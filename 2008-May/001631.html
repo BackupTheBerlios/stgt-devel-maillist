@@ -1,0 +1,801 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Add infrastructure for MaintenanceIn and other
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20infrastructure%20for%20MaintenanceIn%20and%20other&In-Reply-To=%3Cmailman.34.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001628.html">
+   <LINK REL="Next"  HREF="001630.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Add infrastructure for MaintenanceIn and other</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20infrastructure%20for%20MaintenanceIn%20and%20other&In-Reply-To=%3Cmailman.34.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Add infrastructure for MaintenanceIn and other">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Sun May 11 08:25:57 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001628.html">[Stgt-devel] [PATCH service_actions 1/1] Add infrastructure to	handle cdb lengths and service_actions
+</A></li>
+        <LI>Next message: <A HREF="001630.html">[Stgt-devel] [PATCH service_actions 1/1] RESEND Add infrastructure	to handle cdb lengths and service_actions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1631">[ date ]</a>
+              <a href="thread.html#1631">[ thread ]</a>
+              <a href="subject.html#1631">[ subject ]</a>
+              <a href="author.html#1631">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>commands taking service actions.
+
+Expand device_type_operations to also include the cdb length and an
+array of possible service actions for this command.
+We need both the list of service actions and also the cdb length in
+order to implement
+ReportSupportedOpcodes : ManagementIn:service action 0x0c
+
+Augment the .ops structure and provide the expected cdb length for all
+command implemented for all device types.  This is required to support
+ReportSupportedOperationCodes as well as might be useful if/when we add
+a passthrough backend   since at least the current backend becomes unhappy
+if the cdb length provided to the ioctl() is different from what the
+real device expects.
+
+Augment the .ops structure with a null terminated list of service action for
+the (now only 0xa3) opcodes that take service actions and which needs to
+be reported in ReportSupportedOpcodes.
+
+Implement MaintenanceIn and implement service action 0x0c for this command.
+the provided infrastructure should make it easier to add other MaintIn
+service actions, of which there are quite a few.
+
+there are many other opcodes that also take service actions and which
+could build on this framework:
+0xa4 MaintOut
+0x7f: variable length cdb
+0x5e/0x5f persistent reservarion in/out
+0xab
+0x9e
+0x9f
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/mmc.c  |   52 +++++++++---------
+ usr/osd.c  |   10 ++--
+ usr/sbc.c  |   44 ++++++++--------
+ usr/scc.c  |   16 +++---
+ usr/smc.c  |   20 ++++----
+ usr/spc.c  |  171 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/spc.h  |    4 ++
+ usr/tgtd.h |    7 +++
+ 8 files changed, 253 insertions(+), 71 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index f988f5a..25268bc 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -2306,10 +2306,10 @@ static struct device_type_template mmc_template = {
+ 	.lu_offline	= mmc_lu_offline,
+ 	.lu_exit	= spc_lu_exit,
+ 	.ops		= {
+-		{spc_test_unit,},
++		{spc_test_unit, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_request_sense,},
++		{spc_request_sense, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -2327,7 +2327,7 @@ static struct device_type_template mmc_template = {
+ 		/* 0x10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_inquiry,},
++		{spc_inquiry, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -2337,10 +2337,10 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_start_stop,},
++		{spc_start_stop, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_start_stop,}, /* allow medium removal */
++		{spc_start_stop, 6,}, /* allow medium removal */
+ 		{spc_illegal_op,},
+
+ 		/* 0x20 */
+@@ -2349,18 +2349,18 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_read_capacity,},
++		{mmc_read_capacity, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{mmc_rw},
++		{mmc_rw, 10,}, /* read10*/
+ 		{spc_illegal_op,},
+-		{mmc_rw},
++		{mmc_rw, 10,}, /* write10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_test_unit},
++		{spc_test_unit, 10,}, /* verify10 */
+
+ 		/* 0x30 */
+ 		{spc_illegal_op,},
+@@ -2368,7 +2368,7 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_synchronize_cache,},
++		{mmc_synchronize_cache, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+@@ -2385,10 +2385,10 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_read_toc,},
++		{mmc_read_toc, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_get_configuration,},
++		{mmc_get_configuration, 10,},
+ 		{spc_illegal_op,},
+
+ 		{spc_illegal_op,},
+@@ -2402,19 +2402,19 @@ static struct device_type_template mmc_template = {
+
+ 		/* 0x50 */
+ 		{spc_illegal_op,},
+-		{mmc_read_disc_information,},
+-		{mmc_read_track_information,},
+-		{mmc_reserve_track,},
++		{mmc_read_disc_information, 10,},
++		{mmc_read_track_information, 10,},
++		{mmc_reserve_track, 10,},
+ 		{spc_illegal_op,},
+-		{mmc_mode_select,},
++		{mmc_mode_select, 10,}, /* modeselect10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_mode_sense,},
+-		{mmc_close_track,},
+-		{mmc_read_buffer_capacity,},
++		{mmc_mode_sense, 10,}, /* modesense10 */
++		{mmc_close_track, 10,},
++		{mmc_read_buffer_capacity, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -2422,7 +2422,7 @@ static struct device_type_template mmc_template = {
+ 		[0x60 ... 0x9f] = {spc_illegal_op,},
+
+ 		/* 0xA0 */
+-		{spc_report_luns,},
++		{spc_report_luns, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -2431,12 +2431,12 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{mmc_rw},
++		{mmc_rw, 12,}, /* read12 */
+ 		{spc_illegal_op,},
+-		{mmc_rw},
++		{mmc_rw, 12, }, /* write12 */
+ 		{spc_illegal_op,},
+-		{mmc_get_performance,},
+-		{mmc_read_dvd_structure,},
++		{mmc_get_performance, 12,},
++		{mmc_read_dvd_structure, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+@@ -2447,13 +2447,13 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_set_streaming,},
++		{mmc_set_streaming, 12,},
+ 		{spc_illegal_op,},
+
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{mmc_set_cd_speed,},
++		{mmc_set_cd_speed, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+diff --git a/usr/osd.c b/usr/osd.c
+index 593cea8..e56b8ea 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -80,10 +80,10 @@ static struct device_type_template osd_template = {
+ 	.lu_exit	= spc_lu_exit,
+ 	.ops		= {
+ 		/* 0x00 */
+-		{spc_test_unit,},
++		{spc_test_unit, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_request_sense,},
++		{spc_request_sense, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -101,7 +101,7 @@ static struct device_type_template osd_template = {
+ 		/* 0x10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_inquiry,},
++		{spc_inquiry, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -136,12 +136,12 @@ static struct device_type_template osd_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{osd_varlen_cdb,},
++		{osd_varlen_cdb, 224,},
+
+ 		[0x80 ... 0x9f] = {spc_illegal_op},
+
+ 		/* 0xA0 */
+-		{spc_report_luns,},
++		{spc_report_luns, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 09e3002..33f4b82 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -239,18 +239,18 @@ static struct device_type_template sbc_template = {
+ 	.lu_offline	= spc_lu_offline,
+ 	.lu_exit	= spc_lu_exit,
+ 	.ops		= {
+-		{spc_test_unit,},
++		{spc_test_unit, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_request_sense,},
++		{spc_request_sense, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{sbc_rw,},
++		{sbc_rw, 6,}, /* read6 */
+ 		{spc_illegal_op,},
+-		{sbc_rw,},
++		{sbc_rw, 6,}, /* write6 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -260,17 +260,17 @@ static struct device_type_template sbc_template = {
+ 		/* 0x10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_inquiry,},
++		{spc_inquiry, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{sbc_reserve,},
+-		{sbc_release,},
++		{sbc_reserve, 6,}, /* reserve6 */
++		{sbc_release, 6,}, /* release6 */
+
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_mode_sense,},
+-		{spc_start_stop,},
++		{spc_mode_sense, 6,},
++		{spc_start_stop, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -282,13 +282,13 @@ static struct device_type_template sbc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{sbc_read_capacity,},
++		{sbc_read_capacity, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{sbc_rw},
++		{sbc_rw, 10,}, /* read10 */
+ 		{spc_illegal_op,},
+-		{sbc_rw},
++		{sbc_rw, 10,}, /* write10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -301,7 +301,7 @@ static struct device_type_template sbc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{sbc_sync_cache,},
++		{sbc_sync_cache, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+@@ -328,7 +328,7 @@ static struct device_type_template sbc_template = {
+
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_mode_sense,},
++		{spc_mode_sense, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -347,9 +347,9 @@ static struct device_type_template sbc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{sbc_rw,},
++		{sbc_rw, 16,}, /* read16 */
+ 		{spc_illegal_op,},
+-		{sbc_rw,},
++		{sbc_rw, 16,}, /* write16 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -358,7 +358,7 @@ static struct device_type_template sbc_template = {
+
+ 		/* 0x90 */
+ 		{spc_illegal_op,},
+-		{sbc_sync_cache,},
++		{sbc_sync_cache, 16,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -372,22 +372,22 @@ static struct device_type_template sbc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{sbc_service_action,},
++		{sbc_service_action, 16},
+ 		{spc_illegal_op,},
+
+ 		/* 0xA0 */
+-		{spc_report_luns,},
+-		{spc_illegal_op,},
++		{spc_report_luns, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
++		{spc_maint_in, 12, maint_in_service_actions,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{sbc_rw,},
++		{sbc_rw, 12,}, /* read12 */
+ 		{spc_illegal_op,},
+-		{sbc_rw,},
++		{sbc_rw, 12,}, /* write12 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+diff --git a/usr/scc.c b/usr/scc.c
+index 7a6a66e..bec9bf3 100644
+--- a/usr/scc.c
++++ b/usr/scc.c
+@@ -60,10 +60,10 @@ static struct device_type_template scc_template = {
+ 	.lu_offline	= spc_lu_offline,
+ 	.lu_exit	= spc_lu_exit,
+ 	.ops		= {
+-		{spc_test_unit,},
++		{spc_test_unit, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_request_sense,},
++		{spc_request_sense, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -81,7 +81,7 @@ static struct device_type_template scc_template = {
+ 		/* 0x10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_inquiry,},
++		{spc_inquiry, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -114,7 +114,7 @@ static struct device_type_template scc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_test_unit},
++		{spc_test_unit, 10,}, /* verify10 */
+
+ 		[0x30 ... 0x7f] = {spc_illegal_op,},
+
+@@ -135,15 +135,15 @@ static struct device_type_template scc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_test_unit},
++		{spc_test_unit, 16,}, /* verify16 */
+
+ 		[0x90 ... 0x9f] = {spc_illegal_op,},
+
+ 		/* 0xA0 */
+-		{spc_report_luns,},
+-		{spc_illegal_op,},
++		{spc_report_luns, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
++		{spc_maint_in, 12, maint_in_service_actions,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -156,7 +156,7 @@ static struct device_type_template scc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_test_unit,},
++		{spc_test_unit, 12,}, /* verify12 */
+
+ 		[0xb0 ... 0xff] = {spc_illegal_op},
+ 	}
+diff --git a/usr/smc.c b/usr/smc.c
+index ef5f1b0..7125a3d 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -741,10 +741,10 @@ struct device_type_template smc_template = {
+ 	.lu_offline	= spc_lu_offline,
+ 	.lu_config	= smc_lu_config,
+ 	.ops	= {
+-		{spc_test_unit,},
++		{spc_test_unit, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_request_sense,},
++		{spc_request_sense, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -762,7 +762,7 @@ struct device_type_template smc_template = {
+ 		/* 0x10 */
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_inquiry,},
++		{spc_inquiry, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -771,7 +771,7 @@ struct device_type_template smc_template = {
+
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_mode_sense,},
++		{spc_mode_sense, 6,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -792,7 +792,7 @@ struct device_type_template smc_template = {
+
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_mode_sense,},
++		{spc_mode_sense, 10,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -802,12 +802,12 @@ struct device_type_template smc_template = {
+ 		[0x60 ... 0x9f] = {spc_illegal_op,},
+
+ 		/* 0xA0 */
+-		{spc_report_luns,},
++		{spc_report_luns, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
++		{spc_maint_in, 12, maint_in_service_actions,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{smc_move_medium,},
++		{smc_move_medium, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+@@ -818,7 +818,7 @@ struct device_type_template smc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_test_unit,},
++		{spc_test_unit, 12,}, /* verify12 */
+
+ 		/* 0xB0 */
+ 		{spc_illegal_op,},
+@@ -830,7 +830,7 @@ struct device_type_template smc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+-		{smc_read_element_status,},	// Mandatory
++		{smc_read_element_status, 12,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+diff --git a/usr/spc.c b/usr/spc.c
+index e3e4d98..ea99a9b 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -431,6 +431,177 @@ sense:
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+
++
++static int report_opcodes_all(struct scsi_cmd *cmd, int rctd,
++uint32_t alloc_len)
++{
++	uint8_t buf[2048], *data;
++	struct device_type_operations *ops;
++	struct service_action *service_action;
++	int i;
++	uint32_t len;
++
++	/* cant request RCTD for all descriptors */
++	if (rctd) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++			ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	memset(buf, 0, sizeof(buf));
++	data = &amp;buf[4];
++
++	ops = cmd-&gt;dev-&gt;dev_type_template.ops;
++	for (i = 0; i &lt; 256; i++) {
++		if (ops[i].cdb_length == 0)
++			continue;
++
++		/* this command does not take a service action, so just
++		   report the opcode
++		*/
++		if (ops[i].service_actions == NULL) {
++			*data++ = i;
++
++			/* reserved */
++			data++;
++
++			/* service action */
++			data += 2;
++
++			/* reserved */
++			data++;
++
++			/* flags : no service action, no command descriptor */
++			data++;
++
++			/* cdb length */
++			*data++ = (ops[i].cdb_length&gt;&gt;8) &amp; 0xff;
++			*data++ = ops[i].cdb_length &amp; 0xff;
++
++			continue;
++		}
++
++		for (service_action = ops[i].service_actions;
++			service_action-&gt;cmd_perform;
++			service_action++) {
++			/* opcode */
++			*data++ = i;
++
++			/* reserved */
++			data++;
++
++			/* service action */
++			*data++ = (service_action-&gt;service_action&gt;&gt;8) &amp; 0xff;
++			*data++ = service_action-&gt;service_action &amp; 0xff;
++
++			/* reserved */
++			data++;
++
++			/* flags : service action */
++			*data++ = 0x01;
++
++			/* cdb length */
++			*data++ = (ops[i].cdb_length&gt;&gt;8) &amp; 0xff;
++			*data++ = ops[i].cdb_length &amp; 0xff;
++		}
++	}
++
++	len = data - &amp;buf[0];
++	len -= 4;
++	buf[0] = (len&gt;&gt;24) &amp; 0xff;
++	buf[1] = (len&gt;&gt;16) &amp; 0xff;
++	buf[2] = (len&gt;&gt;8)  &amp; 0xff;
++	buf[3] = len &amp; 0xff;
++
++	memcpy(scsi_get_in_buffer(cmd), buf,
++	       min(scsi_get_in_length(cmd), len+4));
++
++	scsi_set_in_resid_by_actual(cmd, len+4);
++
++	return SAM_STAT_GOOD;
++}
++
++int spc_report_supported_opcodes(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t reporting_options;
++	uint8_t requested_opcode;
++	uint16_t requested_service_action;
++	uint32_t alloc_len;
++	int rctd;
++	int ret = SAM_STAT_GOOD;
++
++	reporting_options = cmd-&gt;scb[2] &amp; 0x07;
++
++	requested_opcode = cmd-&gt;scb[3];
++
++	requested_service_action = cmd-&gt;scb[4];
++	requested_service_action &lt;&lt;= 8;
++	requested_service_action |= cmd-&gt;scb[5];
++
++	alloc_len = cmd-&gt;scb[6];
++	alloc_len &lt;&lt;= 8;
++	alloc_len |= cmd-&gt;scb[7];
++	alloc_len &lt;&lt;= 8;
++	alloc_len |= cmd-&gt;scb[8];
++	alloc_len &lt;&lt;= 8;
++	alloc_len |= cmd-&gt;scb[9];
++
++	rctd = cmd-&gt;scb[2] &amp; 0x80;
++
++	switch (reporting_options) {
++	case 0x00: /* report all */
++		ret = report_opcodes_all(cmd, rctd, alloc_len);
++		break;
++	case 0x01: /* report one no service action*/
++	case 0x02: /* report one service action */
++	default:
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++			ASC_INVALID_FIELD_IN_CDB);
++		ret = SAM_STAT_CHECK_CONDITION;
++	}
++
++	return ret;
++}
++
++struct service_action maint_in_service_actions[] = {
++	{0x0c, spc_report_supported_opcodes},
++	{0, NULL}
++};
++
++struct service_action *
++find_service_action(struct service_action *service_action, uint32_t action)
++{
++	while (service_action-&gt;cmd_perform) {
++		if (service_action-&gt;service_action == action)
++			return service_action;
++		service_action++;
++	}
++	return NULL;
++}
++
++/**
++ * This functions emulates the various commands using the 0xa3 cdb opcode
++ */
++int spc_maint_in(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t action;
++	struct service_action *service_action;
++
++	action = cmd-&gt;scb[1] &amp; 0x1f;
++	service_action = find_service_action(maint_in_service_actions, action);
++
++	if (service_action == NULL) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++				ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	return service_action-&gt;cmd_perform(host_no, cmd);
++}
++
+ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	scsi_set_in_resid_by_actual(cmd, 0);
+diff --git a/usr/spc.h b/usr/spc.h
+index a63436a..9147d4c 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -1,6 +1,9 @@
+ #ifndef __SPC_H
+ #define __SPC_H
+
++extern struct service_action maint_in_service_actions[];
++extern int spc_maint_in(int host_no, struct scsi_cmd *cmd);
++
+ extern int spc_inquiry(int host_no, struct scsi_cmd *cmd);
+ extern int spc_report_luns(int host_no, struct scsi_cmd *cmd);
+ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+@@ -9,6 +12,7 @@ extern int spc_request_sense(int host_no, struct
+scsi_cmd *cmd);
+ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+ extern int spc_lu_init(struct scsi_lu *lu);
+
++
+ typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+ extern int lu_config(struct scsi_lu *lu, char *params, match_fn_t *);
+ extern int spc_lu_config(struct scsi_lu *lu, char *params);
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index e516b0a..caff8d0 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -80,8 +80,15 @@ struct it_nexus_lu_info {
+ 	struct list_head pending_ua_sense_list;
+ };
+
++struct service_action {
++	uint32_t service_action;
++	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
++};
++
+ struct device_type_operations {
+ 	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
++	int cdb_length;
++	struct service_action *service_actions;
+ };
+
+ struct device_type_template {
+-- 
+1.5.5
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001628.html">[Stgt-devel] [PATCH service_actions 1/1] Add infrastructure to	handle cdb lengths and service_actions
+</A></li>
+	<LI>Next message: <A HREF="001630.html">[Stgt-devel] [PATCH service_actions 1/1] RESEND Add infrastructure	to handle cdb lengths and service_actions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1631">[ date ]</a>
+              <a href="thread.html#1631">[ thread ]</a>
+              <a href="subject.html#1631">[ subject ]</a>
+              <a href="author.html#1631">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

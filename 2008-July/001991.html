@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20improved%20delete%20option%20for%20removing%0A%20targets%20in%09tgt-admin&In-Reply-To=%3C20080731115439S.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001980.html">
+   <LINK REL="Next"  HREF="001995.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20improved%20delete%20option%20for%20removing%0A%20targets%20in%09tgt-admin&In-Reply-To=%3C20080731115439S.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jul 31 05:00:39 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001980.html">[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+</A></li>
+        <LI>Next message: <A HREF="001995.html">[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1991">[ date ]</a>
+              <a href="thread.html#1991">[ thread ]</a>
+              <a href="subject.html#1991">[ subject ]</a>
+              <a href="author.html#1991">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 30 Jul 2008 13:18:27 +0200
+Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+
+&gt;<i> This patch adds a better --delete option which is used for removing targets.
+</I>&gt;<i> 
+</I>&gt;<i> It works similarly to --offline and --ready options:
+</I>&gt;<i> 
+</I>&gt;<i>       --delete &lt;value&gt;          delete all or selected targets
+</I>&gt;<i>                                 The target will be deleted only if it's not used
+</I>&gt;<i>                                 (no initiator is connected to it).
+</I>&gt;<i>                                 If you want to delete targets which are in use,
+</I>&gt;<i>                                 you have to add &quot;--force&quot; flag
+</I>&gt;<i> 
+</I>&gt;<i> Example usage:
+</I>&gt;<i>       --delete help           - display this help
+</I>&gt;<i>       --delete ALL            - delete all targets
+</I>&gt;<i>       --delete tid=4          - delete target 4 (target with tid 4)
+</I>&gt;<i>       --delete iqn.2008-08.com.example:some.target - delete this target
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Basically, it will remove a target if it's not in use; if you still want to remove the target even though it's in use, you have to add --force.
+</I>&gt;<i> 
+</I>&gt;<i> Because of this, I rename the previous --force into --ignore-errors (previously, --force was used to continue execution even if tgtadm exited with non-zero code).
+</I>&gt;<i> 
+</I>&gt;<i> Also, &quot;-d&quot; (previously, a short for --delete) is gone and is not an option anymore. This is because --delete is potentially a dangerous operation so some extra typing could be justified here. Moreover, lots of programs use &quot;-d&quot; to enable debugging, so we don't want to use it.
+</I>&gt;<i> 
+</I>&gt;<i> Currently, --delete is very quiet; if you want some output, please add a -v/--verbose option.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> If you want to use --force option with --delete, you have to use tgt snapshot from today (30-Jul-2008), or apply 3b4b9bb9d3255e0c84812d263f56cc7e9cc98cd6 (&quot;use decimal notation for the id of I_T nexus in the show option&quot;).
+</I>
+Looks good changes, as I said before. Applied, thanks a lot.
+
+BTW, cid is not always zero. So you need more tricks about it.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001980.html">[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+</A></li>
+	<LI>Next message: <A HREF="001995.html">[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1991">[ date ]</a>
+              <a href="thread.html#1991">[ thread ]</a>
+              <a href="subject.html#1991">[ subject ]</a>
+              <a href="author.html#1991">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

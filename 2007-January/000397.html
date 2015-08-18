@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvstgt/aio%20broken%20with%202.6.20-rc6%20powerpc&In-Reply-To=%3C20070128185258.GA18860%40wavehammer.waldi.eu.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000396.html">
+   <LINK REL="Next"  HREF="000398.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc</H1>
+    <B>Bastian Blank</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvstgt/aio%20broken%20with%202.6.20-rc6%20powerpc&In-Reply-To=%3C20070128185258.GA18860%40wavehammer.waldi.eu.org%3E"
+       TITLE="[Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc">bastian at waldi.eu.org
+       </A><BR>
+    <I>Sun Jan 28 19:52:58 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000396.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000398.html">[Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#397">[ date ]</a>
+              <a href="thread.html#397">[ thread ]</a>
+              <a href="subject.html#397">[ subject ]</a>
+              <a href="author.html#397">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi folks
+
+I'm not really sure if this is a ibmvstgt or a generic aio problem.
+
+I tried ibmvstgt on my openpower and the kernel shows the following
+warning several times:
+|<i> Jan 28 15:11:15 waldi kernel: Badness at arch/powerpc/mm/slb.c:95
+</I>|<i> Jan 28 15:11:15 waldi kernel: Call Trace:
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282B750] [C00000000000EC94] .show_stack+0x68/0x1b0 (unreliable)
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282B7F0] [C00000000015ED64] .report_bug+0x94/0xe8
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282B880] [C0000000000228DC] .program_check_exception+0x140/0x54c
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282B920] [C000000000004774] program_check_common+0xf4/0x100
+</I>|<i> Jan 28 15:11:15 waldi kernel: --- Exception: 700 at .slb_flush_and_rebolt+0xc/0xe0
+</I>|<i> Jan 28 15:11:15 waldi kernel:     LR = .switch_slb+0xac/0x1a0
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282BC10] [FFFFFFFFFFFFFFFF] 0xffffffffffffffff (unreliable)
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282BCB0] [C0000000000E1750] .aio_kick_handler+0x128/0x278
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282BD60] [C000000000066380] .run_workqueue+0xec/0x1d4
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282BE00] [C000000000066F2C] .worker_thread+0x164/0x1bc
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282BEE0] [C00000000006B6E8] .kthread+0x120/0x170
+</I>|<i> Jan 28 15:11:15 waldi kernel: [C00000000282BF90] [C000000000024204] .kernel_thread+0x4c/0x68
+</I>
+One possibility:
+aio_kick_handler calls use_mm. use_mm calls switch_mm. It seems that
+90aef12e6dd609e1ad7fb70044eedc78ca55ee5e changed that from activate_mm.
+
+activate_mm on powerpc disables interupts and calls swtich_mm. So
+switch_mm is now called with interrupts enabled and runs into the
+WARN_ON.
+
+Bastian
+
+-- 
+She won' go Warp 7, Cap'n!  The batteries are dead!
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000396.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000398.html">[Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#397">[ date ]</a>
+              <a href="thread.html#397">[ thread ]</a>
+              <a href="subject.html#397">[ subject ]</a>
+              <a href="author.html#397">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

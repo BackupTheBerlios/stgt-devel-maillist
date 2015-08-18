@@ -1,0 +1,310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47CAA8DC.4030909%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001418.html">
+   <LINK REL="Next"  HREF="001421.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47CAA8DC.4030909%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">erezz at Voltaire.COM
+       </A><BR>
+    <I>Sun Mar  2 14:17:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001418.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+        <LI>Next message: <A HREF="001421.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1419">[ date ]</a>
+              <a href="thread.html#1419">[ thread ]</a>
+              <a href="subject.html#1419">[ subject ]</a>
+              <a href="author.html#1419">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Pete Wyckoff wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Sun, 10 Feb 2008 14:54 +0200:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> I'm trying to run some performance tests on iSER. I'm using the latest
+</I>&gt;&gt;<i> stgt build (tgt-20071227) against open-iscsi r865.15. When I run sgp_dd
+</I>&gt;&gt;<i> on a single LUN directly from the target machine, I get ~400 MB/sec
+</I>&gt;&gt;<i> (which is ok because it's the max throughput of that device). When I run
+</I>&gt;&gt;<i> it from the initiator, I get only ~240 MB/sec.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Did you use any specific configuration when you did your measurements?
+</I>&gt;&gt;<i> Pete - according to your numbers, you got wire speed. I wonder why do I
+</I>&gt;&gt;<i> get 40% less than the physical storage throughput. BTW - when I use
+</I>&gt;&gt;<i> another iSCSI over iSER target, I get 400 MB/sec from the initiator.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Here's a patch that will log timestamps.  I use these to pinpoint
+</I>&gt;<i> where the time is going.  First check for anomalies:  plot it up
+</I>&gt;<i> with line number on the x axis, time stamp on y, make sure it is
+</I>&gt;<i> smooth.
+</I>
+It is almost smooth. From time to time, you can see that it takes time
+before iser_rx_progress is called. I guess that the cq is empty for a
+short time. I don't think that this is the real problem.
+
+&gt;<i>   Then pick one operation:  zoom in with the plot and your
+</I>&gt;<i> editor to look at the times for a single read/write, from when the
+</I>&gt;<i> request first appears to when the response goes out.
+</I>&gt;<i>   
+</I>
+Here's an example of a single command execution:
+
+27892 tgtd: [16:40:38.907547] iser_rx_progress(1101) entry
+27893 tgtd: [16:40:38.907558] handle_wc(897) incoming cmd, len 76
+27894 tgtd: [16:40:38.907568] iscsi_iser_read(1301) buf 0x529fc8 nbytes 48
+27895 tgtd: [16:40:38.907578] iser_parse_hdr(1265) control type PDU
+27896 tgtd: [16:40:38.907587] iser_parse_hdr(1271) rstag 9b320086 va
+3f1fc000
+27897 tgtd: [16:40:38.907597] iscsi_scsi_cmd_rx_start(1466) 1 28 0 0
+524288 1 b
+27898 tgtd: [16:40:38.907607] iscsi_rdma_alloc_data_buf(1659) malloc
+0x2acf61554000 sz 524288
+27899 tgtd: [16:40:38.907617] iscsi_task_queue(1411) 388b 388b 1
+27900 tgtd: [16:40:38.907627] target_cmd_queue(763) 0x535de8 28 1
+27901 tgtd: [16:40:38.907637] target_cmd_queue(783) 0x535de8 28 1 1
+
+this is where bs work starts:
+27902 tgtd: [16:40:38.907649] tgtd: [16:40:38.907650]
+bs_thread_worker_fn(151) got 0x535de8
+27903 target_cmd_queue(794) b 28 (nil) 0x2acf61554000 262144 0 524288 0 4
+27904 tgtd: [16:40:38.907676] iscsi_rdma_event_modify(1628) tx ready
+adding 0x529eb0
+27905 tgtd: [16:40:38.907686] handle_wc(922) incoming cmd proc done, repost
+27906 tgtd: [16:40:38.907697] iser_tx_progress(1017) entry
+27907 tgtd: [16:40:38.907706] iser_tx_progress(1028) trying tx
+27908 tgtd: [16:40:38.907716] iscsi_task_tx_start(1784) no more data
+27909 tgtd: [16:40:38.907725] iscsi_rdma_event_modify(1633) tx ready
+removing 0x529eb0
+
+this is where bs work ends (130 us):
+27910 tgtd: [16:40:38.907779] bs_rdwr_request(114) io done 0x535de8 28
+524288 524288
+27911 tgtd: [16:40:38.907796] bs_thread_ack_fn(82) found 0x535de8
+27912 tgtd: [16:40:38.907813] bs_thread_request_done(122) back to tgtd,
+0x535de8
+27913 tgtd: [16:40:38.907825] iscsi_rdma_event_modify(1628) tx ready
+adding 0x529eb0
+27914 tgtd: [16:40:38.907837] iser_tx_progress(1017) entry
+27915 tgtd: [16:40:38.907846] iser_tx_progress(1028) trying tx
+27916 tgtd: [16:40:38.907856] iscsi_task_tx_start(1759) found a task b
+524288 0 0
+27917 tgtd: [16:40:38.907865] iscsi_data_rsp_build(974) 524288 524288
+524288 524288 b
+27918 tgtd: [16:40:38.907875] iscsi_rdma_rdma_write(1491) offset 0 len
+524288 stag 9b320086 va 3f1fc000
+27919 tgtd: [16:40:38.907885] iscsi_rdma_event_modify(1633) tx ready
+removing 0x529eb0
+27920 tgtd: [16:40:38.907895] iscsi_scsi_cmd_tx_done(1707) more data or
+sense or bidir b
+27921 tgtd: [16:40:38.908269] iser_rx_progress(1101) entry
+27922 tgtd: [16:40:38.908280] handle_wc(932) RDMA write done
+27923 tgtd: [16:40:38.908289] iscsi_rdma_event_modify(1628) tx ready
+adding 0x529eb0
+27924 tgtd: [16:40:38.908298] iser_tx_progress(1017) entry
+27925 tgtd: [16:40:38.908308] iser_tx_progress(1028) trying tx
+27926 tgtd: [16:40:38.908317] iscsi_task_tx_start(1759) found a task b
+524288 524288 0
+27927 tgtd: [16:40:38.908327] iscsi_cmd_rsp_build(901) 0x535d28 28
+27928 tgtd: [16:40:38.908336] iscsi_iser_write_begin(1352) new sendl
+0x2aaab45f7090 len 48
+27929 tgtd: [16:40:38.908347] iscsi_iser_write_end(1387) sendl
+0x2aaab45f7090 len 76
+27930 tgtd: [16:40:38.908356] iscsi_iser_write_end(1402) inc progress to
+finish cmd
+27931 tgtd: [16:40:38.908366] __cmd_done(855) 8 (nil) 0x2acf61554000 0
+524288 0
+27932 tgtd: [16:40:38.908376] iscsi_rdma_free_data_buf(1678) free
+0x2acf61554000
+
+It seems that bs work takes a lot of time. For example: if I run
+disktest on the same device directly from the target machine (i.e. tgt
+is not involved) in the following way:
+
+disktest -PT -T100 -h1 -K64 -B256k -ID /dev/sdc -r
+
+I get ~13000 iops -&gt; each IO takes ~77 us (compared to 130 us only for
+bs work with tgt). I'm not familiar with the bs code in tgt, so I'm not
+sure what should be done here.
+
+Another thing that looks strange - from looking at the logs, I don't see
+that work is done in parallel. A command is received, iSCSI processing
+is done and it is sent to bs processing (which seems to be idle until
+that point in time). Now, nothing happens until bs processing is
+complete. I will try to look more into the code and try to understand
+it, but can someone try to elaborate on this?
+
+&gt;<i> I suspect you'll find lots of the time to be in bs_rdwr servicing
+</I>&gt;<i> the IO.  In which case you'll want to investigate making that
+</I>&gt;<i> faster:  more readahead on reads, bigger write caching.  I've never
+</I>&gt;<i> tried to use real devices though.
+</I>&gt;<i>
+</I>&gt;<i> Will be interested to see what kind of bottlenecks you find.
+</I>&gt;<i>
+</I>&gt;<i> 		-- Pete
+</I>&gt;<i>
+</I>&gt;<i> commit f94c0548ea22223ccf3bf66558598336b3363cfc
+</I>&gt;<i> Author: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> Date: Tue, 16 Oct 2007 15:21:33 -0400
+</I>&gt;<i>
+</I>&gt;<i> local logging changes
+</I>&gt;<i>
+</I>&gt;<i> Do not use syslog for error messages, just send them to stdout/stderr where
+</I>&gt;<i> they can be redirected.  Add NDEBUG ifdef around log_debug to avoid
+</I>&gt;<i> compiling those lines for optimized performance, and fix a compiler warning
+</I>&gt;<i> that falls out due to this.  Put timestamps on messages for performance
+</I>&gt;<i> debugging.
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/log.c |   19 +++++++++++++++----
+</I>&gt;<i>  usr/log.h |    6 ++++++
+</I>&gt;<i>  usr/spc.c |    2 ++
+</I>&gt;<i>  3 files changed, 23 insertions(+), 4 deletions(-)
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/usr/log.c b/usr/log.c
+</I>&gt;<i> index 4a30f05..cb601f6 100644
+</I>&gt;<i> --- a/usr/log.c
+</I>&gt;<i> +++ b/usr/log.c
+</I>&gt;<i> @@ -24,9 +24,11 @@
+</I>&gt;<i>  #include &lt;unistd.h&gt;
+</I>&gt;<i>  #include &lt;syslog.h&gt;
+</I>&gt;<i>  #include &lt;signal.h&gt;
+</I>&gt;<i> +#include &lt;time.h&gt;
+</I>&gt;<i>  #include &lt;sys/shm.h&gt;
+</I>&gt;<i>  #include &lt;sys/ipc.h&gt;
+</I>&gt;<i>  #include &lt;sys/types.h&gt;
+</I>&gt;<i> +#include &lt;sys/time.h&gt;
+</I>&gt;<i>  
+</I>&gt;<i>  #include &quot;log.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -235,7 +237,7 @@ static void log_syslog (void * buff)
+</I>&gt;<i>  
+</I>&gt;<i>  static void dolog(int prio, const char *fmt, va_list ap)
+</I>&gt;<i>  {
+</I>&gt;<i> -	if (is_daemon) {
+</I>&gt;<i> +	if (0 &amp;&amp; is_daemon) {
+</I>&gt;<i>  		la-&gt;ops[0].sem_op = -1;
+</I>&gt;<i>  		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
+</I>&gt;<i>  			syslog(LOG_ERR, &quot;semop up failed&quot;);
+</I>&gt;<i> @@ -250,7 +252,16 @@ static void dolog(int prio, const char *fmt, va_list ap)
+</I>&gt;<i>  			return;
+</I>&gt;<i>  		}
+</I>&gt;<i>  	} else {
+</I>&gt;<i> -		fprintf(stderr, &quot;%s: &quot;, log_name);
+</I>&gt;<i> +		struct timeval tv;
+</I>&gt;<i> +		time_t tp;
+</I>&gt;<i> +		char buffer[16];
+</I>&gt;<i> +
+</I>&gt;<i> +		gettimeofday(&amp;tv, NULL);
+</I>&gt;<i> +		tp = tv.tv_sec;
+</I>&gt;<i> +		strftime(buffer, 9, &quot;%H:%M:%S&quot;, localtime(&amp;tp));
+</I>&gt;<i> +		sprintf(buffer+8, &quot;.%06ld&quot;, (long) tv.tv_usec);
+</I>&gt;<i> +
+</I>&gt;<i> +		fprintf(stderr, &quot;%s: [%s] &quot;, log_name, buffer);
+</I>&gt;<i>  		vfprintf(stderr, fmt, ap);
+</I>&gt;<i>  		fflush(stderr);
+</I>&gt;<i>  	}
+</I>&gt;<i> @@ -308,7 +319,7 @@ int log_init(char *program_name, int size, int daemon, int debug)
+</I>&gt;<i>  
+</I>&gt;<i>  	logdbg(stderr,&quot;enter log_init\n&quot;);
+</I>&gt;<i>  	log_name = program_name;
+</I>&gt;<i> -	if (is_daemon) {
+</I>&gt;<i> +	if (0 &amp;&amp; is_daemon) {
+</I>&gt;<i>  		struct sigaction sa_old;
+</I>&gt;<i>  		struct sigaction sa_new;
+</I>&gt;<i>  		pid_t pid;
+</I>&gt;<i> @@ -349,7 +360,7 @@ int log_init(char *program_name, int size, int daemon, int debug)
+</I>&gt;<i>  
+</I>&gt;<i>  void log_close (void)
+</I>&gt;<i>  {
+</I>&gt;<i> -	if (is_daemon) {
+</I>&gt;<i> +	if (0 &amp;&amp; is_daemon) {
+</I>&gt;<i>  		closelog();
+</I>&gt;<i>  		free_logarea();
+</I>&gt;<i>  	}
+</I>&gt;<i> diff --git a/usr/log.h b/usr/log.h
+</I>&gt;<i> index 35ce374..40eb739 100644
+</I>&gt;<i> --- a/usr/log.h
+</I>&gt;<i> +++ b/usr/log.h
+</I>&gt;<i> @@ -76,9 +76,15 @@ do {									\
+</I>&gt;<i>  	log_error(&quot;%s(%d) &quot; fmt, __FUNCTION__, __LINE__, ##args);	\
+</I>&gt;<i>  } while (0)
+</I>&gt;<i>  
+</I>&gt;<i> +#ifndef NDEBUG
+</I>&gt;<i>  #define dprintf(fmt, args...)						\
+</I>&gt;<i>  do {									\
+</I>&gt;<i>  	log_debug(&quot;%s(%d) &quot; fmt, __FUNCTION__, __LINE__, ##args);	\
+</I>&gt;<i>  } while (0)
+</I>&gt;<i> +#else
+</I>&gt;<i> +#define dprintf(fmt, args...)						\
+</I>&gt;<i> +do {									\
+</I>&gt;<i> +} while (0)
+</I>&gt;<i> +#endif
+</I>&gt;<i>  
+</I>&gt;<i>  #endif	/* LOG_H */
+</I>&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> index 7802f76..bdba471 100644
+</I>&gt;<i> --- a/usr/spc.c
+</I>&gt;<i> +++ b/usr/spc.c
+</I>&gt;<i> @@ -533,6 +533,7 @@ exit:
+</I>&gt;<i>  
+</I>&gt;<i>  void dump_cdb(struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i> +#ifndef NDEBUG
+</I>&gt;<i>  	uint8_t *cdb = cmd-&gt;scb;
+</I>&gt;<i>  
+</I>&gt;<i>  	switch(cmd-&gt;scb_len) {
+</I>&gt;<i> @@ -561,6 +562,7 @@ void dump_cdb(struct scsi_cmd *cmd)
+</I>&gt;<i>  			cdb[12], cdb[13], cdb[14], cdb[15]);
+</I>&gt;<i>  		break;
+</I>&gt;<i>  	}
+</I>&gt;<i> +#endif
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>   
+</I>
+&lt;<A HREF="http://www.voltaire.com/">http://www.voltaire.com/</A>&gt;
+
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001418.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+	<LI>Next message: <A HREF="001421.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1419">[ date ]</a>
+              <a href="thread.html#1419">[ thread ]</a>
+              <a href="subject.html#1419">[ subject ]</a>
+              <a href="author.html#1419">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vtl patch.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3C1176382817.3465.5.camel%40fs0004.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000555.html">
+   <LINK REL="Next"  HREF="000514.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vtl patch.</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3C1176382817.3465.5.camel%40fs0004.ibrix.com%3E"
+       TITLE="[Stgt-devel] vtl patch.">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu Apr 12 15:00:17 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000555.html">[Stgt-devel] vtl patch.
+</A></li>
+        <LI>Next message: <A HREF="000514.html">[PATCH] Fix outgoing authentication bugs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#556">[ date ]</a>
+              <a href="thread.html#556">[ thread ]</a>
+              <a href="subject.html#556">[ subject ]</a>
+              <a href="author.html#556">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-04-12 at 14:37 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] vtl patch.
+</I>&gt;<i> Date: Thu, 12 Apr 2007 15:07:31 +1000
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; I can't find &quot;ElementType&quot; in ssc3_config or smc_config. Will you
+</I>&gt;<i> &gt; &gt; implement it later?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Yes. I am in the process of implementing the this now. Nothing that
+</I>&gt;<i> &gt; actually compiles, let alone run.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I am working on implementing the MODE SENSE/MODE LOG command, with
+</I>&gt;<i> &gt; initial config of page 0x1d (Element Address Assignment).
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I hope to post something new tomorrow so what was previously
+</I>&gt;<i> &gt; 'theoretical' will have some code example with what I'm trying to
+</I>&gt;<i> &gt; achieve.
+</I>&gt;<i> 
+</I>&gt;<i> I see. Thanks.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; Do you need a configuration like 'only when X is true, Y is
+</I>&gt;<i> &gt; &gt; necessary'?  I think that you can still do that with the current
+</I>&gt;<i> &gt; &gt; semantics, 'one field at a time'. You just need to check whether the
+</I>&gt;<i> &gt; &gt; configuration is valid when a user tries to start a target. Though
+</I>&gt;<i> &gt; &gt; with a 'multiple fields at a time' scheme, the checking would be
+</I>&gt;<i> &gt; &gt; a bit easier.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; I don't like '--name a --value b --name b --value c ...' because it
+</I>&gt;<i> &gt; &gt; doesn't look like the standard (GNU) option way.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I can't say I like it either, however it does seem to be the cleanest
+</I>&gt;<i> &gt; way.. I'm open to suggestions.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Only other idea I had was to group up all non-processed arguments from
+</I>&gt;<i> &gt; the getopt_long(), re-format into a argc/argv[] type and pass this
+</I>&gt;<i> &gt; thru to the SMC/SSC module for additional processing. This would allow
+</I>&gt;<i> &gt; the SMC/SSC module to perform their own getopt_long()
+</I>&gt;<i> 
+</I>&gt;<i> How about somthing like this?
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i>         --params VendorIdent=QUANTUM,ProductIdent=SDLT600,ProductRev=0001
+</I>&gt;<i> 
+</I>
+this looks much better.
+
+&gt;<i> 
+</I>&gt;<i> We can steal a parser for this from Linux kernel.
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000555.html">[Stgt-devel] vtl patch.
+</A></li>
+	<LI>Next message: <A HREF="000514.html">[PATCH] Fix outgoing authentication bugs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#556">[ date ]</a>
+              <a href="thread.html#556">[ thread ]</a>
+              <a href="subject.html#556">[ subject ]</a>
+              <a href="author.html#556">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

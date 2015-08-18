@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Fix outgoing authentication bugs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Fix%20outgoing%20authentication%20bugs&In-Reply-To=%3Cmailman.4.1331738468.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000556.html">
+   <LINK REL="Next"  HREF="000513.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Fix outgoing authentication bugs</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Fix%20outgoing%20authentication%20bugs&In-Reply-To=%3Cmailman.4.1331738468.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Fix outgoing authentication bugs">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Apr  5 07:11:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000556.html">[Stgt-devel] vtl patch.
+</A></li>
+        <LI>Next message: <A HREF="000513.html">[Stgt-devel] mutual login failed
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#514">[ date ]</a>
+              <a href="thread.html#514">[ thread ]</a>
+              <a href="subject.html#514">[ subject ]</a>
+              <a href="author.html#514">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>In the case of outgoing authentication, account_lookup() copies a user name.
+
+Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+---
+ usr/iscsi/chap.c |    6 ++++--
+ usr/target.c     |    6 ++++--
+ usr/tgtd.h       |    2 +-
+ 3 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/usr/iscsi/chap.c b/usr/iscsi/chap.c
+index c92275d..fc6fd8f 100644
+--- a/usr/iscsi/chap.c
++++ b/usr/iscsi/chap.c
+@@ -405,7 +405,8 @@ static int chap_initiator_auth_check_response(struct iscsi_connection *conn)
+ 	}
+ 
+ 	memset(pass, 0, sizeof(pass));
+-	err = account_lookup(conn-&gt;tid, AUTH_DIR_INCOMING, value, pass, ISCSI_NAME_LEN);
++	err = account_lookup(conn-&gt;tid, AUTH_DIR_INCOMING, value, 0, pass,
++			     ISCSI_NAME_LEN);
+ 	if (err) {
+ 		eprintf(&quot;No valid user/pass combination for initiator %s &quot;
+ 			    &quot;found\n&quot;, conn-&gt;initiator);
+@@ -502,7 +503,8 @@ static int chap_target_auth_create_response(struct iscsi_connection *conn)
+ 
+ 	memset(pass, 0, sizeof(pass));
+ 	memset(name, 0, sizeof(name));
+-	err = account_lookup(conn-&gt;tid, AUTH_DIR_OUTGOING, name, pass, ISCSI_NAME_LEN);
++	err = account_lookup(conn-&gt;tid, AUTH_DIR_OUTGOING, name, sizeof(name),
++			     pass, sizeof(pass));
+ 	if (err) {
+ 		log_warning(&quot;CHAP target auth.: &quot;
+ 			    &quot;no outgoing credentials configured%s&quot;,
+diff --git a/usr/target.c b/usr/target.c
+index 8c1adf6..0178291 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -698,7 +698,7 @@ static struct account_entry *__account_lookup_user(char *user)
+ 	return NULL;
+ }
+ 
+-int account_lookup(int tid, int type, char *user, char *password, int plen)
++int account_lookup(int tid, int type, char *user, int ulen, char *password, int plen)
+ {
+ 	int i;
+ 	struct target *target;
+@@ -718,8 +718,10 @@ int account_lookup(int tid, int type, char *user, char *password, int plen)
+ 		}
+ 	} else {
+ 		ac = __account_lookup_id(target-&gt;account.out_aid);
+-		if (ac)
++		if (ac) {
++			strncpy(user, ac-&gt;user, ulen);
+ 			goto found;
++		}
+ 	}
+ 
+ 	return -ENOENT;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 7eecc0a..546c078 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -158,7 +158,7 @@ extern int acl_add(int tid, char *address);
+ extern void acl_del(int tid, char *address);
+ extern char *acl_get(int tid, int idx);
+ 
+-extern int account_lookup(int tid, int type, char *user, char *password, int plen);
++extern int account_lookup(int tid, int type, char *user, int ulen, char *password, int plen);
+ extern int account_add(char *user, char *password);
+ extern void account_del(char *user);
+ extern int account_ctl(int tid, int type, char *user, int bind);
+-- 
+1.4.4.3
+
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000556.html">[Stgt-devel] vtl patch.
+</A></li>
+	<LI>Next message: <A HREF="000513.html">[Stgt-devel] mutual login failed
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#514">[ date ]</a>
+              <a href="thread.html#514">[ thread ]</a>
+              <a href="subject.html#514">[ subject ]</a>
+              <a href="author.html#514">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

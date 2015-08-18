@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%0A%20mainstream%09Linux%20kernel&In-Reply-To=%3C200802100437.m1A4blER029141%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001356.html">
+   <LINK REL="Next"  HREF="001353.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%0A%20mainstream%09Linux%20kernel&In-Reply-To=%3C200802100437.m1A4blER029141%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel">tomof at acm.org
+       </A><BR>
+    <I>Sun Feb 10 05:37:47 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001356.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+        <LI>Next message: <A HREF="001353.html">[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1380">[ date ]</a>
+              <a href="thread.html#1380">[ thread ]</a>
+              <a href="subject.html#1380">[ subject ]</a>
+              <a href="author.html#1380">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Subject: Re: [Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+Date: Wed, 06 Feb 2008 09:12:47 +0900
+
+&gt;<i> On Tue, 05 Feb 2008 18:04:52 +0100
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; (...)
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt;&gt; The problem with tgtd is that you can't start it (configured) in an
+</I>&gt;<i> &gt; &gt;&gt; &quot;atomic&quot; way.
+</I>&gt;<i> &gt; &gt;&gt; Usually, one will start tgtd and it's configuration in a script (I 
+</I>&gt;<i> &gt; &gt;&gt; replaced some parameters with &quot;...&quot; to make it shorter and more readable):
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Thanks for the details. So the way to stop the daemon is not related
+</I>&gt;<i> &gt; &gt; with your problem.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; It's easily fixable. Can you start a new thread about this on
+</I>&gt;<i> &gt; &gt; stgt-devel mailing list? When we agree on the interface to start the
+</I>&gt;<i> &gt; &gt; daemon, I'll implement it.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Sure.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 1. tgtd should not immediately background, but only when it's fully started?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 2. tgtd should only start to listen if told so? tgtdadm --listen/--nolisten?
+</I>&gt;<i> 
+</I>&gt;<i> I was thinking about something like:
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm --op update --mode sys --name state -v running
+</I>
+I've just realized that tgt already has something like that, which
+might work for you.
+
+tgt has the state of a target device. See 'Status: offline':
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: offline
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: Yes
+            Poweron/Reset: Yes
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: disk
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 2147 MB
+            Online: Yes
+            Poweron/Reset: Yes
+            Removable media: No
+            Backing store: /var/tmp/image0
+    Account information:
+    ACL information:
+        ALL
+
+
+If the state is 'offline', the daemon tells the initiator that there
+is an error on the target side. Then open-iscsi tries to reconnect to
+the target, I think.
+
+By default, the sate of a target device 'running'. So there is a race
+between the first and second operations (that is, you need to peform
+the second right after the first, before the initiator tries to
+connect). I'm fine with changing the default state to 'offline'.
+
+tgtadm --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+tgtadm --op update --mode target --tid 1 -n state -v offline
+tgtadm --op new --mode logicalunit --tid 1 --lun 1 -b /var/tmp/image0
+tgtadm --op bind --mode target --tid 1 -I ALL
+tgtadm --op update --mode target --tid 1 -n state -v running
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001356.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+	<LI>Next message: <A HREF="001353.html">[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1380">[ date ]</a>
+              <a href="thread.html#1380">[ thread ]</a>
+              <a href="subject.html#1380">[ subject ]</a>
+              <a href="author.html#1380">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

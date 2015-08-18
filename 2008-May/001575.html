@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Patches%20for%20MMC%20and%20fix%20for%20serious%20crash%20bug%20in%0A%09spc_mode_sense%28%29&In-Reply-To=%3Cc9a3e4540805021900u7448c129h34e207f7955aca3f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001574.html">
+   <LINK REL="Next"  HREF="001576.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Patches%20for%20MMC%20and%20fix%20for%20serious%20crash%20bug%20in%0A%09spc_mode_sense%28%29&In-Reply-To=%3Cc9a3e4540805021900u7448c129h34e207f7955aca3f%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Sat May  3 04:00:58 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001574.html">[Stgt-devel] Patches for MMC and fix for serious crash bug	in	spc_mode_sense()
+</A></li>
+        <LI>Next message: <A HREF="001576.html">[Stgt-devel] Patches for MMC and fix for serious crash bug	in	spc_mode_sense()
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1575">[ date ]</a>
+              <a href="thread.html#1575">[ thread ]</a>
+              <a href="subject.html#1575">[ subject ]</a>
+              <a href="author.html#1575">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>do you want me to resend these 7 patches in that way as separate mails?
+
+
+On Sat, May 3, 2008 at 11:32 AM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Fri, 2 May 2008 22:55:22 +1000
+</I>&gt;<i> &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;&gt;<i> Please disregard the previous pathset
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Please find attached a patchset that contains
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> 0001 fix a bug in mode sense 10  where the data length is 1 too little
+</I>&gt;&gt;<i> 0002 dont set modepages in the example, these pages are created by
+</I>&gt;&gt;<i> default when the lun is created anyway
+</I>&gt;&gt;<i> 0003 add modepage for mm capabilities
+</I>&gt;&gt;<i> 0004 fix crashbug in spc_mode_sense()    if an application is asking
+</I>&gt;&gt;<i> for mode sense and specifies a small allocation length,
+</I>&gt;&gt;<i> spc_mode_sense() and build_mode_page() would write beyond the end of
+</I>&gt;&gt;<i> the data array and overwrite other things causing tgtd to crash
+</I>&gt;&gt;<i> has probably not been seen before since prior to 0003 above, there
+</I>&gt;&gt;<i> hasnt been any very large mode pages   and tgtd just must have been
+</I>&gt;&gt;<i> lucky.
+</I>&gt;&gt;<i> 0005 mode page for write parameters
+</I>&gt;&gt;<i> 0006 example on how to use dvdrecorder under linux with the emulation
+</I>&gt;&gt;<i> 0007 final fix so that both windows dvddecrypter and also linux
+</I>&gt;&gt;<i> dvdrecorder can write to the emulated lun
+</I>&gt;<i>
+</I>&gt;<i> Thanks,
+</I>&gt;<i>
+</I>&gt;<i> Can you send patches as just plain text (one patch per email)? Then
+</I>&gt;<i> wee can read and comment on your patches.
+</I>&gt;<i>
+</I>&gt;<i> If you are not familiar with the way to send patches in Linux kernel
+</I>&gt;<i> way, the followings would help:
+</I>&gt;<i>
+</I>&gt;<i> <A HREF="http://linux.yyz.us/patch-format.html">http://linux.yyz.us/patch-format.html</A>
+</I>&gt;<i> <A HREF="http://lxr.linux.no/linux/Documentation/SubmittingPatches">http://lxr.linux.no/linux/Documentation/SubmittingPatches</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001574.html">[Stgt-devel] Patches for MMC and fix for serious crash bug	in	spc_mode_sense()
+</A></li>
+	<LI>Next message: <A HREF="001576.html">[Stgt-devel] Patches for MMC and fix for serious crash bug	in	spc_mode_sense()
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1575">[ date ]</a>
+              <a href="thread.html#1575">[ thread ]</a>
+              <a href="subject.html#1575">[ subject ]</a>
+              <a href="author.html#1575">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

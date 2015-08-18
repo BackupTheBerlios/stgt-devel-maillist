@@ -1,0 +1,480 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch 2/2] passthrough target notification function
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%202/2%5D%20passthrough%20target%20notification%20function&In-Reply-To=%3C20070518182250.GB5340%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000667.html">
+   <LINK REL="Next"  HREF="000672.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch 2/2] passthrough target notification function</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%202/2%5D%20passthrough%20target%20notification%20function&In-Reply-To=%3C20070518182250.GB5340%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] [patch 2/2] passthrough target notification function">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Fri May 18 20:22:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000667.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+        <LI>Next message: <A HREF="000672.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#668">[ date ]</a>
+              <a href="thread.html#668">[ thread ]</a>
+              <a href="subject.html#668">[ subject ]</a>
+              <a href="author.html#668">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add target logicalunit state management to scsi_tgt
+ (required for in-kernel pass-through)
+ 
+ Take the data from user space and correlate this with kernel
+ structures for scsi devices and then properly managing their use.
+ This will keep the kernel drivers from needing to go to userspace for
+ pass-through targets.
+
+ -Use scsi_[un]register_interface to get notifications for each scsi
+  device added/removed; scsi_tgt will maintain a list of all existing
+  scsi devices.
+  
+ -Update scsi_tgt_if.h for new u-&gt;k/k-&gt;u messages
+
+ -Create/destroy requests from tgtd will associate scsi devices with
+  tgt logicalunits through scsi_tgt_kspace_lu_update().  Results of the
+  operation are sent back with scsi_tgt_uspace_send_lu_update_resp().
+
+---
+ drivers/scsi/scsi_tgt_if.c   |   28 ++++++
+ drivers/scsi/scsi_tgt_lib.c  |  209 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/scsi/scsi_tgt_priv.h |    5 +
+ include/scsi/scsi_tgt.h      |   12 ++
+ include/scsi/scsi_tgt_if.h   |   22 +++++
+ 5 files changed, 276 insertions(+)
+
+Index: b/drivers/scsi/scsi_tgt_if.c
+===================================================================
+--- a/drivers/scsi/scsi_tgt_if.c
++++ b/drivers/scsi/scsi_tgt_if.c
+@@ -199,6 +199,25 @@ int scsi_tgt_uspace_send_it_nexus_reques
+ 	return err;
+ }
+ 
++int scsi_tgt_uspace_send_lu_update_resp(int tgt_host_no, u64 tgt_lun,
++                                        int op, int result)
++{
++	struct tgt_event ev;
++	int err;
++
++	memset(&amp;ev, 0, sizeof(ev));
++	ev.p.lu_updt_rsp.op = op;
++	ev.p.lu_updt_rsp.result = result;
++	ev.p.lu_updt_rsp.tgt_host_no = tgt_host_no;
++	ev.p.lu_updt_rsp.tgt_lun = tgt_lun;
++	err = tgt_uspace_send_event(TGT_KEVENT_LU_UPDT_RSP, &amp;ev);
++	if (err)
++		eprintk(&quot;tx buf is full, could not send\n&quot;);
++
++	return err;
++
++}
++
+ static int event_recv_msg(struct tgt_event *ev)
+ {
+ 	int err = 0;
+@@ -226,6 +245,15 @@ static int event_recv_msg(struct tgt_eve
+ 						   ev-&gt;p.it_nexus_rsp.itn_id,
+ 						   ev-&gt;p.it_nexus_rsp.result);
+ 		break;
++	case TGT_UEVENT_LU_UPDT_REQ:
++		err = scsi_tgt_kspace_lu_update(ev-&gt;p.lu_updt_req.tgt_host_no,
++				ev-&gt;p.lu_updt_req.tgt_lun,
++				ev-&gt;p.lu_updt_req.local_host_no,
++				ev-&gt;p.lu_updt_req.local_channel,
++				ev-&gt;p.lu_updt_req.local_scsi_id,
++				ev-&gt;p.lu_updt_req.local_lun,
++				ev-&gt;p.lu_updt_req.op);
++		break;
+ 	default:
+ 		eprintk(&quot;unknown type %d\n&quot;, ev-&gt;hdr.type);
+ 		err = -EINVAL;
+Index: b/drivers/scsi/scsi_tgt_lib.c
+===================================================================
+--- a/drivers/scsi/scsi_tgt_lib.c
++++ b/drivers/scsi/scsi_tgt_lib.c
+@@ -20,12 +20,14 @@
+  * 02110-1301 USA
+  */
+ #include &lt;linux/blkdev.h&gt;
++#include &lt;linux/delay.h&gt;
+ #include &lt;linux/hash.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/pagemap.h&gt;
+ #include &lt;scsi/scsi.h&gt;
+ #include &lt;scsi/scsi_cmnd.h&gt;
+ #include &lt;scsi/scsi_device.h&gt;
++#include &lt;scsi/scsi_driver.h&gt;
+ #include &lt;scsi/scsi_host.h&gt;
+ #include &lt;scsi/scsi_tgt.h&gt;
+ 
+@@ -635,6 +637,205 @@ done:
+ 	return err;
+ }
+ 
++static LIST_HEAD(scsi_dev_list);
++static spinlock_t sdev_list_lock = SPIN_LOCK_UNLOCKED;
++
++/*
++ * Search the scsi_dev_list for a scsi_dev_node for our target lun.
++ * Need to hold sdev_list_lock prior to entry.
++ */
++struct scsi_dev_node *scsi_tgt_lun_to_dev(int host_no, u64 lun)
++{
++	struct scsi_dev_node *tmp_sdn;
++	lun = (lun) &gt;&gt; 56 &amp; 0x001f; /* The incoming lun needs to be
++				       stripped down to just the part
++				       stored in the scsi_dev_node */
++
++	list_for_each_entry(tmp_sdn, &amp;scsi_dev_list, node)
++	if(tmp_sdn-&gt;host_no == host_no) {
++		if(tmp_sdn-&gt;tgt_lun == lun) {
++			return tmp_sdn;
++		}
++	}
++	return NULL;
++}
++EXPORT_SYMBOL_GPL(scsi_tgt_lun_to_dev);
++
++/*
++ * Callback when a scsi_device is added to the system
++ */
++static int add_scsi_device(struct class_device *cdev,
++                           struct class_interface *cl_intf)
++{
++	struct scsi_device *sdev = to_scsi_device(cdev-&gt;dev);
++	struct scsi_dev_node *sdevnode =
++	        kmalloc(sizeof(struct scsi_dev_node), GFP_ATOMIC);
++	unsigned long flags;
++
++	printk(KERN_DEBUG &quot;add_scsi_device got %p, %d:%d:%d:%d, sdn=%p\n&quot;,
++			sdev, sdev-&gt;host-&gt;host_no, sdev-&gt;channel, sdev-&gt;id,
++			sdev-&gt;lun, sdevnode);
++
++	sdevnode-&gt;sdev = sdev;
++	sdevnode-&gt;host_no = -1;
++	sdevnode-&gt;tgt_lun = 0;
++
++	spin_lock_irqsave(&amp;sdev_list_lock, flags);
++	list_add_tail(&amp;sdevnode-&gt;node, &amp;scsi_dev_list);
++	spin_unlock_irqrestore(&amp;sdev_list_lock, flags);
++	return 0;
++}
++
++/*
++ * Callback when a scsi_device is removed from the system
++ */
++static void rem_scsi_device(struct class_device *cdev,
++                            struct class_interface *cl_intf)
++{
++	struct scsi_dev_node *tmp_sdn;
++	struct scsi_device *sdev = to_scsi_device(cdev-&gt;dev);
++	unsigned long flags;
++
++	printk(KERN_DEBUG &quot;rem_scsi_device got %p, %d:%d:%d:%d\n&quot;,
++			sdev, sdev-&gt;host-&gt;host_no, sdev-&gt;channel, sdev-&gt;id,
++			sdev-&gt;lun);
++
++	spin_lock_irqsave(&amp;sdev_list_lock, flags);
++	list_for_each_entry(tmp_sdn, &amp;scsi_dev_list, node) {
++		if (sdev == tmp_sdn-&gt;sdev) {
++			/* XXX RCJ need to add code to track usage */
++			list_del(&amp;tmp_sdn-&gt;node);
++			kfree(tmp_sdn);
++			goto out;
++		}
++	}
++
++	printk(KERN_WARNING &quot;rem_scsi_device: Could not find scsi device &quot;
++	       &quot;%p %d:%d:%d:%d\n&quot;, sdev, sdev-&gt;host-&gt;host_no,
++		   sdev-&gt;channel, sdev-&gt;id, sdev-&gt;lun);
++
++out:
++	spin_unlock_irqrestore(&amp;sdev_list_lock, flags);
++	return;
++}
++
++static struct class_interface tgt_scsi_interface = {
++	.add = add_scsi_device,
++	.remove = rem_scsi_device,
++};
++
++static int scsi_tgt_lu_create(int tgt_host_no, u64 tgt_lun,
++                              int local_host_no, int local_channel,
++                              int local_scsi_id, int local_lun)
++{
++	struct scsi_dev_node *sdnp;
++	int err = 0;
++
++	sdnp = scsi_tgt_lun_to_dev(tgt_host_no, tgt_lun);
++	if (sdnp) {
++		printk(KERN_ERR &quot;Attempt to add logical unit where &quot;
++				&quot;one exists, %d 0x%lx\n&quot;,
++				tgt_host_no, (u64)tgt_lun);
++		return -EEXIST;
++	}
++
++	err = -ENOENT;
++
++	list_for_each_entry(sdnp, &amp;scsi_dev_list, node) {
++		if (sdnp-&gt;sdev-&gt;host-&gt;host_no == local_host_no &amp;&amp;
++		    sdnp-&gt;sdev-&gt;channel == local_channel &amp;&amp;
++		    sdnp-&gt;sdev-&gt;id == local_scsi_id &amp;&amp;
++		    sdnp-&gt;sdev-&gt;lun == local_lun) {
++			sdnp-&gt;host_no = tgt_host_no;
++			sdnp-&gt;tgt_lun = tgt_lun;
++			err = 0;
++			break;
++		}
++	}
++	if (err)
++		printk(KERN_ERR &quot;Unable to find scsi device &quot;
++		                &quot;(%d:%d:%d:%d) to associate with &quot;
++		                &quot;target (%d:0x%lx) from tgt)\n&quot;,
++	               local_host_no, local_channel, local_scsi_id,
++		       local_lun, tgt_host_no, (u64)tgt_lun);
++
++	return err;
++}
++
++static int scsi_tgt_lu_destroy(int tgt_host_no, u64 tgt_lun)
++{
++	struct scsi_dev_node *sdnp;
++
++	sdnp = scsi_tgt_lun_to_dev(tgt_host_no, tgt_lun);
++	if (sdnp)
++		sdnp-&gt;host_no = -1;
++	else {
++		printk(KERN_ERR &quot;Unable to find target configuration &quot;
++				&quot;to be removed (%d:0%lx)\n&quot;,
++				tgt_host_no, (u64)tgt_lun);
++		return -ENOENT;
++	}
++
++	return 0;
++}
++
++int scsi_tgt_kspace_lu_update(int tgt_host_no, u64 tgt_lun,
++                              int local_host_no, int local_channel,
++                              int local_scsi_id, int local_lun,
++                              int op)
++{
++	int flags, updt, send, retry;
++
++
++	if (op == 1) { /* TGT_LU_OP_CREATE */
++		spin_lock_irqsave(&amp;sdev_list_lock, flags);
++		updt = scsi_tgt_lu_create(tgt_host_no, tgt_lun,
++				local_host_no, local_channel,
++				local_scsi_id, local_lun);
++		send = scsi_tgt_uspace_send_lu_update_resp(tgt_host_no,
++				tgt_lun, op, updt);
++		/*
++		 * If the send failed and the lu_update create was sucessful,
++		 * undo the changes.
++		 */
++		if (send &amp;&amp; !updt)
++			scsi_tgt_lu_destroy(tgt_host_no, tgt_lun);
++
++		spin_unlock_irqrestore(&amp;sdev_list_lock, flags);
++		return send;
++	} else if (op == 0) { /* TGT_LU_OP_DESTROY */
++		spin_lock_irqsave(&amp;sdev_list_lock, flags);
++		updt = scsi_tgt_lu_destroy(tgt_host_no, tgt_lun);
++
++		/* Try to send the result, retry for 5 seconds if busy */
++		for (retry = 24; retry; retry--) {
++			send = scsi_tgt_uspace_send_lu_update_resp(tgt_host_no,
++					tgt_lun, op, updt);
++			if (send == 0)
++				break;
++
++			msleep(250);
++		}
++
++		/*
++		 * If the send failed and the lu_update destroy was sucessful,
++		 * retry sending the response, else re-add target.
++		 * Since the sdev_list_lock is held through this entire
++		 * operation the device can be re-added safely.
++		 * */
++		if (send &amp;&amp; !updt)
++			scsi_tgt_lu_create(tgt_host_no, tgt_lun,
++					local_host_no, local_channel,
++					local_scsi_id, local_lun);
++
++		spin_unlock_irqrestore(&amp;sdev_list_lock, flags);
++		return send;
++	}
++
++	printk(KERN_ERR &quot;Unknown option for lu_update %d\n&quot;, op);
++	return -EINVAL;
++}
++
+ static int __init scsi_tgt_init(void)
+ {
+ 	int err;
+@@ -655,6 +856,13 @@ static int __init scsi_tgt_init(void)
+ 	if (err)
+ 		goto destroy_wq;
+ 
++	err = scsi_register_interface(&amp;tgt_scsi_interface);
++	if (err)
++		printk(KERN_WARNING &quot;Could not register for scsi device &quot;
++		       &quot;notification (%d)\n&quot;, err);
++	else
++		printk(KERN_WARNING &quot;registered scsi for scsi device notification&quot;);
++
+ 	return 0;
+ 
+ destroy_wq:
+@@ -667,6 +875,7 @@ free_kmemcache:
+ static void __exit scsi_tgt_exit(void)
+ {
+ 	destroy_workqueue(scsi_tgtd);
++	scsi_unregister_interface(&amp;tgt_scsi_interface);
+ 	scsi_tgt_if_exit();
+ 	kmem_cache_destroy(scsi_tgt_cmd_cache);
+ }
+Index: b/drivers/scsi/scsi_tgt_priv.h
+===================================================================
+--- a/drivers/scsi/scsi_tgt_priv.h
++++ b/drivers/scsi/scsi_tgt_priv.h
+@@ -30,3 +30,8 @@ extern int scsi_tgt_kspace_tsk_mgmt(int 
+ extern int scsi_tgt_uspace_send_it_nexus_request(int host_no, u64 it_nexus_id,
+ 						 int function, char *initiator);
+ extern int scsi_tgt_kspace_it_nexus_rsp(int host_no, u64 it_nexus_id, int result);
++extern int scsi_tgt_kspace_lu_update(int tgt_host_no, u64 tgt_lun,
++				     int local_host_no, int local_channel,
++				     int local_scsi_id, int local_lun, int op);
++extern int scsi_tgt_uspace_send_lu_update_resp(int tgt_host_no, u64 tgt_lun,
++					       int op, int result);
+Index: b/include/scsi/scsi_tgt.h
+===================================================================
+--- a/include/scsi/scsi_tgt.h
++++ b/include/scsi/scsi_tgt.h
+@@ -4,6 +4,17 @@
+ 
+ #include &lt;linux/dma-mapping.h&gt;
+ 
++/*
++ * scsi_dev_node maps scsi_device structures to their represenation from
++ * the tgt framework
++ */
++struct scsi_dev_node {
++	struct list_head node;
++	struct scsi_device *sdev;
++	u64 tgt_lun;
++	int host_no;
++};
++
+ struct Scsi_Host;
+ struct scsi_cmnd;
+ struct scsi_lun;
+@@ -19,3 +30,4 @@ extern struct scsi_cmnd *scsi_host_get_c
+ extern void scsi_host_put_command(struct Scsi_Host *, struct scsi_cmnd *);
+ extern int scsi_tgt_it_nexus_create(struct Scsi_Host *, u64, char *);
+ extern int scsi_tgt_it_nexus_destroy(struct Scsi_Host *, u64);
++extern struct scsi_dev_node * scsi_tgt_lun_to_dev(int, u64);
+Index: b/include/scsi/scsi_tgt_if.h
+===================================================================
+--- a/include/scsi/scsi_tgt_if.h
++++ b/include/scsi/scsi_tgt_if.h
+@@ -26,12 +26,14 @@
+ #define	TGT_UEVENT_CMD_RSP		0x0001
+ #define	TGT_UEVENT_IT_NEXUS_RSP		0x0002
+ #define	TGT_UEVENT_TSK_MGMT_RSP		0x0003
++#define	TGT_UEVENT_LU_UPDT_REQ		0x0004
+ 
+ /* kernel -&gt; user */
+ #define	TGT_KEVENT_CMD_REQ		0x1001
+ #define	TGT_KEVENT_CMD_DONE		0x1002
+ #define	TGT_KEVENT_IT_NEXUS_REQ		0x1003
+ #define	TGT_KEVENT_TSK_MGMT_REQ		0x1004
++#define	TGT_KEVENT_LU_UPDT_RSP		0x1005
+ 
+ struct tgt_event_hdr {
+ 	uint16_t version;
+@@ -40,6 +42,11 @@ struct tgt_event_hdr {
+ 	uint16_t len;
+ } __attribute__ ((aligned (sizeof(uint64_t))));
+ 
++enum {
++	TGT_LU_OP_DESTROY,
++	TGT_LU_OP_CREATE
++};
++
+ struct tgt_event {
+ 	struct tgt_event_hdr hdr;
+ 
+@@ -68,6 +75,15 @@ struct tgt_event {
+ 			aligned_u64 itn_id;
+ 			__u32 function;
+ 		} it_nexus_rsp;
++		struct {
++			int op;
++			int local_host_no;
++			int local_channel;
++			int local_scsi_id;
++			int local_lun;
++			int tgt_host_no;
++			aligned_u64 tgt_lun;
++		} lu_updt_req;
+ 
+ 		/* kernel -&gt; user */
+ 		struct {
+@@ -100,6 +116,12 @@ struct tgt_event {
+ 			__u32 max_cmds;
+ 			__u8 initiator_id[16];
+ 		} it_nexus_req;
++		struct {
++			int op;
++			int result;
++			int tgt_host_no;
++			aligned_u64 tgt_lun;
++		} lu_updt_rsp;
+ 	} p;
+ } __attribute__ ((aligned (sizeof(uint64_t))));
+ 
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000667.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+	<LI>Next message: <A HREF="000672.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#668">[ date ]</a>
+              <a href="thread.html#668">[ thread ]</a>
+              <a href="subject.html#668">[ subject ]</a>
+              <a href="author.html#668">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

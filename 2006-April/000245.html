@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20write%20performance%0A%09examples%20%3F&In-Reply-To=%3C1145281229.24418.12.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000243.html">
+   <LINK REL="Next"  HREF="000247.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?</H1>
+    <B>ming.zhang.china at gmail.com</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20write%20performance%0A%09examples%20%3F&In-Reply-To=%3C1145281229.24418.12.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?">ming.zhang.china at gmail.com
+       </A><BR>
+    <I>Mon Apr 17 15:40:29 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000243.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance examples ?
+</A></li>
+        <LI>Next message: <A HREF="000247.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#245">[ date ]</a>
+              <a href="thread.html#245">[ thread ]</a>
+              <a href="subject.html#245">[ subject ]</a>
+              <a href="author.html#245">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ming.zhang.china at gmail.com</A>&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ming.zhang.china at gmail.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Iscsitarget-devel] write performance examples ?
+</I>&gt;<i> Date: Sun, 16 Apr 2006 21:44:55 -0400
+</I>&gt;<i> 
+</I>&gt;<i> &gt; btw, stgt can directly work on page cache because it uses mmap
+</I>&gt;<i> &gt; interface?
+</I>&gt;<i> 
+</I>&gt;<i> Yes and No. As I said, Ardis can also directly work on page cache
+</I>&gt;<i> without using mmap.
+</I>&gt;<i> 
+</I>&gt;<i> stgt performs I/O operations in user space unlike the
+</I>&gt;<i> others. Comparing it with the others does not make sense. You need to
+</I>&gt;<i> read IET/Ardis/stgt code to understand the details.
+</I>
+from users point of view, both stgt and iet provide a networked storage
+service (stgt can provide more). just like people can compare NFS,
+SAMBA, FTP performance with same HW, and choose the best one base on
+feature and performance, why people can not compare same protocol and
+different implementation solutions?
+
+many people on iet list might want to decide whether to immigrate to
+stgt once it is stable. they of course have interest to know how it
+performs compared with the solution currently under use.
+
+
+&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="http://lists.berlios.de/mailman/listinfo/stgt-devel">http://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+<A HREF="http://sel.as-us.falkag.net/sel?cmd=lnk&amp;kid=110944&amp;bid=241720&amp;dat=121642">http://sel.as-us.falkag.net/sel?cmd=lnk&amp;kid=110944&amp;bid=241720&amp;dat=121642</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000243.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance examples ?
+</A></li>
+	<LI>Next message: <A HREF="000247.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#245">[ date ]</a>
+              <a href="thread.html#245">[ thread ]</a>
+              <a href="subject.html#245">[ subject ]</a>
+              <a href="author.html#245">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

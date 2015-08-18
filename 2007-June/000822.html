@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio is slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C200706211258.l5LCwbak029424%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000821.html">
+   <LINK REL="Next"  HREF="000804.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio is slow</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C200706211258.l5LCwbak029424%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] ibmvio is slow">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jun 21 14:58:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000821.html">[Stgt-devel] ibmvio is slow
+</A></li>
+        <LI>Next message: <A HREF="000804.html">[Stgt-devel] [Patch 1/6] Fix potential memory leak
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#822">[ date ]</a>
+              <a href="thread.html#822">[ thread ]</a>
+              <a href="subject.html#822">[ subject ]</a>
+              <a href="author.html#822">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">waldi at berlios.de</A>&gt;
+Subject: Re: [Stgt-devel] ibmvio is slow
+Date: Thu, 21 Jun 2007 14:30:23 +0200
+
+&gt;<i> On Wed, Jun 20, 2007 at 08:40:51AM +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; &gt; I tried the ibmvio target on a busy vioserver on a power5 machine. It
+</I>&gt;<i> &gt; &gt; works fine, I got no problem. It provides services to 7 initiators with
+</I>&gt;<i> &gt; &gt; at least 2 luns each.
+</I>&gt;<i> &gt; Nice.
+</I>&gt;<i> 
+</I>&gt;<i> Okay, not completely without problems. Using iscsi and ibmvio at the
+</I>&gt;<i> same time produces:
+</I>&gt;<i> |  connection1:0: iscsi: detected conn error (1011)
+</I>&gt;<i> | iscsi: host reset succeeded
+</I>&gt;<i> |  connection1:0: iscsi: detected conn error (1011)
+</I>&gt;<i> | iscsi: host reset succeeded
+</I>&gt;<i> | sd 5:0:0:1: scsi: Device offlined - not ready after error recovery
+</I>&gt;<i> | sd 5:0:0:1: [sdc] Result: hostbyte=DID_BUS_BUSY driverbyte=DRIVER_OK,SUGGEST_OK
+</I>
+Do you mean that iscsi and ibmvio use the same target?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000821.html">[Stgt-devel] ibmvio is slow
+</A></li>
+	<LI>Next message: <A HREF="000804.html">[Stgt-devel] [Patch 1/6] Fix potential memory leak
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#822">[ date ]</a>
+              <a href="thread.html#822">[ thread ]</a>
+              <a href="subject.html#822">[ subject ]</a>
+              <a href="author.html#822">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

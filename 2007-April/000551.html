@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vtl patch.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3Cf29db9a80704101906l4eb12375nfe687f184ce82fdf%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000550.html">
+   <LINK REL="Next"  HREF="000552.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vtl patch.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3Cf29db9a80704101906l4eb12375nfe687f184ce82fdf%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] vtl patch.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Apr 11 04:06:18 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000550.html">[Stgt-devel] vtl patch.
+</A></li>
+        <LI>Next message: <A HREF="000552.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#551">[ date ]</a>
+              <a href="thread.html#551">[ thread ]</a>
+              <a href="subject.html#551">[ subject ]</a>
+              <a href="author.html#551">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 4/11/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] vtl patch.
+</I>&gt;<i> Date: Thu, 5 Apr 2007 09:56:10 +1000
+</I>&gt;<i>
+</I>&gt;<i> &gt; Apologies for this being an attachment. It is rather large to include
+</I>&gt;<i> &gt; inline (57k).
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Follow up to feedback from earlier postings, I have implemented the following:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; This patch includes the following changes.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; - Patch to tgtadm so multiple '--name, --value' arguments can be passed.
+</I>&gt;<i>
+</I>&gt;<i> Why do we need multiple arguments?
+</I>&gt;<i>
+</I>&gt;<i> I prefer to keep the current semantics:
+</I>&gt;<i>
+</I>&gt;<i> $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i>          -n VendorIdent -v QUANTUM
+</I>&gt;<i> $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i>          -n ProductIdent -v SDLT600
+</I>&gt;<i> $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i>          -n ProductRev -v 0001
+</I>&gt;<i> $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i>          -n SerialNumber -v XYZZY10
+</I>&gt;<i>
+</I>&gt;<i> rather than:
+</I>&gt;<i>
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i>         -n VendorIdent -v QUANTUM       \
+</I>&gt;<i>         -n ProductIdent -v SDLT600      \
+</I>&gt;<i>         -n ProductRev -v 0001           \
+</I>&gt;<i>         -n SerialNumber -v XYZZY10
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> The rest looks ok.
+</I>&gt;<i>
+</I>
+Thanks for the feedback.
+
+While setting the Vendor Ident etc can be easly acheived one field at
+a time, configuring the parameters for the SMC device requires
+multiple parameters at the same time.
+
+
+e.g.
+&gt;<i> (Reserve address space for storage slots)
+</I>&gt;<i> --name=ElementType --value=[1|2|3]
+</I>&gt;<i> --name=StartAddress --value=number
+</I>&gt;<i> --name=Quanity --value=number
+</I>&gt;<i> --name=Sides --value=[1|2]          (Single/double sided)
+</I>
+I need to get the element type, starting address and number of slots
+and if media is single/double sided (or at minimum, the element type
+and the element address - if configuring a slot per instance of
+tgtcmd)
+
+&gt;<i> (To reserve address space for 'drives')
+</I>&gt;<i> --name=ElementType --value=4
+</I>&gt;<i> --name=StartAddress --value=number
+</I>&gt;<i> --name=Quanity --value=number
+</I>&gt;<i> --name=Type --value=&quot;ssc|mmc|sbc&quot;
+</I>
+Again for slots which contain Data Transfer Elements, the element
+type, slot number, type of 'data transfer element' needs to be passed
+in 'one go'
+
+
+Same basic argument for the two other configuration options below..
+
+&gt;<i> (To 'tie' a previously known TID/LUN to a slot Address..)
+</I>&gt;<i> --name=ElementType --value=4
+</I>&gt;<i> --name=Address --value=&lt;Within Range from above&gt;
+</I>&gt;<i> --name=tid --value=&lt;tid&gt;
+</I>&gt;<i> --name=lun --value=&lt;lun&gt;
+</I>&gt;<i> --name=SerialNumber --value-&lt;Device S/No&gt;
+</I>
+&gt;<i> To 'populate' slots with 'media'
+</I>&gt;<i> --name=ElementType --value=[2|3]
+</I>&gt;<i> --name=Address --value=&lt;slot number&gt;
+</I>&gt;<i> --name=BarCode --value=&quot;string&quot;
+</I>
+
+The only other way I can see to acheive this would be to create unique
+options within tgtadm. The number of unique options within tgtadm is
+already quite long, hence I followed the '--name=&lt;&gt; --value=&lt;&gt;'
+option.
+
+Cheers
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000550.html">[Stgt-devel] vtl patch.
+</A></li>
+	<LI>Next message: <A HREF="000552.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#551">[ date ]</a>
+              <a href="thread.html#551">[ thread ]</a>
+              <a href="subject.html#551">[ subject ]</a>
+              <a href="author.html#551">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

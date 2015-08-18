@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%0A%09works%09properly%20...&In-Reply-To=%3C20080808031426X.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002019.html">
+   <LINK REL="Next"  HREF="002021.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%0A%09works%09properly%20...&In-Reply-To=%3C20080808031426X.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Aug  7 20:14:32 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002019.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+        <LI>Next message: <A HREF="002021.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2020">[ date ]</a>
+              <a href="thread.html#2020">[ thread ]</a>
+              <a href="subject.html#2020">[ subject ]</a>
+              <a href="author.html#2020">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 6 Aug 2008 18:06:26 +0300
+&quot;Alexander Nezhinsky&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Wed, Jul 30, 2008 at 10:04 AM, FUJITA Tomonori
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; the future... We have it just because Linux AIO is not good enough
+</I>&gt;<i> &gt; now.
+</I>&gt;<i> 
+</I>&gt;<i> Can you explain a bit what's wrong with the current Linux AIO implementation.
+</I>&gt;<i> Why bs_aio.c is implemented using syscall(__NR_io_*)?
+</I>&gt;<i> What is wrong with the aio_read/aio_write and friends?
+</I>
+
+I think that that's Posix AIO, which glibc implemented. It's slower
+than the kernel AIO support. A big problem about it for us is event
+notification. We can't get AIO completion events via a file descriptor
+(so that we can't use poll/epoll with it). How can we wait for both
+network events and AIO events at the same time?
+
+The Linux kernel AIO works only with Direct I/O (that is, we can't use
+page cache with AIO). It's a huge problem for us so we don't use AIO
+now.
+
+
+&gt;<i> Is there a minimal linux kernel that supports this kind of AIO calls?
+</I>&gt;<i> Minimal RedHat distro?
+</I>
+I guess that all the distributions supports the kernel AIO. There is
+no kernel option to disable it now.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002019.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+	<LI>Next message: <A HREF="002021.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2020">[ date ]</a>
+              <a href="thread.html#2020">[ thread ]</a>
+              <a href="subject.html#2020">[ subject ]</a>
+              <a href="author.html#2020">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

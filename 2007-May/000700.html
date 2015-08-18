@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Update SCSI Inquiry version descriptor to an array
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20SCSI%20Inquiry%20version%20descriptor%20to%20an%20array&In-Reply-To=%3Cf29db9a80705232305y2548ef5br313357f454d5d8f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000697.html">
+   <LINK REL="Next"  HREF="000701.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Update SCSI Inquiry version descriptor to an array</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20SCSI%20Inquiry%20version%20descriptor%20to%20an%20array&In-Reply-To=%3Cf29db9a80705232305y2548ef5br313357f454d5d8f%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Update SCSI Inquiry version descriptor to an array">markh794 at gmail.com
+       </A><BR>
+    <I>Thu May 24 08:05:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000697.html">[Stgt-devel] Question about the basic concept of SCSI layer	and	Block layer
+</A></li>
+        <LI>Next message: <A HREF="000701.html">[Stgt-devel] Brown paper bag fix...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#700">[ date ]</a>
+              <a href="thread.html#700">[ thread ]</a>
+              <a href="subject.html#700">[ subject ]</a>
+              <a href="author.html#700">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>As per discussions with Ming,
+
+Changed
+ version_desc1
+ version_desc2
+ version_desc3
+ version_desc4
+etc
+
+
+to
+ version_desc[]
+
+Apply to previous patch sets sent to list.
+
+Cheers
+Mark
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 1x2.diff
+Type: text/x-patch
+Size: 4148 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070524/502cfa22/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070524/502cfa22/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000697.html">[Stgt-devel] Question about the basic concept of SCSI layer	and	Block layer
+</A></li>
+	<LI>Next message: <A HREF="000701.html">[Stgt-devel] Brown paper bag fix...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#700">[ date ]</a>
+              <a href="thread.html#700">[ thread ]</a>
+              <a href="subject.html#700">[ subject ]</a>
+              <a href="author.html#700">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

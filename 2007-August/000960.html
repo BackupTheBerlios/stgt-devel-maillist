@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the task	object
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20save%20stag%20%26%20va%20for%20a%20scsi%20command%20on%20the%20task%0A%09object&In-Reply-To=%3C46C462D1.6080101%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000959.html">
+   <LINK REL="Next"  HREF="000961.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the task	object</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20save%20stag%20%26%20va%20for%20a%20scsi%20command%20on%20the%20task%0A%09object&In-Reply-To=%3C46C462D1.6080101%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the task	object">erezz at voltaire.com
+       </A><BR>
+    <I>Thu Aug 16 16:44:33 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000959.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+        <LI>Next message: <A HREF="000961.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the	task object
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#960">[ date ]</a>
+              <a href="thread.html#960">[ thread ]</a>
+              <a href="subject.html#960">[ subject ]</a>
+              <a href="author.html#960">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>When a command PDU is received, the iSER header contains the read/write
+va &amp; stag. This data was saved on the conn_info object. If another command PDU
+was received before this data was used, its va &amp; stag were written over the
+data for the previous command. This fix saves the va &amp; stag on the task object.
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ usr/iscsi/iscsi_rdma.c |   47 +++++++++++++++++++++++++++++++++++++++++++----
+ usr/iscsi/iscsi_tcp.c  |    6 ++++++
+ usr/iscsi/iscsid.c     |   10 +++++++++-
+ usr/iscsi/iscsid.h     |    3 +++
+ usr/iscsi/transport.h  |    2 ++
+ 5 files changed, 63 insertions(+), 5 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+index cc3d836..0e4a080 100644
+--- a/usr/iscsi/iscsi_rdma.c
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -119,6 +119,12 @@ struct rdmalist {
+ 	struct iscsi_task	*task;
+ };
+ 
++struct iser_task {
++	/* read and write from the initiator's point of view */
++	uint32_t rem_read_stag, rem_write_stag;
++	uint64_t rem_read_va, rem_write_va;
++};
++
+ /*
+  * One of these for each iscsi_connection, adds more fields needed for iser.
+  */
+@@ -1230,6 +1236,7 @@ static int iser_rdma_write(int ind, struct iscsi_pdu *rsp,
+ 	struct conn_info *ci = &amp;cl.conn[ind];
+ 	struct iscsi_data_rsp *datain = (struct iscsi_data_rsp *) &amp;rsp-&gt;bhs;
+ 	int last_rdma = (task-&gt;offset == task-&gt;len);
++	struct iser_task *itask = (struct iser_task *)task-&gt;trans_data;
+ 
+ 	iser_out(4, &quot;in %s size %d, %p&quot;, __func__, rsp-&gt;datasize, rsp);
+ 
+@@ -1249,10 +1256,13 @@ static int iser_rdma_write(int ind, struct iscsi_pdu *rsp,
+ 	dprintf(&quot;offset %d len %d last %d\n&quot;, task-&gt;offset, task-&gt;len,
+ 		last_rdma);
+ 
++	iser_out(4, &quot;%s() posting RDMA write req: &quot;
++		 &quot;rem_read_stag %x rem_read_va %lx&quot;, __func__,
++		 itask-&gt;rem_read_stag, itask-&gt;rem_read_va);
+ 	ret = iser_post_rdma_wr(ci, rdmal, rsp-&gt;datasize, IBV_WR_RDMA_WRITE,
+ 				last_rdma ? IBV_SEND_SIGNALED : 0,
+-				ci-&gt;rem_read_va + offset, ci-&gt;rem_read_stag,
+-				task);
++				itask-&gt;rem_read_va + offset,
++				itask-&gt;rem_read_stag, task);
+ 
+ 	if (ret &lt; 0) {
+ 		eprintf(&quot;iser_post_rdma_wr failed\n&quot;);
+@@ -1279,6 +1289,7 @@ static int iser_rdma_read(int ind, struct iscsi_pdu *rsp)
+ 	struct conn_info *ci = &amp;cl.conn[ind];
+ 	struct iscsi_connection *conn = ci-&gt;iscsi_conn;
+ 	struct iscsi_task *task = conn-&gt;tx_task;
++	struct iser_task *itask = (struct iser_task *)task-&gt;trans_data;
+ 	struct iscsi_r2t_rsp *r2t = (struct iscsi_r2t_rsp *) &amp;rsp-&gt;bhs;
+ 	uint8_t *buf;
+ 	uint32_t len;
+@@ -1295,9 +1306,13 @@ static int iser_rdma_read(int ind, struct iscsi_pdu *rsp)
+ 		return -1;
+ 	}
+ 
++	iser_out(4, &quot;%s() posting RDMA read req: &quot;
++		 &quot;rem_read_stag %x rem_read_va %lx&quot;, __func__,
++		 itask-&gt;rem_write_stag, itask-&gt;rem_write_va);
++
+ 	ret = iser_post_rdma_wr(ci, rdma, len, IBV_WR_RDMA_READ,
+-				IBV_SEND_SIGNALED, ci-&gt;rem_write_va,
+-				ci-&gt;rem_write_stag, task);
++				IBV_SEND_SIGNALED, itask-&gt;rem_write_va,
++				itask-&gt;rem_write_stag, task);
+ 	if (ret &lt; 0) {
+ 		iser_out(4, &quot;iser_post_rdma_wr failed&quot;);
+ 		return ret;
+@@ -1447,10 +1462,34 @@ static void iser_event_modify(int ep, int events)
+ 	}
+ }
+ 
++void iscsi_iser_task_init(struct iscsi_task *task)
++{
++	struct conn_info *ci;
++	struct iser_task *itask;
++
++	iser_out(8, &quot;%s() Entry&quot;, __func__);
++
++	ci = &amp;cl.conn[task-&gt;conn-&gt;fd];
++	if (!ci-&gt;valid) {
++		eprintf(&quot;conn %d not valid\n&quot;, task-&gt;conn-&gt;fd);
++		exit(1);
++	}
++
++	itask = (struct iser_task *)task-&gt;trans_data;
++
++	/* copy the remote va &amp; stag that were temporarily saved in conn_info */
++	itask-&gt;rem_read_stag = ci-&gt;rem_read_stag;
++	itask-&gt;rem_read_va = ci-&gt;rem_read_va;
++	itask-&gt;rem_write_stag = ci-&gt;rem_write_stag;
++	itask-&gt;rem_write_va = ci-&gt;rem_write_va;
++}
++
+ struct iscsi_transport iscsi_iser = {
+ 	.name			= &quot;iser&quot;,
+ 	.rdma			= 1,
++	.trans_data_len		= sizeof(struct iser_task),
+ 	.ep_init		= iscsi_iser_init,
++	.ep_task_init		= iscsi_iser_task_init,
+ 	.ep_read		= iscsi_iser_read,
+ 	.ep_write_begin		= iscsi_iser_write_begin,
+ 	.ep_write_end		= iscsi_iser_write_end,
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index e7f5989..b6e9630 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -251,10 +251,16 @@ void iscsi_tcp_free(void *buf)
+ 	free(buf);
+ }
+ 
++void iscsi_tcp_task_init(struct iscsi_task *task)
++{
++}
++
+ struct iscsi_transport iscsi_tcp = {
+ 	.name			= &quot;iscsi&quot;,
+ 	.rdma			= 0,
++	.trans_data_len		= 0,
+ 	.ep_init		= iscsi_tcp_init,
++	.ep_task_init		= iscsi_tcp_task_init,
+ 	.ep_read		= iscsi_tcp_read,
+ 	.ep_write_begin		= iscsi_tcp_write_begin,
+ 	.ep_write_end		= iscsi_tcp_write_end,
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index a3fa6af..c174b98 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1022,11 +1022,17 @@ iscsi_alloc_task(struct iscsi_connection *conn, int ext_len)
+ 	struct iscsi_hdr *req = (struct iscsi_hdr *) &amp;conn-&gt;req.bhs;
+ 	struct iscsi_task *task;
+ 
+-	task = conn-&gt;tp-&gt;ep_malloc(sizeof(*task) + ext_len);
++	task = conn-&gt;tp-&gt;ep_malloc(sizeof(*task) + conn-&gt;tp-&gt;trans_data_len +
++				   ext_len);
+ 	if (!task)
+ 		return NULL;
+ 	memset(task, 0, sizeof(*task));
+ 
++	if (conn-&gt;tp-&gt;trans_data_len) {
++		task-&gt;trans_data = (void *)((unsigned long)&amp;task[1] + ext_len);
++		memset(task-&gt;trans_data, 0, conn-&gt;tp-&gt;trans_data_len);
++	}
++
+ 	memcpy(&amp;task-&gt;req, req, sizeof(*req));
+ 	task-&gt;conn = conn;
+ 	INIT_LIST_HEAD(&amp;task-&gt;c_hlist);
+@@ -1470,6 +1476,8 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 	else
+ 		return -ENOMEM;
+ 
++	conn-&gt;tp-&gt;ep_task_init(task);
++
+ 	task-&gt;tag = req-&gt;itt;
+ 
+ 	if (ahs_len) {
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 95540f2..ae4490a 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -128,6 +128,9 @@ struct iscsi_task {
+ 	void *ahs;
+ 	void *data;
+ 
++	/* Transport specific data */
++	void *trans_data;
++
+ 	struct scsi_cmd scmd;
+ 
+ 	unsigned long extdata[0];
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index ebb9a23..54f8cd6 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -7,8 +7,10 @@ struct iscsi_task;
+ struct iscsi_transport {
+ 	const char *name;
+ 	int rdma;
++	int trans_data_len;
+ 
+ 	int (*ep_init) (void);
++	void (*ep_task_init) (struct iscsi_task *task);
+ 	size_t (*ep_read) (int ep, void *buf, size_t nbytes);
+ 	size_t (*ep_write_begin) (int ep, void *buf, size_t nbytes);
+ 	void (*ep_write_end)(int ep);
+-- 
+1.5.2
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000959.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+	<LI>Next message: <A HREF="000961.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the	task object
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#960">[ date ]</a>
+              <a href="thread.html#960">[ thread ]</a>
+              <a href="subject.html#960">[ subject ]</a>
+              <a href="author.html#960">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

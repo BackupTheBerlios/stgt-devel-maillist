@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Create and initialise Mandatory SSC mode pages
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Create%20and%20initialise%20Mandatory%20SSC%20mode%20pages&In-Reply-To=%3C48898151.5000100%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001871.html">
+   <LINK REL="Next"  HREF="001878.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Create and initialise Mandatory SSC mode pages</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Create%20and%20initialise%20Mandatory%20SSC%20mode%20pages&In-Reply-To=%3C48898151.5000100%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Create and initialise Mandatory SSC mode pages">markh794 at gmail.com
+       </A><BR>
+    <I>Fri Jul 25 09:31:29 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001871.html">[Stgt-devel] [PATCH] Prepare for variable block write support
+</A></li>
+        <LI>Next message: <A HREF="001878.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1872">[ date ]</a>
+              <a href="thread.html#1872">[ thread ]</a>
+              <a href="subject.html#1872">[ subject ]</a>
+              <a href="author.html#1872">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From 8c2023e06241cb35ddf5b0613e09c53ccc1d6308 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Fri, 25 Jul 2008 17:07:12 +1000
+Subject: Create and initialise Mandatory SSC mode pages
+
+- READ/WRITE Error Recovery
+- Disconnect
+- Control Page
+- Data Compression
+- Device Configuration
+- Information Exception Control
+- Medium Configuration
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/ssc.c |   20 ++++++++++++--------
+ 1 files changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/usr/ssc.c b/usr/ssc.c
+index cdcf0f2..848b323 100644
+--- a/usr/ssc.c
++++ b/usr/ssc.c
+@@ -131,17 +131,21 @@ static int ssc_lu_init(struct scsi_lu *lu)
+ 
+ 	/* Vendor uniq - However most apps seem to call for mode page 0*/
+ 	add_mode_page(lu, &quot;0:0:0&quot;);
+-	/* Disconnect page */
++	/* Read-Write Error Recovery - Mandatory - SSC3 8.3.5 */
++	add_mode_page(lu, &quot;1:0:10:0:8:0:0:0:0:8:0:0:0&quot;);
++	/* Disconnect page - Mandatory - SPC-4 */
+ 	add_mode_page(lu, &quot;2:0:14:0x80:0x80:0:0xa:0:0:0:0:0:0:0:0:0:0&quot;);
+-	/* Data Compression Page */
+-	add_mode_page(lu, &quot;15:0:12:0:0:0:0:0:0:0:0:0:0:0:0&quot;);
+-	/* Device Configuration Page */
+-	add_mode_page(lu, &quot;0x10:0:11:0:0:0:0:0:0:0:0:0x48:0:0&quot;);
+-	/* Control page */
++	/* Control page - Mandatory - SPC-4 */
+ 	add_mode_page(lu, &quot;10:0:10:2:0:0:0:0:0:0:0:2:0&quot;);
+-	/* Informational Exceptions Control page */
++	/* Data Compression - Mandatory - SSC3 8.3.2 */
++	add_mode_page(lu, &quot;15:0:14:0:0:0:0:0:0:0:0:0:0:0:0:0:0&quot;);
++	/* Device Configuration - Mandatory - SSC3 8.3.3 */
++	add_mode_page(lu, &quot;16:0:14:0:0:0:128:128:0:0:0:0:0:0:0:0:0&quot;);
++	/* Informational Exceptions Control page - Mandatory - SSC3 8.3.6 */
+ 	add_mode_page(lu, &quot;0x1c:0:10:8:0:0:0:0:0:0:0:0:0&quot;);
+-
++	/* Medium Configuration - Mandatory - SSC3 8.3.7 */
++	add_mode_page(lu, &quot;0x1d:0:0x1e:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0&quot;
++				&quot;:0:0:0:0:0:0:0:0:0:0:0:0:0&quot;);
+ 	return 0;
+ }
+ 
+-- 
+1.5.4.3
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001871.html">[Stgt-devel] [PATCH] Prepare for variable block write support
+</A></li>
+	<LI>Next message: <A HREF="001878.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1872">[ date ]</a>
+              <a href="thread.html#1872">[ thread ]</a>
+              <a href="subject.html#1872">[ subject ]</a>
+              <a href="author.html#1872">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

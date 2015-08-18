@@ -1,0 +1,877 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 6/6] Create mode page information at runtime
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%206/6%5D%20Create%20mode%20page%20information%20at%20runtime&In-Reply-To=%3C4678E0A9.8060208%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000808.html">
+   <LINK REL="Next"  HREF="000814.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 6/6] Create mode page information at runtime</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%206/6%5D%20Create%20mode%20page%20information%20at%20runtime&In-Reply-To=%3C4678E0A9.8060208%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 6/6] Create mode page information at runtime">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jun 20 10:09:13 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000808.html">[Stgt-devel] [Patch 5/6] Update spc_request_sense() to return some	sense data.
+</A></li>
+        <LI>Next message: <A HREF="000814.html">[Stgt-devel] [Patch 6/6] Create mode page information at runtime
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#809">[ date ]</a>
+              <a href="thread.html#809">[ thread ]</a>
+              <a href="subject.html#809">[ subject ]</a>
+              <a href="author.html#809">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From 9f725d6f1dc62143c0d7cba54db8a612a7fb5bd4 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Wed, 20 Jun 2007 17:52:46 +1000
+Subject: Dynamic mode page creation.
+
+Mode pages are now built at run time.
+
+Initial configuration via the 'tgtadm --params mode_page'
+Page information is seperated by ':'
+e.g.
+ --params mode_page=10:1:11:2:0:0:0:0:0:0:0:2:0:0
+Where '10' is mode page 10
+      '1'  is the subpage
+      '11' is the length of the page data (11 bytes of information follow)
+
+The example script 'scripts/tgt-core-test' contains an executable example.
+
+The 'doc/README.lu_configuration' updated for mode page informaiton.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ doc/README.lu_configuration |   20 +++++
+ scripts/tgt-core-test       |   61 ++++++++++++----
+ usr/Makefile                |    2 +-
+ usr/mmc.c                   |   32 ++++++++-
+ usr/mode_page.c             |  141 ++++++++++++++++++++++++++++++++++
+ usr/mode_page.h             |   37 +++++++++
+ usr/osd.c                   |    3 +
+ usr/sbc.c                   |  174 +++++++++----------------------------------
+ usr/spc.c                   |   86 +++++++++++++++++++++-
+ usr/spc.h                   |    1 +
+ usr/tgtd.h                  |    4 +
+ 11 files changed, 405 insertions(+), 156 deletions(-)
+ create mode 100644 usr/mode_page.c
+ create mode 100644 usr/mode_page.h
+
+diff --git a/doc/README.lu_configuration b/doc/README.lu_configuration
+index 1244bc0..d63668a 100644
+--- a/doc/README.lu_configuration
++++ b/doc/README.lu_configuration
+@@ -65,5 +65,25 @@ standard INQUIRY:
+ As can be seen from above 'sg_inq' output, the RMB (removable) bit is set to 1.
+ The Unit serial number page updated with 'FRED00'
+ 
++Mode Page Creation
++------------------
++Create mode page '2', subpage 0 and 14 bytes of data.
++tgtadm --mode logicalunit --op update --tid 1 --lun 2 \
++         --params mode_page=2:0:14:0x80:0x80:0:0xa:0:0:0:0:0:0:0:0:0:0
++
++Create mode page '3', subpage 0 and 22 bytes of data.
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2 \
++         --params mode_page=3:0:22:0:0:0:0:0:0:0:0:1:0:2:0:0:0:0:0:0:0:0:13:0:0
++
++Create mode page '10', subpage 0 and 10 bytes of data.
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2 \
++         --params mode_page=10:0:10:2:0:0:0:0:0:0:0:2:0
++
++Create mode page '0x1c', subpage 0 and 10 bytes of data.
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2 \
++         --params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
++
++
++
+ Please refer to scripts/tgt-core-test for a working example.
+ 
+diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+index a90fc9d..8f4d6ea 100755
+--- a/scripts/tgt-core-test
++++ b/scripts/tgt-core-test
+@@ -3,6 +3,7 @@
+ # Parent directory for data files..
+ HOME=/d/01
+ 
++# Start tgtd if not running..
+ P=`ps -ef|grep -v grep|grep tgtd|wc -l`
+ if [ &quot;X&quot;$P == &quot;X0&quot; ]; then
+ 	tgtd -d 1
+@@ -48,23 +49,55 @@ tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+ tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+ 	--params vendor_id=QUANTUM,product_id=HD100,product_rev=0010,removable=1,sense_format=0
+ 
+-# Create 2nd LUN - CD/ROM
+-LUN=2
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block0 --device-type=cd
+-tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+-	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY11,removable=1
++#### Set up mode pages ####
++# First try a couple of attempts with incorrect data..
+ 
+-# Create 3rd LUN - CD/ROM
+-LUN=3
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block1 --device-type=cd
++# - Length too long &amp; Incorrect value (300) as one if the params...
+ tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+-	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY12,removable=1
+-
+-# Create 4th LUN - CD/ROM
+-LUN=4
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block1 --device-type=cd
++	--params mode_page=2:0:14:0x80:0x80:0:0xa:0:300:0:0:0:0:0:0:0:0:3
++# - Length too short...
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=2:0:14:0x80:0x80:0:0xa:0:0:0:0:0:0:0:0:0
++# - Just right...
++# Vendor Uniq - Mode page 0..
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=0:0:0
++# Disconnect page
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=2:0:14:0x80:0x80:0:0xa:0:0:0:0:0:0:0:0:0:0
++# Format mode page
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=3:0:22:0:0:0:0:0:0:0:0:1:0:2:0:0:0:0:0:0:0:0:13:0:0
++# Geo mode page
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=4:0:22:0:0:0:0x40:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0x3a:0x98:0:0
++# Caching Page
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=8:0:18:0x14:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
++# ctrl mode page
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params mode_page=10:0:10:2:0:0:0:0:0:0:0:2:0
++# Informational Exceptions Control Mode Page
+ tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+-	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY13,removable=1
++	--params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
++
++
++
++for LUN in 2 3 4; do
++	# Create LUN - CD/ROM
++	tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block0 --device-type=cd
++	tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++		--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY1$LUN,removable=1
++	# Vendor Uniq - Mode page 0..
++	tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++		--params mode_page=0:0:0
++	# ctrl mode page
++	tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++		--params mode_page=10:0:10:2:0:0:0:0:0:0:0:2:0
++	# Informational Exceptions Control Mode Page
++	tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++		--params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
++done
+ 
+ # Allow ALL initiators to connect to this target
+ tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+diff --git a/usr/Makefile b/usr/Makefile
+index 14be34b..43a0fe6 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -44,7 +44,7 @@ CFLAGS += -Wall -g -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDE
+ 
+ PROGRAMS += tgtd tgtadm
+ TGTD_OBJS += tgtd.o mgmt.o target.o spc.o sbc.o mmc.o osd.o spt.o scc.o scsi.o log.o \
+-	driver.o util.o work.o parser.o
++	driver.o util.o work.o parser.o mode_page.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/mmc.c b/usr/mmc.c
+index bfcf76e..75d419a 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -122,6 +122,15 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+ 	return SAM_STAT_GOOD;
+ }
+ 
++static int mmc_mode_sense(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t *scb = cmd-&gt;scb;
++
++	/* MMC devices always return descriptor block */
++	scb[1] |= 8;
++	return spc_mode_sense(host_no, cmd);
++}
++
+ static int mmc_lu_init(struct scsi_lu *lu)
+ {
+ 	if (spc_lu_init(lu))
+@@ -133,6 +142,8 @@ static int mmc_lu_init(struct scsi_lu *lu)
+ 	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+ 	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+ 
++	INIT_LIST_HEAD(&amp;lu-&gt;mode_pages);
++
+ 	return 0;
+ }
+ 
+@@ -218,7 +229,26 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 
+-		[0x50 ... 0x9f] = {spc_illegal_op,},
++		/* 0x50 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{mmc_mode_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x60 ... 0x9f] = {spc_illegal_op,},
+ 
+ 		/* 0xA0 */
+ 		{spc_report_luns,},
+diff --git a/usr/mode_page.c b/usr/mode_page.c
+new file mode 100644
+index 0000000..708115b
+--- /dev/null
++++ b/usr/mode_page.c
+@@ -0,0 +1,141 @@
++/*
++ * Common routines with regards to SCSI mode op codes.
++ *
++ * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#include &lt;errno.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;linux/fs.h&gt;
++#include &lt;string.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;tgtadm_error.h&quot;
++#include &quot;mode_page.h&quot;
++
++/*
++ * Init and alloc space for the supported mode page structures
++ */
++int insert_mode_page(struct list_head *head, int page, int subpage, int sz)
++{
++	struct mode *m;
++
++	if ((m = zalloc(sizeof(struct mode))) == NULL)
++		return -ENOMEM;
++	if ((m-&gt;mode_data = zalloc(sz)) == NULL) {
++		free(m);
++		return -ENOMEM;
++	}
++	m-&gt;pcode = page;
++	m-&gt;subpcode = subpage;
++	m-&gt;pcode_sz = (uint16_t)sz;
++	list_add_tail(&amp;m-&gt;mode_siblings, head);
++	return 0;
++}
++
++struct mode *mode_page_lookup(struct list_head *head, uint8_t page)
++{
++	struct mode *m;
++
++	list_for_each_entry(m, head, mode_siblings)
++		if (m-&gt;pcode == page)
++			return m;
++
++	return NULL;
++}
++
++/*
++ * Return:
++ * 	0 on success
++ *	TGTADM_INVALID_REQUEST on error
++ */
++int add_mode_page(struct scsi_lu *lu, char *params)
++{
++	char *p = NULL;
++	int i = 0;
++	int tmp;
++	uint8_t page = 0;
++	uint8_t subpage = 0;
++	uint8_t *data = NULL;
++	uint16_t sz = 0;
++	struct mode *m = NULL;
++
++	while ((p = strsep(&amp;params, &quot;:&quot;)) != NULL) {
++		switch (i) {
++		case 0:
++			page = strtol(p, NULL, 0);
++			break;
++		case 1:
++			subpage = strtol(p, NULL, 0);
++			break;
++		case 2:
++			sz = strtol(p, NULL, 0);
++			insert_mode_page(&amp;lu-&gt;mode_pages, page, subpage, sz);
++			m = mode_page_lookup(&amp;lu-&gt;mode_pages, page);
++			data = m-&gt;mode_data;
++			break;
++		default:
++			if (i &lt; (sz + 3)) {
++				tmp = strtol(p, NULL, 0);
++				if (tmp &gt; 255)
++					dprintf(&quot;Error : Incorrect value %d &quot;
++					&quot;Mode page %d (0x%02x), index: %d\n&quot;,
++						tmp, page, page, i - 3);
++				data[i - 3] = (uint8_t)tmp;
++			}
++			break;
++		}
++		i++;
++	}
++	if (i != (sz + 3)) {
++		dprintf(&quot;Mode Page %d (0x%02x): param_count %d != &quot;
++					&quot; MODE PAGE size : %d\n&quot;,
++				page, page, i, sz + 3);
++		return TGTADM_INVALID_REQUEST;
++	} else
++		return TGTADM_SUCCESS;
++}
++
++/*
++ * Copy mode page data from list into SCSI data so it can be returned
++ * to the initiator
++ *
++ * *data -&gt; target address (destination)
++ * mode -&gt; Pointer to mode page information (source)
++ *
++ * Returns number of bytes copied.
++ */
++int build_mode_page(uint8_t *data, struct mode *m)
++{
++	uint8_t *p;
++	int len;
++
++	data[0] = m-&gt;pcode;
++	len = m-&gt;pcode_sz;
++	data[1] = len;
++	p = &amp;data[2];
++	len += 2;
++	dprintf(&quot;Page: 0x%02x (%d)\n&quot;, m-&gt;pcode, m-&gt;pcode);
++	memcpy(p, m-&gt;mode_data, m-&gt;pcode_sz);
++
++return len;
++}
+diff --git a/usr/mode_page.h b/usr/mode_page.h
+new file mode 100644
+index 0000000..31eafd3
+--- /dev/null
++++ b/usr/mode_page.h
+@@ -0,0 +1,37 @@
++/*
++ * SCSI Medium Changer Command
++ *
++ * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++
++#ifndef _SPC_MODE_PG_H_
++#define _SPC_MODE_PG_H_
++
++struct mode {
++	struct list_head mode_siblings;
++	uint8_t pcode;		/* Page code */
++	uint8_t subpcode;	/* Sub page code */
++	int16_t pcode_sz;	/* Size of page code data. */
++	uint8_t *mode_data;	/* Rest of mode page info */
++};
++
++int insert_mode_page(struct list_head *head, int page, int subpage, int sz);
++struct mode *mode_page_lookup(struct list_head *head, uint8_t page);
++int add_mode_page(struct scsi_lu *lu, char *params);
++int build_mode_page(uint8_t *data, struct mode *m);
++
++#endif /* _SPC_MODE_PG_H_ */
+diff --git a/usr/osd.c b/usr/osd.c
+index e571ebf..684be4d 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -61,6 +61,9 @@ static int osd_lu_init(struct scsi_lu *lu)
+ 	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+ 	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+ 
++	/* not used - but initialise anyway... */
++	INIT_LIST_HEAD(&amp;lu-&gt;mode_pages);
++
+ 	return 0;
+ }
+ 
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 9d03ea4..db11381 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -39,6 +39,7 @@
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+ #include &quot;sense_codes.h&quot;
++#include &quot;mode_page.h&quot;
+ 
+ #define BLK_SHIFT	9
+ 
+@@ -169,146 +170,11 @@ sense:
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+-static int insert_disconnect_pg(uint8_t *ptr)
+-{
+-	unsigned char disconnect_pg[] = {0x02, 0x0e, 0x80, 0x80, 0x00, 0x0a, 0x00, 0x00,
+-                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, disconnect_pg, sizeof(disconnect_pg));
+-	return sizeof(disconnect_pg);
+-}
+-
+-static int insert_caching_pg(uint8_t *ptr)
+-{
+-	unsigned char caching_pg[] = {0x08, 0x12, 0x14, 0x00, 0xff, 0xff, 0x00, 0x00,
+-				      0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0x00, 0x00,
+-				      0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, caching_pg, sizeof(caching_pg));
+-	return sizeof(caching_pg);
+-}
+-
+-static int insert_ctrl_m_pg(uint8_t *ptr)
+-{
+-	unsigned char ctrl_m_pg[] = {0x0a, 0x0a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				     0x00, 0x00, 0x02, 0x4b};
+-
+-	memcpy(ptr, ctrl_m_pg, sizeof(ctrl_m_pg));
+-	return sizeof(ctrl_m_pg);
+-}
+-
+-static int insert_iec_m_pg(uint8_t *ptr)
+-{
+-	unsigned char iec_m_pg[] = {0x1c, 0xa, 0x08, 0x00, 0x00, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, iec_m_pg, sizeof(iec_m_pg));
+-	return sizeof(iec_m_pg);
+-}
+-
+-static int insert_format_m_pg(uint8_t *ptr)
+-{
+-	unsigned char format_m_pg[] = {0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				       0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
+-				       0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00};
+-	memcpy(ptr, format_m_pg, sizeof(format_m_pg));
+-	return sizeof(format_m_pg);
+-}
+-
+-static int insert_geo_m_pg(uint8_t *ptr, uint64_t sec)
+-{
+-	unsigned char geo_m_pg[] = {0x04, 0x16, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x3a, 0x98, 0x00, 0x00};
+-	uint32_t ncyl, *p;
+-
+-	/* assume 0xff heads, 15krpm. */
+-	memcpy(ptr, geo_m_pg, sizeof(geo_m_pg));
+-	ncyl = sec &gt;&gt; 14; /* 256 * 64 */
+-	p = (uint32_t *)(ptr + 1);
+-	*p = *p | __cpu_to_be32(ncyl);
+-	return sizeof(geo_m_pg);
+-}
+-
+-static int sbc_mode_sense(int host_no, struct scsi_cmd *cmd)
++static int sbc_lu_init(struct scsi_lu *lu)
+ {
+-	int ret = SAM_STAT_GOOD, len;
+-	uint8_t pcode = cmd-&gt;scb[2] &amp; 0x3f;
+ 	uint64_t size;
+-	uint8_t *data = NULL;
+-	unsigned char key = ILLEGAL_REQUEST;
+-	uint16_t asc = E_LUN_NOT_SUPPORTED;
+-
+-	if (device_reserved(cmd))
+-		return SAM_STAT_RESERVATION_CONFLICT;
+-
+-	data = valloc(pagesize);
+-	if (!data) {
+-		key = HARDWARE_ERROR;
+-		asc = E_INTERNAL_TGT_FAILURE;
+-		goto sense;
+-	}
+-	memset(data, 0, pagesize);
+-
+-	len = 4;
+-	size = cmd-&gt;dev-&gt;size &gt;&gt; BLK_SHIFT;
+-
+-	if ((cmd-&gt;scb[1] &amp; 0x8))
+-		data[3] = 0;
+-	else {
+-		data[3] = 8;
+-		len += 8;
+-		*(uint32_t *)(data + 4) = (size &gt;&gt; 32) ?
+-			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
+-		*(uint32_t *)(data + 8) = __cpu_to_be32(1 &lt;&lt; BLK_SHIFT);
+-	}
+-
+-	switch (pcode) {
+-	case 0x0:
+-		break;
+-	case 0x2:
+-		len += insert_disconnect_pg(data + len);
+-		break;
+-	case 0x3:
+-		len += insert_format_m_pg(data + len);
+-		break;
+-	case 0x4:
+-		len += insert_geo_m_pg(data + len, size);
+-		break;
+-	case 0x8:
+-		len += insert_caching_pg(data + len);
+-		break;
+-	case 0xa:
+-		len += insert_ctrl_m_pg(data + len);
+-		break;
+-	case 0x1c:
+-		len += insert_iec_m_pg(data + len);
+-		break;
+-	case 0x3f:
+-		len += insert_disconnect_pg(data + len);
+-		len += insert_format_m_pg(data + len);
+-		len += insert_geo_m_pg(data + len, size);
+-		len += insert_caching_pg(data + len);
+-		len += insert_ctrl_m_pg(data + len);
+-		len += insert_iec_m_pg(data + len);
+-		break;
+-	default:
+-		asc = E_INVALID_FIELD_IN_CDB;
+-		goto sense;
+-	}
++	uint8_t *data;
+ 
+-	data[0] = len - 1;
+-	cmd-&gt;len = len;
+-	cmd-&gt;uaddr = (unsigned long) data;
+-	return ret;
+-sense:
+-	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc);
+-	return SAM_STAT_CHECK_CONDITION;
+-}
+-
+-static int sbc_lu_init(struct scsi_lu *lu)
+-{
+ 	if (spc_lu_init(lu))
+ 		return -ENOMEM;
+ 
+@@ -317,6 +183,15 @@ static int sbc_lu_init(struct scsi_lu *lu)
+ 	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+ 	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+ 
++	INIT_LIST_HEAD(&amp;lu-&gt;mode_pages);
++
++	data = lu-&gt;mode_block_descriptor;
++	size = lu-&gt;size &gt;&gt; BLK_SHIFT;
++
++	*(uint32_t *)(data) = (size &gt;&gt; 32) ?
++			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
++	*(uint32_t *)(data + 4) = __cpu_to_be32(1 &lt;&lt; BLK_SHIFT);
++
+ 	return 0;
+ }
+ 
+@@ -355,7 +230,7 @@ static struct device_type_template sbc_template = {
+ 
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{sbc_mode_sense,},
++		{spc_mode_sense,},
+ 		{spc_start_stop,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+@@ -400,7 +275,28 @@ static struct device_type_template sbc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 
+-		[0x40 ... 0x7f] = {spc_illegal_op,},
++		[0x40 ... 0x4f] = {spc_illegal_op,},
++
++		/* 0x50 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_mode_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x60 ... 0x7f] = {spc_illegal_op,},
+ 
+ 		/* 0x80 */
+ 		{spc_illegal_op,},
+diff --git a/usr/spc.c b/usr/spc.c
+index 6530e73..32dac79 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -35,6 +35,7 @@
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+ #include &quot;sense_codes.h&quot;
++#include &quot;mode_page.h&quot;
+ 
+ #define PRODUCT_REV	&quot;0&quot;
+ #define BLK_SHIFT	9
+@@ -231,6 +232,82 @@ int spc_test_unit(int host_no, struct scsi_cmd *cmd)
+ 		return SAM_STAT_GOOD;
+ }
+ 
++/*
++ * Reference : SPC4r11
++ * 6.11 - MODE SENSE(6)
++ * 6.12 - MODE SENSE(10)
++ */
++int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
++{
++	int	len = 0;
++	uint8_t *data;
++	uint8_t *scb = cmd-&gt;scb;
++	uint8_t	mode6 = (scb[0] == 0x1a) ? 1 : 0;
++	uint8_t dbd = (scb[1] &amp; 8) ? 1 : 0;	/* Disable Block Descriptors */
++	uint8_t page_code = scb[2] &amp; 0x3f;
++	uint8_t subpage = scb[3];
++	uint16_t alloc_len;
++	struct	mode	* m;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = E_INVALID_FIELD_IN_CDB;
++
++	if (subpage)
++		goto sense;	/* Currently not implemented */
++
++	data = valloc(pagesize);
++	if (!data) {
++		key = HARDWARE_ERROR;
++		asc = E_INTERNAL_TGT_FAILURE;
++		goto sense;
++	}
++	memset(data, 0, pagesize);
++	if (mode6) {
++		alloc_len = scb[4];
++		len = 4;
++	} else {
++		alloc_len = (scb[7] &lt;&lt; 8) + scb[8];
++		len = 8;
++	}
++	if (alloc_len &gt; pagesize)
++		goto sense;
++
++	if (!dbd) {
++		memcpy(data + len, cmd-&gt;dev-&gt;mode_block_descriptor,
++				BLOCK_DESCRIPTOR_LEN);
++		len += 8;
++	}
++
++	if (page_code == 0x3f) {	/* All pages */
++		int	i;
++		for (i=0; i &lt; 0x3f; i++) {
++			m = mode_page_lookup(&amp;cmd-&gt;dev-&gt;mode_pages, i);
++			if (m)
++				len += build_mode_page(data + len, m);
++		}
++	} else {
++		m = mode_page_lookup(&amp;cmd-&gt;dev-&gt;mode_pages, page_code);
++		if (!m)
++			goto sense;
++		len += build_mode_page(data + len, m);
++	}
++	if (mode6) {
++		data[0] = len - 1;
++		data[3] = (dbd) ? 0 : BLOCK_DESCRIPTOR_LEN;
++	} else {
++		*(uint16_t *)(data) = __cpu_to_be16(len - 3);
++		data[7] = (dbd) ? 0 : BLOCK_DESCRIPTOR_LEN;
++	}
++
++	cmd-&gt;len = len;
++	cmd-&gt;uaddr = (unsigned long)data;
++	return SAM_STAT_GOOD;
++
++sense:
++	cmd-&gt;len = 0;
++	sense_data_build(cmd, key, asc);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
+ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	uint8_t *data;
+@@ -269,6 +346,7 @@ void dump_cdb(struct scsi_cmd *cmd)
+ {
+ 	uint8_t *cdb = cmd-&gt;scb;
+ 
++	dprintf(&quot;cmd-&gt;cdb_len: %d\n&quot;, cmd-&gt;scb_len);
+ 	switch(cmd-&gt;scb_len) {
+ 	case 6:
+ 		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;,
+@@ -310,6 +388,7 @@ enum {
+ 	Opt_vendor_id, Opt_product_id,
+ 	Opt_product_rev, Opt_sense_format,
+ 	Opt_removable, Opt_online,
++	Opt_mode_page,
+ 	Opt_err,
+ };
+ 
+@@ -322,13 +401,14 @@ static match_table_t tokens = {
+ 	{Opt_sense_format, &quot;sense_format=%s&quot;},
+ 	{Opt_removable, &quot;removable=%s&quot;},
+ 	{Opt_online, &quot;online=%s&quot;},
++	{Opt_mode_page, &quot;mode_page=%s&quot;},
+ 	{Opt_err, NULL},
+ };
+ 
+ int spc_lu_config(struct scsi_lu *lu, char *params) {
+ 	int err = 0;
+ 	char *p;
+-	char buf[20];
++	char buf[256];
+ 
+ 	if (!strncmp(&quot;targetOps&quot;, params, 9))
+ 		params = params + 10;
+@@ -372,6 +452,10 @@ int spc_lu_config(struct scsi_lu *lu, char *params) {
+ 			match_strncpy(buf, &amp;args[0],  sizeof(buf));
+ 			lu-&gt;attrs.online = atoi(buf);
+ 			break;
++		case Opt_mode_page:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			err = add_mode_page(lu, buf);
++			break;
+ 		default:
+ 			err = TGTADM_INVALID_REQUEST;
+ 		}
+diff --git a/usr/spc.h b/usr/spc.h
+index 1036b70..c7b8652 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -10,5 +10,6 @@ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+ extern int spc_lu_init(struct scsi_lu *lu);
+ extern int spc_lu_config(struct scsi_lu *lu, char * params);
+ extern void dump_cdb(struct scsi_cmd *cmd);
++extern int spc_mode_sense(int host_no, struct scsi_cmd *cmd);
+ 
+ #endif
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 8e66d60..bbacae2 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -5,6 +5,7 @@
+ 
+ #define SCSI_ID_LEN	24
+ #define SCSI_SN_LEN	8
++#define BLOCK_DESCRIPTOR_LEN 8
+ #define VERSION_DESCRIPTOR_LEN 8
+ 
+ #define VENDOR_ID	&quot;IET&quot;
+@@ -96,6 +97,9 @@ struct scsi_lu {
+ 
+ 	struct backingstore_template *bst;
+ 
++	uint8_t	mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
++	struct list_head mode_pages;
++
+ 	/* TODO: needs a structure for lots of device parameters */
+ 	struct lu_phy_attr attrs;
+ };
+-- 
+1.5.2.1
+
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000808.html">[Stgt-devel] [Patch 5/6] Update spc_request_sense() to return some	sense data.
+</A></li>
+	<LI>Next message: <A HREF="000814.html">[Stgt-devel] [Patch 6/6] Create mode page information at runtime
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#809">[ date ]</a>
+              <a href="thread.html#809">[ thread ]</a>
+              <a href="subject.html#809">[ subject ]</a>
+              <a href="author.html#809">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

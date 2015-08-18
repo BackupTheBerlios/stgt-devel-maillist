@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C20080408224813T.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001508.html">
+   <LINK REL="Next"  HREF="001511.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C20080408224813T.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] Open connections">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Apr  8 15:48:16 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001508.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001511.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1509">[ date ]</a>
+              <a href="thread.html#1509">[ thread ]</a>
+              <a href="subject.html#1509">[ subject ]</a>
+              <a href="author.html#1509">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 08 Apr 2008 15:36:52 +0200
+Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; On Tue, 08 Apr 2008 14:59:00 +0200
+</I>&gt;<i> &gt; Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt;&gt;&gt; On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+</I>&gt;<i> &gt;&gt;&gt; &quot;Niels de Carpentier&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt at decarpentier.com</A>&gt; wrote:
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; So it looks like the cmd_hash_list is not actually cleared on a
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; connection
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; close.
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; Is there anything more I can do to troubleshoot this issue?
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt; Can you try this patch?
+</I>&gt;<i> &gt;&gt;&gt;&gt; This patch fixes the issue for me.
+</I>&gt;<i> &gt;&gt;&gt; Nice, thanks for testing. I've merged the patch.
+</I>&gt;<i> &gt;&gt; There is something wrong with the &quot;tgtadm --op show --mode target&quot; 
+</I>&gt;<i> &gt;&gt; output - see these files:
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; <A HREF="http://wpkg.org/tgt/out1.txt">http://wpkg.org/tgt/out1.txt</A>
+</I>&gt;<i> &gt;&gt; <A HREF="http://wpkg.org/tgt/out2.txt">http://wpkg.org/tgt/out2.txt</A>
+</I>&gt;<i> &gt;&gt; <A HREF="http://wpkg.org/tgt/out3.txt">http://wpkg.org/tgt/out3.txt</A>
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; What version do you use, the git head?
+</I>&gt;<i> 
+</I>&gt;<i> Will this:
+</I>&gt;<i> 
+</I>&gt;<i>    git clone <A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git</A>
+</I>&gt;<i> 
+</I>&gt;<i> get me the git head? Because that's what I'm using.
+</I>
+Yeah, you should use the git head. To make sure, try `git-log`, then
+you will see:
+
+commit 6a49758ea080ddc095c76d5ccce51e0c911b8e32
+Author: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+Date:   Mon Apr 7 16:55:21 2008 +0300
+
+    tgt-setup-lun: fix the usage example
+
+    Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+    Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+
+
+&gt;<i> And it &quot;feels&quot; rather unstable - although I can boot a diskless 
+</I>&gt;<i> initiator (connect using iscsistart from open-iscsi), it remounts 
+</I>&gt;<i> read-only randomly several seconds after we start to read data from the 
+</I>&gt;<i> target.
+</I>
+Hmm, that's bad. At least, before apllying this patch, it worked
+better (though we had the open connection problem), right?
+
+If so, can you try to revert this patch (for you convenience, I've
+attached the patch)?
+
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index 25ad170..0262729 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -109,7 +109,8 @@ void conn_close(struct iscsi_connection *conn)
+ 	list_for_each_entry_safe(task, tmp, &amp;conn-&gt;tx_clist, c_list) {
+ 		dprintf(&quot;Forcing release of tx task %&quot; PRIx64 &quot;\n&quot;,
+ 			task-&gt;tag);
+-		iscsi_free_cmd_task(task);
++		list_del(&amp;task-&gt;c_list);
++		iscsi_free_task(task);
+ 	}
+ 
+ 	if (conn-&gt;rx_task) {
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index fb140e8..bc8a1d5 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1076,7 +1076,7 @@ static inline struct iscsi_task *ITASK(struct scsi_cmd *scmd)
+ 	return container_of(scmd, struct iscsi_task, scmd);
+ }
+ 
+-void iscsi_free_cmd_task(struct iscsi_task *task)
++static void iscsi_free_cmd_task(struct iscsi_task *task)
+ {
+ 	target_cmd_done(&amp;task-&gt;scmd);
+ 
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 56b0900..7d67727 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -267,7 +267,6 @@ extern int iscsi_scsi_cmd_execute(struct iscsi_task *task);
+ 
+ /* iscsid.c iscsi_task */
+ extern void iscsi_free_task(struct iscsi_task *task);
+-extern void iscsi_free_cmd_task(struct iscsi_task *task);
+ 
+ /* session.c */
+ extern struct iscsi_session *session_find_name(int tid, const char *iname, uint8_t *isid);
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001508.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001511.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1509">[ date ]</a>
+              <a href="thread.html#1509">[ thread ]</a>
+              <a href="subject.html#1509">[ subject ]</a>
+              <a href="author.html#1509">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

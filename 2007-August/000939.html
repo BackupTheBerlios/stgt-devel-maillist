@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46BF054F.9020209%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000942.html">
+   <LINK REL="Next"  HREF="000941.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46BF054F.9020209%40voltaire.com%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">erezz at voltaire.com
+       </A><BR>
+    <I>Sun Aug 12 15:04:15 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000942.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000941.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#939">[ date ]</a>
+              <a href="thread.html#939">[ thread ]</a>
+              <a href="subject.html#939">[ subject ]</a>
+              <a href="author.html#939">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Pete Wyckoff wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A> wrote on Thu, 09 Aug 2007 16:22 -0400:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> There is also a spot in /etc/iscsi/iscsid.conf where you can adjust
+</I>&gt;&gt;<i> the default value for the initiator:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> 	node.conn[0].iscsi.MaxRecvDataSegmentLength = 262144
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Its default is a more reasonable 128k.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> This advice is correct, but for the wrong reasons.  The situation is
+</I>&gt;<i> more complex than I had thought.  The iSER spec doesn't provide
+</I>&gt;<i> guidance on how to set the maximum data segment lentgh for RDMA
+</I>&gt;<i> transfers.  It adds two new parameters:
+</I>&gt;<i>
+</I>&gt;<i>    InitiatorRecvDataSegmentLength - size of data segment in control PDUs
+</I>&gt;<i>    	sent to initiator
+</I>&gt;<i>    TargetRecvDataSegmentLength - size of data segment in control PDUs
+</I>&gt;<i>    	sent to target
+</I>&gt;<i>
+</I>&gt;<i> and tells us to ignore MaxRecvDataSegmentLength.  But it doesn't say
+</I>&gt;<i> how we should figure out the limit for data-type PDUs, i.e. for RDMA
+</I>&gt;<i> transfers, or even if there should be one.  The phrase &quot;control
+</I>&gt;<i> PDUs&quot; means non-RDMA transfers.
+</I>&gt;<i>
+</I>&gt;<i> One approach would be to have the target RDMA the entire data
+</I>&gt;<i> segment in a single operation.  This approach minimizes the
+</I>&gt;<i> overhead, but doesn't let us pipeline and may not be possible for
+</I>&gt;<i> large transfer sizes.  The OS won't let us pin all the memory
+</I>&gt;<i> required for the transfer, perhaps.
+</I>&gt;<i>
+</I>&gt;<i> Instead I've added another patch that changes the MaxRDSL in the
+</I>&gt;<i> target to be whatever was negotiated for IRDSL.
+</I>
+See what the spec says about this:
+
+8.2 MaxRecvDataSegmentLength
+
+[...]
+Similarly, the target MUST consider the value of its local
+MaxRecvDataSegmentLength (that it would have declared to the initiator)
+as having the value of TargetRecvDataSegmentLength, and the value of the
+remote MaxRecvDataSegmentLength (that would have been declared by the
+initiator) as having the value of InitiatorRecvDataSegmentLength.
+
+Therefore, setting MaxRDSL = IRDSL seems to be against the spec.
+Instead, you should do: MaxRDSL = TRDSL
+
+&gt;<i>   Since I see no way
+</I>&gt;<i> in the spec how the target could send data in a control type PDU,
+</I>&gt;<i> IRDSL wasn't doing anything for us anyway.
+</I>As Alex mentioned, the target does send control PDUs back to the initiator.
+&gt;<i>   And open-iscsi uses its
+</I>&gt;<i> conn-&gt;max_recv_dlength as the starting point for IRDSL, which seems
+</I>&gt;<i> reasonable.
+</I>&gt;<i>   
+</I>
+The initiator follows the spec:
+
+    } else if (iscsi_find_key_value(&quot;InitiatorRecvDataSegmentLength&quot;, text,
+                    end, &amp;value, &amp;value_end)) {
+        if (session-&gt;t-&gt;template-&gt;rdma) {
+            conn-&gt;max_recv_dlength = MIN(conn-&gt;max_recv_dlength,
+                             strtoul(value, NULL, 0));
+        }
+        text = value_end;
+    } else if (iscsi_find_key_value(&quot;TargetRecvDataSegmentLength&quot;, text,
+                    end, &amp;value, &amp;value_end)) {
+        if (session-&gt;t-&gt;template-&gt;rdma) {
+            conn-&gt;max_xmit_dlength = MIN(conn-&gt;max_xmit_dlength,
+                             strtoul(value, NULL, 0));
+        }
+        text = value_end;
+
+It sets InitiatorRecvDataSegmentLength to the minimum value that was
+proposed by both sides. It sets conn-&gt;max_recv_dlength to the value that
+was negotiated for InitiatorRecvDataSegmentLength (see 8.5 in the spec:
+&quot;It (InitiatorRecvDataSegmentLength) is used by the initiator and the
+target to negotiate the maximum size of the data segment that a
+target may send to the initiator in an iSCSI control-type PDU.&quot;)
+
+The same thing happens with TargetRecvDataSegmentLength.
+
+So, I suggest that we set MaxRDSL according to 8.2 in the iSER spec.
+
+As for the default values that the target will propose - this is another
+thing to consider, and is not covered by the spec (as Dan &amp; Alex mentioned).
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000942.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000941.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#939">[ date ]</a>
+              <a href="thread.html#939">[ thread ]</a>
+              <a href="subject.html#939">[ subject ]</a>
+              <a href="author.html#939">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

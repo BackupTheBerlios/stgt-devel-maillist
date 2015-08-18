@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%0A%09version%20of%20iscsi%20target%3F&In-Reply-To=%3C20051222085316J.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000168.html">
+   <LINK REL="Next"  HREF="000216.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%0A%09version%20of%20iscsi%20target%3F&In-Reply-To=%3C20051222085316J.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Dec 22 00:53:16 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000168.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000216.html">[Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#214">[ date ]</a>
+              <a href="thread.html#214">[ thread ]</a>
+              <a href="subject.html#214">[ subject ]</a>
+              <a href="author.html#214">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: James Bottomley &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">James.Bottomley at SteelEye.com</A>&gt;
+Subject: Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+Date: Thu, 08 Dec 2005 14:48:10 -0500
+
+&gt;<i> On Thu, 2005-12-08 at 13:10 -0600, Mike Christie wrote:
+</I>&gt;<i> &gt; cleanup. In the end some of the scsi people liked the idea of throwing 
+</I>&gt;<i> &gt; the non-read/write command to userspace and to do this we just decided 
+</I>&gt;<i> &gt; to start over but I have been cutting and pasting your code and cleaning 
+</I>&gt;<i> &gt; it up as I add more stuff.
+</I>&gt;<i> 
+</I>&gt;<i> To be honest, I'd like to see all command processing at user level
+</I>&gt;<i> (including read/write ... for block devices, it shouldn't be that
+</I>&gt;<i> inefficient, since you're merely going to say remap an area from one
+</I>&gt;<i> device to another; as long as no data transformation ever occurs, the
+</I>&gt;<i> user never touches the data and it all remains in the kernel page
+</I>&gt;<i> cache).
+</I>
+The current version of tgt that performs READ/WRITE commands in kernel
+space using the vfs interface and other commands in user space. I'd
+implemented a prototype version of tgt with the mmap scheme.
+
+With the mmap tgt, the kernel module asks a single user-space daemon
+(tgtd) to map a file (logical unit) through netlink, then it call
+get_user_pages().
+
+I did some initial performance tests with both tgt versions and IET
+(as you know, another iSCSI software implementation runs in kernel
+space). All implementations run with write back policy so probably,
+there should be little real disk I/O effect. I started disktest
+benchmark software with cold cache state. The machine has 4 GB memory,
+1.5K SCSI disk, 4 CPUs (x86_64).
+
+(disktest -PT -T10 -h1 -K8 -B8192 -ID /dev/sdc -w)
+
+o IET
+|<i> 2005/12/21-18:05:15 | STAT  | 7259 | v1.2.8 | /dev/sdc | Total write throughput: 48195993.6B/s (45.96MB/s), IOPS 5883.3/s.
+</I>
+o tgt (I/O in kernel space)
+|<i> 2005/12/21-18:03:23 | STAT  | 7013 | v1.2.8 | /dev/sdc | Total write throughput: 45829324.8B/s (43.71MB/s), IOPS 5594.4/s.
+</I>
+o mmap tgt
+|<i> 2005/12/21-18:22:28 | STAT  | 7990 | v1.2.8 | /dev/sdc | Total write throughput: 25373900.8B/s (24.20MB/s), IOPS 3097.4/s.
+</I>
+
+I guess that one of the reasons for the mmap tgt poor performance is
+that it uses single user-space daemon so all commands are
+serialized. I will implement multi-threaded user-space daemon version
+if you like to see its performance.
+
+One potential disadvantage of the mmap scheme is that it reads
+unnecessarily from disk about WRITE commands. That is, when it updates
+the whole page frame, the vfs interface can avoid reading cleverly,
+however, the mmap scheme cannot (If I understand correctly).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000168.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000216.html">[Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#214">[ date ]</a>
+              <a href="thread.html#214">[ thread ]</a>
+              <a href="subject.html#214">[ subject ]</a>
+              <a href="author.html#214">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

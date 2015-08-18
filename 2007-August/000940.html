@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46BF0814.3080907%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000938.html">
+   <LINK REL="Next"  HREF="000942.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46BF0814.3080907%40voltaire.com%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">erezz at voltaire.com
+       </A><BR>
+    <I>Sun Aug 12 15:16:04 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000938.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000942.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#940">[ date ]</a>
+              <a href="thread.html#940">[ thread ]</a>
+              <a href="subject.html#940">[ subject ]</a>
+              <a href="author.html#940">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Alexander Nezhinsky wrote:
+
+&gt;<i> &gt; &gt; and tells us to ignore MaxRecvDataSegmentLength.  But it doesn't say
+</I>&gt;<i> &gt; &gt; how we should figure out the limit for data-type PDUs, i.e. for RDMA
+</I>&gt;<i> &gt; &gt; transfers, or even if there should be one.  The phrase &quot;control
+</I>&gt;<i> &gt; &gt; PDUs&quot; means non-RDMA transfers.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; There are no &quot;data-type&quot; PDUs in ISER, that's why no limit for them is
+</I>&gt;<i> &gt; mentioned. Control type PDUs can carry unsolicited data, but that is
+</I>&gt;<i> true
+</I>&gt;<i> &gt; only for write ops. As to RDMA ops, the initiator communicates the
+</I>&gt;<i> size of
+</I>&gt;<i> &gt; transfer and registration key, allowing the target to do the
+</I>&gt;<i> transfer, be it
+</I>&gt;<i> &gt; read or write, in on or several RDMA ops, as many as it likes.
+</I>&gt;<i>
+</I>&gt;<i> iSER spec is silent about the granularity of RDMA transfers
+</I>&gt;<i> because it says nothing about the meaning of MaxBurstLength and
+</I>&gt;<i> MaxRecvDataSegmentLength, when applied to the solicited data of
+</I>&gt;<i> a write op, and to the entire data of a read op.
+</I>&gt;<i>
+</I>&gt;<i> On the other hand, it maps R2T PDUs to RDMA Reads,
+</I>&gt;<i> and Data-IN to RDMA Writes (changing their meaning), but does not
+</I>&gt;<i> require that their sizes must be governed by either
+</I>&gt;<i> MaxBurstLength (for R2Ts) or MaxRecvDataSegmentLength
+</I>&gt;<i> (for Data-INs).
+</I>&gt;<i>
+</I>&gt;<i> Thus we can interpret them freely, from the formal point of view.
+</I>&gt;<i> Moreover, this does not contradict the spirit of the protocol,
+</I>&gt;<i> which makes all RDMA transfers a target's responsibility.
+</I>&gt;<i>
+</I>&gt;<i> &gt; &gt; One approach would be to have the target RDMA the entire data
+</I>&gt;<i> &gt; &gt; segment in a single operation.  This approach minimizes the
+</I>&gt;<i> &gt; &gt; overhead, but doesn't let us pipeline and may not be possible for
+</I>&gt;<i> &gt; &gt; large transfer sizes.  The OS won't let us pin all the memory
+</I>&gt;<i> &gt; &gt; required for the transfer, perhaps.
+</I>&gt;<i>
+</I>&gt;<i> Another approach is to break both read and write RDMA transfers into
+</I>&gt;<i> smaller units, allowing internal queuing, pipelining and efficient use
+</I>&gt;<i> of memory.
+</I>&gt;<i>
+</I>&gt;<i> This means that the target should set for itself some internal values
+</I>&gt;<i> of MaxBurstLength and Data-IN's MaxRecvDataSegmentLength.
+</I>&gt;<i> These values will govern generation of R2Ts and Data-IN and these,
+</I>&gt;<i> in turn, will initiate a series of RDMA transfers with the desired
+</I>&gt;<i> granularity.
+</I>&gt;<i>
+</I>&gt;<i> &gt; &gt; Instead I've added another patch that changes the MaxRDSL in the
+</I>&gt;<i> &gt; &gt; target to be whatever was negotiated for IRDSL.  Since I see no way
+</I>&gt;<i> &gt; &gt; in the spec how the target could send data in a control type PDU,
+</I>&gt;<i> &gt; &gt; IRDSL wasn't doing anything for us anyway.  And open-iscsi uses its
+</I>&gt;<i> &gt; &gt; conn-&gt;max_recv_dlength as the starting point for IRDSL, which seems
+</I>&gt;<i> &gt; &gt; reasonable.
+</I>&gt;<i>
+</I>&gt;<i> One example of target sending data in a control type PDU is a Response
+</I>&gt;<i> PDU carrying sense data. Other types are Text-Responses outside Login
+</I>&gt;<i> phase and some Task mgmt Responses (for higher error levels).
+</I>&gt;<i> Anyway, the negotiated IRDSL value don't explicitly affect the target.
+</I>&gt;<i> It just guarantees that the initiator is able to receive our PDUs.
+</I>&gt;<i>
+</I>&gt;<i> To summarize, the proposed approach uses the following policy:
+</I>&gt;<i>
+</I>&gt;<i> 1. If MaxRDSL declared by the other side is different from the negotiated
+</I>&gt;<i> value of IRDSL, ignore it.
+</I>&gt;<i>
+</I>Hold your horses:
+
+
+8.2 MaxRecvDataSegmentLength
+For an iSCSI connection belonging to a session in which
+RDMAExtensions=Yes was negotiated on the leading connection of the
+session, MaxRecvDataSegmentLength need not be declared in the Login
+Phase.
+
+
+We don't need to negotiate MaxRecvDataSegmentLength on an iSER
+connection. Actually, we establish a connection over iSER and start the
+login phase. If we were able to connect over iSER, we don't send keys
+that aren't relevant for iSER. Here's the code from login.c in open-iscsi:
+
+
+    if (session-&gt;type == ISCSI_SESSION_TYPE_DISCOVERY ||
+           !session-&gt;t-&gt;template-&gt;rdma) {
+        sprintf(value, &quot;%d&quot;, conn-&gt;max_recv_dlength);
+        if (!iscsi_add_text(pdu, data, max_data_length,
+                    &quot;MaxRecvDataSegmentLength&quot;, value))
+            return 0;
+    } else {
+        sprintf(value, &quot;%d&quot;, conn-&gt;max_recv_dlength);
+        if (!iscsi_add_text(pdu, data, max_data_length,
+                   &quot;InitiatorRecvDataSegmentLength&quot;,
+                    value))
+            return 0;
+
+        sprintf(value, &quot;%d&quot;, conn-&gt;max_xmit_dlength);
+        if (!iscsi_add_text(pdu, data, max_data_length,
+                   &quot;TargetRecvDataSegmentLength&quot;,
+                    value))
+            return 0;
+
+        if (!iscsi_add_text(pdu, data, max_data_length,
+                   &quot;RDMAExtensions&quot;, &quot;Yes&quot;))
+            return 0;
+    }
+
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000938.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000942.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#940">[ date ]</a>
+              <a href="thread.html#940">[ thread ]</a>
+              <a href="subject.html#940">[ subject ]</a>
+              <a href="author.html#940">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

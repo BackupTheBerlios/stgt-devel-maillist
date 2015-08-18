@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] project status
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20project%20status&In-Reply-To=%3C200608031520.k73FK8Tv005931%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000301.html">
+   <LINK REL="Next"  HREF="000304.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] project status</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20project%20status&In-Reply-To=%3C200608031520.k73FK8Tv005931%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] project status">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Aug  3 17:20:08 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000301.html">[Stgt-devel] project status
+</A></li>
+        <LI>Next message: <A HREF="000304.html">[Stgt-devel] project status
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#302">[ date ]</a>
+              <a href="thread.html#302">[ thread ]</a>
+              <a href="subject.html#302">[ subject ]</a>
+              <a href="author.html#302">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+Subject: Re: [Stgt-devel] project status
+Date: Thu, 03 Aug 2006 09:35:45 -0500
+
+&gt;<i> [...snip...]
+</I>&gt;<i> &gt; It turned out that we used netlink wrongly so we replaced netlink. We
+</I>&gt;<i> &gt; need bi-directional, high-speed interface between user and kernel
+</I>&gt;<i> &gt; space. Currently, there isn't such interface in mainline. So we use
+</I>&gt;<i> &gt; mapped ring buffer between kernel and user spaces by using own
+</I>&gt;<i> &gt; character device (I need to replace the very old way to create a
+</I>&gt;<i> &gt; character device). If we find something better, we will replace the
+</I>&gt;<i> &gt; current code (netdev guys seems to bring something promising for
+</I>&gt;<i> &gt; network AIO).
+</I>&gt;<i> 
+</I>&gt;<i> I just looked at this code and am somewhat confused. I understand that
+</I>&gt;<i> the write handler in the kernel has the user mode process context and
+</I>&gt;<i> therefore understands any uspace pointer contained in the event. 
+</I>&gt;<i> 
+</I>&gt;<i> What puzzles me is that the write handler in the kernel doesn't use the
+</I>&gt;<i> passed in buffer, but instead takes the event from an mmaped ring
+</I>&gt;<i> buffer. It then passes the various fields in the event down to the
+</I>&gt;<i> handlers as parameters:
+</I>&gt;<i> 
+</I>&gt;<i> 	...
+</I>&gt;<i> 		err = scsi_tgt_kspace_exec(ev-&gt;u.cmd_rsp.host_no,
+</I>&gt;<i> 					   ev-&gt;u.cmd_rsp.cid,
+</I>&gt;<i> 					   ev-&gt;u.cmd_rsp.result,
+</I>&gt;<i> 					   ev-&gt;u.cmd_rsp.len,
+</I>&gt;<i> 					   ev-&gt;u.cmd_rsp.uaddr,
+</I>&gt;<i> 					   ev-&gt;u.cmd_rsp.rw);
+</I>&gt;<i> 	...
+</I>&gt;<i> At this point, you don't need 'ev' anymore (the contents have been
+</I>&gt;<i> copied into registers as parameters), so I don't understand the need for
+</I>&gt;<i> the ring buffer. The user space caller could just as well have passed
+</I>&gt;<i> you a pointer to a local variable in the write system call. Wouldn't
+</I>&gt;<i> this avoid the complexity of the ring buffer altogether?
+</I>
+I guess that there are some reasons.
+
+1. We are still not sure what interface we will use in the future. We
+might use a different interface. So I prefered less changes.
+
+2. As you said, we need a process context due to bio_map_user. We use
+a user-space single process so this might be bottleneck. Maybe we will
+need to find a way to use workqueue (kernel threads) for I/O after
+performance experiments.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000301.html">[Stgt-devel] project status
+</A></li>
+	<LI>Next message: <A HREF="000304.html">[Stgt-devel] project status
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#302">[ date ]</a>
+              <a href="thread.html#302">[ thread ]</a>
+              <a href="subject.html#302">[ subject ]</a>
+              <a href="author.html#302">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

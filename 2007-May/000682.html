@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/8%20%5D%20Setup%20.device_init%2C%0A%09device_shutdown%20%26%20device_config%20to%20the%20device%20template.&In-Reply-To=%3Cf29db9a80705221958h5f5b808cwf8a448d0c2f0ab%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000681.html">
+   <LINK REL="Next"  HREF="000718.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/8%20%5D%20Setup%20.device_init%2C%0A%09device_shutdown%20%26%20device_config%20to%20the%20device%20template.&In-Reply-To=%3Cf29db9a80705221958h5f5b808cwf8a448d0c2f0ab%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed May 23 04:58:18 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000681.html">[Stgt-devel] [Patch 0/8 ] Core stgt update
+</A></li>
+        <LI>Next message: <A HREF="000718.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#682">[ date ]</a>
+              <a href="thread.html#682">[ thread ]</a>
+              <a href="subject.html#682">[ subject ]</a>
+              <a href="author.html#682">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Move target setup to each 'module' although they all currently call a
+common routine in spc.c. The smc module will add to this when
+submitted in later patches.
+
+Also some 'cruft' in spc_illegal_op to log the SCSI command being
+rejected. (I can't figure out an easy way of removing this section of
+the patch without a lot of fiddling. This will be cleaned up with one
+of the following patch (2 x 8) in this patch set.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 1x8.diff
+Type: text/x-patch
+Size: 12364 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/a0e302a4/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/a0e302a4/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000681.html">[Stgt-devel] [Patch 0/8 ] Core stgt update
+</A></li>
+	<LI>Next message: <A HREF="000718.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#682">[ date ]</a>
+              <a href="thread.html#682">[ thread ]</a>
+              <a href="subject.html#682">[ subject ]</a>
+              <a href="author.html#682">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

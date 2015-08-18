@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio - rdma error
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070407003634E.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000522.html">
+   <LINK REL="Next"  HREF="000542.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio - rdma error</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070407003634E.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] ibmvio - rdma error">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Apr  6 17:36:04 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000522.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+        <LI>Next message: <A HREF="000542.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#540">[ date ]</a>
+              <a href="thread.html#540">[ thread ]</a>
+              <a href="subject.html#540">[ subject ]</a>
+              <a href="author.html#540">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">waldi at berlios.de</A>&gt;
+Subject: Re: [Stgt-devel] ibmvio - rdma error
+Date: Thu, 5 Apr 2007 10:44:36 +0200
+
+&gt;<i> On Thu, Apr 05, 2007 at 05:39:06PM +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; Can you try the following patch to see what error we get?
+</I>&gt;<i> 
+</I>&gt;<i> I already did this.
+</I>
+Oops. Sorry.
+
+&gt;<i> It is -4 (H_PARAMETER, Parameter invalid, out-of-range or
+</I>&gt;<i> conflicting).
+</I>
+Seems that we hit a limit on RDMA transfer.
+
+I slightly modified your patch. How about this?
+
+I'll forward the patch to upstream. Let me know your sign-off.
+
+diff --git a/drivers/scsi/ibmvscsi/ibmvstgt.c b/drivers/scsi/ibmvscsi/ibmvstgt.c
+index a7fbd10..46f9ca1 100644
+--- a/drivers/scsi/ibmvscsi/ibmvstgt.c
++++ b/drivers/scsi/ibmvscsi/ibmvstgt.c
+@@ -35,7 +35,7 @@
+ #include &quot;ibmvscsi.h&quot;
+ 
+ #define	INITIAL_SRP_LIMIT	16
+-#define	DEFAULT_MAX_SECTORS	512
++#define	DEFAULT_MAX_SECTORS	128
+ 
+ #define	TGT_NAME	&quot;ibmvstgt&quot;
+ 
+@@ -248,8 +248,8 @@ static int ibmvstgt_rdma(struct scsi_cmnd *sc, struct scatterlist *sg, int nsg,
+ 						  md[i].va + mdone);
+ 
+ 			if (err != H_SUCCESS) {
+-				eprintk(&quot;rdma error %d %d\n&quot;, dir, slen);
+-				goto out;
++				eprintk(&quot;rdma error %d %d %ld\n&quot;, dir, slen, err);
++				return -EIO;
+ 			}
+ 
+ 			mlen -= slen;
+@@ -265,14 +265,13 @@ static int ibmvstgt_rdma(struct scsi_cmnd *sc, struct scatterlist *sg, int nsg,
+ 				if (sidx &gt; nsg) {
+ 					eprintk(&quot;out of sg %p %d %d\n&quot;,
+ 						iue, sidx, nsg);
+-					goto out;
++					return -EIO;
+ 				}
+ 			}
+ 		};
+ 
+ 		rest -= mlen;
+ 	}
+-out:
+ 	return 0;
+ }
+ 
+@@ -282,18 +281,19 @@ static int ibmvstgt_cmd_done(struct scsi_cmnd *sc,
+ 	unsigned long flags;
+ 	struct iu_entry *iue = (struct iu_entry *) sc-&gt;SCp.ptr;
+ 	struct srp_target *target = iue-&gt;target;
++	int err = 0;
+ 
+ 	dprintk(&quot;%p %p %x %u\n&quot;, iue, target, vio_iu(iue)-&gt;srp.cmd.cdb[0],
+ 		cmd-&gt;usg_sg);
+ 
+ 	if (sc-&gt;use_sg)
+-		srp_transfer_data(sc, &amp;vio_iu(iue)-&gt;srp.cmd, ibmvstgt_rdma, 1, 1);
++		err = srp_transfer_data(sc, &amp;vio_iu(iue)-&gt;srp.cmd, ibmvstgt_rdma, 1, 1);
+ 
+ 	spin_lock_irqsave(&amp;target-&gt;lock, flags);
+ 	list_del(&amp;iue-&gt;ilist);
+ 	spin_unlock_irqrestore(&amp;target-&gt;lock, flags);
+ 
+-	if (sc-&gt;result != SAM_STAT_GOOD) {
++	if (err|| sc-&gt;result != SAM_STAT_GOOD) {
+ 		eprintk(&quot;operation failed %p %d %x\n&quot;,
+ 			iue, sc-&gt;result, vio_iu(iue)-&gt;srp.cmd.cdb[0]);
+ 		send_rsp(iue, sc, HARDWARE_ERROR, 0x00);
+@@ -493,7 +493,8 @@ static void process_iu(struct viosrp_crq *crq, struct srp_target *target)
+ {
+ 	struct vio_port *vport = target_to_port(target);
+ 	struct iu_entry *iue;
+-	long err, done;
++	long err;
++	int done = 1;
+ 
+ 	iue = srp_iu_get(target);
+ 	if (!iue) {
+@@ -508,7 +509,6 @@ static void process_iu(struct viosrp_crq *crq, struct srp_target *target)
+ 
+ 	if (err != H_SUCCESS) {
+ 		eprintk(&quot;%ld transferring data error %p\n&quot;, err, iue);
+-		done = 1;
+ 		goto out;
+ 	}
+ 
+diff --git a/drivers/scsi/libsrp.c b/drivers/scsi/libsrp.c
+index 89403b0..37a0f4d 100644
+--- a/drivers/scsi/libsrp.c
++++ b/drivers/scsi/libsrp.c
+@@ -225,8 +225,7 @@ static int srp_indirect_data(struct scsi_cmnd *sc, struct srp_cmd *cmd,
+ 	struct srp_direct_buf *md = NULL;
+ 	struct scatterlist dummy, *sg = NULL;
+ 	dma_addr_t token = 0;
+-	long err;
+-	unsigned int done = 0;
++	int err = 0;
+ 	int nmd, nsg = 0, len;
+ 
+ 	if (dma_map || ext_desc) {
+@@ -258,8 +257,8 @@ static int srp_indirect_data(struct scsi_cmnd *sc, struct srp_cmd *cmd,
+ 		sg_dma_address(&amp;dummy) = token;
+ 		err = rdma_io(sc, &amp;dummy, 1, &amp;id-&gt;table_desc, 1, DMA_TO_DEVICE,
+ 			      id-&gt;table_desc.len);
+-		if (err &lt; 0) {
+-			eprintk(&quot;Error copying indirect table %ld\n&quot;, err);
++		if (err) {
++			eprintk(&quot;Error copying indirect table %d\n&quot;, err);
+ 			goto free_mem;
+ 		}
+ 	} else {
+@@ -272,6 +271,7 @@ rdma:
+ 		nsg = dma_map_sg(iue-&gt;target-&gt;dev, sg, sc-&gt;use_sg, DMA_BIDIRECTIONAL);
+ 		if (!nsg) {
+ 			eprintk(&quot;fail to map %p %d\n&quot;, iue, sc-&gt;use_sg);
++			err = -EIO;
+ 			goto free_mem;
+ 		}
+ 		len = min(sc-&gt;request_bufflen, id-&gt;len);
+@@ -287,7 +287,7 @@ free_mem:
+ 	if (token &amp;&amp; dma_map)
+ 		dma_free_coherent(iue-&gt;target-&gt;dev, id-&gt;table_desc.len, md, token);
+ 
+-	return done;
++	return err;
+ }
+ 
+ static int data_out_desc_size(struct srp_cmd *cmd)
+@@ -352,7 +352,7 @@ int srp_transfer_data(struct scsi_cmnd *sc, struct srp_cmd *cmd,
+ 		break;
+ 	default:
+ 		eprintk(&quot;Unknown format %d %x\n&quot;, dir, format);
+-		break;
++		err = -EINVAL;
+ 	}
+ 
+ 	return err;
+-- 
+1.4.4.3
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000522.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+	<LI>Next message: <A HREF="000542.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#540">[ date ]</a>
+              <a href="thread.html#540">[ thread ]</a>
+              <a href="subject.html#540">[ subject ]</a>
+              <a href="author.html#540">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

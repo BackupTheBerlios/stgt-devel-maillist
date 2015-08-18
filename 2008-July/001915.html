@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%20persistent%20device%0A%09binding&In-Reply-To=%3C488D90D9.6080603%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001904.html">
+   <LINK REL="Next"  HREF="001917.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%20persistent%20device%0A%09binding&In-Reply-To=%3C488D90D9.6080603%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding">dorons at voltaire.com
+       </A><BR>
+    <I>Mon Jul 28 11:26:49 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001904.html">[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+</A></li>
+        <LI>Next message: <A HREF="001917.html">[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1915">[ date ]</a>
+              <a href="thread.html#1915">[ thread ]</a>
+              <a href="subject.html#1915">[ subject ]</a>
+              <a href="author.html#1915">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>sync this patch with the current git.
+The man page already have an example for using
+direct-device.
+I'll send a patch with an example of using
+serial number instead of /dev/sdX after this
+patch will be applied.
+Tomo - can u please explain me how to use
+git-am for checking my patches?
+I use checkpatch.pl script to check my patches.
+
+Thanks,
+Doron
+
+
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ doc/manpages/tgt-admin.8 |    3 ++
+ scripts/tgt-admin        |   64 ++++++++++++++++++++++++++++++++++-----------
+ 2 files changed, 51 insertions(+), 16 deletions(-)
+
+diff --git a/doc/manpages/tgt-admin.8 b/doc/manpages/tgt-admin.8
+index 97d6484..5598932 100644
+--- a/doc/manpages/tgt-admin.8
++++ b/doc/manpages/tgt-admin.8
+@@ -85,6 +85,9 @@ example for a configuration file:
+ &lt;target iqn.2007-02.com.example:san.xen1&gt;
+    backing-store /dev/san/xen1-disk1 # LUN1
+    direct-store /dev/san/xen1-disk2 # LUN2
++   # for persistent binding use scsi serial number
++   backing-store 00c0ffd508d70048ed1dbc4704000000 #LUN3
++   direct-store 00c0ffd508d70048ed1dbc4704000001 # LUN4
+ 
+    initiator-address 192.168.1.2     # Allowed IP
+    initiator-address 192.168.5.6     # Allowed IP
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index 598bfb1..6c285c9 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -73,6 +73,22 @@ if ($show == 1) {
+ 	exit;
+ }
+ 
++# Create a hash of all the scsi id and their mapped devices
++my %sn_hash=();
++sub map_devices {
++	my @sd_list=();
++	my $sg_list=`sg_map -i -x`;
++	while ($sg_list=~/(\/dev\/sd\w)/sgi) {
++		push(@sd_list,$1);
++	}
++	foreach my $sd (@sd_list) {
++		my $inq=`sg_inq $sd`;
++		if ($inq=~/Unit serial number:\s*(\w+)/) {
++			$sn_hash{$1}=$sd;
++		}
++	}
++}
++
+ # Check if alternative configuration file was given
+ if ($alternate_conf ne 0) {
+ 	# Check if alternative configuration file exist
+@@ -136,14 +152,19 @@ sub add_targets {
+ 
+ # Process options from the config file
+ sub process_options {
++	&amp;map_devices;
+ 	if ( $option eq &quot;backing-store&quot; ) {
+-        # if we have one command, force it to be an array anyway
++	# if we have one command, force it to be an array anyway
+ 		unless (ref($value) eq 'ARRAY') {
+ 			$value = [ $value ];
+ 		}
+ 		my @value_arr = @$value;
+ 		my $i = 1;
+ 		foreach my $backing_store (@value_arr) {
++			# Check if a serial number was given
++			if ($backing_store!~/\/dev\//) {
++				$backing_store=$sn_hash{$backing_store};
++			}
+ 			# Check if device exists
+ 			if ( -e $backing_store) {
+ 				execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
+@@ -169,22 +190,33 @@ sub process_options {
+ 		my @value_arr = @$value;
+ 		my $i = 1;
+ 		foreach my $direct_store (@value_arr) {
+-			$inq=`sg_inq $direct_store`;
+-			if ($inq=~/Vendor identification:\s*(\w+)\s*\n*Product identification:\s*([\w\s\/\-]+)\n\s*\n*Product revision level:\s*(\w*)\s*\n*Unit serial number:\s*(\w+)/)
+-			{
+-				$vendor_id=&quot;$1&quot;;
+-				$prod_id=&quot;$2&quot;;
+-				$prod_rev=&quot;$3&quot;;
+-				$scsi_serial=&quot;$4&quot;;
++			# Check if a serial number was given
++			if ($direct_store!~/\/dev\//) {
++				$direct_store=$sn_hash{$direct_store};
++			}
++			# Check if device exists
++			if ( -e $direct_store) {
++				$inq=`sg_inq $direct_store`;
++				if ($inq=~/Vendor identification:\s*(\w+)\s*\n*Product identification:\s*([\w\s\/\-]+)\n\s*\n*Product revision level:\s*(\w*)\s*\n*Unit serial number:\s*(\w+)/)
++				{
++					$vendor_id=&quot;$1&quot;;
++					$prod_id=&quot;$2&quot;;
++					$prod_rev=&quot;$3&quot;;
++					$scsi_serial=&quot;$4&quot;;
++				}
++				$vendor_id =~ s/\s+$//;
++				$prod_id =~ s/\s+$//;
++				$prod_rev =~ s/\s+$//;
++				$scsi_serial =~ s/\s+$//;
++
++				execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun 1 -b $direct_store&quot;);
++				execute(&quot;tgtadm --lld iscsi --op update --mode logicalunit --tid  $next_tid --lun 1 --params vendor_id=\&quot;$vendor_id\&quot;,product_id=\&quot;$prod_id\&quot;,product_rev=\&quot;$prod_rev\&quot;,scsi_sn=\&quot;$scsi_serial\&quot;&quot;);
++				$i += 1;
++			}
++			else {
++				print(&quot;skipping device $direct_store\n&quot;);
++				print(&quot;$direct_store does not exist - please check the configuration file\n&quot;);
+ 			}
+-			$vendor_id =~ s/\s+$//;
+-			$prod_id =~ s/\s+$//;
+-			$prod_rev =~ s/\s+$//;
+-			$scsi_serial =~ s/\s+$//;
+-
+-			execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun 1 -b $direct_store&quot;);
+-			execute(&quot;tgtadm --lld iscsi --op update --mode logicalunit --tid  $next_tid --lun 1 --params vendor_id=\&quot;$vendor_id\&quot;,product_id=\&quot;$prod_id\&quot;,product_rev=\&quot;$prod_rev\&quot;,scsi_sn=\&quot;$scsi_serial\&quot;&quot;);
+-			$i += 1;
+ 		}
+ 	}
+ 
+-- 
+1.5.3.8
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001904.html">[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+</A></li>
+	<LI>Next message: <A HREF="001917.html">[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1915">[ date ]</a>
+              <a href="thread.html#1915">[ thread ]</a>
+              <a href="subject.html#1915">[ subject ]</a>
+              <a href="author.html#1915">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

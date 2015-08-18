@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] read block limits data offset one off
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20read%20block%20limits%20data%20offset%20one%20off&In-Reply-To=%3C488225BE.5020307%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001793.html">
+   <LINK REL="Next"  HREF="001804.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] read block limits data offset one off</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20read%20block%20limits%20data%20offset%20one%20off&In-Reply-To=%3C488225BE.5020307%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] read block limits data offset one off">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Jul 19 19:34:54 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001793.html">[Stgt-devel] &gt;:-(
+</A></li>
+        <LI>Next message: <A HREF="001804.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1800">[ date ]</a>
+              <a href="thread.html#1800">[ thread ]</a>
+              <a href="subject.html#1800">[ subject ]</a>
+              <a href="author.html#1800">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>According to SSC-2 Rev 8 the Read Block Limits return data is made up of 
+6 bytes, index 0-5:
+
+Byte 0 contains granularity (bits 0-4)
+Byte 1-3 contain  Maximum Block Length Limit (MSB first)
+Byte 4-5 contain Minimum Block Length Limit (MSB first)
+
+Since all bytes are zeroed first, Byte 1 is zero.
+
+I also added a defined value for the granularity, as defined by the
+Read Block Limits command, and calculate the blk_len out of it.
+Now you only need to change the GRANULARITY parameter.
+
+So the patch is:
+
+--- ssc.c    2008-07-19 19:29:58.000000000 +0200
++++ ssc.c.new    2008-07-19 19:30:54.000000000 +0200
+@@ -35,6 +35,7 @@
+ #include &quot;tgtadm_error.h&quot;
+ 
+ #define BLK_SHIFT    9
++#define GRANULARITY    9
+ 
+ 
+ static int ssc_rw(int host_no, struct scsi_cmd *cmd)
+@@ -73,16 +74,16 @@
+ {
+     uint8_t *data;
+     uint8_t buf[256];
+-    uint16_t blk_len = 0x200;
++    uint16_t blk_len = 1 &lt;&lt; GRANULARITY;
+ 
+     memset(buf, 0, sizeof(buf));
+     data = buf;
+ 
+-    data[0] = 9;
++    data[0] = GRANULARITY;
+     data[2] = blk_len &gt;&gt; 8;
+     data[3] = blk_len &amp; 0x0ff;
+-    data[5] = blk_len &gt;&gt; 8;
+-    data[6] = blk_len &amp; 0x0ff;
++    data[4] = blk_len &gt;&gt; 8;
++    data[5] = blk_len &amp; 0x0ff;
+ 
+     memcpy(scsi_get_in_buffer(cmd), data, 6);
+     eprintf(&quot;In ssc_read_block_limit \n&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001793.html">[Stgt-devel] &gt;:-(
+</A></li>
+	<LI>Next message: <A HREF="001804.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1800">[ date ]</a>
+              <a href="thread.html#1800">[ thread ]</a>
+              <a href="subject.html#1800">[ subject ]</a>
+              <a href="author.html#1800">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Thoughts on vtl setup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20setup&In-Reply-To=%3C13d268113d08f7.13d08f713d2681%40o2.ie%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000537.html">
+   <LINK REL="Next"  HREF="000531.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Thoughts on vtl setup</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20setup&In-Reply-To=%3C13d268113d08f7.13d08f713d2681%40o2.ie%3E"
+       TITLE="[Stgt-devel] Thoughts on vtl setup">pauw at o2.ie
+       </A><BR>
+    <I>Thu Apr  5 21:53:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000537.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+        <LI>Next message: <A HREF="000531.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#530">[ date ]</a>
+              <a href="thread.html#530">[ thread ]</a>
+              <a href="subject.html#530">[ subject ]</a>
+              <a href="author.html#530">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Ming,
+
+Ming Zhang wrote:
+&gt;<i> On Thu, 2007-04-05 at 21:32 +0200, Albert Pauw wrote:
+</I>&gt;&gt;<i> Here are a few thoughts I wanted to share regarding the virtual tape
+</I>&gt;&gt;<i> library, just shoot at it if you think otherwise. Hope you don't find
+</I>&gt;&gt;<i> this too nosy Mark (Harvey) as you started the idea.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> General - Best would be to have the changer and the tapedrives on one
+</I>&gt;&gt;<i> target, the changer can be LUN 0, the drive(s) LUN 1 and onwards.
+</I>&gt;<i>
+</I>&gt;<i> in real world, tape and changer most time does not use 1 target. though
+</I>&gt;<i> some of them are. so ideally is to have both.
+</I>&gt;<i>
+</I>&gt;<i> of course, for simplicity purpose, i agree with u. but since it is
+</I>&gt;<i> emulation, it should looks like real stuff.
+</I>&gt;<i>
+</I>Maybe have  it standard set to one target, unless you define otherwise?
+&gt;&gt;<i> Configuration - Would be best to keep this simple. The changer can be
+</I>&gt;&gt;<i> a standard one, implementing all necessary functions. For the drives
+</I>&gt;&gt;<i> you define the type once, and how many drives you want. If you use
+</I>&gt;&gt;<i> symbolic names (as to numeric) for the drive types, then this can be
+</I>&gt;&gt;<i> easily expanded. E.g. LTO3, DDS4, etc. for the drive type. If you need
+</I>&gt;&gt;<i> three different type of drives, then you just add one of each type.
+</I>&gt;&gt;<i> Since these types are predefined you don't have to set other
+</I>&gt;&gt;<i> parameters for these drives (like size etc). Lastly you define the
+</I>&gt;&gt;<i> directory where the tapeslots are.
+</I>&gt;<i>
+</I>&gt;<i> problem is different real changer will not always perform the same and
+</I>&gt;<i> some have features others do not have. so no one emulation fit all
+</I>&gt;<i> solution.
+</I>&gt;<i>
+</I>&gt;<i> ideal way is the code implement as many feature sets as possible. and
+</I>&gt;<i> specific model can enable/disable or override the generic
+</I>&gt;<i> implementation.
+</I>&gt;<i>
+</I>Sounds the way to go!
+&gt;<i>
+</I>&gt;&gt;<i> Tapes - Well, virtual tapes. I guess the filename can be the barcode,
+</I>&gt;&gt;<i> the extension the tape type, e.g. A00001.LTO2. However, when these
+</I>&gt;&gt;<i> files are accidentally renamed you loose the barcode and type. So
+</I>&gt;&gt;<i> every tape should have a header containing the barcode, and tape type.
+</I>&gt;&gt;<i> The barcode and tapetype should be in clear text (e.g. 4 characters
+</I>&gt;&gt;<i> LTO2). Another addition could be a two-byte field, containing
+</I>&gt;&gt;<i> bitfields, like this:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> 0000 0000 0000 RCCC
+</I>&gt;<i>
+</I>&gt;<i> yes. need a header or extra meta file to describe the tapes.
+</I>A header is probably better, you can not loose it from the tape.
+&gt;<i>
+</I>&gt;&gt;<i> were
+</I>&gt;&gt;<i> CCC -&gt; compression 0-7, where 0 is no compression, 1 is LZ, etc. for
+</I>&gt;&gt;<i> different types of compression, if implemented. We can start without
+</I>&gt;&gt;<i> compression.
+</I>&gt;<i>
+</I>&gt;&gt;<i> R -&gt; Readonly bit, even if the file was readonly and set to readwrite,
+</I>&gt;&gt;<i> it would protect the data. Don't know if this setting can be done in
+</I>&gt;&gt;<i> the SCSI set.
+</I>&gt;<i>
+</I>&gt;<i> virtual tape drive can read this and disable write. 
+</I>That was the idea.
+&gt;<i>
+</I>&gt;&gt;<i> Tape handling - Before starting stgt vtl and point it to the tapeslot
+</I>&gt;&gt;<i> directory you create tape slot subdirectories like this, where you
+</I>&gt;&gt;<i> define at startup the directory /var/tape as the slot directory:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> /var/tape/slot-01
+</I>&gt;&gt;<i> ...
+</I>&gt;&gt;<i> /var/tape/slot-24
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> In the /var/tape directory there would be symbolic links like this
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> /var/tape/drive-1 -&gt; /var/slot-01/A00001.LTO3
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> if a tape is loaded into drive-1, when a drive is empty (startup
+</I>&gt;&gt;<i> setting) it does not have a symbolic link.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Note that by creating these directories by hand you can define how
+</I>&gt;&gt;<i> many slots you have, but also leave existing &quot;tapes&quot; in the slots
+</I>&gt;&gt;<i> between restarts of the vtl stgt service. And stopping the service
+</I>&gt;&gt;<i> should delete the symbolic drive links, so the drives &quot;eject&quot; the
+</I>&gt;&gt;<i> virtual tape and start up &quot;empty&quot; next time.
+</I>&gt;<i>
+</I>&gt;<i> this sounds interesting. but what is the action to &quot;insert&quot; a tape to
+</I>&gt;<i> drive? then program has to capture the symlink event.
+</I>&gt;<i>
+</I>Maybe define something like a mailslot? You can just move it to the proper slot, or have
+it put in a free slot, just like a real StorageTek L700. A sort of CAB directory where you can put in
+one or more tapes. When you &quot;close&quot; the CAB, it starts scanning the tapes.
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000537.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+	<LI>Next message: <A HREF="000531.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#530">[ date ]</a>
+              <a href="thread.html#530">[ thread ]</a>
+              <a href="subject.html#530">[ subject ]</a>
+              <a href="author.html#530">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

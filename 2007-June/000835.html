@@ -1,0 +1,657 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/3%5D%20Rework%20of%20mnemonic%20ASC/ASCQ%20values&In-Reply-To=%3C467CD5C8.2090108%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000840.html">
+   <LINK REL="Next"  HREF="000843.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/3%5D%20Rework%20of%20mnemonic%20ASC/ASCQ%20values&In-Reply-To=%3C467CD5C8.2090108%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values">markh794 at gmail.com
+       </A><BR>
+    <I>Sat Jun 23 10:11:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000840.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+        <LI>Next message: <A HREF="000843.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#835">[ date ]</a>
+              <a href="thread.html#835">[ thread ]</a>
+              <a href="subject.html#835">[ subject ]</a>
+              <a href="author.html#835">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From d163aa03f036609ac5343c2d8983aba38ecec679 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Fri, 22 Jun 2007 18:20:54 +1000
+Subject: Use nmemonic codes for SENSE codes instead of numeric value.
+
+Using nmemonic representation for ASC/ASCQ as a 16bit value.
+ - Values defined in sense_codes.h
+ - Updated sense_data_build() to accept a single 16bit
+   combined asc/ascq value.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/bs_sync.c       |    3 +-
+ usr/ibmvio/ibmvio.c |   15 ++++---
+ usr/mmc.c           |    7 ++-
+ usr/osd.c           |    5 +-
+ usr/sbc.c           |   33 +++++++++-------
+ usr/scsi.c          |   13 +++---
+ usr/sense_codes.h   |  103 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/spc.c           |   19 +++++----
+ usr/spt.c           |    5 +-
+ usr/tgtd.h          |    3 +-
+ 10 files changed, 161 insertions(+), 45 deletions(-)
+ create mode 100644 usr/sense_codes.h
+
+diff --git a/usr/bs_sync.c b/usr/bs_sync.c
+index 6789b5b..4986c59 100644
+--- a/usr/bs_sync.c
++++ b/usr/bs_sync.c
+@@ -37,6 +37,7 @@
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;scsi.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ #define NR_WORKER_THREADS	4
+ 
+@@ -161,7 +162,7 @@ static void *bs_sync_worker_fn(void *arg)
+ 			eprintf(&quot;io error %p %x %d %d %&quot; PRIu64 &quot;, %m\n&quot;,
+ 				cmd, cmd-&gt;scb[0], ret, cmd-&gt;len, cmd-&gt;offset);
+ 			cmd-&gt;result = SAM_STAT_CHECK_CONDITION;
+-			sense_data_build(cmd, MEDIUM_ERROR, 0x11, 0x0);
++			sense_data_build(cmd, MEDIUM_ERROR, ASC_READ_ERROR);
+ 		}
+ 
+ 		pthread_mutex_lock(&amp;info-&gt;finished_lock);
+diff --git a/usr/ibmvio/ibmvio.c b/usr/ibmvio/ibmvio.c
+index 5a2f8fe..8cfc8d6 100644
+--- a/usr/ibmvio/ibmvio.c
++++ b/usr/ibmvio/ibmvio.c
+@@ -44,6 +44,7 @@
+ #include &quot;target.h&quot;
+ #include &quot;driver.h&quot;
+ #include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ #define GETTARGET(x) ((int)((((uint64_t)(x)) &gt;&gt; 56) &amp; 0x003f))
+ #define GETBUS(x) ((int)((((uint64_t)(x)) &gt;&gt; 53) &amp; 0x0007))
+@@ -140,7 +141,8 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int ret = SAM_STAT_CHECK_CONDITION;
+ 	uint8_t *data, *scb = cmd-&gt;scb;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+ 
+ 	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+ 		goto sense;
+@@ -148,7 +150,7 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+ 	memset(data, 0, pagesize);
+@@ -173,7 +175,7 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+@@ -194,7 +196,8 @@ static int ibmvio_report_luns(int host_no, struct scsi_cmd *cmd)
+ 	int idx, alen, oalen, nr_luns, rbuflen = 4096;
+ 	int *len = &amp;cmd-&gt;len;
+ 	uint8_t *lun_buf = cmd-&gt;lun;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+ 
+ 	alen = __be32_to_cpu(*(uint32_t *)&amp;cmd-&gt;scb[6]);
+ 	if (alen &lt; 16)
+@@ -203,7 +206,7 @@ static int ibmvio_report_luns(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+ 	memset(data, 0, pagesize);
+@@ -241,7 +244,7 @@ done:
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	*len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+diff --git a/usr/mmc.c b/usr/mmc.c
+index 10b0e3f..defe60b 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -41,6 +41,7 @@
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ #define MMC_BLK_SHIFT 11
+ 
+@@ -53,7 +54,7 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+ 	if (ret) {
+ 		cmd-&gt;offset = 0;
+ 		cmd-&gt;len = 0;
+-		sense_data_build(cmd, ILLEGAL_REQUEST, 0x25, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST, ASC_LUN_NOT_SUPPORTED);
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	} else {
+ 		cmd-&gt;mmapped = 1;
+@@ -69,7 +70,7 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		cmd-&gt;len = 0;
+-		sense_data_build(cmd, HARDWARE_ERROR, 0, 0);
++		sense_data_build(cmd, HARDWARE_ERROR, ASC_INTERNAL_TGT_FAILURE);
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	}
+ 	memset(data, 0, pagesize);
+@@ -105,7 +106,7 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		cmd-&gt;len = 0;
+-		sense_data_build(cmd, HARDWARE_ERROR, 0, 0);
++		sense_data_build(cmd, HARDWARE_ERROR, ASC_INTERNAL_TGT_FAILURE);
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	}
+ 	memset(data, 0, pagesize);
+diff --git a/usr/osd.c b/usr/osd.c
+index a7b92ba..048d0c8 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -33,16 +33,15 @@
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+ {
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
+-
+ 	dprintf(&quot;cdb[0] %x datalen %u\n&quot;, cmd-&gt;scb[0], cmd-&gt;len);
+ 	if (cmd-&gt;scb[7] != 200 - 8) {
+ 		eprintf(&quot;request size %d wrong, should be 200\n&quot;,
+ 			cmd-&gt;scb[7] + 8);
+-		sense_data_build(cmd, key, asc, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST, ASC_LUN_NOT_SUPPORTED);
+ 		cmd-&gt;len = 0;
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	}
+diff --git a/usr/sbc.c b/usr/sbc.c
+index c0075e4..a62e6d8 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -38,13 +38,15 @@
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ #define BLK_SHIFT	9
+ 
+ static int sbc_rw(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int ret;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_LUN_NOT_SUPPORTED;
+ 
+ 	ret = device_reserved(cmd);
+ 	if (ret)
+@@ -65,7 +67,7 @@ static int sbc_rw(int host_no, struct scsi_cmd *cmd)
+ 	ret = cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
+ 	if (ret) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 	} else {
+ 		cmd-&gt;mmapped = 1;
+ 		return SAM_STAT_GOOD;
+@@ -74,7 +76,7 @@ static int sbc_rw(int host_no, struct scsi_cmd *cmd)
+ 	cmd-&gt;rw = READ;
+ 	cmd-&gt;offset = 0;
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+@@ -101,20 +103,21 @@ static int sbc_read_capacity(int host_no, struct scsi_cmd *cmd)
+ 	uint32_t *data;
+ 	uint64_t size;
+ 	uint8_t *scb = cmd-&gt;scb;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_LUN_NOT_SUPPORTED;
+ 
+ 	if (device_reserved(cmd))
+ 		return SAM_STAT_RESERVATION_CONFLICT;
+ 
+ 	if (!(scb[8] &amp; 0x1) &amp; (scb[2] | scb[3] | scb[4] | scb[5])) {
+-		asc = 0x24;
++		asc = ASC_INVALID_FIELD_IN_CDB;
+ 		goto sense;
+ 	}
+ 
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+ 	cmd-&gt;uaddr = (unsigned long) data;
+@@ -129,14 +132,15 @@ static int sbc_read_capacity(int host_no, struct scsi_cmd *cmd)
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+ static int sbc_sync_cache(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int ret, len;
+-	uint8_t key = ILLEGAL_REQUEST, asc;
++	uint8_t key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_LUN_NOT_SUPPORTED;
+ 
+ 	if (device_reserved(cmd))
+ 		return SAM_STAT_RESERVATION_CONFLICT;
+@@ -152,7 +156,7 @@ static int sbc_sync_cache(int host_no, struct scsi_cmd *cmd)
+ 		 * what should I put for the asc/ascq?
+ 		 */
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	default:
+ 		len = 0;
+@@ -161,7 +165,7 @@ static int sbc_sync_cache(int host_no, struct scsi_cmd *cmd)
+ 
+ sense:
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+@@ -232,7 +236,8 @@ static int sbc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	uint8_t pcode = cmd-&gt;scb[2] &amp; 0x3f;
+ 	uint64_t size;
+ 	uint8_t *data = NULL;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_LUN_NOT_SUPPORTED;
+ 
+ 	if (device_reserved(cmd))
+ 		return SAM_STAT_RESERVATION_CONFLICT;
+@@ -240,7 +245,7 @@ static int sbc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+ 	memset(data, 0, pagesize);
+@@ -288,7 +293,7 @@ static int sbc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 		len += insert_iec_m_pg(data + len);
+ 		break;
+ 	default:
+-		asc = 0x24;
++		asc = ASC_INVALID_FIELD_IN_CDB;
+ 		goto sense;
+ 	}
+ 
+@@ -298,7 +303,7 @@ static int sbc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	return ret;
+ sense:
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 36722e1..5ddc94c 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -38,27 +38,28 @@
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+ 
+-void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint8_t asc, uint8_t asq)
++void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint16_t asc)
+ {
++	uint16_t *sense_code;
++
+ 	if (cmd-&gt;dev-&gt;attrs.sense_format) {
+ 		/* descriptor format */
++		sense_code = (uint16_t *)&amp;cmd-&gt;sense_buffer[2];
+ 
+ 		cmd-&gt;sense_buffer[0] = 0x72;  /* current, not deferred */
+ 		cmd-&gt;sense_buffer[1] = key;
+-		cmd-&gt;sense_buffer[2] = asc;
+-		cmd-&gt;sense_buffer[3] = asq;
+ 		cmd-&gt;sense_len = 8;
+ 	} else {
+ 		/* fixed format */
++		sense_code = (uint16_t *)&amp;cmd-&gt;sense_buffer[12];
+ 
+ 		int len = 0xa;
+-		cmd-&gt;sense_buffer[0] = 0x70;
++		cmd-&gt;sense_buffer[0] = 0x70;  /* current, not deferred */
+ 		cmd-&gt;sense_buffer[2] = key;
+ 		cmd-&gt;sense_buffer[7] = len;
+-		cmd-&gt;sense_buffer[12] = asc;
+-		cmd-&gt;sense_buffer[13] = asq;
+ 		cmd-&gt;sense_len = len + 8;
+ 	}
++	*sense_code = __cpu_to_be16(asc);
+ }
+ 
+ #define        TGT_INVALID_DEV_ID      ~0ULL
+diff --git a/usr/sense_codes.h b/usr/sense_codes.h
+new file mode 100644
+index 0000000..ea8eebc
+--- /dev/null
++++ b/usr/sense_codes.h
+@@ -0,0 +1,103 @@
++/*
++ * The SCSI sense key Additional Sense Code / Additional Sense Code Qualifier
++ *
++ * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++/*
++ * SENSE keys
++ */
++#define NO_SENSE			0x00
++#define	RECOVERED_ERROR			0x01
++#define NOT_READY			0x02
++#define MEDIUM_ERROR			0x03
++#define	HARDWARE_ERROR			0x04
++#define ILLEGAL_REQUEST			0x05
++#define UNIT_ATTENTION			0x06
++#define DATA_PROTECT			0x07
++#define	BLANK_CHECK			0x08
++
++/* Key 0: No Sense Errors */
++#define NO_ADDITIONAL_SENSE			0x0000
++#define ASC_MARK				0x0001
++#define ASC_EOM					0x0002
++#define ASC_BOM					0x0004
++#define ASC_END_OF_DATA				0x0005
++#define ASC_OP_IN_PROGRESS			0x0016
++#define ASC_DRIVASC_REQUIRES_CLEANING		0x8282
++
++/* Key 1: Recovered Errors */
++#define ASC_WRITASC_ERROR			0x0c00
++#define ASC_READ_ERROR				0x1100
++#define ASC_RECOVERED_WITH_RETRYS		0x1701
++#define ASC_MEDIA_LOAD_EJECT_ERROR		0x5300
++#define ASC_FAILURASC_PREDICTION		0x5d00
++
++/* Key 2: Not ready */
++#define ASC_CAUSASC_NOT_REPORTABLE		0x0400
++#define ASC_BECOMING_READY			0x0401
++#define ASC_INITIALIZING_REQUIRED		0x0402
++#define ASC_CLEANING_CART_INSTALLED		0x3003
++#define ASC_CLEANING_FAILURE			0x3007
++#define ASC_MEDIUM_NOT_PRESENT			0x3a00
++#define ASC_LOGICAL_UNIT_NOT_CONFIG		0x3e00
++
++/* Key 3: Medium Errors */
++#define ASC_WRITE_ERROR			0x0c00
++#define ASC_UNRECOVERED_READ			0x1100
++#define ASC_RECORDED_ENTITY_NOT_FOUND		0x1400
++#define ASC_UNKNOWN_FORMAT			0x3001
++#define ASC_IMCOMPATIBLE_FORMAT		0x3002
++#define ASC_MEDIUM_FORMAT_CORRUPT		0x3100
++#define ASC_SEQUENTIAL_POSITION_ERR		0x3b00
++#define ASC_WRITE_APPEND_ERR			0x5000
++#define ASC_CARTRIDGE_FAULT			0x5200
++#define ASC_MEDIA_LOAD_OR_EJECT_FAILED		0x5300
++
++/* Key 4: Hardware Failure */
++#define ASC_COMPRESSION_CHECK			0x0c04
++#define ASC_DECOMPRESSION_CRC			0x110d
++#define ASC_MECHANICAL_POSITIONING_ERROR	0x1501
++#define ASC_MANUAL_INTERVENTION_REQ		0x0403
++#define ASC_HARDWARE_FAILURE			0x4000
++#define ASC_INTERNAL_TGT_FAILURE		0x4400
++#define ASC_ERASE_FAILURE			0x5100
++
++/* Key 5: Illegal Request */
++#define ASC_PARAMETER_LIST_LENGTH_ERR		0x1a00
++#define ASC_INVALID_OP_CODE			0x2000
++#define ASC_INVALID_FIELD_IN_CDB		0x2400
++#define ASC_LUN_NOT_SUPPORTED			0x2500
++#define ASC_INVALID_FIELD_IN_PARMS		0x2600
++#define ASC_SAVING_PARMS_UNSUP			0x3900
++#define ASC_MEDIUM_DEST_FULL			0x3b0d
++#define ASC_MEDIUM_SRC_EMPTY			0x3b0e
++#define ASC_POSITION_PAST_BOM			0x3b0c
++#define ASC_MEDIUM_REMOVAL_PREVENTED		0x5302
++#define ASC_BAD_MICROCODE_DETECTED		0x8283
++
++/* Key 6: Unit Attention */
++#define ASC_NOT_READY_TO_TRANSITION		0x2800
++#define ASC_POWERON_RESET			0x2900
++#define ASC_MODE_PARAMETERS_CHANGED		0x2a01
++#define ASC_INSUFFICIENT_TIME_FOR_OPERATION	0x2e00
++#define ASC_MICROCODE_DOWNLOADED		0x3f01
++#define ASC_FAILURE_PREDICTION_FALSE		0x5dff
++#define ASC_INQUIRY_DATA_HAS_CHANGED		0x3f03
++
++/* Data Protect */
++#define ASC_WRITE_PROTECT			0x2700
++#define ASC_MEDIUM_OVERWRITE_ATTEMPTED		0x300c
+diff --git a/usr/spc.c b/usr/spc.c
+index 1c363cd..6560e98 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -34,6 +34,7 @@
+ #include &quot;tgtadm_error.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ #define PRODUCT_REV	&quot;0&quot;
+ #define BLK_SHIFT	9
+@@ -43,7 +44,8 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	int len, ret = SAM_STAT_CHECK_CONDITION;
+ 	uint8_t *data;
+ 	uint8_t *scb = cmd-&gt;scb;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+ 	uint8_t devtype = 0;
+ 
+ 	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+@@ -52,7 +54,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+ 	memset(data, 0, pagesize);
+@@ -148,7 +150,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+@@ -158,7 +160,8 @@ int spc_report_luns(int host_no, struct scsi_cmd *cmd)
+ 	struct list_head *dev_list = &amp;cmd-&gt;c_target-&gt;device_list;
+ 	uint64_t lun, *data;
+ 	int idx, alen, oalen, nr_luns, rbuflen = 4096, overflow;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+ 
+ 	alen = __be32_to_cpu(*(uint32_t *)&amp;cmd-&gt;scb[6]);
+ 	if (alen &lt; 16)
+@@ -167,7 +170,7 @@ int spc_report_luns(int host_no, struct scsi_cmd *cmd)
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+-		asc = 0;
++		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+ 	memset(data, 0, pagesize);
+@@ -204,7 +207,7 @@ int spc_report_luns(int host_no, struct scsi_cmd *cmd)
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, key, asc, 0);
++	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+@@ -231,7 +234,7 @@ int spc_test_unit(int host_no, struct scsi_cmd *cmd)
+ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, NO_SENSE, 0, 0);
++	sense_data_build(cmd, NO_SENSE, NO_ADDITIONAL_SENSE);
+ 	return SAM_STAT_GOOD;
+ }
+ 
+@@ -271,7 +274,7 @@ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+ {
+ 	dump_cdb(cmd);
+ 	cmd-&gt;len = 0;
+-	sense_data_build(cmd, ILLEGAL_REQUEST, 0x20, 0);
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+diff --git a/usr/spt.c b/usr/spt.c
+index c882fd0..9115d7f 100644
+--- a/usr/spt.c
++++ b/usr/spt.c
+@@ -40,6 +40,7 @@
+ #include &quot;target.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
+ 
+ extern int spt_sg_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size);
+ extern int spt_sg_perform(struct scsi_cmd *cmd);
+@@ -68,14 +69,14 @@ static int spt_cmd_perform(int host_no, struct scsi_cmd *cmd)
+ 
+ 	if (!cmd-&gt;dev) {
+ 		cmd-&gt;len = 0;
+-		sense_data_build(cmd, NOT_READY, 0x44, 0); /* Internal target failure */
++		sense_data_build(cmd, NOT_READY, ASC_INTERNAL_TGT_FAILURE);
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	}
+ 
+ 	ret = spt_sg_perform(cmd);
+ 	if (ret) {
+ 		cmd-&gt;len = 0;
+-		sense_data_build(cmd, ILLEGAL_REQUEST, 0x25, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST, ASC_LUN_NOT_SUPPORTED);
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	} else
+ 		return SAM_STAT_GOOD;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 15ae2e1..8e66d60 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -190,8 +190,7 @@ extern void target_cmd_io_done(struct scsi_cmd *cmd, int result);
+ 
+ extern uint64_t scsi_get_devid(int lid, uint8_t *pdu);
+ extern int scsi_cmd_perform(int host_no, struct scsi_cmd *cmd);
+-extern void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint8_t asc,
+-			     uint8_t asq);
++extern void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint16_t asc);
+ extern uint64_t scsi_rw_offset(uint8_t *scb);
+ 
+ extern enum scsi_target_state tgt_get_target_state(int tid);
+-- 
+1.5.2.1
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000840.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+	<LI>Next message: <A HREF="000843.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#835">[ date ]</a>
+              <a href="thread.html#835">[ thread ]</a>
+              <a href="subject.html#835">[ subject ]</a>
+              <a href="author.html#835">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

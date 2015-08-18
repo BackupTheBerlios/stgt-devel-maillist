@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Bug report mediachanger ?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bug%20report%20mediachanger%20%3F&In-Reply-To=%3C4886466C.3030109%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001907.html">
+   <LINK REL="Next"  HREF="001828.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Bug report mediachanger ?</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bug%20report%20mediachanger%20%3F&In-Reply-To=%3C4886466C.3030109%40gmail.com%3E"
+       TITLE="[Stgt-devel] Bug report mediachanger ?">albert.pauw at gmail.com
+       </A><BR>
+    <I>Tue Jul 22 22:43:24 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001907.html">[Stgt-devel] [PATCH] add man page for tgt-admin
+</A></li>
+        <LI>Next message: <A HREF="001828.html">[Stgt-devel] Bug report mediachanger ?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1825">[ date ]</a>
+              <a href="thread.html#1825">[ thread ]</a>
+              <a href="subject.html#1825">[ subject ]</a>
+              <a href="author.html#1825">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>For the media changer I defined three drives starting at address 1,
+one robot arm at address 16, ten tape slots starting at 1024, and five
+import/export elements at address 32.
+
+However, when I use mtx for the status (mtx -f /dev/sg4 status) I get:
+
+  Storage Changer /dev/sg4:3 Drives, 13 Slots ( 5 Import/Export )
+Data Transfer Element 0:Full (Storage Element 1 Loaded):VolumeTag = 
+ABC123                        
+Data Transfer Element 1:Empty
+Data Transfer Element 2:Empty
+      Storage Element 1:Empty:VolumeTag=                               
+      Storage Element 2:Full :VolumeTag=ULT001L3                      
+      Storage Element 3:Empty:VolumeTag=                               
+      Storage Element 4:Empty:VolumeTag=                              
+      Storage Element 5:Empty:VolumeTag=                              
+      Storage Element 6:Empty:VolumeTag=                              
+      Storage Element 7:Empty:VolumeTag=                              
+      Storage Element 8:Empty:VolumeTag=                              
+      Storage Element 9 
+IMPORT/EXPORT:Empty:VolumeTag=                              
+      Storage Element 10 
+IMPORT/EXPORT:Empty:VolumeTag=                              
+      Storage Element 11 
+IMPORT/EXPORT:Empty:VolumeTag=                              
+      Storage Element 12 
+IMPORT/EXPORT:Empty:VolumeTag=                              
+      Storage Element 13 IMPORT/EXPORT:Empty:VolumeTag=                
+
+Why doesn't show mtx the proper addresses as defined at setup,
+i.e. first storage element -&gt; 1024?
+
+Thanks,
+
+Albert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001907.html">[Stgt-devel] [PATCH] add man page for tgt-admin
+</A></li>
+	<LI>Next message: <A HREF="001828.html">[Stgt-devel] Bug report mediachanger ?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1825">[ date ]</a>
+              <a href="thread.html#1825">[ thread ]</a>
+              <a href="subject.html#1825">[ subject ]</a>
+              <a href="author.html#1825">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

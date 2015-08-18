@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20RFC%20%5BPATCH%5D%20Implement%20PERSISTENT%20RESERVE%20IN/OUT&In-Reply-To=%3Cf29db9a80808192201i5b72ca41he5eb9387fc556d28%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002035.html">
+   <LINK REL="Next"  HREF="002036.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20RFC%20%5BPATCH%5D%20Implement%20PERSISTENT%20RESERVE%20IN/OUT&In-Reply-To=%3Cf29db9a80808192201i5b72ca41he5eb9387fc556d28%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Aug 20 07:01:44 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002035.html">Add persistent reserve in/out to ssc module
+</A></li>
+        <LI>Next message: <A HREF="002036.html">[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2033">[ date ]</a>
+              <a href="thread.html#2033">[ thread ]</a>
+              <a href="subject.html#2033">[ subject ]</a>
+              <a href="author.html#2033">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Apologies for sending as an attachment... gmail and all.
+
+This is an initial attempt to implement PERSISTENT RESERVE IN and
+PERSISTENT RESERVE OUT.
+
+Currently only READ KEY service action will actually return anything.
+It returns a hard-coded 'ABC1234'.
+
+This post is a request for comment before I get too far into coding effort.
+
+# lsscsi -g
+[3:0:0:0]    disk    USB-HS   HTS726060M9AT00  0.01  /dev/sda  /dev/sg0
+[7:0:0:0]    storage IET      Controller       0001  -         /dev/sg1
+[7:0:0:1]    disk    QUANTUM  HD100            0010  /dev/sdb  /dev/sg2
+[7:0:0:2]    tape    QUANTUM  DLT6000          0010  /dev/st0  /dev/sg3
+[7:0:0:3]    tape    QUANTUM  DLT6000          0010  /dev/st1  /dev/sg4
+[7:0:0:4]    tape    QUANTUM  DLT6000          0010  /dev/st2  /dev/sg5
+[7:0:0:5]    mediumx STK      L700             0010  -         /dev/sg6
+
+# sg_persist -i /dev/sg3
+&gt;&gt;<i> No service action given; assume Persistent Reservations In command
+</I>&gt;&gt;<i> with Read Keys service action
+</I>  QUANTUM  DLT6000  0010
+  Peripheral device type: tape
+  PR generation=0x0, 4 registered reservation keys follow:
+    0x4142433132333400
+    0x0
+    0x0
+    0x0
+
+
+I'll include in-line for viewing pleasure :)
+
+[PATCH 1/2]
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002035.html">Add persistent reserve in/out to ssc module
+</A></li>
+	<LI>Next message: <A HREF="002036.html">[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2033">[ date ]</a>
+              <a href="thread.html#2033">[ thread ]</a>
+              <a href="subject.html#2033">[ subject ]</a>
+              <a href="author.html#2033">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071011145742C.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001065.html">
+   <LINK REL="Next"  HREF="001073.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071011145742C.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] iSER">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Oct 11 07:57:42 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001065.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001073.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1071">[ date ]</a>
+              <a href="thread.html#1071">[ thread ]</a>
+              <a href="subject.html#1071">[ subject ]</a>
+              <a href="author.html#1071">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 08 Oct 2007 17:36:16 +0200
+Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; On Thu, 4 Oct 2007 13:20:35 -0400
+</I>&gt;<i> &gt; Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   
+</I>&gt;<i> &gt;&gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A> wrote on Sun, 09 Sep 2007 14:12 -0400:
+</I>&gt;<i> &gt;&gt;     
+</I>&gt;<i> &gt;&gt;&gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Sun, 09 Sep 2007 11:30 -0400:
+</I>&gt;<i> &gt;&gt;&gt;       
+</I>&gt;<i> &gt;&gt;&gt;&gt; Summary:
+</I>&gt;<i> &gt;&gt;&gt;&gt;  - 2.6.21 seems to be a good kernel. 2.6.22 or newer, or RedHat's OFED 1.2
+</I>&gt;<i> &gt;&gt;&gt;&gt;    patched kernels all seem to have iSER bugs that make them unusable.
+</I>&gt;<i> &gt;&gt;&gt;&gt;  - as everything works in 2.6.21 presumably this means there's nothing
+</I>&gt;<i> &gt;&gt;&gt;&gt;    wrong with the iSER implementation in tgtd. well done! :)
+</I>&gt;<i> &gt;&gt;&gt;&gt;         
+</I>&gt;<i> &gt;&gt;&gt; Well, that's good and bad news.  Nice to know that things do work at times,
+</I>&gt;<i> &gt;&gt;&gt; but we have to figure out what happened in the initiator now.  Or maybe tgt
+</I>&gt;<i> &gt;&gt;&gt; is making some bad assumptions.
+</I>&gt;<i> &gt;&gt;&gt;       
+</I>&gt;<i> &gt;&gt; This all turned out to be a known bug in the mthca IB driver in
+</I>&gt;<i> &gt;&gt; kernels older than 2.6.21.  Including the rhel5 kernel.  The
+</I>&gt;<i> &gt;&gt; initiator uses FMR for memory registrations, and a certain popular
+</I>&gt;<i> &gt;&gt; chipset was prone to random scribbling on old registrations,
+</I>&gt;<i> &gt;&gt; yielding wrong data in the application or unexplainable kernel
+</I>&gt;<i> &gt;&gt; crashes.  Nothing wrong in the target.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;     
+</I>&gt;<i> &gt;&gt;&gt;&gt; with the 2.6.22.6 kernel and iSER I couldn't find any corruption
+</I>&gt;<i> &gt;&gt;&gt;&gt; issues using dd to /dev/sdc. however (as reported previously) if I put
+</I>&gt;<i> &gt;&gt;&gt;&gt; an ext3 filesystem on the iSER device and then dd to a file in the ext3
+</I>&gt;<i> &gt;&gt;&gt;&gt; filsystem then pretty much immediately I get:
+</I>&gt;<i> &gt;&gt;&gt;&gt;   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196611, length 1
+</I>&gt;<i> &gt;&gt;&gt;&gt;   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196612, length 1
+</I>&gt;<i> &gt;&gt;&gt;&gt;   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196613, length 1
+</I>&gt;<i> &gt;&gt;&gt;&gt;   ...
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt; I get the same type of errors with 2.6.23-rc5 too.
+</I>&gt;<i> &gt;&gt;&gt;&gt;         
+</I>&gt;<i> &gt;&gt;&gt; I'm still not been able to reproduce this, at least on my
+</I>&gt;<i> &gt;&gt;&gt; 2.6.22-rc5.  One of these days we'll move to some newer kernels
+</I>&gt;<i> &gt;&gt;&gt; here, but have been sort of waiting for the bidi approaches to
+</I>&gt;<i> &gt;&gt;&gt; stabilize somewhat.
+</I>&gt;<i> &gt;&gt;&gt;       
+</I>&gt;<i> &gt;&gt; Maybe this is fixed.  I did find one possible case where the Send
+</I>&gt;<i> &gt;&gt; result may have gone out before the final RDMA write, in the case
+</I>&gt;<i> &gt;&gt; when the target is starved for RDMA slots.  But I never saw the
+</I>&gt;<i> &gt;&gt; problem myself, so can't say for sure.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; In fact, I hacked up the bs-sync code to calculate the result
+</I>&gt;<i> &gt;&gt; expected by the test application lmdd, rather than read it off disk,
+</I>&gt;<i> &gt;&gt; and could achieve your high throughputs but never any corruptions.
+</I>&gt;<i> &gt;&gt; It ran all night last night.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; Anyway, there's a new git out there with this one new patch and some
+</I>&gt;<i> &gt;&gt; kernel initiator warnings in the README.iser doc.
+</I>&gt;<i> &gt;&gt;     
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Sounds promising. voltaire guys, any chance to try Pete's latest tree?
+</I>&gt;<i> 
+</I>&gt;<i> We ran some tests on it and it looks ok now (still trying to make it 
+</I>&gt;<i> crash :-) ). We will run more nasty tests soon, and if anything goes 
+</I>&gt;<i> wrong, we will report. We will also try to get some performance numbers 
+</I>&gt;<i> (BW, iops) from our storage.
+</I>
+Cool.
+
+Pete, the iSER patchset is ready for re-submission?
+
+BTW, can you elaborate on the following commit?
+
+<A HREF="http://git.osc.edu/?p=tgt.git;a=commit;h=8d9eae7acd041fc10a7cfe560c1c280dcc290fa1">http://git.osc.edu/?p=tgt.git;a=commit;h=8d9eae7acd041fc10a7cfe560c1c280dcc290fa1</A>
+
+
+What type of commands hit this bug?
+
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001065.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001073.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1071">[ date ]</a>
+              <a href="thread.html#1071">[ thread ]</a>
+              <a href="subject.html#1071">[ subject ]</a>
+              <a href="author.html#1071">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46BF1333.4020801%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000939.html">
+   <LINK REL="Next"  HREF="000933.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46BF1333.4020801%40voltaire.com%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">erezz at voltaire.com
+       </A><BR>
+    <I>Sun Aug 12 16:03:31 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000939.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000933.html">[PATCH] iser more rdma bufs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#941">[ date ]</a>
+              <a href="thread.html#941">[ thread ]</a>
+              <a href="subject.html#941">[ subject ]</a>
+              <a href="author.html#941">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+&gt;<i> &gt; When I run with &quot;tgtd -d 9&quot;, I don't see any logs. I only see:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Aug  8 12:01:27 noni tgtd: Target daemon logger with pid=6353 started!
+</I>&gt;<i>
+</I>&gt;<i> It seems to produce logs at level &lt;31&gt;, which syslog ignores.  You
+</I>&gt;<i> can do this though:
+</I>&gt;<i>
+</I>&gt;<i> ./tgtd -d 9 -f &amp;
+</I>&gt;<i>
+</I>&gt;<i> Then run the tgtadm commands and you should see output on stderr.
+</I>&gt;<i>
+</I>
+I ran the following command:
+
+sgp_dd bs=512 of=/dev/null if=/dev/sg3 bpt=256 thr=8 time=1 count=8000
+
+and got the following error:
+
+[...]
+iser_progress() Entry.
+tgtd: iser_progress(1381) trying tx on fd 0 conn 0x636d90
+tgtd: iscsi_task_tx_start(1750) found a task 3a 131072 0 0
+tgtd: iscsi_data_rsp_build(969) 131072 131072 131072 131072 3a
+[iSER]:in iser_rdma_write size 131072, 0x636f08.
+tgtd: iser_rdma_write(1250) offset 131072 len 131072 last 1
+[iSER]:in iser_post_rdma_wr size 131072 rem_va 46980000 rem_stag bef4005b.
+[iSER]:iser_post_rdma_wr() Exit rdma = 0x63f090.
+tgtd: iser_rdma_write(1267) removing ep 0 from tx ready list
+tgtd: iser_event_modify(1434) ep 0 events 1
+tgtd: iser_event_modify(1445) removing ep 0 from tx ready list
+tgtd: iscsi_scsi_cmd_tx_done(1703) more data or sense or bidir 3a
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_cqe_handler() Entry.
+[iSER]:iser_cqe_handler() Exit.
+tgtd: bs_sync_handler(193) back to tgtd, 0x2aaaaab2c0f0
+tgtd: iser_event_modify(1434) ep 0 events 5
+tgtd: iser_event_modify(1438) adding ep 0 to tx ready list
+tgtd: bs_sync_handler(193) back to tgtd, 0x2aaaaad300f0
+tgtd: iser_event_modify(1434) ep 0 events 5
+tgtd: iser_event_modify(1441) ep 0 was already on the list.  Track?
+tgtd: bs_sync_handler(193) back to tgtd, 0x2aaaaae320f0
+tgtd: iser_event_modify(1434) ep 0 events 5
+tgtd: iser_event_modify(1441) ep 0 was already on the list.  Track?
+[iSER]:tgtd: bs_sync_ack_fn(94) found 0x2aaaaac2e0f0
+iser_progress() Entry.
+tgtd: iser_progress(1381) trying tx on fd 0 conn 0x636d90
+tgtd: iscsi_task_tx_start(1750) found a task 39 131072 131072 0
+tgtd: iscsi_cmd_rsp_build(897) 0x2aaaaaaab010 28
+[iSER]:in iscsi_iser_write_begin nbytes 48.
+[iSER]:iscsi_iser_write_begin: alloc new send event 0x640010.
+[iSER]:iscsi_iser_write_end: continue send event 0x640010, writeb 76.
+tgtd: iscsi_iser_write_end(1065) waking up progress to finish cmd
+[iSER]:iscsi_iser_write_end exit 0x640010.
+tgtd: __cmd_done(618) 1 2aaaaaaab2b0 131072 0
+tgtd: iser_progress(1381) trying tx on fd 0 conn 0x636d90
+tgtd: iscsi_task_tx_start(1750) found a task 0 4294967295 0 0
+[iSER]:in iscsi_iser_write_begin nbytes 48.
+[iSER]:iscsi_iser_write_begin: alloc new send event 0x6410e0.
+[iSER]:iscsi_iser_write_end: continue send event 0x6410e0, writeb 76.
+tgtd: iscsi_iser_write_end(1065) waking up progress to finish cmd
+[iSER]:iscsi_iser_write_end exit 0x6410e0.
+tgtd: iser_progress(1381) trying tx on fd 0 conn 0x636d90
+tgtd: iscsi_task_tx_start(1750) found a task 3b 131072 0 0
+tgtd: iscsi_data_rsp_build(969) 131072 131072 131072 131072 3b
+[iSER]:in iser_rdma_write size 131072, 0x636f08.
+tgtd: iser_rdma_write(1250) offset 131072 len 131072 last 1
+[iSER]:in iser_post_rdma_wr size 131072 rem_va 46980000 rem_stag bef4005b.
+[iSER]:iser_post_rdma_wr() Exit rdma = 0x63f010.
+tgtd: iser_rdma_write(1267) removing ep 0 from tx ready list
+tgtd: iser_event_modify(1434) ep 0 events 1
+tgtd: iser_event_modify(1445) removing ep 0 from tx ready list
+tgtd: iscsi_scsi_cmd_tx_done(1703) more data or sense or bidir 3b
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_progress() Entry.
+[iSER]:iser_progress() Exit.
+[iSER]:iser_cqe_handler() Entry.
+tgtd: iser_cqe_handler(888) bad WC status 10 for wr_id 0x63f090
+
+If you need the whole log, I can send it.
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000939.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000933.html">[PATCH] iser more rdma bufs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#941">[ date ]</a>
+              <a href="thread.html#941">[ thread ]</a>
+              <a href="subject.html#941">[ subject ]</a>
+              <a href="author.html#941">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

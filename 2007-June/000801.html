@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio is slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C20070619171838.GA13219%40wavehammer.waldi.eu.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000800.html">
+   <LINK REL="Next"  HREF="000802.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio is slow</H1>
+    <B>Bastian Blank</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C20070619171838.GA13219%40wavehammer.waldi.eu.org%3E"
+       TITLE="[Stgt-devel] ibmvio is slow">waldi at berlios.de
+       </A><BR>
+    <I>Tue Jun 19 19:18:38 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000800.html">[Stgt-devel] [Patch 1/1] Update SCSI ASC/ASCQ to use a single	nmemonic value.
+</A></li>
+        <LI>Next message: <A HREF="000802.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#801">[ date ]</a>
+              <a href="thread.html#801">[ thread ]</a>
+              <a href="subject.html#801">[ subject ]</a>
+              <a href="author.html#801">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi folks
+
+I tried the ibmvio target on a busy vioserver on a power5 machine. It
+works fine, I got no problem. It provides services to 7 initiators with
+at least 2 luns each.
+
+But it is slow. I can write at most 15MiB/s to the disks, regardless of
+the count of the initiators and disks.
+
+I used strace and saw the following:
+
+|<i> mmap2(NULL, 131072, PROT_READ|PROT_WRITE, MAP_SHARED, 14, 0xc6185) = 0xf7e28000 &lt;0.000026&gt;
+</I>|<i> write(8, &quot;\0&quot;, 1)                       = 1 &lt;0.002088&gt;
+</I>|<i> munmap(0xf7f5e000, 12288)               = 0 &lt;0.000022&gt;
+</I>|<i> mmap2(NULL, 131072, PROT_READ|PROT_WRITE, MAP_SHARED, 14, 0xc61a5) = 0xf7e08000 &lt;0.000025&gt;
+</I>|<i> write(8, &quot;\0&quot;, 1)                       = 1 &lt;0.002060&gt;
+</I>|<i> munmap(0xf7fde000, 4096)                = 0 &lt;0.000022&gt;
+</I>|<i> mmap2(NULL, 131072, PROT_READ|PROT_WRITE, MAP_SHARED, 14, 0xc61c5) = 0xf7de8000 &lt;0.000023&gt;
+</I>|<i> write(8, &quot;\0&quot;, 1)                       = 1 &lt;0.002130&gt;
+</I>|<i> munmap(0xf7f12000, 73728)               = 0 &lt;0.000031&gt;
+</I>
+Each request produces a mmap, a write and a unmap. The time needed for the
+write, which seems to be a request available flag, needs 2ms, which means at
+most 50 requests/s.
+
+Bastian
+
+-- 
+Bones: &quot;The man's DEAD, Jim!&quot;
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000800.html">[Stgt-devel] [Patch 1/1] Update SCSI ASC/ASCQ to use a single	nmemonic value.
+</A></li>
+	<LI>Next message: <A HREF="000802.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#801">[ date ]</a>
+              <a href="thread.html#801">[ thread ]</a>
+              <a href="subject.html#801">[ subject ]</a>
+              <a href="author.html#801">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

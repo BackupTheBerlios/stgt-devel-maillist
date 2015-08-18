@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/3] osd sense fixup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/3%5D%20osd%20sense%20fixup&In-Reply-To=%3C45FA9DCE.3080806%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000437.html">
+   <LINK REL="Next"  HREF="000434.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/3] osd sense fixup</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/3%5D%20osd%20sense%20fixup&In-Reply-To=%3C45FA9DCE.3080806%40torque.net%3E"
+       TITLE="[Stgt-devel] [PATCH 1/3] osd sense fixup">dougg at torque.net
+       </A><BR>
+    <I>Fri Mar 16 14:38:22 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000437.html">[Stgt-devel] [PATCH 1/3] osd sense fixup
+</A></li>
+        <LI>Next message: <A HREF="000434.html">[Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#439">[ date ]</a>
+              <a href="thread.html#439">[ thread ]</a>
+              <a href="subject.html#439">[ subject ]</a>
+              <a href="author.html#439">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] [PATCH 1/3] osd sense fixup
+</I>&gt;<i> Date: Thu, 15 Mar 2007 14:57:04 -0400
+</I>&gt;<i> 
+</I>&gt;&gt;<i> OSD must use descriptor format sense data.  Support request sense and
+</I>&gt;&gt;<i> report luns.  Add support for a couple more inquiry page codes.  Remove
+</I>&gt;&gt;<i> list of actions; submit can deal with it.  They are obsolete anyway.
+</I>&gt;<i> 
+</I>&gt;<i> descriptor format sense is not only for OSD. struct tgt_device needs
+</I>&gt;<i> to have some SCSI parameters and sense_data_build() should follow them.
+</I>&gt;<i> 
+</I>&gt;<i> I added only d_sense and fixed sense_data_build().
+</I>
+I have a fair amount of descriptor sense data processing
+code around the place:
+   - in the linux scsi mid level
+   - in sg3_utils (specifically sg_lib.c)
+   - in the scsi_debug virtual LLD
+
+The latter item is probably closest to what tgt needs.
+Another device &quot;type&quot; that might be usefully put in
+tgt is a SAT layer. To implement a SAT layer descriptor
+sense generation is needed (since that is how FIS
+registers are conveyed back to the initiator).
+
+
+Has anyone ever thought of implementing the IMMED bit
+is some SCSI cdbs? START STOP UNIT is one example.
+
+Doug Gilbert
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000437.html">[Stgt-devel] [PATCH 1/3] osd sense fixup
+</A></li>
+	<LI>Next message: <A HREF="000434.html">[Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#439">[ date ]</a>
+              <a href="thread.html#439">[ thread ]</a>
+              <a href="subject.html#439">[ subject ]</a>
+              <a href="author.html#439">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

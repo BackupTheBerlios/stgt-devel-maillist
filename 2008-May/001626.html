@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Fwd:  Implementation of vtl
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Fwd%3A%20%20Implementation%20of%20vtl&In-Reply-To=%3Cf29db9a80805071628s20f1037ds577ef64b54b5dcbd%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001623.html">
+   <LINK REL="Next"  HREF="001629.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Fwd:  Implementation of vtl</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Fwd%3A%20%20Implementation%20of%20vtl&In-Reply-To=%3Cf29db9a80805071628s20f1037ds577ef64b54b5dcbd%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Fwd:  Implementation of vtl">markh794 at gmail.com
+       </A><BR>
+    <I>Thu May  8 01:28:51 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001623.html">[Stgt-devel] Fw:  Implementation of vtl
+</A></li>
+        <LI>Next message: <A HREF="001629.html">[PATCH] Add infrastructure to handle cdb lengths, service actions lists
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1626">[ date ]</a>
+              <a href="thread.html#1626">[ thread ]</a>
+              <a href="subject.html#1626">[ subject ]</a>
+              <a href="author.html#1626">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Oops. Forgot to 'reply all'...
+
+Forwarding to stgt mailing list - just in case I've got my facts wrong.
+
+Cheers
+Mark
+
+---------- Forwarded message ----------
+From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Thu, May 8, 2008 at 7:32 AM
+Subject: Re: [Stgt-devel] Implementation of vtl
+To: aftab azmi &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">max_aftab at yahoo.com</A>&gt;
+
+
+I'm not quite sure of your meaning of &quot;couldn't find any value for
+ filemark&quot; so please excuse me, if I'm talking to the converted...
+
+ A 'filemark' is a special bit pattern written to tape which is not
+ actually data. Just a 'mark' so the tape drive firmware can find
+ (position to) it. Many backup programs (VERITAS NetBackup, Legato
+ NetWorker as larger examples) use filemarks as delimiters between
+ segments of data. Especially in the older days when tape drives did
+ not support the FAST BLOCK LOCATE cmd.
+
+ The ability to be able to detect multiple filemarks will be critical
+ for correct tape drive emulation.
+
+ Re: Fixed block:
+ How do you compute the block size ?
+
+ From my quick review of the code, I did not see any reference to the
+ MODE SELECT/MODE SENSE commands and the BLOCK LENGTH field. i.e. No
+ way for a backup program to set / query the block size. (except the
+ READ BLOCK LIMITS).
+
+ Re: Block under/over run detection.
+ This is only a requirement for variable block READ - so fixed block
+we are safe.
+
+ Cheers
+ Mark
+
+
+
+
+
+ On Thu, May 8, 2008 at 1:26 AM, aftab azmi &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">max_aftab at yahoo.com</A>&gt; wrote:
+ &gt; Actually i couldnt find any value for file mark so i choose ascii
+code 28(file separator) as filemark.i guess it will not be present in
+any user file so will not produce false positive...
+ &gt;
+ &gt;  I have assummed fixed block write..i forgot to include check for
+the FIXED bit in read and write command..
+ &gt;
+ &gt;  For variable block write i think we have to use your
+structure...for underrun we can compare the blk_size in blk_header
+against the MINIMUM BLOCK LENGTH LIMIT field in READ BLOCK LIMITS data
+and for overrun we can compare blk_size and MAXIMUM BLOCK LENGTH
+LIMIT.
+ &gt;
+ &gt;
+ &gt;
+ &gt;  ----- Original Message ----
+ &gt;  From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+ &gt;  To: aftab azmi &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">max_aftab at yahoo.com</A>&gt;
+ &gt;  Cc: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>
+ &gt;  Sent: Wednesday, 7 May, 2008 1:52:45 PM
+ &gt;  Subject: Re: [Stgt-devel] Implementation of vtl
+ &gt;
+ &gt;  Hello aftab azmi,
+ &gt;
+ &gt;  First off, thanks... You beat me to the punch :) It might save me
+some work....
+ &gt;
+ &gt;  While I can't speak authoritatively, I'm sure this will be rejected
+ &gt;  first off due the the code base not following the Linux kernel coding
+ &gt;  style... You can find the coding style document in the Linux kernel
+ &gt;  source under the Documentation dir.
+ &gt;
+ &gt;  I've passed it thru the scripts/checkpatch.pl script and attached are
+ &gt;  the coding style errors: (Lots of tab/space issues)
+ &gt;
+ &gt;  2nd. The 'detection' of a filemark appears a little week. i.e. first
+ &gt;  byte at a 512 byte boundary to contain '28'. This could produce many
+ &gt;  false positives.
+ &gt;
+ &gt;  3rd. I see no way to detect variable block underrun/overrun detection
+ &gt;  (the main sticking point with my code base)..
+ &gt;
+ &gt;  4th. You assume variable block writes. This code would fail if the
+ &gt;  user set the tape block size to 'fixed block'.
+ &gt;
+ &gt;  Point 1 is easily resolved with a little effort.
+ &gt;  Do you have any ideas on the solution to points 2 &amp; 3 (just not coded yet) ?
+ &gt;  Point 4 is an easy code fix.
+ &gt;
+ &gt;  Keep up the good work.
+ &gt;
+ &gt;  p.s. To make it much easier for people on this list to review the
+ &gt;  code, please refer to the Linux kernel 'submitting patches' document.
+ &gt;  You will receive much faster code reviews...
+ &gt;
+ &gt;  Regards
+ &gt;  Mark Harvey
+ &gt;
+ &gt;  On Tue, May 6, 2008 at 5:24 PM, aftab azmi &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">max_aftab at yahoo.com</A>&gt; wrote:
+ &gt;  &gt; Hiii everyone...
+ &gt;  &gt;     Attached herewith  is our implementation  of  Virtual  Tape
+Library....I have implemented all the mandatory commands mentioned in
+ssc-r42  except  erase command.....
+ &gt;  &gt;  For this to run u have  to change the default-bst in iscsid.c  to &quot;ssc&quot;..
+ &gt;  &gt;  We can use tar command to read/write  backup..
+ &gt;  &gt;  Please do send in your comments and suggestions for further devlopment.
+ &gt;  &gt;
+ &gt;  &gt;
+ &gt;  &gt;
+ &gt;  &gt;
+ &gt;  &gt;
+ &gt;  &gt;
+ &gt;  &gt;       Bollywood, fun, friendship, sports and more. You name it,
+we have it on <A HREF="http://in.promos.yahoo.com/groups/bestofyahoo/">http://in.promos.yahoo.com/groups/bestofyahoo/</A>
+ &gt;  &gt; _______________________________________________
+ &gt;  &gt;  Stgt-devel mailing list
+ &gt;  &gt;  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+ &gt;  &gt;  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+ &gt;  &gt;
+ &gt;  &gt;
+ &gt;
+ &gt;
+ &gt;
+ &gt;       Check out the all-new face of Yahoo! India. Go to <A HREF="http://in.yahoo.com/">http://in.yahoo.com/</A>
+ &gt;
+ &gt;
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001623.html">[Stgt-devel] Fw:  Implementation of vtl
+</A></li>
+	<LI>Next message: <A HREF="001629.html">[PATCH] Add infrastructure to handle cdb lengths, service actions lists
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1626">[ date ]</a>
+              <a href="thread.html#1626">[ thread ]</a>
+              <a href="subject.html#1626">[ subject ]</a>
+              <a href="author.html#1626">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

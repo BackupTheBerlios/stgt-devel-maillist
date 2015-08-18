@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/7%5D%20option%20to%20specify%20an%20alternative%0A%09configuration%20file&In-Reply-To=%3C46b8a8850807231547o3e27a503i4a2d2492e96cea4b%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001820.html">
+   <LINK REL="Next"  HREF="001821.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/7%5D%20option%20to%20specify%20an%20alternative%0A%09configuration%20file&In-Reply-To=%3C46b8a8850807231547o3e27a503i4a2d2492e96cea4b%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Thu Jul 24 00:47:00 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001820.html">[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+</A></li>
+        <LI>Next message: <A HREF="001821.html">[Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1842">[ date ]</a>
+              <a href="thread.html#1842">[ thread ]</a>
+              <a href="subject.html#1842">[ subject ]</a>
+              <a href="author.html#1842">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Jul 22, 2008 at 4:19 AM, Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt; wrote:
+&gt;<i> Add -c flag.
+</I>&gt;<i> Specify an alternative configuration file.
+</I>&gt;<i>
+</I>&gt;<i> Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>
+Acked-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+
+&gt;<i> ---
+</I>&gt;<i>  scripts/tgt-admin |   29 ++++++++++++++++++++++-------
+</I>&gt;<i>  1 files changed, 22 insertions(+), 7 deletions(-)
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+</I>&gt;<i> index 9bbe710..8eea44f 100755
+</I>&gt;<i> --- a/scripts/tgt-admin
+</I>&gt;<i> +++ b/scripts/tgt-admin
+</I>&gt;<i> @@ -26,13 +26,14 @@ Usage:
+</I>&gt;<i>  tgt-admin [OPTION]...
+</I>&gt;<i>  This tool configures tgt targets.
+</I>&gt;<i>
+</I>&gt;<i> -  -e, --execute   read $configfile and execute tgtadm commands
+</I>&gt;<i> -  -d, --delete    delete all the targets
+</I>&gt;<i> -  -s, --show      show all the targets
+</I>&gt;<i> -  -f, --force     don't exit on tgtadm errors
+</I>&gt;<i> -  -p, --pretend   only print tgtadm options
+</I>&gt;<i> -  -v, --verbose   increase verbosity (no effect in &quot;pretend&quot; mode)
+</I>&gt;<i> -  -h, --help      show this help
+</I>&gt;<i> +  -e, --execute              read $configfile and execute tgtadm commands
+</I>&gt;<i> +  -d, --delete               delete all the targets
+</I>&gt;<i> +  -s, --show                 show all the targets
+</I>&gt;<i> +  -c, --conf &lt;conf file&gt;     specify an alternative configuration file
+</I>&gt;<i> +  -f, --force                don't exit on tgtadm errors
+</I>&gt;<i> +  -p, --pretend              only print tgtadm options
+</I>&gt;<i> +  -v, --verbose              increase verbosity (no effect in &quot;pretend&quot; mode)
+</I>&gt;<i> +  -h, --help                 show this help
+</I>&gt;<i>
+</I>&gt;<i>  EOF
+</I>&gt;<i>        exit;
+</I>&gt;<i> @@ -44,6 +45,7 @@ my $param = $ARGV[0];
+</I>&gt;<i>  my $execute = 0;
+</I>&gt;<i>  my $delete = 0;
+</I>&gt;<i>  my $show = 0;
+</I>&gt;<i> +my $alternate_conf=&quot;0&quot;;
+</I>&gt;<i>  my $force = 0;
+</I>&gt;<i>  my $pretend = 0;
+</I>&gt;<i>  my $verbose = 0;
+</I>&gt;<i> @@ -52,6 +54,7 @@ my $result = GetOptions (
+</I>&gt;<i>        &quot;e|execute&quot; =&gt; \$execute,
+</I>&gt;<i>        &quot;d|delete&quot;  =&gt; \$delete,
+</I>&gt;<i>        &quot;s|show&quot;    =&gt; \$show,
+</I>&gt;<i> +       &quot;c|conf=s&quot;    =&gt; \$alternate_conf,
+</I>&gt;<i>        &quot;f|force&quot;   =&gt; \$force,
+</I>&gt;<i>        &quot;p|pretend&quot; =&gt; \$pretend,
+</I>&gt;<i>        &quot;v|verbose&quot; =&gt; \$verbose,
+</I>&gt;<i> @@ -68,6 +71,18 @@ if ($show == 1) {
+</I>&gt;<i>        exit;
+</I>&gt;<i>  }
+</I>&gt;<i>
+</I>&gt;<i> +# Check if alternative configuration file was given
+</I>&gt;<i> +if ($alternate_conf ne 0) {
+</I>&gt;<i> +       # Check if alternative configuration file exist
+</I>&gt;<i> +       if (-e $alternate_conf) {
+</I>&gt;<i> +               execute(&quot;# Using $alternate_conf as configuration file\n&quot;);
+</I>&gt;<i> +               %conf = ParseConfig(-ConfigFile =&gt; &quot;$alternate_conf&quot;, -UseApacheInclude =&gt; 1, -IncludeGlob =&gt; 1,);
+</I>&gt;<i> +       }
+</I>&gt;<i> +       else {
+</I>&gt;<i> +               die(&quot;file $alternate_conf not found. Exiting...\n&quot;);
+</I>&gt;<i> +       }
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  # Some variables/arrays/hashes we will use globally
+</I>&gt;<i>  my %tgtadm_output;
+</I>&gt;<i>  my %tgtadm_output_tid;
+</I>&gt;<i> --
+</I>&gt;<i> 1.5.3.8
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001820.html">[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+</A></li>
+	<LI>Next message: <A HREF="001821.html">[Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1842">[ date ]</a>
+              <a href="thread.html#1842">[ thread ]</a>
+              <a href="subject.html#1842">[ subject ]</a>
+              <a href="author.html#1842">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

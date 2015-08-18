@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] No LUN option in target.c
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20No%20LUN%20option%20in%20target.c&In-Reply-To=%3C474A8158.1020809%40inter.nl.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001159.html">
+   <LINK REL="Next"  HREF="001161.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] No LUN option in target.c</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20No%20LUN%20option%20in%20target.c&In-Reply-To=%3C474A8158.1020809%40inter.nl.net%3E"
+       TITLE="[Stgt-devel] No LUN option in target.c">apauw at inter.nl.net
+       </A><BR>
+    <I>Mon Nov 26 09:18:32 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001159.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+        <LI>Next message: <A HREF="001161.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1160">[ date ]</a>
+              <a href="thread.html#1160">[ thread ]</a>
+              <a href="subject.html#1160">[ subject ]</a>
+              <a href="author.html#1160">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Tomo
+&gt;<i> What you want is remove the lun0 scc device, right?
+</I>&gt;<i>   
+</I>Yes, see one my previously posted message regarding Windows behaviour.
+&gt;<i> It doesn't work well for the ibmvstgt driver, so I also want to do
+</I>&gt;<i> something.
+</I>&gt;<i>
+</I>&gt;<i> When I finish some overdue tgt stuff, I'll take a look at it.
+</I>&gt;<i>   
+</I>Thanks that's appreciated.
+&gt;<i> Thanks,
+</I>&gt;<i>
+</I>&gt;<i> BTW, 
+</I>&gt;<i>
+</I>&gt;<i> 1) please don't use an attached email.
+</I>&gt;<i>   
+</I>You got me puzzled there, can't remember an attached email, but then again
+I sometimes forget to set the mail to plain text instead of html.
+&gt;<i> 2) Have you compared tgt performance with IET recently?
+</I>&gt;<i>   
+</I>I did a quick test just now, very interesting. Running tgt/iet on same 
+machine as open-iscsi
+I noticed that iet is nearly twice as fast. I used a simple test (just 
+hdparm -t) but the
+difference in behaviour is striking. tgt keeps returning the same speed 
+using hdparm, while
+iet creeps up in speed (which was initially faster anyway) to six times 
+faster than tgt.
+Mind you that must have something to do with caching, it's just strange 
+that tgt doesn't show
+that behaviour.
+
+Albert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001159.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+	<LI>Next message: <A HREF="001161.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1160">[ date ]</a>
+              <a href="thread.html#1160">[ thread ]</a>
+              <a href="subject.html#1160">[ subject ]</a>
+              <a href="author.html#1160">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

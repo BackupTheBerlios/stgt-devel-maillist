@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi param cleanup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20param%20cleanup&In-Reply-To=%3C20070726231813.GA6664%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000884.html">
+   <LINK REL="Next"  HREF="000885.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi param cleanup</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20param%20cleanup&In-Reply-To=%3C20070726231813.GA6664%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi param cleanup">pw at osc.edu
+       </A><BR>
+    <I>Fri Jul 27 01:18:13 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000884.html">[Stgt-devel] [PATCH] osd request sense
+</A></li>
+        <LI>Next message: <A HREF="000885.html">[Stgt-devel] [PATCH] iscsi param cleanup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#880">[ date ]</a>
+              <a href="thread.html#880">[ thread ]</a>
+              <a href="subject.html#880">[ subject ]</a>
+              <a href="author.html#880">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Remove inconsistencies in param structures and index usage.  This
+seems like the cleanest way to keep the three separate lists of 19
+parameters in sync.  The three spots are:  lookup of special params
+by index #defines during login, session defaults, and target
+defaults.  This fixes one real (although oddball) bug and several
+potential bugs.
+
+The real bug left the recv dlength size at 8k in spite of both
+initiator and target wanting 256k: text_add_key thought 256k was
+default and did not bother to send it.  The OFMarker code was errant
+too, but it is unlikely that that was ever a problem for someone.
+
+Target parameter defaults are not changed.  Except for the case
+where you asked for a dlength of 256k using an explicit iscsiadm
+target update command.
+
+Further cleanups to iscsi_if.h would be possible.  Most of that is
+legacy code from the target-in-kernel days.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_if.h |   43 +++++++------------------------------------
+ usr/iscsi/iscsid.h   |    4 ----
+ usr/iscsi/param.c    |   43 ++++++++++++++++++++++++++++++++++++-------
+ usr/iscsi/param.h    |    4 ++++
+ usr/iscsi/target.c   |   38 +++++++++++++++++++-------------------
+ 5 files changed, 66 insertions(+), 66 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_if.h b/usr/iscsi/iscsi_if.h
+index 9008b5f..58a76a2 100644
+--- a/usr/iscsi/iscsi_if.h
++++ b/usr/iscsi/iscsi_if.h
+@@ -192,10 +192,10 @@ enum iscsi_err {
+ };
+ 
+ /*
+- * iSCSI Parameters (RFC3720)
++ * iSCSI Parameters (RFC3720).  Keep the session_keys and
++ * default_tgt_session_param arrays consistent with this list.
+  */
+ enum iscsi_param {
+-	/* passed in using netlink set param */
+ 	ISCSI_PARAM_MAX_RECV_DLENGTH,
+ 	ISCSI_PARAM_MAX_XMIT_DLENGTH,
+ 	ISCSI_PARAM_HDRDGST_EN,
+@@ -210,44 +210,15 @@ enum iscsi_param {
+ 	ISCSI_PARAM_ERL,
+ 	ISCSI_PARAM_IFMARKER_EN,
+ 	ISCSI_PARAM_OFMARKER_EN,
+-	ISCSI_PARAM_EXP_STATSN,
+-	ISCSI_PARAM_TARGET_NAME,
+-	ISCSI_PARAM_TPGT,
+-	ISCSI_PARAM_PERSISTENT_ADDRESS,
+-	ISCSI_PARAM_PERSISTENT_PORT,
+-	ISCSI_PARAM_SESS_RECOVERY_TMO,
+-
+-	/* pased in through bind conn using transport_fd */
+-	ISCSI_PARAM_CONN_PORT,
+-	ISCSI_PARAM_CONN_ADDRESS,
+-
++	ISCSI_PARAM_DEFAULTTIME2WAIT,
++	ISCSI_PARAM_DEFAULTTIME2RETAIN,
++	ISCSI_PARAM_OFMARKINT,
++	ISCSI_PARAM_IFMARKINT,
++	ISCSI_PARAM_MAXCONNECTIONS,
+ 	/* must always be last */
+ 	ISCSI_PARAM_MAX,
+ };
+ 
+-#define ISCSI_MAX_RECV_DLENGTH		(1 &lt;&lt; ISCSI_PARAM_MAX_RECV_DLENGTH)
+-#define ISCSI_MAX_XMIT_DLENGTH		(1 &lt;&lt; ISCSI_PARAM_MAX_XMIT_DLENGTH)
+-#define ISCSI_HDRDGST_EN		(1 &lt;&lt; ISCSI_PARAM_HDRDGST_EN)
+-#define ISCSI_DATADGST_EN		(1 &lt;&lt; ISCSI_PARAM_DATADGST_EN)
+-#define ISCSI_INITIAL_R2T_EN		(1 &lt;&lt; ISCSI_PARAM_INITIAL_R2T_EN)
+-#define ISCSI_MAX_R2T			(1 &lt;&lt; ISCSI_PARAM_MAX_R2T)
+-#define ISCSI_IMM_DATA_EN		(1 &lt;&lt; ISCSI_PARAM_IMM_DATA_EN)
+-#define ISCSI_FIRST_BURST		(1 &lt;&lt; ISCSI_PARAM_FIRST_BURST)
+-#define ISCSI_MAX_BURST			(1 &lt;&lt; ISCSI_PARAM_MAX_BURST)
+-#define ISCSI_PDU_INORDER_EN		(1 &lt;&lt; ISCSI_PARAM_PDU_INORDER_EN)
+-#define ISCSI_DATASEQ_INORDER_EN	(1 &lt;&lt; ISCSI_PARAM_DATASEQ_INORDER_EN)
+-#define ISCSI_ERL			(1 &lt;&lt; ISCSI_PARAM_ERL)
+-#define ISCSI_IFMARKER_EN		(1 &lt;&lt; ISCSI_PARAM_IFMARKER_EN)
+-#define ISCSI_OFMARKER_EN		(1 &lt;&lt; ISCSI_PARAM_OFMARKER_EN)
+-#define ISCSI_EXP_STATSN		(1 &lt;&lt; ISCSI_PARAM_EXP_STATSN)
+-#define ISCSI_TARGET_NAME		(1 &lt;&lt; ISCSI_PARAM_TARGET_NAME)
+-#define ISCSI_TPGT			(1 &lt;&lt; ISCSI_PARAM_TPGT)
+-#define ISCSI_PERSISTENT_ADDRESS	(1 &lt;&lt; ISCSI_PARAM_PERSISTENT_ADDRESS)
+-#define ISCSI_PERSISTENT_PORT		(1 &lt;&lt; ISCSI_PARAM_PERSISTENT_PORT)
+-#define ISCSI_SESS_RECOVERY_TMO		(1 &lt;&lt; ISCSI_PARAM_SESS_RECOVERY_TMO)
+-#define ISCSI_CONN_PORT			(1 &lt;&lt; ISCSI_PARAM_CONN_PORT)
+-#define ISCSI_CONN_ADDRESS		(1 &lt;&lt; ISCSI_PARAM_CONN_ADDRESS)
+-
+ #define iscsi_ptr(_handle) ((void*)(unsigned long)_handle)
+ #define iscsi_handle(_ptr) ((uint64_t)(unsigned long)_ptr)
+ #define hostdata_session(_hostdata) (iscsi_ptr(*(unsigned long *)_hostdata))
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 6704488..a8c8cb1 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -60,10 +60,6 @@ struct iscsi_pdu {
+ 	unsigned int datasize;
+ };
+ 
+-#define KEY_STATE_START		0
+-#define KEY_STATE_REQUEST	1
+-#define KEY_STATE_DONE		2
+-
+ struct iscsi_session {
+ 	int refcount;
+ 
+diff --git a/usr/iscsi/param.c b/usr/iscsi/param.c
+index 29007d7..9eac62c 100644
+--- a/usr/iscsi/param.c
++++ b/usr/iscsi/param.c
+@@ -212,10 +212,10 @@ static int marker_val_to_str(unsigned int val, char *str)
+ 
+ static int marker_set_val(struct param *param, int idx, unsigned int *val)
+ {
+-	if ((idx == ISCSI_OFMARKER_EN &amp;&amp;
+-	     param[ISCSI_OFMARKER_EN].state == KEY_STATE_DONE) ||
+-	    (idx == ISCSI_IFMARKER_EN &amp;&amp;
+-	     param[ISCSI_IFMARKER_EN].state == KEY_STATE_DONE))
++	if ((idx == ISCSI_PARAM_OFMARKER_EN &amp;&amp;
++	     param[ISCSI_PARAM_OFMARKER_EN].state == KEY_STATE_DONE) ||
++	    (idx == ISCSI_PARAM_IFMARKER_EN &amp;&amp;
++	     param[ISCSI_PARAM_IFMARKER_EN].state == KEY_STATE_DONE))
+ 		*val = 0;
+ 	else
+ 		*val = 1;
+@@ -297,25 +297,54 @@ static struct iscsi_key_ops marker_ops = {
+ 
+ #define	SET_KEY_VALUES(x)	DEFAULT_NR_##x,MIN_NR_##x, MAX_NR_##x
+ 
++/*
++ * The defaults here are according to the spec and must not be changed,
++ * otherwise the initiator may make the wrong assumption.  If you want
++ * to change a value, edit the value in iscsi_target_create.
++ *
++ * The param MaxXmitDataSegmentLength doesn't really exist.  It's a way
++ * to remember the RDSL of the initiator, which defaults to 8k if he has
++ * not told us otherwise.
++ */
+ struct iscsi_key session_keys[] = {
+-	{&quot;MaxRecvDataSegmentLength&quot;, 262144, 512, 16777215, &amp;minimum_ops},
+-	{&quot;MaxXmitDataSegmentLength&quot;, 262144, 512, 16777215, &amp;minimum_ops},
++	[ISCSI_PARAM_MAX_RECV_DLENGTH] =
++	{&quot;MaxRecvDataSegmentLength&quot;, 8192, 512, 16777215, &amp;minimum_ops},
++	[ISCSI_PARAM_MAX_XMIT_DLENGTH] =
++	{&quot;MaxXmitDataSegmentLength&quot;, 8192, 512, 16777215, &amp;minimum_ops},
++	[ISCSI_PARAM_HDRDGST_EN] =
+ 	{&quot;HeaderDigest&quot;, DIGEST_NONE, DIGEST_NONE, DIGEST_ALL, &amp;digest_ops},
++	[ISCSI_PARAM_DATADGST_EN] =
+ 	{&quot;DataDigest&quot;, DIGEST_NONE, DIGEST_NONE, DIGEST_ALL, &amp;digest_ops},
+-	{&quot;InitialR2T&quot;, 0, 0, 1, &amp;or_ops},
++	[ISCSI_PARAM_INITIAL_R2T_EN] =
++	{&quot;InitialR2T&quot;, 1, 0, 1, &amp;or_ops},
++	[ISCSI_PARAM_MAX_R2T] =
+ 	{&quot;MaxOutstandingR2T&quot;, 1, 1, 65535, &amp;minimum_ops},
++	[ISCSI_PARAM_IMM_DATA_EN] =
+ 	{&quot;ImmediateData&quot;, 1, 0, 1, &amp;and_ops},
++	[ISCSI_PARAM_FIRST_BURST] =
+ 	{&quot;FirstBurstLength&quot;, 65536, 512, 16777215, &amp;minimum_ops},
++	[ISCSI_PARAM_MAX_BURST] =
+ 	{&quot;MaxBurstLength&quot;, 262144, 512, 16777215, &amp;minimum_ops},
++	[ISCSI_PARAM_PDU_INORDER_EN] =
+ 	{&quot;DataPDUInOrder&quot;, 1, 0, 1, &amp;or_ops},
++	[ISCSI_PARAM_DATASEQ_INORDER_EN] =
+ 	{&quot;DataSequenceInOrder&quot;, 1, 0, 1, &amp;or_ops},
++	[ISCSI_PARAM_ERL] =
+ 	{&quot;ErrorRecoveryLevel&quot;, 0, 0, 2, &amp;minimum_ops},
++	[ISCSI_PARAM_IFMARKER_EN] =
+ 	{&quot;IFMarker&quot;, 0, 0, 1, &amp;and_ops},
++	[ISCSI_PARAM_OFMARKER_EN] =
+ 	{&quot;OFMarker&quot;, 0, 0, 1, &amp;and_ops},
++	[ISCSI_PARAM_DEFAULTTIME2WAIT] =
+ 	{&quot;DefaultTime2Wait&quot;, 2, 0, 3600, &amp;maximum_ops},
++	[ISCSI_PARAM_DEFAULTTIME2RETAIN] =
+ 	{&quot;DefaultTime2Retain&quot;, 20, 0, 3600, &amp;minimum_ops},
++	[ISCSI_PARAM_OFMARKINT] =
+ 	{&quot;OFMarkInt&quot;, 2048, 1, 65535, &amp;marker_ops},
++	[ISCSI_PARAM_IFMARKINT] =
+ 	{&quot;IFMarkInt&quot;, 2048, 1, 65535, &amp;marker_ops},
++	[ISCSI_PARAM_MAXCONNECTIONS] =
+ 	{&quot;MaxConnections&quot;, 1, 1, 65535, &amp;minimum_ops},
++	[ISCSI_PARAM_MAX] =
+ 	{NULL,},
+ };
+diff --git a/usr/iscsi/param.h b/usr/iscsi/param.h
+index fcee1e1..b5dd567 100644
+--- a/usr/iscsi/param.h
++++ b/usr/iscsi/param.h
+@@ -26,6 +26,10 @@ struct param {
+ 	unsigned int val;
+ };
+ 
++#define KEY_STATE_START		0
++#define KEY_STATE_REQUEST	1
++#define KEY_STATE_DONE		2
++
+ struct iscsi_key_ops {
+ 	int (*val_to_str)(unsigned int, char *);
+ 	int (*str_to_val)(char *, unsigned int *);
+diff --git a/usr/iscsi/target.c b/usr/iscsi/target.c
+index f2ecfd8..3e63485 100644
+--- a/usr/iscsi/target.c
++++ b/usr/iscsi/target.c
+@@ -265,25 +265,25 @@ int iscsi_target_create(struct target *t)
+ 	int tid = t-&gt;tid;
+ 	struct iscsi_target *target;
+ 	struct param default_tgt_session_param[] = {
+-		{0, 8192},
+-		{0, 8192},
+-		{0, DIGEST_NONE},
+-		{0, DIGEST_NONE},
+-		{0, 1},
+-		{0, 1},
+-		{0, 1},
+-		{0, 65536},
+-		{0, 262144},
+-		{0, 1},
+-		{0, 1},
+-		{0, 0},
+-		{0, 0},
+-		{0, 0},
+-		{0, 2},
+-		{0, 20},
+-		{0, 2048},
+-		{0, 2048},
+-		{0, 1},
++		[ISCSI_PARAM_MAX_RECV_DLENGTH] = {0, 8192},
++		[ISCSI_PARAM_MAX_XMIT_DLENGTH] = {0, 8192},  /* do not edit */
++		[ISCSI_PARAM_HDRDGST_EN] = {0, DIGEST_NONE},
++		[ISCSI_PARAM_DATADGST_EN] = {0, DIGEST_NONE},
++		[ISCSI_PARAM_INITIAL_R2T_EN] = {0, 1},
++		[ISCSI_PARAM_MAX_R2T] = {0, 1},
++		[ISCSI_PARAM_IMM_DATA_EN] = {0, 1},
++		[ISCSI_PARAM_FIRST_BURST] = {0, 65536},
++		[ISCSI_PARAM_MAX_BURST] = {0, 262144},
++		[ISCSI_PARAM_PDU_INORDER_EN] = {0, 1},
++		[ISCSI_PARAM_DATASEQ_INORDER_EN] = {0, 1},
++		[ISCSI_PARAM_ERL] = {0, 0},
++		[ISCSI_PARAM_IFMARKER_EN] = {0, 0},
++		[ISCSI_PARAM_OFMARKER_EN] = {0, 0},
++		[ISCSI_PARAM_DEFAULTTIME2WAIT] = {0, 2},
++		[ISCSI_PARAM_DEFAULTTIME2RETAIN] = {0, 20},
++		[ISCSI_PARAM_OFMARKINT] = {0, 2048},
++		[ISCSI_PARAM_IFMARKINT] = {0, 2048},
++		[ISCSI_PARAM_MAXCONNECTIONS] = {0, 1},
+ 	};
+ 
+ 	target = malloc(sizeof(*target));
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000884.html">[Stgt-devel] [PATCH] osd request sense
+</A></li>
+	<LI>Next message: <A HREF="000885.html">[Stgt-devel] [PATCH] iscsi param cleanup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#880">[ date ]</a>
+              <a href="thread.html#880">[ thread ]</a>
+              <a href="subject.html#880">[ subject ]</a>
+              <a href="author.html#880">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

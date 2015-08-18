@@ -1,0 +1,364 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070122190839.GE1477%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000393.html">
+   <LINK REL="Next"  HREF="000392.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070122190839.GE1477%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">pw at osc.edu
+       </A><BR>
+    <I>Mon Jan 22 20:08:39 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000393.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+        <LI>Next message: <A HREF="000392.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#391">[ date ]</a>
+              <a href="thread.html#391">[ thread ]</a>
+              <a href="subject.html#391">[ subject ]</a>
+              <a href="author.html#391">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add command parser for OSD commands.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/Makefile |    2 +-
+ usr/osd.c    |  182 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/scsi.c   |    4 +
+ usr/scsi.h   |   31 ++++++++++
+ usr/tgtd.h   |    6 ++
+ 5 files changed, 224 insertions(+), 1 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 7b828e0..181f0cc 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -45,7 +45,7 @@ INCLUDES += -I.
+ CFLAGS += -Wall -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDES)
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o sbc.o log.o driver.o util.o work.o
++TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o sbc.o osd.o log.o driver.o util.o work.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/osd.c b/usr/osd.c
+new file mode 100644
+index 0000000..34a330f
+--- /dev/null
++++ b/usr/osd.c
+@@ -0,0 +1,182 @@
++/*
++ * Parse OSD command set, using functions in SPC as necessary.
++ *
++ * (C) 2006 Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
++ */
++#include &lt;inttypes.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;scsi.h&quot;
++
++#define VENDOR_ID	&quot;STGT&quot;
++#define PRODUCT_ID	&quot;OSD&quot;
++#define PRODUCT_REV	&quot;0&quot;
++
++/*
++ * OSD-specific inquiry.
++ */
++int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
++                uint8_t *scb, uint8_t *data, int *len)
++{
++	int result = SAM_STAT_CHECK_CONDITION;
++
++	/* EVPD means need a page code */
++	if ((scb[1] &amp; 0x3) == 0 &amp;&amp; scb[2] != 0)
++		return result;
++
++	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
++
++	data[0] = TYPE_OSD;
++	if (!dev)
++		data[0] = TYPE_NO_LUN;
++
++	if ((scb[1] &amp; 0x1) == 0) {
++		/* evpd == 0, standard inquiry */
++		dprintf(&quot;standard inquiry\n&quot;);
++		data[2] = 5;  /* modern version */
++		data[3] = 0x02;  /* modern response format */
++		data[7] = 0x02;  /* support command queueing */
++		memset(data + 8, 0x20, 28);
++		memcpy(data + 8,
++		       VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
++		memcpy(data + 16,
++		       PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
++		memcpy(data + 32,
++		       PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
++		*len = 36;
++		if (dev) {
++			data[58] = 0x03;
++			data[59] = 0x40;  /* osd */
++			data[60] = 0x09;
++			data[61] = 0x60;  /* iscsi */
++			data[62] = 0x03;
++			data[63] = 0x00;  /* spc3 */
++			*len = 64;
++		}
++		data[4] = *len - 5;  /* additional length */
++		result = SAM_STAT_GOOD;
++	} else {
++		/* request particular page code */
++		dprintf(&quot;page %x\n&quot;, scb[2]);
++		if (!dev)
++			return result;
++		data[1] = scb[2];
++		if (scb[2] == 0x0) {
++			/* supported VPD pages */
++			data[3] = 3;
++			data[4] = 0x0;
++			data[5] = 0x80;
++			data[6] = 0x83;
++			*len = 7;
++			result = SAM_STAT_GOOD;
++		} else if (scb[2] == 0x80) {
++			/* unit serial number &quot;    &quot; */
++			data[3] = 4;
++			memset(data + 4, 0x20, 4);
++			*len = 8;
++			result = SAM_STAT_GOOD;
++		} else if (scb[2] == 0x83) {
++			/* device identification */
++			data[3] = SCSI_ID_LEN + 4;
++			data[4] = 0x1;
++			data[5] = 0x1;
++			data[7] = SCSI_ID_LEN;
++			if (dev)
++				memcpy(data + 8, dev-&gt;scsi_id, SCSI_ID_LEN);
++			*len = SCSI_ID_LEN + 8;
++			result = SAM_STAT_GOOD;
++		}
++	}
++
++	if (result != SAM_STAT_GOOD)
++		goto err;
++
++	*len = min_t(int, *len, scb[4]);
++
++	return SAM_STAT_GOOD;
++
++err:
++	*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
++				0x24, 0);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++int osd_cmd_perform(uint8_t *cdb, int *len, uint32_t datalen,
++                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++                    uint64_t *offset, struct tgt_device *dev, int *async,
++                    void *key, bkio_submit_t *submit)
++{
++	int ret = SAM_STAT_GOOD;
++	uint8_t *data = NULL;
++	uint16_t action;
++
++	switch (cdb[0]) {
++	/* there are other optional non-varlen commands */
++	case VARLEN_CDB:
++		dprintf(&quot;cdb[0] %x datalen %u\n&quot;, cdb[0], datalen);
++		if (cdb[7] != 200-8)
++			eprintf(&quot;request size %d wrong, should be 200\n&quot;,
++			        cdb[7]+8);
++
++		action = (cdb[8] &lt;&lt; 8) | cdb[9];
++
++		switch (action) {
++		case OSD_APPEND:
++		case OSD_CREATE:
++		case OSD_CREATE_AND_WRITE:
++		case OSD_CREATE_COLLECTION:
++		case OSD_CREATE_PARTITION:
++		case OSD_FLUSH:
++		case OSD_FLUSH_COLLECTION:
++		case OSD_FLUSH_OSD:
++		case OSD_FLUSH_PARTITION:
++		case OSD_FORMAT_OSD:
++		case OSD_GET_ATTRIBUTES:
++		case OSD_GET_MEMBER_ATTRIBUTES:
++		case OSD_LIST:
++		case OSD_LIST_COLLECTION:
++		case OSD_PERFORM_SCSI_COMMAND:
++		case OSD_PERFORM_TASK_MGMT_FUNC:
++		case OSD_QUERY:
++		case OSD_READ:
++		case OSD_REMOVE:
++		case OSD_REMOVE_COLLECTION:
++		case OSD_REMOVE_MEMBER_OBJECTS:
++		case OSD_REMOVE_PARTITION:
++		case OSD_SET_ATTRIBUTES:
++		case OSD_SET_KEY:
++		case OSD_SET_MASTER_KEY:
++		case OSD_SET_MEMBER_ATTRIBUTES:
++		case OSD_WRITE:
++			ret = submit(dev, cdb, *rw, datalen, uaddr, *offset,
++			             async, key);
++			if (ret == SAM_STAT_GOOD) {
++				*len = datalen;
++			} else {
++				data = get_zeroed_page();
++				*len = sense_data_build(data, 0x70,
++				                        ILLEGAL_REQUEST, 0x25,
++							0);
++			}
++			break;
++		default:
++			eprintf(&quot;unknown service action 0x%04x\n&quot;, action);
++		}
++		break;
++	default:
++		eprintf(&quot;unknown command %x %u\n&quot;, cdb[0], datalen);
++		*len = 0;
++		break;
++	}
++
++	if (data)
++		*uaddr = (unsigned long) data;
++
++	return ret;
++}
++
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 277924c..d102f5e 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -357,6 +357,10 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+ 		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+ 		                           try_map, offset, dev, async, key,
+ 					   submit);
++	else if (target_type == SCSI_TARGET_OSD)
++		result = osd_cmd_perform(scb, len, datalen, uaddr, rw,
++		                         try_map, offset, dev, async, key,
++					 submit);
+ 	else
+ 		eprintf(&quot;unknown target type %d\n&quot;, target_type);
+ 
+diff --git a/usr/scsi.h b/usr/scsi.h
+index 154508d..20aa2a8 100644
+--- a/usr/scsi.h
++++ b/usr/scsi.h
+@@ -69,6 +69,7 @@
+ #define MODE_SENSE_10         0x5a
+ #define PERSISTENT_RESERVE_IN 0x5e
+ #define PERSISTENT_RESERVE_OUT 0x5f
++#define VARLEN_CDB            0x7f
+ #define REPORT_LUNS           0xa0
+ #define MOVE_MEDIUM           0xa5
+ #define EXCHANGE_MEDIUM       0xa6
+@@ -87,6 +88,35 @@
+ #define SERVICE_ACTION_IN     0x9e
+ #define	SAI_READ_CAPACITY_16  0x10
+ 
++/* varlen cdb service actions for OSD-2 (before SNIA changes 17 jan 07) */
++#define OSD_APPEND			0x8807
++#define OSD_CREATE			0x8802
++#define OSD_CREATE_AND_WRITE		0x8812
++#define OSD_CREATE_COLLECTION		0x8815
++#define OSD_CREATE_PARTITION		0x880b
++#define OSD_FLUSH			0x8808
++#define OSD_FLUSH_COLLECTION		0x881a
++#define OSD_FLUSH_OSD			0x881c
++#define OSD_FLUSH_PARTITION		0x881b
++#define OSD_FORMAT_OSD			0x8801
++#define OSD_GET_ATTRIBUTES		0x880e
++#define OSD_GET_MEMBER_ATTRIBUTES	0x8822
++#define OSD_LIST			0x8803
++#define OSD_LIST_COLLECTION		0x8817
++#define OSD_PERFORM_SCSI_COMMAND	0x8f7e
++#define OSD_PERFORM_TASK_MGMT_FUNC	0x8f7f
++#define OSD_QUERY			0x8820
++#define OSD_READ			0x8805
++#define OSD_REMOVE			0x880a
++#define OSD_REMOVE_COLLECTION		0x8816
++#define OSD_REMOVE_MEMBER_OBJECTS	0x8821
++#define OSD_REMOVE_PARTITION		0x880c
++#define OSD_SET_ATTRIBUTES		0x880f
++#define OSD_SET_KEY			0x8818
++#define OSD_SET_MASTER_KEY		0x8819
++#define OSD_SET_MEMBER_ATTRIBUTES	0x8823
++#define OSD_WRITE			0x8806
++
+ #define SAM_STAT_GOOD            0x00
+ #define SAM_STAT_CHECK_CONDITION 0x02
+ #define SAM_STAT_CONDITION_MET   0x04
+@@ -127,6 +157,7 @@
+ #define TYPE_RAID           0x0c
+ #define TYPE_ENCLOSURE      0x0d
+ #define TYPE_RBC	    0x0e
++#define TYPE_OSD            0x11
+ #define TYPE_NO_LUN         0x7f
+ 
+ #define	MSG_SIMPLE_TAG	0x20
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 262dc9c..3b75da3 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -125,6 +125,12 @@ int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+                       unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+ 		      uint64_t *offset, struct tgt_device *dev, int *async,
+ 		      void *key, bkio_submit_t *submit);
++int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
++                uint8_t *scb, uint8_t *data, int *len);
++int osd_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
++                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++                    uint64_t *offset, struct tgt_device *dev, int *async,
++                    void *key, bkio_submit_t *submit);
+ 
+ extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 			    uint8_t ascode, uint8_t ascodeq);
+-- 
+1.4.4.2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000393.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+	<LI>Next message: <A HREF="000392.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#391">[ date ]</a>
+              <a href="thread.html#391">[ thread ]</a>
+              <a href="subject.html#391">[ subject ]</a>
+              <a href="author.html#391">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

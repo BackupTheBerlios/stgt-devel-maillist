@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47AFE44D.1010103%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001374.html">
+   <LINK REL="Next"  HREF="001385.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47AFE44D.1010103%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">erezz at Voltaire.COM
+       </A><BR>
+    <I>Mon Feb 11 06:59:41 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001374.html">[Stgt-devel] [PATCH 2/2] iSER throttling
+</A></li>
+        <LI>Next message: <A HREF="001385.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1384">[ date ]</a>
+              <a href="thread.html#1384">[ thread ]</a>
+              <a href="subject.html#1384">[ subject ]</a>
+              <a href="author.html#1384">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Robin Humble wrote:
+&gt;<i> On Sun, Feb 10, 2008 at 05:19:03PM +0200, Erez Zilber wrote:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> Robin - did you try to use a real device? If yes, did you see any
+</I>&gt;&gt;<i> difference between running something like sgp_dd directly from the
+</I>&gt;&gt;<i> target machine and running the same sgp_dd command from the initiator
+</I>&gt;&gt;<i> machine?
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> I've used real devices for some tests in the past, but haven't ever
+</I>&gt;<i> tried initiator on the same machine. sorry.
+</I>&gt;<i> the tests that I can do easily are with backing store files on lustre,
+</I>&gt;<i> which also uses IB, so that halves the available IB bandwidth for iSER.
+</I>&gt;<i>
+</I>&gt;<i> I can try initiator on the same machine with lustre in a few days time.
+</I>&gt;<i> direct attached storage will prob have to wait a month 'til I get back
+</I>&gt;<i> from Canada :-/
+</I>&gt;<i>
+</I>&gt;<i> cheers,
+</I>&gt;<i> robin
+</I>&gt;<i>   
+</I>
+Robin,
+
+I'm adding stgt list to this thread.
+
+I'm not talking about running the initiator &amp; the target from the same
+machine. What I said is that if you're running the initiator on machine
+'A' and the target on machine 'B', I see the following behavior:
+
+    * running sgp_dd directly from the target machine - 400 MB/sec
+      (which is the throughput of the LUN)
+    * running sgp_dd from the initiator on the same LUN - 240 MB/sec
+
+If you get better numbers, I'm interested to know if you're using the
+default config or anything else.
+
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001374.html">[Stgt-devel] [PATCH 2/2] iSER throttling
+</A></li>
+	<LI>Next message: <A HREF="001385.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1384">[ date ]</a>
+              <a href="thread.html#1384">[ thread ]</a>
+              <a href="subject.html#1384">[ subject ]</a>
+              <a href="author.html#1384">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

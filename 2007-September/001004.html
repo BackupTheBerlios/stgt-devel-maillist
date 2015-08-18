@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] print newline
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20print%20newline&In-Reply-To=%3C20070904200245.GA6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001000.html">
+   <LINK REL="Next"  HREF="001038.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] print newline</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20print%20newline&In-Reply-To=%3C20070904200245.GA6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] print newline">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:02:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001000.html">[Stgt-devel] patch for rhel4/centos4
+</A></li>
+        <LI>Next message: <A HREF="001038.html">[Stgt-devel] [PATCH] print newline
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1004">[ date ]</a>
+              <a href="thread.html#1004">[ thread ]</a>
+              <a href="subject.html#1004">[ subject ]</a>
+              <a href="author.html#1004">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add newlines missing on some dprintf and eprintf.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/chap.c   |    2 +-
+ usr/iscsi/iscsid.c |    3 ++-
+ usr/xen/xenbus.c   |    2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/usr/iscsi/chap.c b/usr/iscsi/chap.c
+index fc6fd8f..7e42d5f 100644
+--- a/usr/iscsi/chap.c
++++ b/usr/iscsi/chap.c
+@@ -284,7 +284,7 @@ static int chap_decode_string(char *encoded, uint8_t *decode_buf, int buf_len, i
+ 
+ 	} else if (encoding_fmt == BASE64_FORMAT) {
+ 		if ((strlen(encoded) - 2) &gt; ((buf_len - 1) / 3 + 1) * 4) {
+-			eprintf(&quot;buf[%d] !sufficient to decode string[%d]&quot;,
++			eprintf(&quot;buf[%d] !sufficient to decode string[%d]\n&quot;,
+ 				buf_len, (int) strlen(encoded));
+ 			return CHAP_TARGET_ERROR;
+ 		}
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index cbedcf1..ab3bf53 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -529,7 +529,8 @@ static void cmnd_exec_login(struct iscsi_connection *conn)
+ 
+ 	switch (ISCSI_LOGIN_CURRENT_STAGE(req-&gt;flags)) {
+ 	case ISCSI_SECURITY_NEGOTIATION_STAGE:
+-		dprintf(&quot;Login request (security negotiation): %d&quot;, conn-&gt;state);
++		dprintf(&quot;Login request (security negotiation): %d\n&quot;,
++			conn-&gt;state);
+ 		rsp-&gt;flags = ISCSI_SECURITY_NEGOTIATION_STAGE &lt;&lt; 2;
+ 
+ 		switch (conn-&gt;state) {
+diff --git a/usr/xen/xenbus.c b/usr/xen/xenbus.c
+index d17d555..fc68b0b 100644
+--- a/usr/xen/xenbus.c
++++ b/usr/xen/xenbus.c
+@@ -194,7 +194,7 @@ static int tgt_device_setup(struct xs_handle *h, char *bepath)
+ 
+ 	err = xs_printf(h, be-&gt;backpath, &quot;info&quot;, &quot;%d&quot;, be-&gt;frontend_id);
+ 	if (!err)
+-		dprintf(&quot;ERROR: Failed writing info&quot;);
++		dprintf(&quot;ERROR: Failed writing info\n&quot;);
+ 
+ 	dprintf(&quot;[SETUP] Complete\n\n&quot;);
+ 
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001000.html">[Stgt-devel] patch for rhel4/centos4
+</A></li>
+	<LI>Next message: <A HREF="001038.html">[Stgt-devel] [PATCH] print newline
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1004">[ date ]</a>
+              <a href="thread.html#1004">[ thread ]</a>
+              <a href="subject.html#1004">[ subject ]</a>
+              <a href="author.html#1004">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

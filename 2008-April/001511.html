@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C47FB8719.30408%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001509.html">
+   <LINK REL="Next"  HREF="001513.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C47FB8719.30408%40wpkg.org%3E"
+       TITLE="[Stgt-devel] Open connections">mangoo at wpkg.org
+       </A><BR>
+    <I>Tue Apr  8 16:54:17 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001509.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001513.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1511">[ date ]</a>
+              <a href="thread.html#1511">[ thread ]</a>
+              <a href="subject.html#1511">[ subject ]</a>
+              <a href="author.html#1511">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Tue, 08 Apr 2008 15:36:52 +0200
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;&gt;&gt;<i> On Tue, 08 Apr 2008 14:59:00 +0200
+</I>&gt;&gt;&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;&gt;&gt;&gt;&gt;<i> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+</I>&gt;&gt;&gt;&gt;&gt;<i> &quot;Niels de Carpentier&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt at decarpentier.com</A>&gt; wrote:
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> So it looks like the cmd_hash_list is not actually cleared on a
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> connection
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> close.
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> Is there anything more I can do to troubleshoot this issue?
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> Can you try this patch?
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i> This patch fixes the issue for me.
+</I>&gt;&gt;&gt;&gt;&gt;<i> Nice, thanks for testing. I've merged the patch.
+</I>&gt;&gt;&gt;&gt;<i> There is something wrong with the &quot;tgtadm --op show --mode target&quot; 
+</I>&gt;&gt;&gt;&gt;<i> output - see these files:
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> <A HREF="http://wpkg.org/tgt/out1.txt">http://wpkg.org/tgt/out1.txt</A>
+</I>&gt;&gt;&gt;&gt;<i> <A HREF="http://wpkg.org/tgt/out2.txt">http://wpkg.org/tgt/out2.txt</A>
+</I>&gt;&gt;&gt;&gt;<i> <A HREF="http://wpkg.org/tgt/out3.txt">http://wpkg.org/tgt/out3.txt</A>
+</I>&gt;&gt;&gt;<i> What version do you use, the git head?
+</I>&gt;&gt;<i> Will this:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>    git clone <A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git</A>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> get me the git head? Because that's what I'm using.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, you should use the git head. To make sure, try `git-log`, then
+</I>&gt;<i> you will see:
+</I>&gt;<i> 
+</I>&gt;<i> commit 6a49758ea080ddc095c76d5ccce51e0c911b8e32
+</I>&gt;<i> Author: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>&gt;<i> Date:   Mon Apr 7 16:55:21 2008 +0300
+</I>&gt;<i> 
+</I>&gt;<i>     tgt-setup-lun: fix the usage example
+</I>&gt;<i> 
+</I>&gt;<i>     Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>&gt;<i>     Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+</I>
+Yep, that's it.
+
+
+&gt;&gt;<i> And it &quot;feels&quot; rather unstable - although I can boot a diskless 
+</I>&gt;&gt;<i> initiator (connect using iscsistart from open-iscsi), it remounts 
+</I>&gt;&gt;<i> read-only randomly several seconds after we start to read data from the 
+</I>&gt;&gt;<i> target.
+</I>&gt;<i> 
+</I>&gt;<i> Hmm, that's bad. At least, before apllying this patch, it worked
+</I>&gt;<i> better (though we had the open connection problem), right?
+</I>
+That's more problematic.
+The last version I used was the one found in 
+<A HREF="http://stgt.berlios.de/releases/">http://stgt.berlios.de/releases/</A> - I had rather unpleasant experiences 
+with using development versions of other Linux iSCSI targets, so I 
+decided to stick with at least semi-stable tar.bz2 package.
+
+As I had the same problem with open connections when initiator was 
+restarted, I though I'd give development version of tgt a try.
+
+It mostly solves my problem, but sometimes the connection dies 
+(connection times out, remount ro etc.) after restarting.
+
+
+Other problem I had with today's git is that tgtd &quot;hangs&quot;, i.e., the 
+process still exists, but:
+
+# tgtadm --op show --mode target
+tgtadm: can't connect to the tgt daemon, Connection refused
+tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+not connected
+
+It happened twice or three times, but I'm not sure how to reproduce 
+either of the issues reliably. At least since I restarted tgtd, which 
+doesn't show broken display now any more.
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001509.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001513.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1511">[ date ]</a>
+              <a href="thread.html#1511">[ thread ]</a>
+              <a href="subject.html#1511">[ subject ]</a>
+              <a href="author.html#1511">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

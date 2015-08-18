@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] iser more rdma bufs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20iser%20more%20rdma%20bufs&In-Reply-To=%3Cmailman.16.1331738474.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000941.html">
+   <LINK REL="Next"  HREF="000934.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] iser more rdma bufs</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20iser%20more%20rdma%20bufs&In-Reply-To=%3Cmailman.16.1331738474.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] iser more rdma bufs">pw at osc.edu
+       </A><BR>
+    <I>Thu Aug  9 22:14:35 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000941.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000934.html">[Stgt-devel] RFC: tgt service script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#933">[ date ]</a>
+              <a href="thread.html#933">[ thread ]</a>
+              <a href="subject.html#933">[ subject ]</a>
+              <a href="author.html#933">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Increase the number of slots used for RDMA transfers.  This does not
+actually require more buffer space, just lists for keeping track of
+outstanding operations.
+
+It is best to minimize the number of RDMA transfers required for data
+motion, however.  This can be done by increasing the maximum data transfer
+length parameter in both the target and the initiator.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_rdma.c |   43 +++++++++++++++++++++++++------------------
+ 1 files changed, 25 insertions(+), 18 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+index adff476..5c308fa 100644
+--- a/usr/iscsi/iscsi_rdma.c
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -164,6 +164,14 @@ struct conn_info {
+ #define MAX_RSIZE 8192
+ #define ISER_INITIAL_POST 10  /*XXX make this a global variable and set it to what gets negotiated at login*/
+ 
++/*
++ * Number of outstanding RDMAs per command; should instead wait for previous
++ * RDMAs to complete before starting new ones.  For RDMA write, each one
++ * will be no bigger than max burst, so we end up issuing lots when the
++ * max_recv_dlength value is very low.
++ */
++#define RDMA_PER_COMMAND 32
++
+ #define MEMPOOL_SZ (64)
+ /* 512K + sizeof(iscsi_task) + AHS size */
+ #define MEM_SZ (roundup((1 &lt;&lt; 19) + sizeof(struct iscsi_task) + 260+28+48, \
+@@ -250,7 +258,7 @@ static int iser_match_qp(uint32_t qp_num)
+ static int iser_init_comm(struct conn_info *conn, ssize_t ssize,
+ 			  ssize_t rsize, int id)
+ {
+-	int i;
++	int i, j;
+ 	unsigned long size;
+ 	uint8_t *srbuf, *listbuf;
+ 	struct rdmalist *rdmal;
+@@ -275,8 +283,9 @@ static int iser_init_comm(struct conn_info *conn, ssize_t ssize,
+ 	INIT_LIST_HEAD(&amp;conn-&gt;rdmal);
+ 	INIT_LIST_HEAD(&amp;conn-&gt;rdmal_write_busy);
+ 
+-	size = ISER_INITIAL_POST * (sizeof(struct rdmalist)
+-		+ sizeof(struct sendlist) + sizeof(struct recvlist));
++	size = ISER_INITIAL_POST * (RDMA_PER_COMMAND * sizeof(struct rdmalist)
++				    + sizeof(struct sendlist)
++				    + sizeof(struct recvlist));
+ 	conn-&gt;listbuf = malloc(size);
+ 	if (!conn-&gt;listbuf) {
+ 		eprintf(&quot;malloc listbuf %lu\n&quot;, size);
+@@ -286,31 +295,29 @@ static int iser_init_comm(struct conn_info *conn, ssize_t ssize,
+ 	srbuf = conn-&gt;srbuf;
+ 	listbuf = conn-&gt;listbuf;
+ 	for (i=0; i&lt;ISER_INITIAL_POST; i++){
+-		rdmal = (void *) listbuf;
+-		listbuf += sizeof(*rdmal);
++
++		for (j=0; j&lt;RDMA_PER_COMMAND; j++) {
++			rdmal = (void *) listbuf;
++			listbuf += sizeof(*rdmal);
++			rdmal-&gt;conn_index = id;
++			rdmal-&gt;free = 1;
++			list_add_tail(&amp;rdmal-&gt;list, &amp;conn-&gt;rdmal);
++		}
+ 
+ 		sendl = (void *) listbuf;
+ 		listbuf += sizeof(*sendl);
++		sendl-&gt;buf = srbuf;
++		srbuf += ssize;
++		sendl-&gt;conn_index = id;
++		sendl-&gt;free = 1;
++		list_add_tail(&amp;sendl-&gt;list, &amp;conn-&gt;sendl);
+ 
+ 		recvl = (void *) listbuf;
+ 		listbuf += sizeof(*recvl);
+-
+ 		recvl-&gt;buf = srbuf;
+ 		srbuf += rsize;
+-
+-		sendl-&gt;buf = srbuf;
+-		srbuf += ssize;
+-
+-		rdmal-&gt;conn_index = id;
+-		sendl-&gt;conn_index = id;
+ 		recvl-&gt;conn_index = id;
+-
+-		sendl-&gt;free = 1;
+-		rdmal-&gt;free = 1;
+-
+-		list_add_tail(&amp;sendl-&gt;list, &amp;conn-&gt;sendl);
+ 		list_add_tail(&amp;recvl-&gt;list, &amp;conn-&gt;recvl);
+-		list_add_tail(&amp;rdmal-&gt;list, &amp;conn-&gt;rdmal);
+ 	}
+ 	conn-&gt;slen = ssize;
+ 	conn-&gt;rlen = rsize;
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000941.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000934.html">[Stgt-devel] RFC: tgt service script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#933">[ date ]</a>
+              <a href="thread.html#933">[ thread ]</a>
+              <a href="subject.html#933">[ subject ]</a>
+              <a href="author.html#933">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

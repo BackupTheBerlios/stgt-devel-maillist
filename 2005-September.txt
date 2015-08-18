@@ -1,0 +1,2663 @@
+From michaelc at cs.wisc.edu  Sun Sep  4 03:20:04 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sat, 03 Sep 2005 20:20:04 -0500
+Subject: [Stgt-devel] outstanding patches and moving the scsi in stgt
+Message-ID: <431A4BC4.5050506@cs.wisc.edu>
+
+Hey
+
+Do you have any large outstanding patches you were about to merge? I 
+think to increase our chances of ever getting merged to mainline it 
+would be a good a idea to be as generic as possible. So I would like to 
+move the stgt core and stgt_vsd/sd scsi code to a type of personality or 
+protocal handling module. This personality module can then be overidden 
+so that a NBD or AOE target driver can use its own personality module. 
+It would basically make stgt a block_target (blk_tgt) framework.
+
+I have patches to move the kernel lun sutff to a more generic 64 bit 
+device_id which is interpreted by the scsi personality as a lun. And 
+next I would like to move some of the other SCSI command, sense and 
+offset/len code.
+
+comments?
+
+Mike
+
+
+From tomof at acm.org  Sun Sep  4 06:14:02 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sun, 04 Sep 2005 13:14:02 +0900
+Subject: [Stgt-devel] outstanding patches and moving the scsi in stgt
+In-Reply-To: <431A4BC4.5050506@cs.wisc.edu>
+References: <431A4BC4.5050506@cs.wisc.edu>
+Message-ID: <20050904131402O.tomof@acm.org>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: [Stgt-devel] outstanding patches and moving the scsi in stgt
+Date: Sat, 03 Sep 2005 20:20:04 -0500
+
+> Do you have any large outstanding patches you were about to merge?
+
+No, I don't have yet.
+
+
+> I think to increase our chances of ever getting merged to mainline
+> it would be a good a idea to be as generic as possible.
+
+Yep. It should be generic.
+
+
+> So I would like to move the stgt core and stgt_vsd/sd scsi code to a
+> type of personality or protocal handling module. This personality
+> module can then be overidden so that a NBD or AOE target driver can
+> use its own personality module. It would basically make stgt a
+> block_target (blk_tgt) framework.
+
+It sounds good, though I've not read a NBD or AOE target driver (I'll
+see them later).
+
+
+> I have patches to move the kernel lun sutff to a more generic 64 bit
+> device_id which is interpreted by the scsi personality as a lun.
+> And next I would like to move some of the other SCSI command, sense
+> and offset/len code.
+
+Please merge the patches that you already have for making stgt to be a
+block_target framework.
+
+
+From tomof at acm.org  Mon Sep  5 03:54:16 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Mon, 05 Sep 2005 10:54:16 +0900
+Subject: [Stgt-devel] More threads for device server
+Message-ID: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>
+
+The current code uses work queue for performing SCSI commands (or
+block target's tasks). Work queue is simple and good enough for
+debugging, however, a single thread per CPU is not good enough (from
+the performance perspective).
+
+I thought about creating multiple kernel threads by hand. Are there
+handy APIs?
+
+
+From michaelc at cs.wisc.edu  Mon Sep  5 04:05:12 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sun, 04 Sep 2005 21:05:12 -0500
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>
+References: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <431BA7D8.5050706@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> The current code uses work queue for performing SCSI commands (or
+> block target's tasks). Work queue is simple and good enough for
+> debugging, however, a single thread per CPU is not good enough (from
+> the performance perspective).
+> 
+> I thought about creating multiple kernel threads by hand. Are there
+> handy APIs?
+
+you can create a single threaded workqueue per target or session?
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep  5 04:14:49 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 05 Sep 2005 11:14:49 +0900
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <431BA7D8.5050706@cs.wisc.edu>
+References: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>
+	<431BA7D8.5050706@cs.wisc.edu>
+Message-ID: <20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] More threads for device server
+Date: Sun, 04 Sep 2005 21:05:12 -0500
+
+> > The current code uses work queue for performing SCSI commands (or
+> > block target's tasks). Work queue is simple and good enough for
+> > debugging, however, a single thread per CPU is not good enough (from
+> > the performance perspective).
+> > 
+> > I thought about creating multiple kernel threads by hand. Are there
+> > handy APIs?
+> 
+> you can create a single threaded workqueue per target or session?
+
+The vfs APIs work synchronously. So we need multiple threads per
+target (or session) to perform several SCSI commands simultaneously.
+
+If we always use asynchronous block I/O APIs (like AIO vfs,
+submit_bio, etc), a single threaded workqueue would be fine.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep  5 04:36:34 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 05 Sep 2005 11:36:34 +0900
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+References: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>
+	<431BA7D8.5050706@cs.wisc.edu>
+	<20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <20050905113634T.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: Re: [Stgt-devel] More threads for device server
+Date: Mon, 05 Sep 2005 11:14:49 +0900
+
+> > > The current code uses work queue for performing SCSI commands (or
+> > > block target's tasks). Work queue is simple and good enough for
+> > > debugging, however, a single thread per CPU is not good enough (from
+> > > the performance perspective).
+> > > 
+> > > I thought about creating multiple kernel threads by hand. Are there
+> > > handy APIs?
+> > 
+> > you can create a single threaded workqueue per target or session?
+> 
+> The vfs APIs work synchronously. So we need multiple threads per
+> target (or session) to perform several SCSI commands simultaneously.
+
+If we create threads per device, can we put the code to wait all the
+threads to finish and destroy them in stgt_device_class_release?
+
+
+From michaelc at cs.wisc.edu  Mon Sep  5 05:38:08 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sun, 04 Sep 2005 22:38:08 -0500
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <20050905113634T.fujita.tomonori@lab.ntt.co.jp>
+References: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>	<431BA7D8.5050706@cs.wisc.edu>	<20050905111449Y.fujita.tomonori@lab.ntt.co.jp> <20050905113634T.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <431BBDA0.7090602@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+> Subject: Re: [Stgt-devel] More threads for device server
+> Date: Mon, 05 Sep 2005 11:14:49 +0900
+> 
+> 
+>>>>The current code uses work queue for performing SCSI commands (or
+>>>>block target's tasks). Work queue is simple and good enough for
+>>>>debugging, however, a single thread per CPU is not good enough (from
+>>>>the performance perspective).
+>>>>
+>>>>I thought about creating multiple kernel threads by hand. Are there
+>>>>handy APIs?
+>>>
+>>>you can create a single threaded workqueue per target or session?
+>>
+>>The vfs APIs work synchronously. So we need multiple threads per
+>>target (or session) to perform several SCSI commands simultaneously.
+> 
+> 
+> If we create threads per device, can we put the code to wait all the
+> threads to finish and destroy them in stgt_device_class_release?
+
+Ummmm I think you can sleep in there. We would have to make sure the 
+last put on the device is from a place that can sleep. A thread or 
+couple of threads per device seems like it might be a lot of threads though.
+
+
+From michaelc at cs.wisc.edu  Mon Sep  5 05:45:41 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sun, 04 Sep 2005 22:45:41 -0500
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+References: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>	<431BA7D8.5050706@cs.wisc.edu> <20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <431BBF65.1030902@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: Re: [Stgt-devel] More threads for device server
+> Date: Sun, 04 Sep 2005 21:05:12 -0500
+> 
+> 
+>>>The current code uses work queue for performing SCSI commands (or
+>>>block target's tasks). Work queue is simple and good enough for
+>>>debugging, however, a single thread per CPU is not good enough (from
+>>>the performance perspective).
+>>>
+>>>I thought about creating multiple kernel threads by hand. Are there
+>>>handy APIs?
+>>
+>>you can create a single threaded workqueue per target or session?
+> 
+> 
+> The vfs APIs work synchronously. So we need multiple threads per
+> target (or session) to perform several SCSI commands simultaneously.
+> 
+> If we always use asynchronous block I/O APIs (like AIO vfs,
+> submit_bio, etc), a single threaded workqueue would be fine.
+
+I think async is going to be better in the long run since a thread per 
+device sounds like a lot. I am not familar with the AIO vfs code so I am 
+not much help and my opinion is really more of guess then. I am just 
+thinking if we can send more than one command down to the real device at 
+once then we could take advatage of the block layers io scheduling or 
+something.
+
+
+From michaelc at cs.wisc.edu  Mon Sep  5 05:53:13 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sun, 04 Sep 2005 22:53:13 -0500
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+References: <20050905105416B.fujita.tomonori@lab.ntt.co.jp>	<431BA7D8.5050706@cs.wisc.edu> <20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <431BC129.5090905@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: Re: [Stgt-devel] More threads for device server
+> Date: Sun, 04 Sep 2005 21:05:12 -0500
+> 
+> 
+>>>The current code uses work queue for performing SCSI commands (or
+>>>block target's tasks). Work queue is simple and good enough for
+>>>debugging, however, a single thread per CPU is not good enough (from
+>>>the performance perspective).
+>>>
+>>>I thought about creating multiple kernel threads by hand. Are there
+>>>handy APIs?
+>>
+>>you can create a single threaded workqueue per target or session?
+> 
+> 
+> The vfs APIs work synchronously. So we need multiple threads per
+> target (or session) to perform several SCSI commands simultaneously.
+> 
+> If we always use asynchronous block I/O APIs (like AIO vfs,
+> submit_bio, etc), a single threaded workqueue would be fine.
+
+Hey what was the submit_bio idea though? Is there a way o do that and 
+still get to use the systems cache?
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep  5 06:26:48 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 05 Sep 2005 13:26:48 +0900
+Subject: [Stgt-devel] outstanding patches and moving the scsi in stgt
+In-Reply-To: <20050904131402O.tomof@acm.org>
+References: <431A4BC4.5050506@cs.wisc.edu>
+	<20050904131402O.tomof@acm.org>
+Message-ID: <20050905132648A.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <tomof at acm.org>
+Subject: Re: [Stgt-devel] outstanding patches and moving the scsi in stgt
+Date: Sun, 04 Sep 2005 13:14:02 +0900
+
+> > So I would like to move the stgt core and stgt_vsd/sd scsi code to a
+> > type of personality or protocal handling module. This personality
+> > module can then be overidden so that a NBD or AOE target driver can
+> > use its own personality module. It would basically make stgt a
+> > block_target (blk_tgt) framework.
+> 
+> It sounds good, though I've not read a NBD or AOE target driver (I'll
+> see them later).
+
+I found one AOE server implementation.
+
+http://sourceforge.net/project/showfiles.php?group_id=130453&package_id=143790
+
+It is not for production use. It can handle only a single file. The
+configuration is not dynamically changeable.
+
+The code of 659 lines works in user space. The block_target framework
+can be very useful for it if we also provide a clean user-space
+framework that we talked about in the past, though I'm not sure how
+many people want it.
+
+
+I found a kernel-space NBD server implementation, however, it's too
+old (not for 2.6.X).
+
+A user-space NBD server is the code of about 1000 lines. It seems that
+the configuration is not dynamically changeable. So the block_target
+framework can be very useful again.
+
+http://sourceforge.net/projects/nbd
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep  5 06:41:49 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 05 Sep 2005 13:41:49 +0900
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <431BC129.5090905@cs.wisc.edu>
+References: <431BA7D8.5050706@cs.wisc.edu>
+	<20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+	<431BC129.5090905@cs.wisc.edu>
+Message-ID: <20050905134149G.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] More threads for device server
+Date: Sun, 04 Sep 2005 22:53:13 -0500
+
+> >>>The current code uses work queue for performing SCSI commands (or
+> >>>block target's tasks). Work queue is simple and good enough for
+> >>>debugging, however, a single thread per CPU is not good enough (from
+> >>>the performance perspective).
+> >>>
+> >>>I thought about creating multiple kernel threads by hand. Are there
+> >>>handy APIs?
+> >>
+> >>you can create a single threaded workqueue per target or session?
+> > 
+> > 
+> > The vfs APIs work synchronously. So we need multiple threads per
+> > target (or session) to perform several SCSI commands simultaneously.
+> > 
+> > If we always use asynchronous block I/O APIs (like AIO vfs,
+> > submit_bio, etc), a single threaded workqueue would be fine.
+> 
+> Hey what was the submit_bio idea though? Is there a way o do that and 
+> still get to use the systems cache?
+
+Some storage systems want to use own cache algorithm, so avoiding page
+cache can be useful.
+
+The following paper might interest you.
+
+http://www.usenix.org/events/fast04/tech/li.html
+
+It says that EMC Symmetric storage systems can have 4-64 GB of memory
+for cache.
+
+Anyway, direct I/O is handy than submit_bio, I guess.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep  5 08:32:19 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 05 Sep 2005 15:32:19 +0900
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <431BBF65.1030902@cs.wisc.edu>
+References: <431BA7D8.5050706@cs.wisc.edu>
+	<20050905111449Y.fujita.tomonori@lab.ntt.co.jp>
+	<431BBF65.1030902@cs.wisc.edu>
+Message-ID: <20050905153219W.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] More threads for device server
+Date: Sun, 04 Sep 2005 22:45:41 -0500
+
+> >>>The current code uses work queue for performing SCSI commands (or
+> >>>block target's tasks). Work queue is simple and good enough for
+> >>>debugging, however, a single thread per CPU is not good enough (from
+> >>>the performance perspective).
+> >>>
+> >>>I thought about creating multiple kernel threads by hand. Are there
+> >>>handy APIs?
+> >>
+> >>you can create a single threaded workqueue per target or session?
+> > 
+> > 
+> > The vfs APIs work synchronously. So we need multiple threads per
+> > target (or session) to perform several SCSI commands simultaneously.
+> > 
+> > If we always use asynchronous block I/O APIs (like AIO vfs,
+> > submit_bio, etc), a single threaded workqueue would be fine.
+> 
+> I think async is going to be better in the long run since a thread per 
+> device sounds like a lot. I am not familar with the AIO vfs code so I am 
+> not much help and my opinion is really more of guess then. I am just 
+> thinking if we can send more than one command down to the real device at 
+> once then we could take advatage of the block layers io scheduling or 
+> something.
+
+Sorry, I should have stated this issue more precisely.
+
+We need three delayed works: performing SCSI commands; notification
+the completion of session creation and buffer allocation to target
+drivers.
+
+Now we use the system default work queue (keventd). This is
+insufficient if a user creates lots of targets, so I need a new work
+queue (per target, session, or device).
+
+I think a work queue per target is sufficient for notification
+the completion. They are not high-performance stuff.
+
+Targets need to perform multiple SCSI commands at the same time. If we
+use synchronous APIs, the work queue framework is not sufficient
+because it cannot perform lots of SCSI commands simultaneously. 
+
+There are two options: we need to create lots of kernel threads
+calling kthread_create several times (like IET) or we need to use
+asynchronous APIs with the work queue framework. I don't think that
+having lots of kernel threads is so bad, though it makes the stgt code
+complicated and dirty a bit. So I'll try AIO later with work queue per
+target. Work queue per device is not necessary, though it fit for
+SAM-3 theoretically.
+
+
+The last topic is that how to prevent a device from being removed (by
+an user) while it has active I/O operations. There are many ways to do
+that. I was just thought about things like the following.
+
+stgt_device_destory() sets DEVICE_DEL bit (device->state). It prevents
+queuecommand from putting new commands to the device. Then,
+stgt_device_destory() calls flush_workqueue() to wait all commands to
+finish and then frees the resources.
+
+
+From michaelc at cs.wisc.edu  Mon Sep  5 22:38:17 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Mon, 05 Sep 2005 15:38:17 -0500
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <20050905153219W.fujita.tomonori@lab.ntt.co.jp>
+References: <431BA7D8.5050706@cs.wisc.edu>	<20050905111449Y.fujita.tomonori@lab.ntt.co.jp>	<431BBF65.1030902@cs.wisc.edu> <20050905153219W.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <431CACB9.1000402@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> Targets need to perform multiple SCSI commands at the same time. If we
+> use synchronous APIs, the work queue framework is not sufficient
+> because it cannot perform lots of SCSI commands simultaneously. 
+
+Umm, I was just reccomending a work queue becuase you can create them 
+either as a one thread per proc or a single threaded one. So if you like 
+the work queue interface you can just create a bunch of 
+single-threaded-workqueuues instead of creating a bunch of threads.
+
+> 
+> There are two options: we need to create lots of kernel threads
+> calling kthread_create several times (like IET) or we need to use
+> asynchronous APIs with the work queue framework.
+
+Are you creating a thread per command that can get queued or how do you 
+determine how many threads?
+
+  I don't think that
+> having lots of kernel threads is so bad, though it makes the stgt code
+> complicated and dirty a bit. So I'll try AIO later with work queue per
+> target. Work queue per device is not necessary, though it fit for
+> SAM-3 theoretically.
+
+ok then.
+
+> 
+> 
+> The last topic is that how to prevent a device from being removed (by
+> an user) while it has active I/O operations. There are many ways to do
+> that. I was just thought about things like the following.
+> 
+> stgt_device_destory() sets DEVICE_DEL bit (device->state). It prevents
+> queuecommand from putting new commands to the device. Then,
+> stgt_device_destory() calls flush_workqueue() to wait all commands to
+> finish and then frees the resources.
+
+That sounds about right. We also will have to deal with people suddenly 
+removing targets too. I mean someone just yanking the controller from 
+the box :) We are going to have to do some more lifetime management for 
+this.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Sep  8 03:16:21 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 08 Sep 2005 10:16:21 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <20050828004944V.tomof@acm.org>
+References: <200508251550.j7PFoTpw013356@r-dd.iij4u.or.jp>
+	<430DE27F.1070205@cs.wisc.edu>
+	<20050828004944V.tomof@acm.org>
+Message-ID: <20050908101621J.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <tomof at acm.org>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Sun, 28 Aug 2005 00:49:44 +0900
+
+> > > Does stgt enable target drivers to call their own functions when
+> > > user-space requires such operations?
+> > 
+> > I think we will need to move the stgt_target_template registration to 
+> > the target driver's module_init function. We can add some callbacks onto 
+> > it so stgt can call into the target driver. Maybe a create_target(), 
+> > set_param(), get_param(), destroy_target(), etc is needed. I think this 
+> > is what you are suggesting right?
+> 
+> I think so. I simply thought about mechanisms like
+> stgt_device_template, however, I didn't have a clear idea. I'll
+> implement that after the cleanup.
+
+I've done target_create/destroy callbacks.
+
+I'll try to see how to integrate target driver daemons to stgtd. For
+that, ietd daemon needs to do all kernel-user space communication
+through stgt netlink. Thus, we need to add some iSCSI specific
+callbacks (like conn_create/destroy). Is it OK? Or is implementing
+more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+target driver specific tasks better?
+
+
+From michaelc at cs.wisc.edu  Thu Sep  8 03:32:05 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <20050908101621J.fujita.tomonori@lab.ntt.co.jp>
+References: <200508251550.j7PFoTpw013356@r-dd.iij4u.or.jp>	<430DE27F.1070205@cs.wisc.edu>	<20050828004944V.tomof@acm.org> <20050908101621J.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <431F9495.8010306@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: FUJITA Tomonori <tomof at acm.org>
+> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Sun, 28 Aug 2005 00:49:44 +0900
+> 
+> 
+>>>>Does stgt enable target drivers to call their own functions when
+>>>>user-space requires such operations?
+>>>
+>>>I think we will need to move the stgt_target_template registration to 
+>>>the target driver's module_init function. We can add some callbacks onto 
+>>>it so stgt can call into the target driver. Maybe a create_target(), 
+>>>set_param(), get_param(), destroy_target(), etc is needed. I think this 
+>>>is what you are suggesting right?
+>>
+>>I think so. I simply thought about mechanisms like
+>>stgt_device_template, however, I didn't have a clear idea. I'll
+>>implement that after the cleanup.
+> 
+> 
+> I've done target_create/destroy callbacks.
+> 
+> I'll try to see how to integrate target driver daemons to stgtd. For
+> that, ietd daemon needs to do all kernel-user space communication
+> through stgt netlink. Thus, we need to add some iSCSI specific
+> callbacks (like conn_create/destroy). Is it OK? Or is implementing
+
+I do not think we want to do that since we would have stgt_core doing 
+lower level transport stuff and as we add many the callouts for them 
+could get out of hand.
+
+> more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+> target driver specific tasks better?
+
+Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+handle the event it passes it to the protocol or target driver or 
+transport. Or maybe it can flow downwards. For what we have now:
+
+STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass 
+down if not mine) ->target_driver (fail if not my message)
+
+I guess either way we need to add something on the event so we can 
+figure out who the event is supposed to be for. I ran into similar 
+troubles with passing things upwards (see the TODO I added to the 
+usr/netlink.c this morning).
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Sep  8 03:59:36 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 08 Sep 2005 10:59:36 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <431F9495.8010306@cs.wisc.edu>
+References: <20050828004944V.tomof@acm.org>
+	<20050908101621J.fujita.tomonori@lab.ntt.co.jp>
+	<431F9495.8010306@cs.wisc.edu>
+Message-ID: <20050908105936X.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+
+> >>>I think we will need to move the stgt_target_template registration to 
+> >>>the target driver's module_init function. We can add some callbacks onto 
+> >>>it so stgt can call into the target driver. Maybe a create_target(), 
+> >>>set_param(), get_param(), destroy_target(), etc is needed. I think this 
+> >>>is what you are suggesting right?
+> >>
+> >>I think so. I simply thought about mechanisms like
+> >>stgt_device_template, however, I didn't have a clear idea. I'll
+> >>implement that after the cleanup.
+> > 
+> > 
+> > I've done target_create/destroy callbacks.
+> > 
+> > I'll try to see how to integrate target driver daemons to stgtd. For
+> > that, ietd daemon needs to do all kernel-user space communication
+> > through stgt netlink. Thus, we need to add some iSCSI specific
+> > callbacks (like conn_create/destroy). Is it OK? Or is implementing
+> 
+> I do not think we want to do that since we would have stgt_core doing 
+> lower level transport stuff and as we add many the callouts for them 
+> could get out of hand.
+
+I expected you not to fancy this :)
+
+
+> > more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+> > target driver specific tasks better?
+> 
+> Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+> handle the event it passes it to the protocol or target driver or 
+> transport. Or maybe it can flow downwards. For what we have now:
+> 
+> STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass 
+> down if not mine) ->target_driver (fail if not my message)
+
+That sounds a right solution.
+
+conn_create/destroy and set/get_param can be handled by protocol
+modules. And there is some target driver specific stuff, I guess.
+
+
+> I guess either way we need to add something on the event so we can 
+> figure out who the event is supposed to be for. I ran into similar 
+> troubles with passing things upwards (see the TODO I added to the 
+> usr/netlink.c this morning).
+
+I see. In user-space, we have target driver libraries (dynamic
+libraries, as Christoph suggested before), protocol specific stuff,
+and stgtd core. We need to handle all cleanly.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Sep  8 04:12:46 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 08 Sep 2005 11:12:46 +0900
+Subject: [Stgt-devel] More threads for device server
+In-Reply-To: <431CACB9.1000402@cs.wisc.edu>
+References: <431BBF65.1030902@cs.wisc.edu>
+	<20050905153219W.fujita.tomonori@lab.ntt.co.jp>
+	<431CACB9.1000402@cs.wisc.edu>
+Message-ID: <20050908111246V.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] More threads for device server
+Date: Mon, 05 Sep 2005 15:38:17 -0500
+
+> > There are two options: we need to create lots of kernel threads
+> > calling kthread_create several times (like IET) or we need to use
+> > asynchronous APIs with the work queue framework.
+> 
+> Are you creating a thread per command that can get queued or how do you 
+> determine how many threads?
+
+You can configure how many threads IET runs dynamically.
+
+Several kernel threads compete for tasks liked to a single list and
+sleep on a single wait_queue_head.
+
+The core IET code put tasks on the list and call wakeup against the
+wait_queue_head. One of the thread picks up one task, performs it, and
+sleeps until the completion. Then another thread gets CPU time and
+works in the same way.
+
+
+> > I don't think that having lots of kernel threads is so bad, though
+> > it makes the stgt code complicated and dirty a bit. So I'll try
+> > AIO later with work queue per target. Work queue per device is not
+> > necessary, though it fit for SAM-3 theoretically.
+>
+> ok then.
+
+After reading AIO status (http://lwn.net/Articles/148755/), I guess
+that it is not ready for us. So I just created a work queue per target
+instead of using keventd. We can revisit this later.
+
+
+> > The last topic is that how to prevent a device from being removed (by
+> > an user) while it has active I/O operations. There are many ways to do
+> > that. I was just thought about things like the following.
+> > 
+> > stgt_device_destory() sets DEVICE_DEL bit (device->state). It prevents
+> > queuecommand from putting new commands to the device. Then,
+> > stgt_device_destory() calls flush_workqueue() to wait all commands to
+> > finish and then frees the resources.
+> 
+> That sounds about right. We also will have to deal with people suddenly 
+> removing targets too. I mean someone just yanking the controller from 
+> the box :) We are going to have to do some more lifetime management for 
+> this.
+
+Yep. We need to think about it later.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Sep  8 21:56:33 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 09 Sep 2005 04:56:33 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Message-ID: <20050909045633Z.tomof@acm.org>
+
+Hi,
+
+I had a look at your code to figure out how it works together.
+
+Here is my guess, however, probably I misunderstood several issues.
+
+In case of DMA_TO_DEVICE, your driver allocates continuous buffer and
+asks the hypervisor to copy data from initiator's buffer several times
+(= cmnd->use_sg). And then, it submits the I/O request.
+
+In case of DMA_FROM_DEVICE, your driver allocates continuous buffer
+and submits the I/O request. After the completion, the driver asks
+the hypervisor to copy data to initiator's buffer in the same way as
+DMA_TO_DEVICE.
+
+
+I think that your driver can exploit stgt easily.
+
+In case of DMA_TO_DEVICE, your driver asks stgt to create a new
+command and allocate sg buffer, and then copy data from initiator's
+buffer.  After that, it asks stgt to perform the command.
+
+In case of DMA_FROM_DEVICE, your driver asks stgt to create a new
+command and to perform the command. After the completion notification
+(of course, you can specify the completion notification callback), the
+driver uses sg buffer in the command.
+
+stgt takes care of SCSI command handling. So your driver can focus on
+communication with indicators.
+
+stgt scheme to handle sense data buffer does not match your driver,
+however, I thought that its scheme needs to be cleaned up. So we can
+see it later on.
+
+We plan to do most of configurations through netlink. Your driver is
+purely virtual so that all configurations can be done through netlink.
+
+We've not implement all features yet, however, I think you can start
+to work right now.
+
+
+By the way, I have some questions about your driver.
+
+1. Your driver uses bio to access non-scsi devices. I think that it
+leads to poor read performance. Why do you use the vfs interface to
+exploit page cache?
+
+2. About task attribute, you can support only simple and ordered. You
+implement 'ordered task' to use bio barrier. So you don't have a
+complete code to handle all task attributes?
+
+
+stgt interface needs to be changed to support task attribute
+feature. I also think that we can simplify stgt_cmnd_* and buffer
+allocation interfaces. In short, I don't think that target drivers
+don't need to know or access the inside of stgt_cmnd structure. Mike,
+What do you think?
+
+
+From michaelc at cs.wisc.edu  Thu Sep  8 22:44:10 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Thu, 08 Sep 2005 15:44:10 -0500
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <20050909045633Z.tomof@acm.org>
+References: <20050909045633Z.tomof@acm.org>
+Message-ID: <4320A29A.4050708@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> 
+> In case of DMA_TO_DEVICE, your driver asks stgt to create a new
+> command and allocate sg buffer, and then copy data from initiator's
+> buffer.  After that, it asks stgt to perform the command.
+>
+
+We need a way to set certain limits that exist with the request_queue 
+and initiator drivers so that target drivers can get a cmnd with a 
+scatterlist which they can pass to their HW or lowerlevel APIs they use.
+
+Does vscsi use an API which can takes a scatter list mapped by one of 
+the dma_map_* functions? If so we need to add the correct limits onto 
+something so the cmnd buffer allocation code can allocate a buffer with 
+the correct number of segments.
+
+This is the part I was mentioning in some other mail. Today sg and st 
+replicate a bunch of scatterlist code and I am trying to rip it out and 
+replace it with block layer code so there is less duplication. stgt 
+should hopefully be able to reuse this code.
+
+
+> 1. Your driver uses bio to access non-scsi devices. I think that it
+> leads to poor read performance. Why do you use the vfs interface to
+> exploit page cache?
+> 
+
+Also the scsi_request usage is bad for the scsi devices btw. We are 
+trying to kill that in linux-scsi. It was one thing that we would have 
+had to kill from scst.
+
+
+> 2. About task attribute, you can support only simple and ordered. You
+> implement 'ordered task' to use bio barrier. So you don't have a
+> complete code to handle all task attributes?
+> 
+> 
+> stgt interface needs to be changed to support task attribute
+> feature. I also think that we can simplify stgt_cmnd_* and buffer
+> allocation interfaces. In short, I don't think that target drivers
+
+Maybe we clean up the interfaces but I think that the stgt code will 
+have to become more complicated. I think we are going to have to add to 
+them to support correct scatterlist allocations for HW targets at least.
+
+Also I think there will be some HW targets which cannot allocate the 
+commands from process context so some of that crud will have to stay - 
+is that what you got from looking at the qlogic driver too? If you move 
+IET to the same model open-iscsi uses, where it operates from the 
+network's softirqs, then we will have to keep that delayed allocation 
+code too.
+
+> don't need to know or access the inside of stgt_cmnd structure. Mike,
+> What do you think?
+
+For SCSI drivers if we can decipher the offset and len from the SCSI cdb 
+then I think I agree, if there are going to be weird commands that do 
+not fit into a transport or protocol or some generic place then I guess 
+target drivers may have to touch some things. Although I think I got 
+some things wrong. Today we do
+
+target driver (queue cmnd/ alloc buffer) -> STGT (call protocol) 
+->protocol (SCSI stuff)
+
+But I think we should go
+
+target driver (queue cmnd alloc buffer) -> protocol (SCSI stuff) -> STGT
+
+So then the target driver can pass some protocol specifc values like cdb 
+and lun (and lun decoder if necessary) without the stgt core having to 
+worry about that stuff. This will also allow you to make it so target 
+drivers do not have to touch things like the cdb field (I can move that 
+to a protocol specific cmnd data finally).
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Sep  9 13:49:06 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 09 Sep 2005 20:49:06 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <4320A29A.4050708@cs.wisc.edu>
+References: <20050909045633Z.tomof@acm.org>
+	<4320A29A.4050708@cs.wisc.edu>
+Message-ID: <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Thu, 08 Sep 2005 15:44:10 -0500
+
+> > 2. About task attribute, you can support only simple and ordered. You
+> > implement 'ordered task' to use bio barrier. So you don't have a
+> > complete code to handle all task attributes?
+> > 
+> > stgt interface needs to be changed to support task attribute
+> > feature. I also think that we can simplify stgt_cmnd_* and buffer
+> > allocation interfaces. In short, I don't think that target drivers
+> 
+> Maybe we clean up the interfaces but I think that the stgt code will 
+> have to become more complicated. I think we are going to have to add to 
+> them to support correct scatterlist allocations for HW targets at least.
+> 
+> Also I think there will be some HW targets which cannot allocate the 
+> commands from process context so some of that crud will have to stay - 
+> is that what you got from looking at the qlogic driver too?
+
+Yep. The qlogic driver allocates commands in interrupt context. My
+first intention was preallocate the specified number of commands using
+mempool (as session_init does). It works with iSCSI however, though
+I'm not sure about other protocols. However, preallocating some
+commands is a bit difficult now (please see the comment in
+stgt_cmnd_create). So perhaps, we needs delayed command allocation
+later on.
+
+
+> If you move IET to the same model open-iscsi uses, where it operates
+> from the network's softirqs, then we will have to keep that delayed
+> allocation code too.
+
+Yes.
+
+
+> > don't need to know or access the inside of stgt_cmnd structure. Mike,
+> > What do you think?
+> 
+> For SCSI drivers if we can decipher the offset and len from the SCSI cdb 
+> then I think I agree, if there are going to be weird commands that do 
+> not fit into a transport or protocol or some generic place then I guess 
+> target drivers may have to touch some things. Although I think I got 
+> some things wrong. Today we do
+> 
+> target driver (queue cmnd/ alloc buffer) -> STGT (call protocol) 
+> ->protocol (SCSI stuff)
+> 
+> But I think we should go
+> 
+> target driver (queue cmnd alloc buffer) -> protocol (SCSI stuff) -> STGT
+> 
+> So then the target driver can pass some protocol specifc values like cdb 
+> and lun (and lun decoder if necessary) without the stgt core having to 
+> worry about that stuff. This will also allow you to make it so target 
+> drivers do not have to touch things like the cdb field (I can move that 
+> to a protocol specific cmnd data finally).
+
+I agreed. Now we should remove all protocol specific stuff in stgt. I
+tried to do this (though I'm not sure whether I've done in a right way
+about some of the changes).
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Sep  9 13:58:33 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 09 Sep 2005 20:58:33 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <431F9495.8010306@cs.wisc.edu>
+References: <20050828004944V.tomof@acm.org>
+	<20050908101621J.fujita.tomonori@lab.ntt.co.jp>
+	<431F9495.8010306@cs.wisc.edu>
+Message-ID: <200509091158.j89BwY40016782@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+
+> > more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+> > target driver specific tasks better?
+> 
+> Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+> handle the event it passes it to the protocol or target driver or 
+> transport. Or maybe it can flow downwards. For what we have now:
+> 
+> STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass 
+> down if not mine) ->target_driver (fail if not my message)
+> 
+> I guess either way we need to add something on the event so we can 
+> figure out who the event is supposed to be for. I ran into similar 
+> troubles with passing things upwards (see the TODO I added to the 
+> usr/netlink.c this morning).
+
+How should we do this?
+
+I think that user-space daemon need to know 'tid -> target driver' and
+'target driver -> protocol'. Are we adding something about them to
+sysfs?
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Sep  9 14:10:41 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 09 Sep 2005 21:10:41 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+References: <20050909045633Z.tomof@acm.org>
+	<4320A29A.4050708@cs.wisc.edu>
+	<200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+Message-ID: <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Fri, 09 Sep 2005 20:49:06 +0900
+
+> > target driver (queue cmnd alloc buffer) -> protocol (SCSI stuff) -> STGT
+> > 
+> > So then the target driver can pass some protocol specifc values like cdb 
+> > and lun (and lun decoder if necessary) without the stgt core having to 
+> > worry about that stuff. This will also allow you to make it so target 
+> > drivers do not have to touch things like the cdb field (I can move that 
+> > to a protocol specific cmnd data finally).
+> 
+> I agreed. Now we should remove all protocol specific stuff in stgt. I
+> tried to do this (though I'm not sure whether I've done in a right way
+> about some of the changes).
+
+By the way, it's time to rename stgt tgt (or something generic), I
+guess. 
+
+I also think about rename IET something generic like istgt or isstgt
+(iSCSI software target). After all, the code will be really very from
+the original IET code. Any suggestions?
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Sep  9 14:13:56 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 09 Sep 2005 21:13:56 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+References: <4320A29A.4050708@cs.wisc.edu>
+	<200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+	<200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+Message-ID: <20050909211356J.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Fri, 09 Sep 2005 21:10:41 +0900
+
+> > > target driver (queue cmnd alloc buffer) -> protocol (SCSI stuff) -> STGT
+> > > 
+> > > So then the target driver can pass some protocol specifc values like cdb 
+> > > and lun (and lun decoder if necessary) without the stgt core having to 
+> > > worry about that stuff. This will also allow you to make it so target 
+> > > drivers do not have to touch things like the cdb field (I can move that 
+> > > to a protocol specific cmnd data finally).
+> > 
+> > I agreed. Now we should remove all protocol specific stuff in stgt. I
+> > tried to do this (though I'm not sure whether I've done in a right way
+> > about some of the changes).
+> 
+> By the way, it's time to rename stgt tgt (or something generic), I
+> guess. 
+> 
+> I also think about rename IET something generic like istgt or isstgt
+> (iSCSI software target). After all, the code will be really very from
+> the original IET code. Any suggestions?
+
+Sorry for typo. The code will be very different from the original IET
+code.
+
+
+From michaelc at cs.wisc.edu  Fri Sep  9 19:35:34 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Fri, 09 Sep 2005 12:35:34 -0500
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+References: <20050909045633Z.tomof@acm.org>	<4320A29A.4050708@cs.wisc.edu> <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+Message-ID: <4321C7E6.20701@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> I agreed. Now we should remove all protocol specific stuff in stgt. I
+> tried to do this (though I'm not sure whether I've done in a right way
+> about some of the changes).
+
+It is looking good at first glance.
+
+
+
+From michaelc at cs.wisc.edu  Fri Sep  9 19:40:27 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Fri, 09 Sep 2005 12:40:27 -0500
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+References: <20050909045633Z.tomof@acm.org>	<4320A29A.4050708@cs.wisc.edu>	<200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp> <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+Message-ID: <4321C90B.6020103@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+> Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+> Date: Fri, 09 Sep 2005 20:49:06 +0900
+> 
+> 
+>>>target driver (queue cmnd alloc buffer) -> protocol (SCSI stuff) -> STGT
+>>>
+>>>So then the target driver can pass some protocol specifc values like cdb 
+>>>and lun (and lun decoder if necessary) without the stgt core having to 
+>>>worry about that stuff. This will also allow you to make it so target 
+>>>drivers do not have to touch things like the cdb field (I can move that 
+>>>to a protocol specific cmnd data finally).
+>>
+>>I agreed. Now we should remove all protocol specific stuff in stgt. I
+>>tried to do this (though I'm not sure whether I've done in a right way
+>>about some of the changes).
+> 
+> 
+> By the way, it's time to rename stgt tgt (or something generic), I
+> guess. 
+
+yeah, what a pain :) I am fine with tgt. Maybe "blktgt" (that may be too 
+long) to show we are generic like the block layer. I am not so good at 
+naming things :)
+
+> 
+> I also think about rename IET something generic like istgt or isstgt
+> (iSCSI software target). After all, the code will be really very from
+> the original IET code. Any suggestions?
+
+
+From mingz at ele.uri.edu  Fri Sep  9 19:43:45 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Fri, 09 Sep 2005 13:43:45 -0400
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <4321C90B.6020103@cs.wisc.edu>
+References: <20050909045633Z.tomof@acm.org>	<4320A29A.4050708@cs.wisc.edu>
+	 <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+	 <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+	 <4321C90B.6020103@cs.wisc.edu>
+Message-ID: <1126287826.5546.67.camel@localhost.localdomain>
+
+On Fri, 2005-09-09 at 12:40 -0500, Mike Christie wrote:
+> FUJITA Tomonori wrote:
+> > From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+> > Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+> > Date: Fri, 09 Sep 2005 20:49:06 +0900
+> > 
+> > 
+> >>>target driver (queue cmnd alloc buffer) -> protocol (SCSI stuff) -> STGT
+> >>>
+> >>>So then the target driver can pass some protocol specifc values like cdb 
+> >>>and lun (and lun decoder if necessary) without the stgt core having to 
+> >>>worry about that stuff. This will also allow you to make it so target 
+> >>>drivers do not have to touch things like the cdb field (I can move that 
+> >>>to a protocol specific cmnd data finally).
+> >>
+> >>I agreed. Now we should remove all protocol specific stuff in stgt. I
+> >>tried to do this (though I'm not sure whether I've done in a right way
+> >>about some of the changes).
+> > 
+> > 
+> > By the way, it's time to rename stgt tgt (or something generic), I
+> > guess. 
+> 
+> yeah, what a pain :) I am fine with tgt. Maybe "blktgt" (that may be too 
+> long) to show we are generic like the block layer. I am not so good at 
+> naming things :)
+
+i think tgt is fine here. blktgt is too long.
+
+> 
+> > 
+> > I also think about rename IET something generic like istgt or isstgt
+> > (iSCSI software target). After all, the code will be really very from
+> > the original IET code. Any suggestions?
+
+istgt is better. is(csi) + tgt
+
+ming
+
+
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Sep  9 19:49:51 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 10 Sep 2005 02:49:51 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <1126287826.5546.67.camel@localhost.localdomain>
+References: <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+	<4321C90B.6020103@cs.wisc.edu>
+	<1126287826.5546.67.camel@localhost.localdomain>
+Message-ID: <20050910024951X.fujita.tomonori@lab.ntt.co.jp>
+
+From: Ming Zhang <mingz at ele.uri.edu>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Fri, 09 Sep 2005 13:43:45 -0400
+
+> > > I also think about rename IET something generic like istgt or isstgt
+> > > (iSCSI software target). After all, the code will be really very from
+> > > the original IET code. Any suggestions?
+> 
+> istgt is better. is(csi) + tgt
+
+I'm not sure because we'll support multiple iSCSI target drivers.
+
+
+From mingz at ele.uri.edu  Fri Sep  9 20:01:31 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Fri, 09 Sep 2005 14:01:31 -0400
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <20050910024951X.fujita.tomonori@lab.ntt.co.jp>
+References: <200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+	 <4321C90B.6020103@cs.wisc.edu>
+	 <1126287826.5546.67.camel@localhost.localdomain>
+	 <20050910024951X.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1126288891.5546.73.camel@localhost.localdomain>
+
+On Sat, 2005-09-10 at 02:49 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <mingz at ele.uri.edu>
+> Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+> Date: Fri, 09 Sep 2005 13:43:45 -0400
+> 
+> > > > I also think about rename IET something generic like istgt or isstgt
+> > > > (iSCSI software target). After all, the code will be really very from
+> > > > the original IET code. Any suggestions?
+> > 
+> > istgt is better. is(csi) + tgt
+> 
+> I'm not sure because we'll support multiple iSCSI target drivers.
+
+there are mpt, qla. maybe we use IETTGT to indicate it is originated
+from iet? We already registered IET in T10 as a vendor id. so it is a
+formal name.
+
+
+Ming
+
+
+
+
+From michaelc at cs.wisc.edu  Sat Sep 10 02:03:43 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Fri, 09 Sep 2005 19:03:43 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200509091158.j89BwY40016782@r-dd.iij4u.or.jp>
+References: <20050828004944V.tomof@acm.org>	<20050908101621J.fujita.tomonori@lab.ntt.co.jp>	<431F9495.8010306@cs.wisc.edu> <200509091158.j89BwY40016782@r-dd.iij4u.or.jp>
+Message-ID: <432222DF.1010108@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Wed, 07 Sep 2005 20:32:05 -0500
+> 
+> 
+>>>more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+>>>target driver specific tasks better?
+>>
+>>Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+>>handle the event it passes it to the protocol or target driver or 
+>>transport. Or maybe it can flow downwards. For what we have now:
+>>
+>>STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass 
+>>down if not mine) ->target_driver (fail if not my message)
+>>
+>>I guess either way we need to add something on the event so we can 
+>>figure out who the event is supposed to be for. I ran into similar 
+>>troubles with passing things upwards (see the TODO I added to the 
+>>usr/netlink.c this morning).
+> 
+> 
+> How should we do this?
+> 
+> I think that user-space daemon need to know 'tid -> target driver' and
+> 'target driver -> protocol'. Are we adding something about them to
+> sysfs?
+
+I was trying to expose the protocol on the target sysfs stuff. Will do 
+this in a sec but it keeps locking up on me.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Sep 11 13:40:27 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 11 Sep 2005 20:40:27 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <4321C90B.6020103@cs.wisc.edu>
+References: <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>
+	<200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>
+	<4321C90B.6020103@cs.wisc.edu>
+Message-ID: <200509111140.j8BBeSPL003246@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Fri, 09 Sep 2005 12:40:27 -0500
+
+> > By the way, it's time to rename stgt tgt (or something generic), I
+> > guess. 
+> 
+> yeah, what a pain :) I am fine with tgt. Maybe "blktgt" (that may be too 
+> long) to show we are generic like the block layer. I am not so good at 
+> naming things :)
+
+Let's go with 'tgt' (though I have no preference in this matter). I'll
+do it unless you have already started to do it.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Sep 11 13:54:19 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 11 Sep 2005 20:54:19 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <1126288891.5546.73.camel@localhost.localdomain>
+References: <1126287826.5546.67.camel@localhost.localdomain>
+	<20050910024951X.fujita.tomonori@lab.ntt.co.jp>
+	<1126288891.5546.73.camel@localhost.localdomain>
+Message-ID: <200509111154.j8BBsKQJ004668@r-dd.iij4u.or.jp>
+
+From: Ming Zhang <mingz at ele.uri.edu>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Fri, 09 Sep 2005 14:01:31 -0400
+
+> > > > > I also think about rename IET something generic like istgt or isstgt
+> > > > > (iSCSI software target). After all, the code will be really very from
+> > > > > the original IET code. Any suggestions?
+> > > 
+> > > istgt is better. is(csi) + tgt
+> > 
+> > I'm not sure because we'll support multiple iSCSI target drivers.
+> 
+> there are mpt, qla. maybe we use IETTGT to indicate it is originated
+> from iet?
+
+This implementation is a new project. It is a fork of IET. I think
+that calling two different implementations a same name causes
+unnecessary confusion (e.g. sfnet and open-iscsi).
+
+
+> We already registered IET in T10 as a vendor id. so it is a
+> formal name.
+
+The new project can get it easily if necessary.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Sep 11 14:09:59 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 11 Sep 2005 21:09:59 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <432222DF.1010108@cs.wisc.edu>
+References: <431F9495.8010306@cs.wisc.edu>
+	<200509091158.j89BwY40016782@r-dd.iij4u.or.jp>
+	<432222DF.1010108@cs.wisc.edu>
+Message-ID: <200509111210.j8BCA0eF006403@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Fri, 09 Sep 2005 19:03:43 -0500
+
+> >>>more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+> >>>target driver specific tasks better?
+> >>
+> >>Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+> >>handle the event it passes it to the protocol or target driver or 
+> >>transport. Or maybe it can flow downwards. For what we have now:
+> >>
+> >>STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass 
+> >>down if not mine) ->target_driver (fail if not my message)
+> >>
+> >>I guess either way we need to add something on the event so we can 
+> >>figure out who the event is supposed to be for. I ran into similar 
+> >>troubles with passing things upwards (see the TODO I added to the 
+> >>usr/netlink.c this morning).
+> > 
+> > 
+> > How should we do this?
+> > 
+> > I think that user-space daemon need to know 'tid -> target driver' and
+> > 'target driver -> protocol'. Are we adding something about them to
+> > sysfs?
+> 
+> I was trying to expose the protocol on the target sysfs stuff. Will do 
+> this in a sec but it keeps locking up on me.
+
+I sometimes see kernel panic though the code works in most cases. I'll
+dig into the code later.
+
+
+From mingz at ele.uri.edu  Sun Sep 11 15:39:18 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Sun, 11 Sep 2005 09:39:18 -0400
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509111154.j8BBsKQJ004668@r-dd.iij4u.or.jp>
+References: <1126287826.5546.67.camel@localhost.localdomain>
+	 <20050910024951X.fujita.tomonori@lab.ntt.co.jp>
+	 <1126288891.5546.73.camel@localhost.localdomain>
+	 <200509111154.j8BBsKQJ004668@r-dd.iij4u.or.jp>
+Message-ID: <1126445959.5422.2.camel@localhost.localdomain>
+
+On Sun, 2005-09-11 at 20:54 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <mingz at ele.uri.edu>
+> Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+> Date: Fri, 09 Sep 2005 14:01:31 -0400
+> 
+> > > > > > I also think about rename IET something generic like istgt or isstgt
+> > > > > > (iSCSI software target). After all, the code will be really very from
+> > > > > > the original IET code. Any suggestions?
+> > > > 
+> > > > istgt is better. is(csi) + tgt
+> > > 
+> > > I'm not sure because we'll support multiple iSCSI target drivers.
+> > 
+> > there are mpt, qla. maybe we use IETTGT to indicate it is originated
+> > from iet?
+> 
+> This implementation is a new project. It is a fork of IET. I think
+> that calling two different implementations a same name causes
+> unnecessary confusion (e.g. sfnet and open-iscsi).
+
+my understanding is when tgt get matured, IET will be merged here soon.
+iet always wants to have a better layer split and now tgt comes. so iet
+of course will follow this path. i do not think we need to maintain 2
+open source iscsi software target code. 
+
+> 
+> 
+> > We already registered IET in T10 as a vendor id. so it is a
+> > formal name.
+> 
+> The new project can get it easily if necessary.
+
+yes, of course. but the reality is once this one gets matured, i do not
+think there are still many people use IET. :P
+
+Ming
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Sep 11 16:36:51 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 11 Sep 2005 23:36:51 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <1126445959.5422.2.camel@localhost.localdomain>
+References: <1126288891.5546.73.camel@localhost.localdomain>
+	<200509111154.j8BBsKQJ004668@r-dd.iij4u.or.jp>
+	<1126445959.5422.2.camel@localhost.localdomain>
+Message-ID: <200509111436.j8BEaqkg022217@r-dd.iij4u.or.jp>
+
+From: Ming Zhang <mingz at ele.uri.edu>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Sun, 11 Sep 2005 09:39:18 -0400
+
+> > > > I'm not sure because we'll support multiple iSCSI target drivers.
+> > > 
+> > > there are mpt, qla. maybe we use IETTGT to indicate it is originated
+> > > from iet?
+> > 
+> > This implementation is a new project. It is a fork of IET. I think
+> > that calling two different implementations a same name causes
+> > unnecessary confusion (e.g. sfnet and open-iscsi).
+> 
+> my understanding is when tgt get matured, IET will be merged here soon.
+> iet always wants to have a better layer split and now tgt comes. so iet
+> of course will follow this path. i do not think we need to maintain 2
+> open source iscsi software target code. 
+
+It's not about only using the tgt framework. There are many other
+issues.
+
+Hopefully, the tgt framework will be merged into mainline. After that,
+I'll rewrite the large portion of IET. The iSCSI target implementation
+for tgt will be completely different from IET.
+
+If I successfully make the new iSCSI implementation as stable as the
+current IET code, I'll stop maintaining IET.
+
+
+From mingz at ele.uri.edu  Sun Sep 11 16:46:29 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Sun, 11 Sep 2005 10:46:29 -0400
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509111436.j8BEaqkg022217@r-dd.iij4u.or.jp>
+References: <1126288891.5546.73.camel@localhost.localdomain>
+	 <200509111154.j8BBsKQJ004668@r-dd.iij4u.or.jp>
+	 <1126445959.5422.2.camel@localhost.localdomain>
+	 <200509111436.j8BEaqkg022217@r-dd.iij4u.or.jp>
+Message-ID: <1126449989.5422.8.camel@localhost.localdomain>
+
+On Sun, 2005-09-11 at 23:36 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <mingz at ele.uri.edu>
+> Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+> Date: Sun, 11 Sep 2005 09:39:18 -0400
+> 
+> > > > > I'm not sure because we'll support multiple iSCSI target drivers.
+> > > > 
+> > > > there are mpt, qla. maybe we use IETTGT to indicate it is originated
+> > > > from iet?
+> > > 
+> > > This implementation is a new project. It is a fork of IET. I think
+> > > that calling two different implementations a same name causes
+> > > unnecessary confusion (e.g. sfnet and open-iscsi).
+> > 
+> > my understanding is when tgt get matured, IET will be merged here soon.
+> > iet always wants to have a better layer split and now tgt comes. so iet
+> > of course will follow this path. i do not think we need to maintain 2
+> > open source iscsi software target code. 
+> 
+> It's not about only using the tgt framework. There are many other
+> issues.
+> 
+> Hopefully, the tgt framework will be merged into mainline. After that,
+> I'll rewrite the large portion of IET. The iSCSI target implementation
+> for tgt will be completely different from IET.
+
+ic. so u want to redo it. then it is separated and independent new
+project.
+
+> 
+> If I successfully make the new iSCSI implementation as stable as the
+> current IET code, I'll stop maintaining IET.
+
+at that time, i do not see reasons that why IET should keep alive. :P
+
+ming
+
+
+
+
+From michaelc at cs.wisc.edu  Sun Sep 11 19:41:02 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sun, 11 Sep 2005 12:41:02 -0500
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <200509111140.j8BBeSPL003246@r-dd.iij4u.or.jp>
+References: <200509091149.j89Bn7lZ015875@r-dd.iij4u.or.jp>	<200509091210.j89CAgSq017888@r-dd.iij4u.or.jp>	<4321C90B.6020103@cs.wisc.edu> <200509111140.j8BBeSPL003246@r-dd.iij4u.or.jp>
+Message-ID: <43246C2E.7080001@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+> Date: Fri, 09 Sep 2005 12:40:27 -0500
+> 
+> 
+>>>By the way, it's time to rename stgt tgt (or something generic), I
+>>>guess. 
+>>
+>>yeah, what a pain :) I am fine with tgt. Maybe "blktgt" (that may be too 
+>>long) to show we are generic like the block layer. I am not so good at 
+>>naming things :)
+> 
+> 
+> Let's go with 'tgt' (though I have no preference in this matter). I'll
+> do it unless you have already started to do it.
+
+go ahead. We are hitting the iscsi oom problem here so I have been 
+focused on initiator problems.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep 12 11:18:25 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 12 Sep 2005 18:18:25 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200509111210.j8BCA0eF006403@r-dd.iij4u.or.jp>
+References: <200509091158.j89BwY40016782@r-dd.iij4u.or.jp>
+	<432222DF.1010108@cs.wisc.edu>
+	<200509111210.j8BCA0eF006403@r-dd.iij4u.or.jp>
+Message-ID: <20050912181825W.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Sun, 11 Sep 2005 21:09:59 +0900
+
+> > > How should we do this?
+> > > 
+> > > I think that user-space daemon need to know 'tid -> target driver' and
+> > > 'target driver -> protocol'. Are we adding something about them to
+> > > sysfs?
+> > 
+> > I was trying to expose the protocol on the target sysfs stuff. Will do 
+> > this in a sec but it keeps locking up on me.
+> 
+> I sometimes see kernel panic though the code works in most cases. I'll
+> dig into the code later.
+
+I fixed two serious memory corruptions bugs. So far the code has
+worked well.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep 12 11:22:27 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 12 Sep 2005 18:22:27 +0900
+Subject: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+In-Reply-To: <43246C2E.7080001@cs.wisc.edu>
+References: <4321C90B.6020103@cs.wisc.edu>
+	<200509111140.j8BBeSPL003246@r-dd.iij4u.or.jp>
+	<43246C2E.7080001@cs.wisc.edu>
+Message-ID: <20050912182227B.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] stgt & IBM virtual SCSI Target Driver
+Date: Sun, 11 Sep 2005 12:41:02 -0500
+
+> >>>By the way, it's time to rename stgt tgt (or something generic), I
+> >>>guess. 
+> >>
+> >>yeah, what a pain :) I am fine with tgt. Maybe "blktgt" (that may be too 
+> >>long) to show we are generic like the block layer. I am not so good at 
+> >>naming things :)
+> > 
+> > 
+> > Let's go with 'tgt' (though I have no preference in this matter). I'll
+> > do it unless you have already started to do it.
+> 
+> go ahead. We are hitting the iscsi oom problem here so I have been 
+> focused on initiator problems.
+
+Done.
+
+I like to clean up one more thing. We use both 'cmnd' and 'cmd' for
+commands. Which one do you like?
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep 12 16:12:41 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 12 Sep 2005 23:12:41 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <431F9495.8010306@cs.wisc.edu>
+References: <20050828004944V.tomof@acm.org>
+	<20050908101621J.fujita.tomonori@lab.ntt.co.jp>
+	<431F9495.8010306@cs.wisc.edu>
+Message-ID: <20050912231241T.fujita.tomonori@lab.ntt.co.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+
+> > I'll try to see how to integrate target driver daemons to stgtd. For
+> > that, ietd daemon needs to do all kernel-user space communication
+> > through stgt netlink. Thus, we need to add some iSCSI specific
+> > callbacks (like conn_create/destroy). Is it OK? Or is implementing
+> 
+> I do not think we want to do that since we would have stgt_core doing 
+> lower level transport stuff and as we add many the callouts for them 
+> could get out of hand.
+> 
+> > more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+> > target driver specific tasks better?
+> 
+> Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+> handle the event it passes it to the protocol or target driver or 
+> transport. Or maybe it can flow downwards. For what we have now:
+> 
+> STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass 
+> down if not mine) ->target_driver (fail if not my message)
+
+Mike, can you tell me the details of your design (or commit the
+initial code)? I don't get a clear idea of how this part should be
+implemented yet.
+
+
+From johan at capvert.se  Mon Sep 12 16:04:11 2005
+From: johan at capvert.se (johan at capvert.se)
+Date: Mon, 12 Sep 2005 16:04:11 +0200
+Subject: Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Message-ID: <OF4EFAAB9E.A8AA546E-ONC125707A.004CCD38@capvert.ins>
+
+                                               Hi!
+
+
+ I?m new to this list, but has been in the IET since the beginning. Where
+can I read something about the ideas behind this project? Is the idea to
+become a midlevel scsi target driver, that handles ALL the scsi specific
+commands, to be used of ANY target driver that uses scsi commands, like Fc
+or iScsi? If so, I would give my full support for it.
+
+               Best regards from/Med v?nliga h?lsningar fr?n
+
+                                 Johan Kragsterman
+
+                               http://www.capvert.se
+
+
+                                                                                                                          
+                    FUJITA Tomonori                                                                                       
+                    <fujita.tomonori at lab.       Till:   michaelc at cs.wisc.edu                                              
+                    ntt.co.jp>                  Kopia:  stgt-devel at lists.berlios.de                                       
+                    S?nt av:                    ?rende: Re: [Stgt-devel] [PATCH] add stgt_device_template example         
+                    stgt-devel-admin at berl                                                                                 
+                    ios.de                                                                                                
+                                                                                                                          
+                                                                                                                          
+                    2005-09-12 16:12                                                                                      
+                                                                                                                          
+                                                                                                                          
+
+
+
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+
+> > I'll try to see how to integrate target driver daemons to stgtd. For
+> > that, ietd daemon needs to do all kernel-user space communication
+> > through stgt netlink. Thus, we need to add some iSCSI specific
+> > callbacks (like conn_create/destroy). Is it OK? Or is implementing
+>
+> I do not think we want to do that since we would have stgt_core doing
+> lower level transport stuff and as we add many the callouts for them
+> could get out of hand.
+>
+> > more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+> > target driver specific tasks better?
+>
+> Yeah, maybe a generic event like that. Where if stgt doe not know how to
+> handle the event it passes it to the protocol or target driver or
+> transport. Or maybe it can flow downwards. For what we have now:
+>
+> STGT_UEVENT_SEND_MESSAGE->stgt (if not mine pass down) ->protocol (pass
+> down if not mine) ->target_driver (fail if not my message)
+
+Mike, can you tell me the details of your design (or commit the
+initial code)? I don't get a clear idea of how this part should be
+implemented yet.
+_______________________________________________
+Stgt-devel mailing list
+Stgt-devel at lists.berlios.de
+http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep 12 16:39:55 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 12 Sep 2005 23:39:55 +0900
+Subject: Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <OF4EFAAB9E.A8AA546E-ONC125707A.004CCD38@capvert.ins>
+References: <OF4EFAAB9E.A8AA546E-ONC125707A.004CCD38@capvert.ins>
+Message-ID: <20050912233955F.fujita.tomonori@lab.ntt.co.jp>
+
+From: johan at capvert.se
+Subject: Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Mon, 12 Sep 2005 16:04:11 +0200
+
+>  I?m new to this list, but has been in the IET since the beginning. Where
+> can I read something about the ideas behind this project? Is the idea to
+> become a midlevel scsi target driver, that handles ALL the scsi specific
+> commands, to be used of ANY target driver that uses scsi commands, like Fc
+> or iScsi? If so, I would give my full support for it.
+
+Unfortunately, there aren't any documents. But you can get the current
+code from the subversion repository.
+
+http://developer.berlios.de/svn/?group_id=4492
+
+stgt provides similar features SCST does. So it can provide what you
+want.
+
+
+P.S.
+
+Please don't use stgt-devel-admin at berlios.de or reply to unrelated
+emails.
+
+
+From mingz at ele.uri.edu  Tue Sep 13 04:16:06 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Mon, 12 Sep 2005 22:16:06 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+In-Reply-To: <20050913094504L.tomof@acm.org>
+References: <1126540169.5422.59.camel@localhost.localdomain>
+	 <200509121718.j8CHILoq010790@r-dd.iij4u.or.jp>
+	 <1126563339.5422.88.camel@localhost.localdomain>
+	 <20050913094504L.tomof@acm.org>
+Message-ID: <1126577766.5422.162.camel@localhost.localdomain>
+
+On Tue, 2005-09-13 at 09:45 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <mingz at ele.uri.edu>
+> Subject: Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+> Date: Mon, 12 Sep 2005 18:15:39 -0400
+> 
+> > > > > > add a unlikely for assert.
+> > > > > 
+> > > > > I think that we should kill assert and use BUG_ON.
+> > > > > 
+> > > > 
+> > > > BUG_ON does not have dump_stack()
+> > > > 
+> > > > but WARN_ON is weak in some places.
+> > > 
+> > > First, simply try to use BUG_ON to learn how it works.
+> > 
+> > my dumb.
+> > 
+> > [mingz at amd64 iscsitarget-0.4.12]$ grep assert * -rn |wc
+> >      87     230    3922
+> > 
+> > do u have interest to merge the patch if i kill all these assert with
+> > BUG_ON?
+> 
+> To be honest, I don't. There is no chance that IET code is in
+> mainline, so it is no worth doing that.
+> 
+
+:) thx. so i will not do that.
+
+so i guess there will not have much development on IET but on stgt then?
+
+> If you want to speed up assert, just define it as a null function.
+
+yes.
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Sep 13 04:30:01 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 13 Sep 2005 11:30:01 +0900
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+In-Reply-To: <1126577766.5422.162.camel@localhost.localdomain>
+References: <1126563339.5422.88.camel@localhost.localdomain>
+	<20050913094504L.tomof@acm.org>
+	<1126577766.5422.162.camel@localhost.localdomain>
+Message-ID: <20050913113001Q.fujita.tomonori@lab.ntt.co.jp>
+
+From: Ming Zhang <mingz at ele.uri.edu>
+Subject: Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+Date: Mon, 12 Sep 2005 22:16:06 -0400
+
+> > > > > > > add a unlikely for assert.
+> > > > > > 
+> > > > > > I think that we should kill assert and use BUG_ON.
+> > > > > > 
+> > > > > 
+> > > > > BUG_ON does not have dump_stack()
+> > > > > 
+> > > > > but WARN_ON is weak in some places.
+> > > > 
+> > > > First, simply try to use BUG_ON to learn how it works.
+> > > 
+> > > my dumb.
+> > > 
+> > > [mingz at amd64 iscsitarget-0.4.12]$ grep assert * -rn |wc
+> > >      87     230    3922
+> > > 
+> > > do u have interest to merge the patch if i kill all these assert with
+> > > BUG_ON?
+> > 
+> > To be honest, I don't. There is no chance that IET code is in
+> > mainline, so it is no worth doing that.
+> > 
+> 
+> :) thx. so i will not do that.
+> 
+> so i guess there will not have much development on IET but on stgt then?
+
+I'll focus on a new iSCSI software target implementation (it is not
+IET, but a fork of IET) for stgt. However, if someone finds serious
+bugs in IET, I'll try to fix them.
+
+
+From mingz at ele.uri.edu  Tue Sep 13 04:36:23 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Mon, 12 Sep 2005 22:36:23 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+In-Reply-To: <20050913113001Q.fujita.tomonori@lab.ntt.co.jp>
+References: <1126563339.5422.88.camel@localhost.localdomain>
+	 <20050913094504L.tomof@acm.org>
+	 <1126577766.5422.162.camel@localhost.localdomain>
+	 <20050913113001Q.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1126578983.5422.180.camel@localhost.localdomain>
+
+On Tue, 2005-09-13 at 11:30 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <mingz at ele.uri.edu>
+> Subject: Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+> Date: Mon, 12 Sep 2005 22:16:06 -0400
+> 
+> > > > > > > > add a unlikely for assert.
+> > > > > > > 
+> > > > > > > I think that we should kill assert and use BUG_ON.
+> > > > > > > 
+> > > > > > 
+> > > > > > BUG_ON does not have dump_stack()
+> > > > > > 
+> > > > > > but WARN_ON is weak in some places.
+> > > > > 
+> > > > > First, simply try to use BUG_ON to learn how it works.
+> > > > 
+> > > > my dumb.
+> > > > 
+> > > > [mingz at amd64 iscsitarget-0.4.12]$ grep assert * -rn |wc
+> > > >      87     230    3922
+> > > > 
+> > > > do u have interest to merge the patch if i kill all these assert with
+> > > > BUG_ON?
+> > > 
+> > > To be honest, I don't. There is no chance that IET code is in
+> > > mainline, so it is no worth doing that.
+> > > 
+> > 
+> > :) thx. so i will not do that.
+> > 
+> > so i guess there will not have much development on IET but on stgt then?
+> 
+> I'll focus on a new iSCSI software target implementation (it is not
+> IET, but a fork of IET) for stgt. However, if someone finds serious
+> bugs in IET, I'll try to fix them.
+
+Thanks!
+
+ming
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Sep 13 18:14:02 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Wed, 14 Sep 2005 01:14:02 +0900
+Subject: [Stgt-devel] Re: [Stgt-svn] r75 - trunk/iscsi/kernel
+In-Reply-To: <1126626332.5385.38.camel@localhost.localdomain>
+References: <1126625930.5385.34.camel@localhost.localdomain>
+	<20050914004434T.fujita.tomonori@lab.ntt.co.jp>
+	<1126626332.5385.38.camel@localhost.localdomain>
+Message-ID: <20050914011402U.fujita.tomonori@lab.ntt.co.jp>
+
+By the way, please don't use stgt-svn at lists.berlios.de. It is only for
+subversion's changes.
+
+From: Ming Zhang <mingz at ele.uri.edu>
+Subject: Re: [Stgt-svn] r75 - trunk/iscsi/kernel
+Date: Tue, 13 Sep 2005 11:45:32 -0400
+
+> ic. thx
+>
+> ming
+>
+> On Wed, 2005-09-14 at 00:44 +0900, FUJITA Tomonori wrote:
+> > From: Ming Zhang <mingz at ele.uri.edu>
+> > Subject: Re: [Stgt-svn] r75 - trunk/iscsi/kernel
+> > Date: Tue, 13 Sep 2005 11:38:50 -0400
+> > 
+> > > which iscsi ini u use? open-iscsi?
+> > > 
+> > > ming
+> > > 
+> > > On Tue, 2005-09-13 at 17:35 +0200, Tomonori Fujita at BerliOS wrote:
+> > > > Author: tomo
+> > > > Date: 2005-09-13 17:35:44 +0200 (Tue, 13 Sep 2005)
+> > > > New Revision: 75
+> > > > 
+> > > > Modified:
+> > > >    trunk/iscsi/kernel/iscsi.c
+> > > > Log:
+> > > > Fix data corruption bugs. Finally, I succeeded to run postmark with ext3.
+> > > 
+> > 
+> > I alway prefer sfnet when I debug unstable iSCSI target software.
+
+
+From mingz at ele.uri.edu  Tue Sep 13 18:22:15 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 13 Sep 2005 12:22:15 -0400
+Subject: [Stgt-devel] Re: [Stgt-svn] r75 - trunk/iscsi/kernel
+In-Reply-To: <20050914011402U.fujita.tomonori@lab.ntt.co.jp>
+References: <1126625930.5385.34.camel@localhost.localdomain>
+	 <20050914004434T.fujita.tomonori@lab.ntt.co.jp>
+	 <1126626332.5385.38.camel@localhost.localdomain>
+	 <20050914011402U.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1126628536.5385.40.camel@localhost.localdomain>
+
+sure. will avoid that.
+
+ming
+
+On Wed, 2005-09-14 at 01:14 +0900, FUJITA Tomonori wrote:
+> By the way, please don't use stgt-svn at lists.berlios.de. It is only for
+> subversion's changes.
+> 
+> From: Ming Zhang <mingz at ele.uri.edu>
+> Subject: Re: [Stgt-svn] r75 - trunk/iscsi/kernel
+> Date: Tue, 13 Sep 2005 11:45:32 -0400
+> 
+> > ic. thx
+> >
+> > ming
+> >
+> > On Wed, 2005-09-14 at 00:44 +0900, FUJITA Tomonori wrote:
+> > > From: Ming Zhang <mingz at ele.uri.edu>
+> > > Subject: Re: [Stgt-svn] r75 - trunk/iscsi/kernel
+> > > Date: Tue, 13 Sep 2005 11:38:50 -0400
+> > > 
+> > > > which iscsi ini u use? open-iscsi?
+> > > > 
+> > > > ming
+> > > > 
+> > > > On Tue, 2005-09-13 at 17:35 +0200, Tomonori Fujita at BerliOS wrote:
+> > > > > Author: tomo
+> > > > > Date: 2005-09-13 17:35:44 +0200 (Tue, 13 Sep 2005)
+> > > > > New Revision: 75
+> > > > > 
+> > > > > Modified:
+> > > > >    trunk/iscsi/kernel/iscsi.c
+> > > > > Log:
+> > > > > Fix data corruption bugs. Finally, I succeeded to run postmark with ext3.
+> > > > 
+> > > 
+> > > I alway prefer sfnet when I debug unstable iSCSI target software.
+
+
+
+From mingz at ele.uri.edu  Tue Sep 13 19:18:16 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 13 Sep 2005 13:18:16 -0400
+Subject: [Stgt-devel] patch for compiling on fc3 x86_64 with gcc 3.4.x
+Message-ID: <1126631896.5385.46.camel@localhost.localdomain>
+
+here it is.
+
+Ming
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: tgt.compile.patch
+Type: text/x-patch
+Size: 683 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20050913/8e0ff37e/attachment.bin>
+
+From mingz at ele.uri.edu  Tue Sep 13 19:35:42 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 13 Sep 2005 13:35:42 -0400
+Subject: [Stgt-devel] use KERNELSRC from single Makefile
+Message-ID: <1126632942.5385.49.camel@localhost.localdomain>
+
+use single KERNELSRC from one makefile. 
+
+
+Ming
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: tgt.make.patch
+Type: text/x-patch
+Size: 1081 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20050913/b0f1f09d/attachment.bin>
+
+From michaelc at cs.wisc.edu  Tue Sep 13 23:34:27 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 13 Sep 2005 16:34:27 -0500
+Subject: [Stgt-devel] use KERNELSRC from single Makefile
+In-Reply-To: <1126632942.5385.49.camel@localhost.localdomain>
+References: <1126632942.5385.49.camel@localhost.localdomain>
+Message-ID: <432745E3.70703@cs.wisc.edu>
+
+Ming Zhang wrote:
+> use single KERNELSRC from one makefile. 
+
+Nice thanks!
+
+> 
+> 
+> Ming
+> 
+> 
+> 
+> ------------------------------------------------------------------------
+> 
+> Index: kernel/Makefile
+> ===================================================================
+> --- kernel/Makefile	(revision 76)
+> +++ kernel/Makefile	(working copy)
+> @@ -11,10 +11,6 @@
+>  obj-m		+= tgt_vsd.o tgt_scsi.o
+>  else
+>  
+> -ifeq ($(KERNELSRC),)
+> -	KERNELSRC ?= /lib/modules/$(shell uname -r)/build
+> -endif
+> -
+>  PWD := $(shell pwd)
+>  
+>  default:
+> Index: iscsi/Makefile
+> ===================================================================
+> --- iscsi/Makefile	(revision 76)
+> +++ iscsi/Makefile	(working copy)
+> @@ -7,14 +7,8 @@
+>  #
+>  # Note 2! The CFLAGS definitions are now in the main makefile.
+>  
+> -#export KERNELSRC := /usr/src/linux
+> -
+>  SUBDIRS := $(shell pwd)
+>  
+> -ifeq ($(KERNELSRC),)
+> -	KERNELSRC ?= /lib/modules/$(shell uname -r)/build
+> -endif
+> -
+>  all: progs mods
+>  
+>  mods:
+> Index: Makefile
+> ===================================================================
+> --- Makefile	(revision 76)
+> +++ Makefile	(working copy)
+> @@ -1,3 +1,11 @@
+> +#KERNELSRC := /usr/src/linux
+> +
+> +ifeq ($(KERNELSRC),)
+> +	KERNELSRC ?= /lib/modules/$(shell uname -r)/build
+> +endif
+> +
+> +export KERNELSRC
+> +
+>  all:
+>  	make -C usr
+>  	make -C kernel
+
+
+
+From mingz at ele.uri.edu  Tue Sep 20 14:27:27 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 20 Sep 2005 08:27:27 -0400
+Subject: [Stgt-devel] vsd -> vdev is bad
+Message-ID: <1127219247.5544.5.camel@localhost.localdomain>
+
+Hi Mike
+
+I think change vsd->vdev is a bad idea.
+
+There can be many different types of virtual device.
+
+so if a virtual disk device is vdev, then a virtual tape will be vtdev?
+i think name like these should be better.
+
+vd virtual disk
+vt virtual tape
+vg - virtual generic
+vmmc - virtual mmc device
+
+my 2c.
+
+Ming
+
+
+--------------
+Log:
+rename vsd to vdev. NOTE YOU MUST CHANGE YOUR IETD.CONF TO REFLECT THIS.
+tgt_vsd IS NOW tgt_vdev
+
+
+
+From michaelc at cs.wisc.edu  Tue Sep 20 20:15:40 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 20 Sep 2005 13:15:40 -0500
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <1127219247.5544.5.camel@localhost.localdomain>
+References: <1127219247.5544.5.camel@localhost.localdomain>
+Message-ID: <433051CC.1030608@cs.wisc.edu>
+
+Ming Zhang wrote:
+> Hi Mike
+> 
+> I think change vsd->vdev is a bad idea.
+
+I would agree it is a bad name, but all that device does today is the 
+reads and writes. It should probably be called something-something-IO. 
+ From your experience with iet, do you think a read or write will be 
+different for tape or disk when using the interface we are using?
+
+For any other non-read/write command it looks like we are going to 
+userspace for now. Originally we had the possiblity to do passthrough 
+using blk_execute_rq_nowait so we could do some interesting things in 
+the kernel, but not anymore - hopefully temporarily. Patches are welcome 
+though :) It was just a matter of having time to do things becuase we 
+would need to account for the destination device's limits (segments, 
+segment size, max_sectors, max cdb size for scsi, etc), and the target 
+drivers limits. And the target driver's limits are a priority because we 
+must support HW targets like qla2xxx.
+
+The reason for the concern is that we are duplicating a lot of block 
+layer code. The tgt_cmnd is starting to look like a request, the code to 
+make and use scatterlists will eventually look like the block layers, 
+and eventually for mainline I am guessing we will have to merge 
+functionality so I am trying to stay small as possible so we can push 
+common code. I am in the middle of cleaning up the SCSI ULDs to do this 
+and it is a pain in the butt :)
+
+Send me a patch and I will at least change the name if you are thinking 
+a read for a tape will be different for a read for disk, or can think of 
+a better name to convey that it is only a interface to do IO. I was 
+thinking if tape or cd does become much different we will need something 
+like the SCSI ULDs to abstract this to avoid some code duplication.
+
+> 
+> There can be many different types of virtual device.
+> 
+> so if a virtual disk device is vdev, then a virtual tape will be vtdev?
+> i think name like these should be better.
+> 
+> vd virtual disk
+> vt virtual tape
+> vg - virtual generic
+> vmmc - virtual mmc device
+> 
+> my 2c.
+> 
+> Ming
+> 
+> 
+> --------------
+> Log:
+> rename vsd to vdev. NOTE YOU MUST CHANGE YOUR IETD.CONF TO REFLECT THIS.
+> tgt_vsd IS NOW tgt_vdev
+> 
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From michaelc at cs.wisc.edu  Tue Sep 20 20:27:38 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 20 Sep 2005 13:27:38 -0500
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <433051CC.1030608@cs.wisc.edu>
+References: <1127219247.5544.5.camel@localhost.localdomain> <433051CC.1030608@cs.wisc.edu>
+Message-ID: <4330549A.4040800@cs.wisc.edu>
+
+Mike Christie wrote:
+> Ming Zhang wrote:
+> 
+>> Hi Mike
+>>
+>> I think change vsd->vdev is a bad idea.
+> 
+> 
+> I would agree it is a bad name, but all that device does today is the 
+> reads and writes. It should probably be called something-something-IO. 
+>  From your experience with iet, do you think a read or write will be 
+> different for tape or disk when using the interface we are using?
+> 
+
+Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+mostly only the error hanlding will be a problem.
+
+
+From mingz at ele.uri.edu  Tue Sep 20 20:31:48 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 20 Sep 2005 14:31:48 -0400
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <4330549A.4040800@cs.wisc.edu>
+References: <1127219247.5544.5.camel@localhost.localdomain>
+	 <433051CC.1030608@cs.wisc.edu>  <4330549A.4040800@cs.wisc.edu>
+Message-ID: <1127241108.5544.44.camel@localhost.localdomain>
+
+On Tue, 2005-09-20 at 13:27 -0500, Mike Christie wrote:
+> Mike Christie wrote:
+> > Ming Zhang wrote:
+> > 
+> >> Hi Mike
+> >>
+> >> I think change vsd->vdev is a bad idea.
+> > 
+> > 
+> > I would agree it is a bad name, but all that device does today is the 
+> > reads and writes. It should probably be called something-something-IO. 
+> >  From your experience with iet, do you think a read or write will be 
+> > different for tape or disk when using the interface we are using?
+> > 
+> 
+> Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+> mostly only the error hanlding will be a problem.
+
+yes, that is quite different.
+
+ming
+
+
+
+
+From mingz at ele.uri.edu  Tue Sep 20 20:42:39 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 20 Sep 2005 14:42:39 -0400
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <433051CC.1030608@cs.wisc.edu>
+References: <1127219247.5544.5.camel@localhost.localdomain>
+	 <433051CC.1030608@cs.wisc.edu>
+Message-ID: <1127241759.5544.56.camel@localhost.localdomain>
+
+On Tue, 2005-09-20 at 13:15 -0500, Mike Christie wrote:
+> Ming Zhang wrote:
+> > Hi Mike
+> > 
+> > I think change vsd->vdev is a bad idea.
+> 
+> I would agree it is a bad name, but all that device does today is the 
+> reads and writes. It should probably be called something-something-IO. 
+>  From your experience with iet, do you think a read or write will be 
+> different for tape or disk when using the interface we are using?
+
+yes, it is fileio in fact.
+
+any disk based virtual object, even OSD i feel, will come to (r/w, lba,
+size, buf) eventually. so yes, i feel tgat all device will use finally
+do same/simialr io with this vdev. so  will have
+
+tgt -- VD   ---- fileio
+    -- VMMC 
+    -- VT
+    -- OSD
+    -- ...
+
+> 
+> For any other non-read/write command it looks like we are going to 
+> userspace for now. Originally we had the possiblity to do passthrough 
+
+good point for Vx devices.
+
+for pass-through/bridge like stuff, u might want CDB relay to next
+level.
+
+
+> using blk_execute_rq_nowait so we could do some interesting things in 
+> the kernel, but not anymore - hopefully temporarily. Patches are welcome 
+> though :) It was just a matter of having time to do things becuase we 
+> would need to account for the destination device's limits (segments, 
+> segment size, max_sectors, max cdb size for scsi, etc), and the target 
+> drivers limits. And the target driver's limits are a priority because we 
+> must support HW targets like qla2xxx.
+
+yes, looking forward to that. One thing I like SCST very much is its
+clear document. It has great help on writing front/back end for scst.
+
+> 
+> The reason for the concern is that we are duplicating a lot of block 
+> layer code. The tgt_cmnd is starting to look like a request, the code to 
+> make and use scatterlists will eventually look like the block layers, 
+> and eventually for mainline I am guessing we will have to merge 
+> functionality so I am trying to stay small as possible so we can push 
+> common code. I am in the middle of cleaning up the SCSI ULDs to do this 
+> and it is a pain in the butt :)
+
+yes, saw u post on scsi list.
+
+
+> 
+> Send me a patch and I will at least change the name if you are thinking 
+> a read for a tape will be different for a read for disk, or can think of 
+> a better name to convey that it is only a interface to do IO. I was 
+> thinking if tape or cd does become much different we will need something 
+> like the SCSI ULDs to abstract this to avoid some code duplication.
+
+no, they are almost same. one thing here is tape/mmc might generate
+extra io activity while disk is a pure dumb device.
+
+
+> 
+> > 
+> > There can be many different types of virtual device.
+> > 
+> > so if a virtual disk device is vdev, then a virtual tape will be vtdev?
+> > i think name like these should be better.
+> > 
+> > vd virtual disk
+> > vt virtual tape
+> > vg - virtual generic
+> > vmmc - virtual mmc device
+> > 
+> > my 2c.
+> > 
+> > Ming
+> > 
+> > 
+> > --------------
+> > Log:
+> > rename vsd to vdev. NOTE YOU MUST CHANGE YOUR IETD.CONF TO REFLECT THIS.
+> > tgt_vsd IS NOW tgt_vdev
+> > 
+> > _______________________________________________
+> > Stgt-devel mailing list
+> > Stgt-devel at lists.berlios.de
+> > http://lists.berlios.de/mailman/listinfo/stgt-devel
+> 
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From michaelc at cs.wisc.edu  Tue Sep 20 20:44:08 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 20 Sep 2005 13:44:08 -0500
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <1127241108.5544.44.camel@localhost.localdomain>
+References: <1127219247.5544.5.camel@localhost.localdomain>	 <433051CC.1030608@cs.wisc.edu>  <4330549A.4040800@cs.wisc.edu> <1127241108.5544.44.camel@localhost.localdomain>
+Message-ID: <43305878.3020903@cs.wisc.edu>
+
+Ming Zhang wrote:
+> On Tue, 2005-09-20 at 13:27 -0500, Mike Christie wrote:
+> 
+>>Mike Christie wrote:
+>>
+>>>Ming Zhang wrote:
+>>>
+>>>
+>>>>Hi Mike
+>>>>
+>>>>I think change vsd->vdev is a bad idea.
+>>>
+>>>
+>>>I would agree it is a bad name, but all that device does today is the 
+>>>reads and writes. It should probably be called something-something-IO. 
+>>> From your experience with iet, do you think a read or write will be 
+>>>different for tape or disk when using the interface we are using?
+>>>
+>>
+>>Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+>>mostly only the error hanlding will be a problem.
+> 
+> 
+> yes, that is quite different.
+> 
+
+So I guess we will need something. Originally the vsd and sd names came 
+about becuase we were only doing SCSI and vsd was a virtual scsi disk 
+and sd was a scsi disk passthrough type of device. They basically 
+emulated SCSI's ULDs for tape, cd, disk but they also performed 
+different types of IO, passthrough vs generic_file_readv/writev. 
+Eventually we pushed the SCSI stuff to the protocol handlers and the 
+devices became what they are today. Maybe io_handlers or io_type is a 
+better name?
+
+Then to suport scsi tape, cd, etc we can add that code to the scsi 
+protocol and have something simialr to the SCSI-ml ULDs.
+
+
+From mingz at ele.uri.edu  Tue Sep 20 20:53:44 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 20 Sep 2005 14:53:44 -0400
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <43305878.3020903@cs.wisc.edu>
+References: <1127219247.5544.5.camel@localhost.localdomain>
+	 <433051CC.1030608@cs.wisc.edu>  <4330549A.4040800@cs.wisc.edu>
+	 <1127241108.5544.44.camel@localhost.localdomain>
+	 <43305878.3020903@cs.wisc.edu>
+Message-ID: <1127242424.5544.64.camel@localhost.localdomain>
+
+On Tue, 2005-09-20 at 13:44 -0500, Mike Christie wrote:
+> Ming Zhang wrote:
+> > On Tue, 2005-09-20 at 13:27 -0500, Mike Christie wrote:
+> > 
+> >>Mike Christie wrote:
+> >>
+> >>>Ming Zhang wrote:
+> >>>
+> >>>
+> >>>>Hi Mike
+> >>>>
+> >>>>I think change vsd->vdev is a bad idea.
+> >>>
+> >>>
+> >>>I would agree it is a bad name, but all that device does today is the 
+> >>>reads and writes. It should probably be called something-something-IO. 
+> >>> From your experience with iet, do you think a read or write will be 
+> >>>different for tape or disk when using the interface we are using?
+> >>>
+> >>
+> >>Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+> >>mostly only the error hanlding will be a problem.
+> > 
+> > 
+> > yes, that is quite different.
+> > 
+> 
+> So I guess we will need something. Originally the vsd and sd names came 
+> about becuase we were only doing SCSI and vsd was a virtual scsi disk 
+> and sd was a scsi disk passthrough type of device. They basically 
+> emulated SCSI's ULDs for tape, cd, disk but they also performed 
+> different types of IO, passthrough vs generic_file_readv/writev. 
+> Eventually we pushed the SCSI stuff to the protocol handlers and the 
+> devices became what they are today. Maybe io_handlers or io_type is a 
+> better name?
+> 
+> Then to suport scsi tape, cd, etc we can add that code to the scsi 
+> protocol and have something simialr to the SCSI-ml ULDs.
+
+iet currently have target type and io type. target_disk is a target type
+and fileio is a io type. so current vsd looks more like a io_handlers as
+u said.
+
+in fact, i do not think target type is ok since it is quite possible
+that 1 target has several lu while some of them are disk and others are
+cdrom or tape. so LU type is better here. base on scsi spec, it is the
+device server to decide what action it performs.
+
+so it would be nice that tgt define a clear line between target mode
+common and device specific; each lu has its own device server. device
+server process most of the function in user space, and r/w use certain
+io handler.
+
+ming
+
+
+
+
+
+
+From michaelc at cs.wisc.edu  Tue Sep 20 21:22:09 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 20 Sep 2005 14:22:09 -0500
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <1127242424.5544.64.camel@localhost.localdomain>
+References: <1127219247.5544.5.camel@localhost.localdomain>	 <433051CC.1030608@cs.wisc.edu>  <4330549A.4040800@cs.wisc.edu>	 <1127241108.5544.44.camel@localhost.localdomain>	 <43305878.3020903@cs.wisc.edu> <1127242424.5544.64.camel@localhost.localdomain>
+Message-ID: <43306161.9080103@cs.wisc.edu>
+
+Ming Zhang wrote:
+> On Tue, 2005-09-20 at 13:44 -0500, Mike Christie wrote:
+> 
+>>Ming Zhang wrote:
+>>
+>>>On Tue, 2005-09-20 at 13:27 -0500, Mike Christie wrote:
+>>>
+>>>
+>>>>Mike Christie wrote:
+>>>>
+>>>>
+>>>>>Ming Zhang wrote:
+>>>>>
+>>>>>
+>>>>>
+>>>>>>Hi Mike
+>>>>>>
+>>>>>>I think change vsd->vdev is a bad idea.
+>>>>>
+>>>>>
+>>>>>I would agree it is a bad name, but all that device does today is the 
+>>>>>reads and writes. It should probably be called something-something-IO. 
+>>>>>From your experience with iet, do you think a read or write will be 
+>>>>>different for tape or disk when using the interface we are using?
+>>>>>
+>>>>
+>>>>Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+>>>>mostly only the error hanlding will be a problem.
+>>>
+>>>
+>>>yes, that is quite different.
+>>>
+>>
+>>So I guess we will need something. Originally the vsd and sd names came 
+>>about becuase we were only doing SCSI and vsd was a virtual scsi disk 
+>>and sd was a scsi disk passthrough type of device. They basically 
+>>emulated SCSI's ULDs for tape, cd, disk but they also performed 
+>>different types of IO, passthrough vs generic_file_readv/writev. 
+>>Eventually we pushed the SCSI stuff to the protocol handlers and the 
+>>devices became what they are today. Maybe io_handlers or io_type is a 
+>>better name?
+>>
+>>Then to suport scsi tape, cd, etc we can add that code to the scsi 
+>>protocol and have something simialr to the SCSI-ml ULDs.
+> 
+> 
+> iet currently have target type and io type. target_disk is a target type
+> and fileio is a io type. so current vsd looks more like a io_handlers as
+> u said.
+> 
+> in fact, i do not think target type is ok since it is quite possible
+> that 1 target has several lu while some of them are disk and others are
+> cdrom or tape. so LU type is better here. base on scsi spec, it is the
+> device server to decide what action it performs.
+> 
+> so it would be nice that tgt define a clear line between target mode
+> common and device specific; each lu has its own device server. device
+> server process most of the function in user space, and r/w use certain
+> io handler.
+> 
+
+So for tgt we will end up having:
+
+- target_type (this is just the low level target driver like IET or 
+qla2xxx, emulex, vscsi etc).
+- device_type (at the moment this just handles low level IO details but 
+will end up handling some device specifics like if the device is a tape, 
+disk, etc (some of this code is just stuck in tgt_scsi right now since 
+we only support disks, but the scsi specifics will be seperated out 
+similar to the SCSI-ml ULDs) and we will move the low level IO details 
+to a new struct)
+- io_handler (this will handle the lower level destination IO details 
+like if it is uses blk_execute_rq_nowait, sendfile or generic_file_*, etc).
+
+And sometihng similar will be needed in userspace.
+
+
+
+
+From mingz at ele.uri.edu  Wed Sep 21 00:06:55 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Tue, 20 Sep 2005 18:06:55 -0400
+Subject: [Stgt-devel] vsd -> vdev is bad
+In-Reply-To: <43306161.9080103@cs.wisc.edu>
+References: <1127219247.5544.5.camel@localhost.localdomain>
+	 <433051CC.1030608@cs.wisc.edu>  <4330549A.4040800@cs.wisc.edu>
+	 <1127241108.5544.44.camel@localhost.localdomain>
+	 <43305878.3020903@cs.wisc.edu>
+	 <1127242424.5544.64.camel@localhost.localdomain>
+	 <43306161.9080103@cs.wisc.edu>
+Message-ID: <1127254015.5550.0.camel@localhost.localdomain>
+
+On Tue, 2005-09-20 at 14:22 -0500, Mike Christie wrote:
+> Ming Zhang wrote:
+> > On Tue, 2005-09-20 at 13:44 -0500, Mike Christie wrote:
+> > 
+> >>Ming Zhang wrote:
+> >>
+> >>>On Tue, 2005-09-20 at 13:27 -0500, Mike Christie wrote:
+> >>>
+> >>>
+> >>>>Mike Christie wrote:
+> >>>>
+> >>>>
+> >>>>>Ming Zhang wrote:
+> >>>>>
+> >>>>>
+> >>>>>
+> >>>>>>Hi Mike
+> >>>>>>
+> >>>>>>I think change vsd->vdev is a bad idea.
+> >>>>>
+> >>>>>
+> >>>>>I would agree it is a bad name, but all that device does today is the 
+> >>>>>reads and writes. It should probably be called something-something-IO. 
+> >>>>>From your experience with iet, do you think a read or write will be 
+> >>>>>different for tape or disk when using the interface we are using?
+> >>>>>
+> >>>>
+> >>>>Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+> >>>>mostly only the error hanlding will be a problem.
+> >>>
+> >>>
+> >>>yes, that is quite different.
+> >>>
+> >>
+> >>So I guess we will need something. Originally the vsd and sd names came 
+> >>about becuase we were only doing SCSI and vsd was a virtual scsi disk 
+> >>and sd was a scsi disk passthrough type of device. They basically 
+> >>emulated SCSI's ULDs for tape, cd, disk but they also performed 
+> >>different types of IO, passthrough vs generic_file_readv/writev. 
+> >>Eventually we pushed the SCSI stuff to the protocol handlers and the 
+> >>devices became what they are today. Maybe io_handlers or io_type is a 
+> >>better name?
+> >>
+> >>Then to suport scsi tape, cd, etc we can add that code to the scsi 
+> >>protocol and have something simialr to the SCSI-ml ULDs.
+> > 
+> > 
+> > iet currently have target type and io type. target_disk is a target type
+> > and fileio is a io type. so current vsd looks more like a io_handlers as
+> > u said.
+> > 
+> > in fact, i do not think target type is ok since it is quite possible
+> > that 1 target has several lu while some of them are disk and others are
+> > cdrom or tape. so LU type is better here. base on scsi spec, it is the
+> > device server to decide what action it performs.
+> > 
+> > so it would be nice that tgt define a clear line between target mode
+> > common and device specific; each lu has its own device server. device
+> > server process most of the function in user space, and r/w use certain
+> > io handler.
+> > 
+> 
+> So for tgt we will end up having:
+> 
+> - target_type (this is just the low level target driver like IET or 
+> qla2xxx, emulex, vscsi etc).
+> - device_type (at the moment this just handles low level IO details but 
+> will end up handling some device specifics like if the device is a tape, 
+> disk, etc (some of this code is just stuck in tgt_scsi right now since 
+> we only support disks, but the scsi specifics will be seperated out 
+> similar to the SCSI-ml ULDs) and we will move the low level IO details 
+> to a new struct)
+> - io_handler (this will handle the lower level destination IO details 
+> like if it is uses blk_execute_rq_nowait, sendfile or generic_file_*, etc).
+> 
+> And sometihng similar will be needed in userspace.
+> 
+> 
+
+fully agree. ;)
+
+Ming
+
+
+
+

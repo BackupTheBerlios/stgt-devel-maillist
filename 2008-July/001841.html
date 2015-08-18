@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 3/7] add option to show all targets
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/7%5D%20add%20option%20to%20show%20all%20targets&In-Reply-To=%3C46b8a8850807231546n368e3b4axf0275a2f51bbc537%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001819.html">
+   <LINK REL="Next"  HREF="001820.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 3/7] add option to show all targets</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/7%5D%20add%20option%20to%20show%20all%20targets&In-Reply-To=%3C46b8a8850807231546n368e3b4axf0275a2f51bbc537%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 3/7] add option to show all targets">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Thu Jul 24 00:46:12 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001819.html">[Stgt-devel] [PATCH 3/7] add option to show all targets
+</A></li>
+        <LI>Next message: <A HREF="001820.html">[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1841">[ date ]</a>
+              <a href="thread.html#1841">[ thread ]</a>
+              <a href="subject.html#1841">[ subject ]</a>
+              <a href="author.html#1841">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Jul 22, 2008 at 4:18 AM, Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt; wrote:
+&gt;<i> Add -s flag.
+</I>&gt;<i> Show all the targets and exit.
+</I>&gt;<i>
+</I>&gt;<i> Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>
+Acked-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+
+&gt;<i> ---
+</I>&gt;<i>  scripts/tgt-admin |    8 ++++++++
+</I>&gt;<i>  1 files changed, 8 insertions(+), 0 deletions(-)
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+</I>&gt;<i> index 278e93d..9bbe710 100755
+</I>&gt;<i> --- a/scripts/tgt-admin
+</I>&gt;<i> +++ b/scripts/tgt-admin
+</I>&gt;<i> @@ -28,6 +28,7 @@ This tool configures tgt targets.
+</I>&gt;<i>
+</I>&gt;<i>   -e, --execute   read $configfile and execute tgtadm commands
+</I>&gt;<i>   -d, --delete    delete all the targets
+</I>&gt;<i> +  -s, --show      show all the targets
+</I>&gt;<i>   -f, --force     don't exit on tgtadm errors
+</I>&gt;<i>   -p, --pretend   only print tgtadm options
+</I>&gt;<i>   -v, --verbose   increase verbosity (no effect in &quot;pretend&quot; mode)
+</I>&gt;<i> @@ -42,6 +43,7 @@ my $param = $ARGV[0];
+</I>&gt;<i>
+</I>&gt;<i>  my $execute = 0;
+</I>&gt;<i>  my $delete = 0;
+</I>&gt;<i> +my $show = 0;
+</I>&gt;<i>  my $force = 0;
+</I>&gt;<i>  my $pretend = 0;
+</I>&gt;<i>  my $verbose = 0;
+</I>&gt;<i> @@ -49,6 +51,7 @@ my $help = 0;
+</I>&gt;<i>  my $result = GetOptions (
+</I>&gt;<i>        &quot;e|execute&quot; =&gt; \$execute,
+</I>&gt;<i>        &quot;d|delete&quot;  =&gt; \$delete,
+</I>&gt;<i> +       &quot;s|show&quot;    =&gt; \$show,
+</I>&gt;<i>        &quot;f|force&quot;   =&gt; \$force,
+</I>&gt;<i>        &quot;p|pretend&quot; =&gt; \$pretend,
+</I>&gt;<i>        &quot;v|verbose&quot; =&gt; \$verbose,
+</I>&gt;<i> @@ -59,6 +62,11 @@ if (($help == 1) || ($param eq undef)) {
+</I>&gt;<i>        &amp;usage
+</I>&gt;<i>  }
+</I>&gt;<i>
+</I>&gt;<i> +# Show all the targets and exit
+</I>&gt;<i> +if ($show == 1) {
+</I>&gt;<i> +       execute(&quot;tgtadm --lld iscsi --op show --mode target&quot;);
+</I>&gt;<i> +       exit;
+</I>&gt;<i> +}
+</I>&gt;<i>
+</I>&gt;<i>  # Some variables/arrays/hashes we will use globally
+</I>&gt;<i>  my %tgtadm_output;
+</I>&gt;<i> --
+</I>&gt;<i> 1.5.3.8
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001819.html">[Stgt-devel] [PATCH 3/7] add option to show all targets
+</A></li>
+	<LI>Next message: <A HREF="001820.html">[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1841">[ date ]</a>
+              <a href="thread.html#1841">[ thread ]</a>
+              <a href="subject.html#1841">[ subject ]</a>
+              <a href="author.html#1841">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

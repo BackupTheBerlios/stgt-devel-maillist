@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] SCC vs SES
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SCC%20vs%20SES&In-Reply-To=%3C1182432989.3847.11.camel%40dhcp-145.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000820.html">
+   <LINK REL="Next"  HREF="000823.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] SCC vs SES</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SCC%20vs%20SES&In-Reply-To=%3C1182432989.3847.11.camel%40dhcp-145.ibrix.com%3E"
+       TITLE="[Stgt-devel] SCC vs SES">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu Jun 21 15:36:29 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000820.html">[Stgt-devel] SCC vs SES
+</A></li>
+        <LI>Next message: <A HREF="000823.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#824">[ date ]</a>
+              <a href="thread.html#824">[ thread ]</a>
+              <a href="subject.html#824">[ subject ]</a>
+              <a href="author.html#824">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-06-21 at 18:03 +1000, Mark Harvey wrote:
+&gt;<i> Hello One and all.
+</I>&gt;<i> 
+</I>&gt;<i> Just brushing up on the recent changes to the stgt with regards to the 
+</I>&gt;<i> SCC module.
+</I>&gt;<i> 
+</I>&gt;<i> The most recent draft doco at the T10 site I could locate is dated 12 
+</I>&gt;<i> Sept 1997 (scc2r04.pdf)
+</I>&gt;<i> 
+</I>&gt;<i>  From my 10 minute read of these standards, the 'scc' device appears to 
+</I>&gt;<i> be aimed at the RAID Disk array and fine grain control of disks within a 
+</I>&gt;<i> RAID array (hot-swap spares, redirecting SCSI commands to a device 
+</I>&gt;<i> within an array, etc).
+</I>&gt;<i> 
+</I>&gt;<i> While this model will suit the existing SBC / MMC modules, the SES (SCSI 
+</I>&gt;<i> Enclosure Service) model would IMO be a better 'fit'.
+</I>&gt;<i> 
+</I>&gt;<i> i.e. The target 'owner' is an enclosure, rather than a SCSI Controller..
+</I>&gt;<i> 
+</I>&gt;<i> This way, the enclosure can be parent to all devices within the target.
+</I>&gt;<i> 
+</I>&gt;<i> Having the SES be the 'parent' for all LUN within the target, a SCC 
+</I>&gt;<i> module could then become a LUN within the SES framework (if this 
+</I>&gt;<i> functionality is required) to direct SCSI commands to the SBC/MMC type 
+</I>&gt;<i> devices within the target.
+</I>&gt;<i> 
+</I>&gt;<i> The SES model would be a better fit with regards to virtual libraries. 
+</I>&gt;<i> i.e. Each stgt target is an Enclosure with x number of logical units 
+</I>&gt;<i> within the enclosure.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i>  From a practical point of view - As there is no SCC unique code behind 
+</I>&gt;<i> the SCC target, both the SCC or SES models will work.
+</I>&gt;<i> 
+</I>&gt;<i> I could see potential issues where a (unknown / as yet untested) SCSI 
+</I>&gt;<i> initiators finding a SCC controlling a set of LUNs which happened to be 
+</I>&gt;<i> tape drives and/or medium changer may fail...
+</I>&gt;<i> 
+</I>
+i would ignore the SCC and only take care about SES. actually one step a
+time, have SMC and SSC in tgt already a big success. SES can be treated
+as some enterprise feature added later.
+
+
+&gt;<i> 
+</I>&gt;<i> Thoughts ?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Regards
+</I>&gt;<i> Mark Harvey
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000820.html">[Stgt-devel] SCC vs SES
+</A></li>
+	<LI>Next message: <A HREF="000823.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#824">[ date ]</a>
+              <a href="thread.html#824">[ thread ]</a>
+              <a href="subject.html#824">[ subject ]</a>
+              <a href="author.html#824">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

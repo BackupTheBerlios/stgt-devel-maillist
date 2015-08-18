@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] rework of smc module
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20rework%20of%20smc%20module&In-Reply-To=%3C20070628193343E.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000849.html">
+   <LINK REL="Next"  HREF="000853.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] rework of smc module</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20rework%20of%20smc%20module&In-Reply-To=%3C20070628193343E.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] rework of smc module">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jun 28 12:41:14 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000849.html">[Stgt-devel] rework of smc module
+</A></li>
+        <LI>Next message: <A HREF="000853.html">[Stgt-devel] iSCSI digest offload
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#850">[ date ]</a>
+              <a href="thread.html#850">[ thread ]</a>
+              <a href="subject.html#850">[ subject ]</a>
+              <a href="author.html#850">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] rework of smc module
+Date: Thu, 28 Jun 2007 18:24:45 +1000
+
+&gt;<i> OK - Not a patch but a 'proof oc concept' type patch.
+</I>&gt;<i> 
+</I>&gt;<i> If this method of lu_config() is ok, then I'll put together a proper patch.
+</I>
+I'm thinking about something like this patch.
+
+BTW, could you fix some of the comments in this patch? And please use
+the kernel-doc format when commenting functions. Here's an example:
+
+/**
+ * sas_remove_children  --  tear down a devices SAS data structures
+ * @dev:	device belonging to the sas object
+ *
+ * Removes all SAS PHYs and remote PHYs for a given object
+ */
+void sas_remove_children(struct device *dev)
+{
+	....
+}
+
+Note that I don't ask you to comment every functions. It's ok if you
+comment only functions that you want to comment.
+
+
+diff --git a/usr/sbc.c b/usr/sbc.c
+index c0075e4..a0c2d34 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -39,6 +39,9 @@
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+ 
++#include &quot;parser.h&quot;
++#include &quot;tgtadm_error.h&quot;
++
+ #define BLK_SHIFT	9
+ 
+ static int sbc_rw(int host_no, struct scsi_cmd *cmd)
+@@ -315,10 +318,48 @@ static int sbc_lu_init(struct scsi_lu *lu)
+ 	return 0;
+ }
+ 
++enum {
++	Opt_hoge1, Opt_hoge2,
++	Opt_err,
++};
++
++static match_table_t tokens = {
++	{Opt_hoge1, &quot;hoge1=%s&quot;},
++	{Opt_hoge2, &quot;hoge2=%s&quot;},
++	{Opt_err, NULL},
++};
++
++static int __sbc_lu_config(struct scsi_lu *lu, char *p)
++{
++	substring_t args[MAX_OPT_ARGS];
++	int token, ret = 0;
++	char buf[64];
++
++	token = match_token(p, tokens, args);
++	switch (token) {
++	case Opt_hoge1:
++		match_strncpy(buf, &amp;args[0], sizeof(buf));
++		eprintf(&quot;hoge1: %s\n&quot;, buf);
++		break;
++	case Opt_hoge2:
++		match_strncpy(buf, &amp;args[0], sizeof(buf));
++		eprintf(&quot;hoge2: %s\n&quot;, buf);
++		break;
++	default:
++		ret = TGTADM_INVALID_REQUEST;
++	}
++	return ret;
++}
++
++static int sbc_lu_config(struct scsi_lu *lu, char *params)
++{
++	return lu_config(lu, params, __sbc_lu_config);
++}
++
+ static struct device_type_template sbc_template = {
+ 	.type		= TYPE_DISK,
+ 	.lu_init	= sbc_lu_init,
+-	.lu_config	= spc_lu_config,
++	.lu_config	= sbc_lu_config,
+ 	.ops		= {
+ 		{spc_test_unit,},
+ 		{spc_illegal_op,},
+diff --git a/usr/spc.c b/usr/spc.c
+index 1c363cd..8a8ee72 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -295,7 +295,8 @@ static match_table_t tokens = {
+ 	{Opt_err, NULL},
+ };
+ 
+-int spc_lu_config(struct scsi_lu *lu, char *params) {
++int lu_config(struct scsi_lu *lu, char *params, match_fn_t *fn)
++{
+ 	int err = 0;
+ 	char *p;
+ 	char buf[20];
+@@ -343,12 +344,17 @@ int spc_lu_config(struct scsi_lu *lu, char *params) {
+ 			lu-&gt;attrs.online = atoi(buf);
+ 			break;
+ 		default:
+-			err = TGTADM_INVALID_REQUEST;
++			err = fn ? fn(lu, p) : TGTADM_INVALID_REQUEST;
+ 		}
+ 	}
+ 	return err;
+ }
+ 
++int spc_lu_config(struct scsi_lu *lu, char *params)
++{
++	return lu_config(lu, params, NULL);
++}
++
+ int spc_lu_init(struct scsi_lu *lu)
+ {
+ 	strncpy(lu-&gt;attrs.vendor_id, VENDOR_ID, sizeof(lu-&gt;attrs.vendor_id));
+diff --git a/usr/spc.h b/usr/spc.h
+index 1036b70..98e1448 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -8,7 +8,10 @@ extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+ extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+ extern int spc_lu_init(struct scsi_lu *lu);
+-extern int spc_lu_config(struct scsi_lu *lu, char * params);
++
++typedef int (match_fn_t)(struct scsi_lu *, char *);
++extern int lu_config(struct scsi_lu *lu, char *params, match_fn_t *);
++extern int spc_lu_config(struct scsi_lu *lu, char *params);
+ extern void dump_cdb(struct scsi_cmd *cmd);
+ 
+ #endif
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000849.html">[Stgt-devel] rework of smc module
+</A></li>
+	<LI>Next message: <A HREF="000853.html">[Stgt-devel] iSCSI digest offload
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#850">[ date ]</a>
+              <a href="thread.html#850">[ thread ]</a>
+              <a href="subject.html#850">[ subject ]</a>
+              <a href="author.html#850">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C47D9679E.1000502%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001465.html">
+   <LINK REL="Next"  HREF="001471.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C47D9679E.1000502%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel">mangoo at wpkg.org
+       </A><BR>
+    <I>Thu Mar 13 18:42:54 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001465.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+        <LI>Next message: <A HREF="001471.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1466">[ date ]</a>
+              <a href="thread.html#1466">[ thread ]</a>
+              <a href="subject.html#1466">[ subject ]</a>
+              <a href="author.html#1466">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+
+(...)
+
+&gt;&gt;<i> target              initiator
+</I>&gt;&gt;<i> -----------------------------------
+</I>&gt;&gt;<i> not started         trying to reconnect
+</I>&gt;&gt;<i> start tgtd          trying to reconnect
+</I>&gt;&gt;<i> sleep 2s            trying to reconnect
+</I>&gt;&gt;<i> nothing configured  login I/O error - non fatal
+</I>&gt;&gt;<i> configure target1   conn to target1 OK
+</I>&gt;&gt;<i> no such target      conn to target2 FAIL
+</I>&gt;&gt;<i>                      I/O error to target2
+</I>&gt;&gt;<i> configure target2   too late, fatal, we lost it
+</I>&gt;<i> 
+</I>&gt;<i> You don't understand how to use it.
+</I>&gt;<i> 
+</I>&gt;<i> 1. start tgtd.
+</I>&gt;<i> 2. change the system state to offline.
+</I>&gt;<i> 3. do whatever you want (create new targets and add luns).
+</I>&gt;<i> 4. change the system state to running.
+</I>
+Oh, I see now.
+Thanks for the explanation.
+
+
+(...)
+
+&gt;&gt;<i> Or, is it possible not to fail connections to non-existing targets, but 
+</I>&gt;&gt;<i> to answer that the (non-existing, not-yet-configured) target is 
+</I>&gt;&gt;<i> offlined? Or will it be against RFCs?
+</I>&gt;<i> 
+</I>&gt;<i> I don't think so.
+</I>&gt;<i> 
+</I>&gt;<i> BTW, as I explained again and again, IIRC, RFC doesn't say that
+</I>&gt;<i> initiators need to reconnect in your situation. Your scheme works for
+</I>&gt;<i> open-iscsi now, but it could be broken anytime.
+</I>
+Network infrastructure fail, administrator make mistakes, target has to 
+be restarted or moved somewhere else (i.e. failover).
+Disconnections may and do happen.
+
+I hope existing features will not be removed from open-iscsi.
+
+And if other initiators can't handle disconnections - it's another 
+reason not to use them.
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001465.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+	<LI>Next message: <A HREF="001471.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1466">[ date ]</a>
+              <a href="thread.html#1466">[ thread ]</a>
+              <a href="subject.html#1466">[ subject ]</a>
+              <a href="author.html#1466">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

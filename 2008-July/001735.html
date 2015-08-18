@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C1215007770.4995.1.camel%40dhcp-126.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001734.html">
+   <LINK REL="Next"  HREF="001755.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C1215007770.4995.1.camel%40dhcp-126.ibrix.com%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Wed Jul  2 16:09:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001734.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+        <LI>Next message: <A HREF="001755.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1735">[ date ]</a>
+              <a href="thread.html#1735">[ thread ]</a>
+              <a href="subject.html#1735">[ subject ]</a>
+              <a href="author.html#1735">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 2008-07-01 at 09:34 +1000, Mark Harvey wrote:
+&gt;<i> Hi Tomasz,
+</I>&gt;<i> 
+</I>&gt;<i> I've also noticed there is only one tgtd process when running it in
+</I>&gt;<i> the foreground.
+</I>&gt;<i> 
+</I>&gt;<i> Running in the foreground has been the only way I've been successful
+</I>&gt;<i> in collecting core files in the past.
+</I>
+in the script before u start tgtd, add &quot;ulimit -c unlimited&quot; might help.
+or change tgtd code to call setrlimit().
+
+
+&gt;<i> 
+</I>&gt;<i> I still do not (read: never actually spent time looking) understand
+</I>&gt;<i> the why/what differences is between foreground and why there is two
+</I>&gt;<i> processes while in background.
+</I>&gt;<i> 
+</I>&gt;<i> I would have to assume that there is some sort of race condition or
+</I>&gt;<i> handshake issue between the two processes within your test senerio.
+</I>&gt;<i> 
+</I>&gt;<i> Sorry I can't be of much help.
+</I>&gt;<i> 
+</I>&gt;<i> Cheers
+</I>&gt;<i> Mark
+</I>&gt;<i> 
+</I>&gt;<i> On Mon, Jun 30, 2008 at 7:00 PM, Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> &gt; Mark Harvey schrieb:
+</I>&gt;<i> &gt;&gt; My 2c worth.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; Try running the tgtd in 'foreground' mode (after setting &quot;ulimit -c
+</I>&gt;<i> &gt;&gt; unlimited&quot;).
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; You will then get a core file which should be a little easier to work
+</I>&gt;<i> &gt;&gt; with (vs gdb on a running tgtd instance).
+</I>&gt;<i> &gt;&gt; e.g.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; It doesn't crash when started in the foreground mode.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Also, when started in the foreground mode, we only have one tgtd
+</I>&gt;<i> &gt; process, so perhaps this somehow makes the issue harder or impossible to
+</I>&gt;<i> &gt; reproduce.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; --
+</I>&gt;<i> &gt; Tomasz Chmielewski
+</I>&gt;<i> &gt; <A HREF="http://wpkg.org">http://wpkg.org</A>
+</I>&gt;<i> &gt; _______________________________________________
+</I>&gt;<i> &gt; Stgt-devel mailing list
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> &gt;
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>-- 
+Ming Zhang
+
+
+@#$%^ purging memory... (*!%
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+<A HREF="http://www.linkedin.com/in/blackmagic02881">http://www.linkedin.com/in/blackmagic02881</A>
+--------------------------------------------
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001734.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+	<LI>Next message: <A HREF="001755.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1735">[ date ]</a>
+              <a href="thread.html#1735">[ thread ]</a>
+              <a href="subject.html#1735">[ subject ]</a>
+              <a href="author.html#1735">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

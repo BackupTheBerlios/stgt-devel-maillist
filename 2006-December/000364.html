@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C200612240907.kBO97oCn017802%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000363.html">
+   <LINK REL="Next"  HREF="000365.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] sg_turs on stgt iscsi drive is very slow</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C200612240907.kBO97oCn017802%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] sg_turs on stgt iscsi drive is very slow">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun Dec 24 10:07:49 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000363.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+        <LI>Next message: <A HREF="000365.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#364">[ date ]</a>
+              <a href="thread.html#364">[ thread ]</a>
+              <a href="subject.html#364">[ subject ]</a>
+              <a href="author.html#364">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+Date: Thu, 14 Dec 2006 11:41:27 +0900
+
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</I>&gt;<i> Date: Tue, 12 Dec 2006 11:13:33 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; same as yesterday. i think that EPOLL should have problem.
+</I>&gt;<i> 
+</I>&gt;<i> I did some performance tests. I wrongly use EPOLL_WAIT or EPOLL_WAIT
+</I>&gt;<i> is much slower than AIO queue (try r616 if you are interested).
+</I>&gt;<i> 
+</I>&gt;<i> I'll try kevent in -mm kernel shortly (probably, after 2.6.20-rc1).
+</I>
+Seems that it might takes months to have kevent in mainline. So I
+added tweaked the EPOLL_WAIT patch.
+
+The latest patch (aioepoll-2.6.20-rc2.diff), I've just put into the
+svn repository, should provide much better performances.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000363.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+	<LI>Next message: <A HREF="000365.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#364">[ date ]</a>
+              <a href="thread.html#364">[ thread ]</a>
+              <a href="subject.html#364">[ subject ]</a>
+              <a href="author.html#364">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

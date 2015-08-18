@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio is slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C20070814183602.GA14092%40wavehammer.waldi.eu.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000965.html">
+   <LINK REL="Next"  HREF="000946.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio is slow</H1>
+    <B>Bastian Blank</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C20070814183602.GA14092%40wavehammer.waldi.eu.org%3E"
+       TITLE="[Stgt-devel] ibmvio is slow">waldi at berlios.de
+       </A><BR>
+    <I>Tue Aug 14 20:36:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000965.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object
+</A></li>
+        <LI>Next message: <A HREF="000946.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#945">[ date ]</a>
+              <a href="thread.html#945">[ thread ]</a>
+              <a href="subject.html#945">[ subject ]</a>
+              <a href="author.html#945">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Jun 19, 2007 at 07:18:38PM +0200, Bastian Blank wrote:
+&gt;<i> But it is slow. I can write at most 15MiB/s to the disks, regardless of
+</I>&gt;<i> the count of the initiators and disks.
+</I>
+I did another round of tests with 2.6.22 and a corresponsing patchset
+and an uptodate tgtd with disabled controller lun (it breaks my setup
+which needs the boot disk on lun 0).
+
+Writing on an exported device shows weird behaviour. iostat shows many
+write _and_ read requests, even if the initiator only emits write
+requests:
+
+|<i> Device:         rrqm/s   wrqm/s   r/s   w/s   rsec/s   wsec/s avgrq-sz avgqu-sz   await  svctm  %util
+</I>|<i> sdb            3733.90  4177.60 525.80 72.70 34138.40 34002.40   113.85    19.94   33.32   1.38  82.76
+</I>
+If the initiator emits read requests, it is okay:
+
+|<i> Device:         rrqm/s   wrqm/s   r/s   w/s   rsec/s   wsec/s avgrq-sz avgqu-sz   await  svctm  %util
+</I>|<i> sdb           13798.50     0.40 1955.31  0.20 126057.72     4.81    64.47     1.18    0.60   0.43  83.21
+</I>
+There is only lvm between it. This looks like some sort of read-ahead
+for the data, which should not happen for write requests. I tried to dig
+a little bit in the block code but was not able to found the cause.
+
+Bonnie shows the following:
+|<i> Version  1.03       ------Sequential Output------ --Sequential Input- --Random-
+</I>|<i>                     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+</I>|<i> Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+</I>|<i> test.track.rz.un 2G           21914  10 15207   4           59795   6 305.8   0
+</I>
+Bastian
+
+-- 
+Emotions are alien to me.  I'm a scientist.
+		-- Spock, &quot;This Side of Paradise&quot;, stardate 3417.3
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000965.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object
+</A></li>
+	<LI>Next message: <A HREF="000946.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#945">[ date ]</a>
+              <a href="thread.html#945">[ thread ]</a>
+              <a href="subject.html#945">[ subject ]</a>
+              <a href="author.html#945">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

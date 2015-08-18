@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%0A%09DVD%2BR%09implementation&In-Reply-To=%3C20080421150327S.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001523.html">
+   <LINK REL="Next"  HREF="001529.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%0A%09DVD%2BR%09implementation&In-Reply-To=%3C20080421150327S.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Apr 21 08:03:27 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001523.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+        <LI>Next message: <A HREF="001529.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1528">[ date ]</a>
+              <a href="thread.html#1528">[ thread ]</a>
+              <a href="subject.html#1528">[ subject ]</a>
+              <a href="author.html#1528">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Sorry for the delay.
+
+On Tue, 15 Apr 2008 12:45:23 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Tue, Apr 15, 2008 at 10:23 AM, FUJITA Tomonori
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt;  Let me review the changes to the core first.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Once we agree on the changes to the core, please send them as separate
+</I>&gt;<i> &gt;  patches. Then you can post mmc patches as you like, a single patch or
+</I>&gt;<i> &gt;  multiple patches. I'm fine with either way.
+</I>&gt;<i> 
+</I>&gt;<i> Great, thanks.
+</I>&gt;<i> Thinking about it, it might not be necessary to be able to create a
+</I>&gt;<i> LUN which lacks a backing store, so that part of my proposed patch
+</I>&gt;<i> it probably a mistake.
+</I>&gt;<i> 
+</I>&gt;<i> The semantics in core and tgtadm that i think would be useful for
+</I>&gt;<i> devices such as MMC, and probably also SSC, that support
+</I>&gt;<i> removable/ejectable media would be
+</I>&gt;<i> 1, ability to administratively make LUNs online/offline. Such offline
+</I>&gt;<i> LUNs would still show up in report luns and be accessable, but the LUN
+</I>&gt;<i> when in offline
+</I>&gt;<i>     would behave as if there was no media loaded.
+</I>&gt;<i> 2, something similar to the two added lun methods :
+</I>&gt;<i> lu_online/lu_offline which are called when the online/offline
+</I>&gt;<i> attribute changes.
+</I>&gt;<i>    So that the lun emulation cna perform additional, commandset
+</I>&gt;<i> specific actions when the online attribute changes.
+</I>&gt;<i>    For MMC, I think online/offline would map very nicely to &quot;media is
+</I>&gt;<i> inserted&quot;/&quot;no media loaded&quot;.
+</I>&gt;<i>    For MMC I think it would make sense to let the LUN close the
+</I>&gt;<i> backend file completely when the device goes offline and reopen it
+</I>&gt;<i> again
+</I>&gt;<i>    when the backend file goes online.   Thus
+</I>&gt;<i> offline/replacefile/online would be similar to eject tray/replace
+</I>&gt;<i> disk/close tray on a real physical device.
+</I>&gt;<i> 
+</I>&gt;<i> I think that for SSC it would also make sense to have the emulation
+</I>&gt;<i> for this commandset also be informed/called on any/all changes on the
+</I>&gt;<i> online attribute
+</I>&gt;<i> in case SSC would want to map this and change its behaviour to map
+</I>&gt;<i> &quot;tape is inserted&quot;/&quot;no tape loaded&quot;.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Maybe there are better ways to implement this than lu_online/offline
+</I>&gt;<i> methods for the lun. Though, for removable media it would be nice if
+</I>&gt;<i> the offline/online cycle did close and reopen the backingstore file
+</I>&gt;<i> incase one wants to &quot;swap the media&quot; while the device is offline.
+</I>
+How about the following scheme?
+
+- we add new hooks to device_type_template, online/offlne/reload.
+
+- tgtadm can control the above methods.
+
+- we let users to create a new logical unit without a backing-store
+file. In this case, the logical unit is set to offline automatically.
+
+- 'reload' method enables users to bind a new backing-store file to a
+logical unit.
+
+- 'reload' method works against only a offline logical unit (an online
+logical unit could have outstanding commands and accept new commands).
+
+- If offline logical units behaves as if there was no media loaded if
+they are removable/ejectable media.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001523.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+	<LI>Next message: <A HREF="001529.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1528">[ date ]</a>
+              <a href="thread.html#1528">[ thread ]</a>
+              <a href="subject.html#1528">[ subject ]</a>
+              <a href="author.html#1528">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

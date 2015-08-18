@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Allow -show to be used without a config file as well.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Allow%20-show%20to%20be%20used%20without%20a%20config%20file%20as%20well.&In-Reply-To=%3Cmailman.44.1331738483.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001936.html">
+   <LINK REL="Next"  HREF="001890.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Allow -show to be used without a config file as well.</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Allow%20-show%20to%20be%20used%20without%20a%20config%20file%20as%20well.&In-Reply-To=%3Cmailman.44.1331738483.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Allow -show to be used without a config file as well.">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Sat Jul 26 03:06:10 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001936.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+        <LI>Next message: <A HREF="001890.html">[Stgt-devel] K--9 Class Catches Crooks At Traiining Facility
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1883">[ date ]</a>
+              <a href="thread.html#1883">[ thread ]</a>
+              <a href="subject.html#1883">[ subject ]</a>
+              <a href="author.html#1883">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Also, only
+             parse the config once if an alternate config file is specified.
+
+Signed-off-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+
+---
+ scripts/tgt-admin |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index 76fab79..41c828c 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -61,16 +61,16 @@ if (($help == 1) || ($param eq undef)) {
+        &amp;usage
+ }
+
+-# Parse the config file with Config::General
+-my %conf = ParseConfig(-ConfigFile =&gt; &quot;$configfile&quot;, -UseApacheInclude =&gt; 1, -I
+ncludeGlob =&gt; 1,);
+-
+ # Show all the targets and exit
+ if ($show == 1) {
+        execute(&quot;tgtadm --lld iscsi --op show --mode target&quot;);
+        exit;
+ }
+
+-# Check if alternative configuration file was given
++my %conf;
++
++# Check if alternative configuration file was given and use that, else
++# use the default. ParseConfig will die if config file not found.
+ if ($alternate_conf ne 0) {
+        # Check if alternative configuration file exist
+        if (-e $alternate_conf) {
+@@ -81,6 +81,10 @@ if ($alternate_conf ne 0) {
+                die(&quot;file $alternate_conf not found. Exiting...\n&quot;);
+        }
+ }
++else {
++       # Parse the config file with Config::General
++       my %conf = ParseConfig(-ConfigFile =&gt; &quot;$configfile&quot;, -UseApacheInclude =
+&gt;<i> 1, -IncludeGlob =&gt; 1,);
+</I>+}
+
+ # Some variables/arrays/hashes we will use globally
+ my %tgtadm_output;
+--
+1.5.5.1
+
+------=_Part_21314_20473588.1217006538442
+Content-Type: application/octet-stream;
+ name=0002-Allow-show-to-be-used-without-a-config-file-as-well.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fj328v0h0
+Content-Disposition: attachment;
+ filename=0002-Allow-show-to-be-used-without-a-config-file-as-well.patch
+
+RnJvbSBhMTZhNjhjZGUyMTVlZWNkZjc5NGQ3ZjEwMDc3OGFlNmZhZjNmYjdkIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBSaWNoYXJkIFNoYXJwZSA8cmVhbHJpY2hhcmRzaGFycGVAZ21h
+aWwuY29tPgpEYXRlOiBGcmksIDI1IEp1bCAyMDA4IDE4OjA2OjEwIC0wNzAwClN1YmplY3Q6IFtQ
+QVRDSF0gQWxsb3cgLXNob3cgdG8gYmUgdXNlZCB3aXRob3V0IGEgY29uZmlnIGZpbGUgYXMgd2Vs
+bC4gQWxzbywgb25seSBwYXJzZSB0aGUKIGNvbmZpZyBvbmNlIGlmIGFuIGFsdGVybmF0ZSBjb25m
+aWcgZmlsZSBpcyBzcGVjaWZpZWQuCgotLS0KIHNjcmlwdHMvdGd0LWFkbWluIHwgICAxMiArKysr
+KysrKy0tLS0KIDEgZmlsZXMgY2hhbmdlZCwgOCBpbnNlcnRpb25zKCspLCA0IGRlbGV0aW9ucygt
+KQoKZGlmZiAtLWdpdCBhL3NjcmlwdHMvdGd0LWFkbWluIGIvc2NyaXB0cy90Z3QtYWRtaW4KaW5k
+ZXggNzZmYWI3OS4uNDFjODI4YyAxMDA3NTUKLS0tIGEvc2NyaXB0cy90Z3QtYWRtaW4KKysrIGIv
+c2NyaXB0cy90Z3QtYWRtaW4KQEAgLTYxLDE2ICs2MSwxNiBAQCBpZiAoKCRoZWxwID09IDEpIHx8
+ICgkcGFyYW0gZXEgdW5kZWYpKSB7CiAJJnVzYWdlCiB9CiAKLSMgUGFyc2UgdGhlIGNvbmZpZyBm
+aWxlIHdpdGggQ29uZmlnOjpHZW5lcmFsCi1teSAlY29uZiA9IFBhcnNlQ29uZmlnKC1Db25maWdG
+aWxlID0+ICIkY29uZmlnZmlsZSIsIC1Vc2VBcGFjaGVJbmNsdWRlID0+IDEsIC1JbmNsdWRlR2xv
+YiA9PiAxLCk7Ci0KICMgU2hvdyBhbGwgdGhlIHRhcmdldHMgYW5kIGV4aXQKIGlmICgkc2hvdyA9
+PSAxKSB7CiAJZXhlY3V0ZSgidGd0YWRtIC0tbGxkIGlzY3NpIC0tb3Agc2hvdyAtLW1vZGUgdGFy
+Z2V0Iik7CiAJZXhpdDsKIH0KIAotIyBDaGVjayBpZiBhbHRlcm5hdGl2ZSBjb25maWd1cmF0aW9u
+IGZpbGUgd2FzIGdpdmVuCitteSAlY29uZjsgCisKKyMgQ2hlY2sgaWYgYWx0ZXJuYXRpdmUgY29u
+ZmlndXJhdGlvbiBmaWxlIHdhcyBnaXZlbiBhbmQgdXNlIHRoYXQsIGVsc2UgCisjIHVzZSB0aGUg
+ZGVmYXVsdC4gUGFyc2VDb25maWcgd2lsbCBkaWUgaWYgY29uZmlnIGZpbGUgbm90IGZvdW5kLgog
+aWYgKCRhbHRlcm5hdGVfY29uZiBuZSAwKSB7CiAJIyBDaGVjayBpZiBhbHRlcm5hdGl2ZSBjb25m
+aWd1cmF0aW9uIGZpbGUgZXhpc3QKIAlpZiAoLWUgJGFsdGVybmF0ZV9jb25mKSB7CkBAIC04MSw2
+ICs4MSwxMCBAQCBpZiAoJGFsdGVybmF0ZV9jb25mIG5lIDApIHsKIAkJZGllKCJmaWxlICRhbHRl
+cm5hdGVfY29uZiBub3QgZm91bmQuIEV4aXRpbmcuLi5cbiIpOwogCX0KIH0KK2Vsc2UgeworCSMg
+UGFyc2UgdGhlIGNvbmZpZyBmaWxlIHdpdGggQ29uZmlnOjpHZW5lcmFsCisJbXkgJWNvbmYgPSBQ
+YXJzZUNvbmZpZygtQ29uZmlnRmlsZSA9PiAiJGNvbmZpZ2ZpbGUiLCAtVXNlQXBhY2hlSW5jbHVk
+ZSA9PiAxLCAtSW5jbHVkZUdsb2IgPT4gMSwpOworfQogCiAjIFNvbWUgdmFyaWFibGVzL2FycmF5
+cy9oYXNoZXMgd2Ugd2lsbCB1c2UgZ2xvYmFsbHkKIG15ICV0Z3RhZG1fb3V0cHV0OwotLSAKMS41
+LjUuMQoK
+------=_Part_21314_20473588.1217006538442--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001936.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+	<LI>Next message: <A HREF="001890.html">[Stgt-devel] K--9 Class Catches Crooks At Traiining Facility
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1883">[ date ]</a>
+              <a href="thread.html#1883">[ thread ]</a>
+              <a href="subject.html#1883">[ subject ]</a>
+              <a href="author.html#1883">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

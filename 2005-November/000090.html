@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Re: [PATCH 0/3] ibmvscsis scsi target
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BPATCH%200/3%5D%20ibmvscsis%20scsi%20target&In-Reply-To=%3C20051105100019B.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000091.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Re: [PATCH 0/3] ibmvscsis scsi target</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BPATCH%200/3%5D%20ibmvscsis%20scsi%20target&In-Reply-To=%3C20051105100019B.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Re: [PATCH 0/3] ibmvscsis scsi target">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Nov  5 02:00:19 CET 2005</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000091.html">[Stgt-devel] What is kernel version of stgt developed on?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#90">[ date ]</a>
+              <a href="thread.html#90">[ thread ]</a>
+              <a href="subject.html#90">[ subject ]</a>
+              <a href="author.html#90">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Subject: Re: [Stgt-devel] Re: [PATCH 0/3] ibmvscsis scsi target
+Date: Sat, 22 Oct 2005 01:16:06 +0900
+
+&gt;<i> &gt; I started to convert ibmvscsi code to the tgt framework a little while
+</I>&gt;<i> &gt; ago. Its model is pretty different from the iSCSI and FC models so I'm
+</I>&gt;<i> &gt; trying to figure out what changes we need.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Hopefully, I will commit the initial code to the repository by the end
+</I>&gt;<i> &gt; of the month.
+</I>&gt;<i> 
+</I>&gt;<i> I managed to make a SCSI client boot by using the new VIO SCSI target
+</I>&gt;<i> driver. I uploaded a patch against r119 of the framework code.
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://zaal.org/tgt/ibmvstgt.diff">http://zaal.org/tgt/ibmvstgt.diff</A>
+</I>&gt;<i> 
+</I>&gt;<i> It includes verbose debug code and makeshift code so I've not
+</I>&gt;<i> committed it. I'll clean up and commit it next week. I've found some
+</I>&gt;<i> bugs in the framework during rewriting the driver, however, I've not
+</I>&gt;<i> fixed them yet.
+</I>
+This took longer a bit than expected. At last, tgt can handle multiple
+target drivers (and their user-space dynamic libraries), I think.
+
+Currently, tgt supports two SCSI target drivers, iSCSI software target
+(istgt) and IBM virtual SCSI target (ibmvstgt) drivers. Mike has
+started working on a qla2xxx target driver based on the mainline
+qla2xxx driver.
+
+I added a README file including simple instruction. So you can test
+the tgt framework without lots of effort.
+
+The README file does not contain lots of infomation, so feel free to
+ask questions.
+
+You can get the code through anonymous SVN access via SVN (or
+HTTP). See:
+
+<A HREF="http://developer.berlios.de/svn/?group_id=4492">http://developer.berlios.de/svn/?group_id=4492</A>
+
+
+&gt;<i> The code has been not tested heavily, still unstable, and not
+</I>&gt;<i> finished. In addition, there's no document about how to use the tgt
+</I>&gt;<i> framework. But it gives a hints how the ibmvscsi driver work with the
+</I>&gt;<i> tgt framework.
+</I>
+Dave, Santiago, I'd appreciate any comments on the code.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000091.html">[Stgt-devel] What is kernel version of stgt developed on?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#90">[ date ]</a>
+              <a href="thread.html#90">[ thread ]</a>
+              <a href="subject.html#90">[ subject ]</a>
+              <a href="author.html#90">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

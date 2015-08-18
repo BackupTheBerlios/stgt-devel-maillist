@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH 4/7] crash bug in spc_mode_sense
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%204/7%5D%20crash%20bug%20in%20spc_mode_sense&In-Reply-To=%3Cmailman.22.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001582.html">
+   <LINK REL="Next"  HREF="001586.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH 4/7] crash bug in spc_mode_sense</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%204/7%5D%20crash%20bug%20in%20spc_mode_sense&In-Reply-To=%3Cmailman.22.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH 4/7] crash bug in spc_mode_sense">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Fri May  2 14:36:54 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001582.html">[PATCH 3/7] modepage for mm capabilities
+</A></li>
+        <LI>Next message: <A HREF="001586.html">[PATCH 5/7] modepage for write parameters
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1584">[ date ]</a>
+              <a href="thread.html#1584">[ thread ]</a>
+              <a href="subject.html#1584">[ subject ]</a>
+              <a href="author.html#1584">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>If an initiator/application is requesting mode_sense and specifying a very
+small allocation_length (2,8 or so bytes) but the mode page itself
+is big,  then the memcpy() in build_mode_page() will overwrite other memory
+and cause tgtd to crash.
+
+be more careful when writing to the data buffer.
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/spc.c |   63 ++++++++++++++++++++++++++++++++++--------------------------
+ 1 files changed, 36 insertions(+), 27 deletions(-)
+
+diff --git a/usr/spc.c b/usr/spc.c
+index e3e4d98..6707778 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -335,22 +335,28 @@ int spc_test_unit(int host_no, struct scsi_cmd *cmd)
+  *
+  * Returns number of bytes copied.
+  */
+-static int build_mode_page(uint8_t *data, struct mode_pg *pg, int update)
++static uint8_t *build_mode_page(uint8_t *data, uint8_t *p, int alloc_len,
++				struct mode_pg *pg)
+ {
+-	uint8_t *p;
+-	int len;
++	int i;
++
++	if (alloc_len &gt; (p-data))
++		*p = pg-&gt;pcode;
++	p++;
++
++
++	if (alloc_len &gt; (p-data))
++		*p = pg-&gt;pcode_size;
++	p++;
++
+
+-	len = pg-&gt;pcode_size;
+-	if (update) {
+-		data[0] = pg-&gt;pcode;
+-		data[1] = len;
++	for (i = 0; i &lt; pg-&gt;pcode_size; i++) {
++		if (alloc_len &gt; (p-data))
++			*p = pg-&gt;mode_data[i];
++		p++;
+ 	}
+-	p = &amp;data[2];
+-	len += 2;
+-	if (update)
+-		memcpy(p, pg-&gt;mode_data, pg-&gt;pcode_size);
+
+-	return len;
++	return p;
+ }
+
+ /**
+@@ -362,12 +368,13 @@ static int build_mode_page(uint8_t *data, struct
+mode_pg *pg, int update)
+  */
+ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ {
+-	int len = 0;
+ 	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode;
++	uint8_t *p;
+ 	uint16_t alloc_len;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+ 	struct mode_pg *pg;
++	int i;
+
+ 	scb = cmd-&gt;scb;
+ 	mode6 = (scb[0] == 0x1a);
+@@ -383,10 +390,10 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+
+ 	if (mode6) {
+ 		alloc_len = scb[4];
+-		len = 4;
++		p = &amp;data[4];
+ 	} else {
+ 		alloc_len = (scb[7] &lt;&lt; 8) + scb[8];
+-		len = 8;
++		p = &amp;data[8];
+ 	}
+
+ 	if (scsi_get_in_length(cmd) &lt; alloc_len)
+@@ -394,10 +401,11 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	memset(data, 0, alloc_len);
+
+ 	if (!dbd) {
+-		if (alloc_len &gt;= len)
+-			memcpy(data + len, cmd-&gt;dev-&gt;mode_block_descriptor,
+-			       BLOCK_DESCRIPTOR_LEN);
+-		len += BLOCK_DESCRIPTOR_LEN;
++		for (i = 0; i &lt; BLOCK_DESCRIPTOR_LEN; i++) {
++			if (alloc_len &gt; (p-data))
++				*p = cmd-&gt;dev-&gt;mode_block_descriptor[i];
++			p++;
++		}
+ 	}
+
+ 	if (pcode == 0x3f) {
+@@ -405,25 +413,26 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 		for (i = 0; i &lt; ARRAY_SIZE(cmd-&gt;dev-&gt;mode_pgs); i++) {
+ 			pg = cmd-&gt;dev-&gt;mode_pgs[i];
+ 			if (pg)
+-				len += build_mode_page(data + len, pg,
+-						       alloc_len &gt;= len);
++				p = build_mode_page(data, p, alloc_len, pg);
+ 		}
+ 	} else {
+ 		pg = cmd-&gt;dev-&gt;mode_pgs[pcode];
+ 		if (!pg)
+ 			goto sense;
+-		len += build_mode_page(data + len, pg, alloc_len &gt;= len);
++		p = build_mode_page(data, p, alloc_len, pg);
+ 	}
+
+ 	if (mode6) {
+-		data[0] = len - 1;
+-		data[3] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
++		data[0] = (p - data) - 1;
++		if (alloc_len &gt; 3)
++			data[3] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
+ 	} else {
+-		*(uint16_t *)(data) = __cpu_to_be16(len - 2);
+-		data[7] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
++		*(uint16_t *)(data) = __cpu_to_be16((p - data)-2);
++		if (alloc_len &gt; 7)
++			data[7] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
+ 	}
+
+-	scsi_set_in_resid_by_actual(cmd, len);
++	scsi_set_in_resid_by_actual(cmd, p - data);
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	scsi_set_in_resid_by_actual(cmd, 0);
+-- 
+1.5.5
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001582.html">[PATCH 3/7] modepage for mm capabilities
+</A></li>
+	<LI>Next message: <A HREF="001586.html">[PATCH 5/7] modepage for write parameters
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1584">[ date ]</a>
+              <a href="thread.html#1584">[ thread ]</a>
+              <a href="subject.html#1584">[ subject ]</a>
+              <a href="author.html#1584">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tgtadm syntax additions (long)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtadm%20syntax%20additions%20%28long%29&In-Reply-To=%3Cf29db9a80703232339o6828fd9fx9751a75bba3d3a9e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000468.html">
+   <LINK REL="Next"  HREF="000466.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tgtadm syntax additions (long)</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtadm%20syntax%20additions%20%28long%29&In-Reply-To=%3Cf29db9a80703232339o6828fd9fx9751a75bba3d3a9e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] tgtadm syntax additions (long)">markh794 at gmail.com
+       </A><BR>
+    <I>Sat Mar 24 07:39:05 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000468.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+        <LI>Next message: <A HREF="000466.html">[Stgt-devel] [PATCH] free leaked target name
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#471">[ date ]</a>
+              <a href="thread.html#471">[ thread ]</a>
+              <a href="subject.html#471">[ subject ]</a>
+              <a href="author.html#471">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>As the idea of hijacking the 'backing file' for use as a configuration
+file, I have put together some ideas for adding to the syntax of
+tgtadm to allow the configuration and customization of SSC and SMC
+devices.
+
+I have not attempted to implement any of the syntax, but am posting to
+the list for comments before putting any effort into coding.
+
+Here goes....
+
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=[] --lun=[]
+--value=[value]
+
+Where value is:
+
+If device_type == 1 (SSC)
+
+ VendorIdent=&quot;SONY&quot;
+ ProductIdent=&quot;SDX-900V&quot;
+ ProductRev=&quot;5401&quot;
+ SerialNumber=&quot;XYZZY_10&quot;
+
+If device_type == 8 (SMC), in addition to SSC values...
+ VendorIdent=&quot;STK&quot;
+ ProductIdent=&quot;L700&quot;
+ ProductRev=&quot;5400&quot;
+ SerialNumber=&quot;XYZZY&quot;
+
+To configure
+ (Reserve address space)
+ ElementType=[1|2|3] StartAddress=[number] Quanity=[number]
+Sides=[1|2] (Single/double sided)
+
+ (To reserve address space for 'drives')
+ ElementType=4 StartAddress=[number] Quanity=[number] Type=&quot;ssc|smc|sbc&quot;
+
+ (To 'tie' a previously known SerialNumber to this Address..)
+ ElementType=4 Address=[Within Range from above] SerialNumber=&quot;xxxxx&quot;
+
+To 'populate' slots with 'media'
+ ElementType=[2|3] BarCode=&quot;string&quot;
+
+where   ElementType 1 == Medium Transport (picker arm)
+        ElementType 2 == Storage Element (Slots in robot)
+        ElementType 3 == Import/Export Element (mailslots/Cartridge Access Port)
+        ElementType 4 == Data Transport (SSC/SBC/MMC device - Tape,
+Optical, CD/DVD)
+
+Limits:
+VendorIdent, ProductIdent, ProductRev &amp; SerialNumber can all be on one line...
+
+For Medium changers
+ - We first need to 'reserve' number of slots for each element type:
+ - Then Tie device S/No to a slot
+ - Next fill Storage Slots and Import/Export with 'media'
+
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=[] --lun=[]
+VendorIdent=&quot;QUANTUM&quot;
+tgtadm --lld iscsi --mode logicalunit --op update --tid=[] --lun=[]
+ProductIdent=&quot;SDLT600&quot;
+tgtadm --lld iscsi --mode logicalunit --op update --tid=[] --lun=[]
+ProductRev=&quot;0001&quot;
+tgtadm --lld iscsi --mode logicalunit --op update --tid=[] --lun=[]
+SerialNumber=&quot;XYZZY_10&quot;
+
+or
+tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+        VendorIdent=&quot;QUANTUM&quot; ProductIdent=&quot;SDLT600&quot; \
+        ProductRev=&quot;0001&quot; SerialNumber=&quot;XYZZY_10&quot;
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=1 \
+        VendorIdent=&quot;QUANTUM&quot; ProductIdent=&quot;SDLT600&quot; \
+        ProductRev=&quot;0001&quot; SerialNumber=&quot;XYZZY_11&quot;
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=2 \
+        VendorIdent=&quot;QUANTUM&quot; ProductIdent=&quot;SDLT600&quot; \
+        ProductRev=&quot;0001&quot; SerialNumber=&quot;XYZZY_12&quot;
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=3 \
+        VendorIdent=&quot;QUANTUM&quot; ProductIdent=&quot;SDLT600&quot; \
+        ProductRev=&quot;0001&quot; SerialNumber=&quot;XYZZY_13&quot;
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        VendorIdent=&quot;STK&quot; ProductIdent=&quot;L180&quot; \
+        ProductRev=&quot;0001&quot; SerialNumber=&quot;XYZZY&quot;
+
+Allocate 1 picker at address 256...
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=1 StartAddress=256 Quanity=1 Sides=2
+
+Allocate 800 slots starting at address 1024
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=2 StartAddress=1024 Quanity=800 Sides=2
+
+Allocate 10 Import/Export slots starting at address 128
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=3 StartAddress=128 Quanity=10 Sides=2
+
+Allocate room for 8 drives
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=4 StartAddress=1 Quanity=8 Sides=1
+
+'Assign drive SerialNumber with slot'
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=4 Address=1 SerialNumber=XYZZY_10
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=4 Address=2 SerialNumber=XYZZY_11
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=4 Address=3 SerialNumber=XYZZY_12
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=4 Address=4 SerialNumber=XYZZY_13
+
+
+Add media to storage Element
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=2 Address=4 BarCode=&quot;ABC123L3&quot;
+
+Add media to import/export Element
+tgtadm --lld iscsi --mode logicalunit --op update --tid=2 --lun=0 \
+        ElementType=3 Address=1 BarCode=&quot;CLN001&quot;
+
+
+
+tgtadm --lld iscsi --mode target --op show
+Target 1: iqn.2007-03:marks-vtl_ssc:laptop
+    System information:
+        Type: tape
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            SCSI ID: deadbeaf2:0
+            SCSI SN: beaf20
+            VendorIdentification : QUANTUM
+            ProductIdentification: SDLT600
+            ProductRevision      : 0001
+        LUN: 1
+            SCSI ID: deadbeaf2:1
+            SCSI SN: beaf21
+            VendorIdentification : QUANTUM
+            ProductIdentification: SDLT600
+            ProductRevision      : 0001
+        LUN: 2
+            SCSI ID: deadbeaf2:2
+            SCSI SN: beaf22
+            VendorIdentification : QUANTUM
+            ProductIdentification: SDLT600
+            ProductRevision      : 0001
+        LUN: 3
+            SCSI ID: deadbeaf2:3
+            SCSI SN: beaf23
+            VendorIdentification : QUANTUM
+            ProductIdentification: SDLT600
+            ProductRevision      : 0001
+    Account information:
+    ACL information:
+        ALL
+Target 2: iqn.2007-03:marks-vtl_smc:laptop
+    System information:
+        Type: changer
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 1K
+            Backing store: /var/tmp/l1
+            VendorIdentification : STK
+            ProductIdentification: L700
+            ProductRevision      : 0001
+          Device Configuration:
+            Medium Transport     : 1
+            Storage Element      : 800
+            Import/Export Element: 10
+            Data Transport       : 8
+    Account information:
+    ACL information:
+        ALL
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000468.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+	<LI>Next message: <A HREF="000466.html">[Stgt-devel] [PATCH] free leaked target name
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#471">[ date ]</a>
+              <a href="thread.html#471">[ thread ]</a>
+              <a href="subject.html#471">[ subject ]</a>
+              <a href="author.html#471">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

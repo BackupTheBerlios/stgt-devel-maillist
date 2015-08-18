@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] How to setup a DVD RW
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20How%20to%20setup%20a%20DVD%20RW&In-Reply-To=%3C4878EF24.2070505%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001784.html">
+   <LINK REL="Next"  HREF="001774.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] How to setup a DVD RW</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20How%20to%20setup%20a%20DVD%20RW&In-Reply-To=%3C4878EF24.2070505%40gmail.com%3E"
+       TITLE="[Stgt-devel] How to setup a DVD RW">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Jul 12 19:51:32 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001784.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+        <LI>Next message: <A HREF="001774.html">[Stgt-devel] How to setup a DVD RW
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1773">[ date ]</a>
+              <a href="thread.html#1773">[ thread ]</a>
+              <a href="subject.html#1773">[ subject ]</a>
+              <a href="author.html#1773">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Looks like there are a few things missing in the status reported by the 
+CD drive.
+
+After a succesful image burn to a virtual CD I logged the target out and 
+in again,
+as can be seen from the messages below it sees the CDROM as not read,
+but still mounts and unmounts the image succesfully anyway.
+
+Jul 12 19:45:19 orange kernel: sr1: CDROM not ready.  Make sure there is 
+a disc in the drive.
+Jul 12 19:45:19 orange kernel: sr1: CDROM not ready.  Make sure there is 
+a disc in the drive.
+Jul 12 19:45:19 orange hald: mounted /dev/sr1 on behalf of uid 500
+Jul 12 19:45:19 orange gnome-keyring-daemon[2687]: adding removable 
+location: volume_label_MINIX at /media/MINIX
+Jul 12 19:45:24 orange hald: unmounted /dev/sr1 from '/media/MINIX' on 
+behalf of uid 500
+Jul 12 19:45:24 orange gnome-keyring-daemon[2687]: removing removable 
+location: volume_label_MINIX
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001784.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+	<LI>Next message: <A HREF="001774.html">[Stgt-devel] How to setup a DVD RW
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1773">[ date ]</a>
+              <a href="thread.html#1773">[ thread ]</a>
+              <a href="subject.html#1773">[ subject ]</a>
+              <a href="author.html#1773">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

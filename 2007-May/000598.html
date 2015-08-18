@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vtl take 3
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20take%203&In-Reply-To=%3C200705030510.l435AJts014728%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000599.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vtl take 3</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20take%203&In-Reply-To=%3C200705030510.l435AJts014728%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] vtl take 3">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu May  3 07:10:14 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000599.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#598">[ date ]</a>
+              <a href="thread.html#598">[ thread ]</a>
+              <a href="subject.html#598">[ subject ]</a>
+              <a href="author.html#598">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] vtl take 3
+Date: Fri, 27 Apr 2007 11:10:15 +1000
+
+&gt;<i> Post #3 of vtl patch against current scsi target git head..
+</I>&gt;<i>  - Sorry - it is an attachment due to patch size (80k)
+</I>&gt;<i> 
+</I>&gt;<i> Updated smc module to use 'kernel style param parser' parser.c
+</I>&gt;<i>  - ssc module is still to be updated.
+</I>&gt;<i> 
+</I>&gt;<i> Moved common 'scsi_sn' &amp; 'scsi_id' from target.c to spc.c
+</I>&gt;<i>  - To me, the processing of module 'params' should be handled in each module.
+</I>&gt;<i>  - sbc / mmc both call the common (original code in target.c) routine
+</I>&gt;<i> in spc.c. While this is not a 'SCSI Primary Command', I chose this as
+</I>&gt;<i> the 'best fit' place for the common routine.
+</I>
+OK. I don't like to have the code to parse scsi_sn and scsi_id in all
+the device types but seems that we have no choice (we could do
+something like IET iotype code does, but it's not nice).
+
+
+&gt;<i> smc improvements since last post:
+</I>&gt;<i>  - Configure slots &amp; ability to add 'media' (or at least assign a
+</I>&gt;<i> barcode to the slot location)
+</I>&gt;<i>  - mode sense pages.
+</I>&gt;<i> 
+</I>&gt;<i> tgt-setup in the / directory is my 'pre-canned' script to test.
+</I>&gt;<i> 
+</I>&gt;<i> What next:
+</I>&gt;<i> - Over the next few days I should have enough of the smc coded which
+</I>&gt;<i> will allow utility 'mtx' to move media between slots / drives.
+</I>&gt;<i> - Then it will be onto the ssc module.
+</I>&gt;<i> 
+</I>&gt;<i> Log sense pages still to be implemented. Current code in this patch
+</I>&gt;<i> for LOG SENSE/SELECT is just a place holder.
+</I>
+I'm happy to merge your code when it can do something useful. It
+doesn't need to be complete.
+
+Thanks.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000599.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#598">[ date ]</a>
+              <a href="thread.html#598">[ thread ]</a>
+              <a href="subject.html#598">[ subject ]</a>
+              <a href="author.html#598">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

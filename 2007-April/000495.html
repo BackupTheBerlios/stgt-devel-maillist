@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] some shortcut options missing from tgtadm
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20some%20shortcut%20options%20missing%20from%20tgtadm&In-Reply-To=%3C13491c613421c0.13421c013491c6%40o2.ie%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000496.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] some shortcut options missing from tgtadm</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20some%20shortcut%20options%20missing%20from%20tgtadm&In-Reply-To=%3C13491c613421c0.13421c013491c6%40o2.ie%3E"
+       TITLE="[Stgt-devel] [PATCH] some shortcut options missing from tgtadm">pauw at o2.ie
+       </A><BR>
+    <I>Sun Apr  1 10:11:12 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000496.html">[Stgt-devel] [patch] support different type in one target.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#495">[ date ]</a>
+              <a href="thread.html#495">[ thread ]</a>
+              <a href="subject.html#495">[ subject ]</a>
+              <a href="author.html#495">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>A few short options were missing in tgtadm.c, this simple patch just adds these.
+
+Albert
+
+--- usr/tgtadm.c        2007-04-01 10:03:22.000000000 +0200
++++ usr/tgtadm.c.new    2007-04-01 10:03:02.000000000 +0200
+@@ -110,7 +110,7 @@
+        {NULL, 0, NULL, 0},
+ };
+ 
+-static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:&quot;;
++static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:B:Y:O:&quot;;
+ 
+ static void usage(int status)
+ {
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000496.html">[Stgt-devel] [patch] support different type in one target.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#495">[ date ]</a>
+              <a href="thread.html#495">[ thread ]</a>
+              <a href="subject.html#495">[ subject ]</a>
+              <a href="author.html#495">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

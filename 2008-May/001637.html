@@ -1,0 +1,398 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH service_actions 1/1] RESEND Add infrastructure	to handle cdb lengths and service_actions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%20service_actions%201/1%5D%20RESEND%20Add%0A%20infrastructure%09to%20handle%20cdb%20lengths%20and%20service_actions&In-Reply-To=%3C20080513213657S.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001632.html">
+   <LINK REL="Next"  HREF="001633.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH service_actions 1/1] RESEND Add infrastructure	to handle cdb lengths and service_actions</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%20service_actions%201/1%5D%20RESEND%20Add%0A%20infrastructure%09to%20handle%20cdb%20lengths%20and%20service_actions&In-Reply-To=%3C20080513213657S.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH service_actions 1/1] RESEND Add infrastructure	to handle cdb lengths and service_actions">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue May 13 14:36:56 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001632.html">[Stgt-devel] [PATCH service_actions 1/1] RESEND Add	infrastructure to handle cdb lengths and service_actions
+</A></li>
+        <LI>Next message: <A HREF="001633.html">[Stgt-devel] Moving responsibility for iSER &amp; iSCSI related issues
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1637">[ date ]</a>
+              <a href="thread.html#1637">[ thread ]</a>
+              <a href="subject.html#1637">[ subject ]</a>
+              <a href="author.html#1637">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 11 May 2008 17:00:29 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> Resend the patch.
+</I>&gt;<i> MMC and OSD does not implement MaintenanceIn  so dont define them for
+</I>&gt;<i> those two emulation targets.
+</I>
+Thanks,
+
+
+&gt;<i> List
+</I>&gt;<i> 
+</I>&gt;<i> This patch is also attached in gzip format, if gmail once again
+</I>&gt;<i> decides to mangle it.
+</I>
+Can you attach a patch in plain text format next time?
+
+
+&gt;<i> It adds infrastructure to handle commands that take service actions.
+</I>&gt;<i> It also adds the cdb length to all commands we have implemented and
+</I>&gt;<i> list in the .ops structure.
+</I>
+CDB_SIZE macro doesn't work?
+
+
+&gt;<i> (at least when I try the ioctl() to do scsi passthrough,   the devices
+</I>&gt;<i> I have gets really &quot;unhappy&quot; if i dont provide the correct/expected
+</I>&gt;<i> cdb length   so this sould also benefit when passthrough is added)
+</I>&gt;<i> 
+</I>&gt;<i> As an example of a &quot;service action&quot; command being implemented
+</I>&gt;<i> I implemented 0xa3/0x0c which is ReportSupportedOperationCodes
+</I>&gt;<i> other MaintenanceIn commands should be easy to add.
+</I>&gt;<i> 
+</I>&gt;<i> please review/apply/discuss
+</I>&gt;<i> 
+</I>&gt;<i> ronnie sahlberg
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt;From a9b06135ac3805daa136bc39355b8a49759de6d8 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> Date: Sun, 11 May 2008 16:25:57 +1000
+</I>&gt;<i> Subject: [PATCH] Add infrastructure for MaintenanceIn and other
+</I>&gt;<i> commands taking service actions.
+</I>&gt;<i> 
+</I>&gt;<i> Expand device_type_operations to also include the cdb length and an
+</I>&gt;<i> array of possible service actions for this command.
+</I>&gt;<i> We need both the list of service actions and also the cdb length in
+</I>&gt;<i> order to implement
+</I>&gt;<i> ReportSupportedOpcodes : ManagementIn:service action 0x0c
+</I>&gt;<i> 
+</I>&gt;<i> Augment the .ops structure and provide the expected cdb length for all
+</I>&gt;<i> command implemented for all device types.  This is required to support
+</I>&gt;<i> ReportSupportedOperationCodes as well as might be useful if/when we add
+</I>&gt;<i> a passthrough backend   since at least the current backend becomes unhappy
+</I>&gt;<i> if the cdb length provided to the ioctl() is different from what the
+</I>&gt;<i> real device expects.
+</I>&gt;<i> 
+</I>&gt;<i> Augment the .ops structure with a null terminated list of service action for
+</I>&gt;<i> the (now only 0xa3) opcodes that take service actions and which needs to
+</I>&gt;<i> be reported in ReportSupportedOpcodes.
+</I>&gt;<i> 
+</I>&gt;<i> Implement MaintenanceIn and implement service action 0x0c for this command.
+</I>&gt;<i> the provided infrastructure should make it easier to add other MaintIn
+</I>&gt;<i> service actions, of which there are quite a few.
+</I>&gt;<i> 
+</I>&gt;<i> there are many other opcodes that also take service actions and which
+</I>&gt;<i> could build on this framework:
+</I>&gt;<i> 0xa4 MaintOut
+</I>&gt;<i> 0x7f: variable length cdb
+</I>&gt;<i> 0x5e/0x5f persistent reservarion in/out
+</I>&gt;<i> 0xab
+</I>&gt;<i> 0x9e
+</I>&gt;<i> 0x9f
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/mmc.c  |   52 +++++++++---------
+</I>&gt;<i>  usr/osd.c  |   10 ++--
+</I>&gt;<i>  usr/sbc.c  |   44 ++++++++--------
+</I>&gt;<i>  usr/scc.c  |   16 +++---
+</I>&gt;<i>  usr/smc.c  |   20 ++++----
+</I>&gt;<i>  usr/spc.c  |  171 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i>  usr/spc.h  |    4 ++
+</I>&gt;<i>  usr/tgtd.h |    7 +++
+</I>&gt;<i>  8 files changed, 253 insertions(+), 71 deletions(-)
+</I>
+(snip)
+
+Here are some minor comments,
+
+&gt;<i> +static int report_opcodes_all(struct scsi_cmd *cmd, int rctd,
+</I>&gt;<i> +uint32_t alloc_len)
+</I>&gt;<i> +{
+</I>&gt;<i> +	uint8_t buf[2048], *data;
+</I>&gt;<i> +	struct device_type_operations *ops;
+</I>&gt;<i> +	struct service_action *service_action;
+</I>&gt;<i> +	int i;
+</I>&gt;<i> +	uint32_t len;
+</I>&gt;<i> +
+</I>&gt;<i> +	/* cant request RCTD for all descriptors */
+</I>&gt;<i> +	if (rctd) {
+</I>&gt;<i> +		scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i> +		sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;<i> +			ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i> +		return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	memset(buf, 0, sizeof(buf));
+</I>&gt;<i> +	data = &amp;buf[4];
+</I>&gt;<i> +
+</I>&gt;<i> +	ops = cmd-&gt;dev-&gt;dev_type_template.ops;
+</I>&gt;<i> +	for (i = 0; i &lt; 256; i++) {
+</I>&gt;<i> +		if (ops[i].cdb_length == 0)
+</I>&gt;<i> +			continue;
+</I>&gt;<i> +
+</I>&gt;<i> +		/* this command does not take a service action, so just
+</I>&gt;<i> +		   report the opcode
+</I>&gt;<i> +		*/
+</I>&gt;<i> +		if (ops[i].service_actions == NULL) {
+</I>
+Please use
+
+if (!ops[i].service_actions)
+
+It's Linux kernel coding style.
+
+
+&gt;<i> +			*data++ = i;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* reserved */
+</I>&gt;<i> +			data++;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* service action */
+</I>&gt;<i> +			data += 2;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* reserved */
+</I>&gt;<i> +			data++;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* flags : no service action, no command descriptor */
+</I>&gt;<i> +			data++;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* cdb length */
+</I>&gt;<i> +			*data++ = (ops[i].cdb_length&gt;&gt;8) &amp; 0xff;
+</I>
+Please put spaces around &quot;&gt;&gt;&quot;:
+
+*data++ = (ops[i].cdb_length &gt;&gt; 8) &amp; 0xff;
+
+
+&gt;<i> +			*data++ = ops[i].cdb_length &amp; 0xff;
+</I>&gt;<i> +
+</I>&gt;<i> +			continue;
+</I>&gt;<i> +		}
+</I>&gt;<i> +
+</I>&gt;<i> +		for (service_action = ops[i].service_actions;
+</I>&gt;<i> +			service_action-&gt;cmd_perform;
+</I>&gt;<i> +			service_action++) {
+</I>&gt;<i> +			/* opcode */
+</I>&gt;<i> +			*data++ = i;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* reserved */
+</I>&gt;<i> +			data++;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* service action */
+</I>&gt;<i> +			*data++ = (service_action-&gt;service_action&gt;&gt;8) &amp; 0xff;
+</I>&gt;<i> +			*data++ = service_action-&gt;service_action &amp; 0xff;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* reserved */
+</I>&gt;<i> +			data++;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* flags : service action */
+</I>&gt;<i> +			*data++ = 0x01;
+</I>&gt;<i> +
+</I>&gt;<i> +			/* cdb length */
+</I>&gt;<i> +			*data++ = (ops[i].cdb_length&gt;&gt;8) &amp; 0xff;
+</I>&gt;<i> +			*data++ = ops[i].cdb_length &amp; 0xff;
+</I>&gt;<i> +		}
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	len = data - &amp;buf[0];
+</I>&gt;<i> +	len -= 4;
+</I>&gt;<i> +	buf[0] = (len&gt;&gt;24) &amp; 0xff;
+</I>&gt;<i> +	buf[1] = (len&gt;&gt;16) &amp; 0xff;
+</I>&gt;<i> +	buf[2] = (len&gt;&gt;8)  &amp; 0xff;
+</I>&gt;<i> +	buf[3] = len &amp; 0xff;
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i> +	       min(scsi_get_in_length(cmd), len+4));
+</I>&gt;<i> +
+</I>&gt;<i> +	scsi_set_in_resid_by_actual(cmd, len+4);
+</I>&gt;<i> +
+</I>&gt;<i> +	return SAM_STAT_GOOD;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +int spc_report_supported_opcodes(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +	uint8_t reporting_options;
+</I>&gt;<i> +	uint8_t requested_opcode;
+</I>&gt;<i> +	uint16_t requested_service_action;
+</I>&gt;<i> +	uint32_t alloc_len;
+</I>&gt;<i> +	int rctd;
+</I>&gt;<i> +	int ret = SAM_STAT_GOOD;
+</I>&gt;<i> +
+</I>&gt;<i> +	reporting_options = cmd-&gt;scb[2] &amp; 0x07;
+</I>&gt;<i> +
+</I>&gt;<i> +	requested_opcode = cmd-&gt;scb[3];
+</I>&gt;<i> +
+</I>&gt;<i> +	requested_service_action = cmd-&gt;scb[4];
+</I>&gt;<i> +	requested_service_action &lt;&lt;= 8;
+</I>&gt;<i> +	requested_service_action |= cmd-&gt;scb[5];
+</I>&gt;<i> +
+</I>&gt;<i> +	alloc_len = cmd-&gt;scb[6];
+</I>&gt;<i> +	alloc_len &lt;&lt;= 8;
+</I>&gt;<i> +	alloc_len |= cmd-&gt;scb[7];
+</I>&gt;<i> +	alloc_len &lt;&lt;= 8;
+</I>&gt;<i> +	alloc_len |= cmd-&gt;scb[8];
+</I>&gt;<i> +	alloc_len &lt;&lt;= 8;
+</I>&gt;<i> +	alloc_len |= cmd-&gt;scb[9];
+</I>
+Let's do this in one line:
+
+alloc_len = (uint32_t)scb[6] &lt;&lt; 24 | (uint32_t)scb[7] &lt;&lt; 16 |
+			(uint32_t)scb[8] &lt;&lt; 8 | (uint32_t)scb[9];
+
+We have the same code in scsi_rw_offset and scsi_rw_count so adding
+some helper functions to util.h would be nice.
+
+And we need to check scsi_get_in_length(cmd) here?
+
+
+&gt;<i> +	rctd = cmd-&gt;scb[2] &amp; 0x80;
+</I>&gt;<i> +
+</I>&gt;<i> +	switch (reporting_options) {
+</I>&gt;<i> +	case 0x00: /* report all */
+</I>&gt;<i> +		ret = report_opcodes_all(cmd, rctd, alloc_len);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 0x01: /* report one no service action*/
+</I>&gt;<i> +	case 0x02: /* report one service action */
+</I>&gt;<i> +	default:
+</I>&gt;<i> +		scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i> +		sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;<i> +			ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i> +		ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	return ret;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +struct service_action maint_in_service_actions[] = {
+</I>&gt;<i> +	{0x0c, spc_report_supported_opcodes},
+</I>&gt;<i> +	{0, NULL}
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +struct service_action *
+</I>&gt;<i> +find_service_action(struct service_action *service_action, uint32_t action)
+</I>&gt;<i> +{
+</I>&gt;<i> +	while (service_action-&gt;cmd_perform) {
+</I>&gt;<i> +		if (service_action-&gt;service_action == action)
+</I>&gt;<i> +			return service_action;
+</I>&gt;<i> +		service_action++;
+</I>&gt;<i> +	}
+</I>&gt;<i> +	return NULL;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +/**
+</I>&gt;<i> + * This functions emulates the various commands using the 0xa3 cdb opcode
+</I>&gt;<i> + */
+</I>&gt;<i> +int spc_maint_in(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +	uint8_t action;
+</I>&gt;<i> +	struct service_action *service_action;
+</I>&gt;<i> +
+</I>&gt;<i> +	action = cmd-&gt;scb[1] &amp; 0x1f;
+</I>&gt;<i> +	service_action = find_service_action(maint_in_service_actions, action);
+</I>&gt;<i> +
+</I>&gt;<i> +	if (service_action == NULL) {
+</I>&gt;<i> +		scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i> +		sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;<i> +				ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i> +		return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	return service_action-&gt;cmd_perform(host_no, cmd);
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i>  	scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i> diff --git a/usr/spc.h b/usr/spc.h
+</I>&gt;<i> index a63436a..9147d4c 100644
+</I>&gt;<i> --- a/usr/spc.h
+</I>&gt;<i> +++ b/usr/spc.h
+</I>&gt;<i> @@ -1,6 +1,9 @@
+</I>&gt;<i>  #ifndef __SPC_H
+</I>&gt;<i>  #define __SPC_H
+</I>&gt;<i> 
+</I>&gt;<i> +extern struct service_action maint_in_service_actions[];
+</I>&gt;<i> +extern int spc_maint_in(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> +
+</I>&gt;<i>  extern int spc_inquiry(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_report_luns(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> @@ -9,6 +12,7 @@ extern int spc_request_sense(int host_no, struct
+</I>&gt;<i> scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_lu_init(struct scsi_lu *lu);
+</I>&gt;<i> 
+</I>&gt;<i> +
+</I>&gt;<i>  typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+</I>&gt;<i>  extern int lu_config(struct scsi_lu *lu, char *params, match_fn_t *);
+</I>&gt;<i>  extern int spc_lu_config(struct scsi_lu *lu, char *params);
+</I>&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;<i> index e516b0a..caff8d0 100644
+</I>&gt;<i> --- a/usr/tgtd.h
+</I>&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;<i> @@ -80,8 +80,15 @@ struct it_nexus_lu_info {
+</I>&gt;<i>  	struct list_head pending_ua_sense_list;
+</I>&gt;<i>  };
+</I>&gt;<i> 
+</I>&gt;<i> +struct service_action {
+</I>&gt;<i> +	uint32_t service_action;
+</I>&gt;<i> +	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i>  struct device_type_operations {
+</I>&gt;<i>  	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> +	int cdb_length;
+</I>&gt;<i> +	struct service_action *service_actions;
+</I>&gt;<i>  };
+</I>&gt;<i> 
+</I>&gt;<i>  struct device_type_template {
+</I>&gt;<i> -- 
+</I>&gt;<i> 1.5.5
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001632.html">[Stgt-devel] [PATCH service_actions 1/1] RESEND Add	infrastructure to handle cdb lengths and service_actions
+</A></li>
+	<LI>Next message: <A HREF="001633.html">[Stgt-devel] Moving responsibility for iSER &amp; iSCSI related issues
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1637">[ date ]</a>
+              <a href="thread.html#1637">[ thread ]</a>
+              <a href="subject.html#1637">[ subject ]</a>
+              <a href="author.html#1637">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

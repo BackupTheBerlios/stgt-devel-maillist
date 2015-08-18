@@ -1,0 +1,427 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20Remove%20duplicate%20pointer.&In-Reply-To=%3C4841FC62.3030801%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001679.html">
+   <LINK REL="Next"  HREF="001680.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/1] Remove duplicate pointer.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20Remove%20duplicate%20pointer.&In-Reply-To=%3C4841FC62.3030801%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 1/1] Remove duplicate pointer.">markh794 at gmail.com
+       </A><BR>
+    <I>Sun Jun  1 03:33:22 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001679.html">[Stgt-devel] [patch] 1x1 - remove spaces.
+</A></li>
+        <LI>Next message: <A HREF="001680.html">[Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1676">[ date ]</a>
+              <a href="thread.html#1676">[ thread ]</a>
+              <a href="subject.html#1676">[ subject ]</a>
+              <a href="author.html#1676">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE> From 72e5a96969937bc68f9153d5c18af306827cf254 Mon Sep 17 00:00:00 2001
+From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Fri, 30 May 2008 17:54:16 +1000
+Subject: Share common 'private' pointer.
+
+No need for smc &amp; mmc to use different pointer.
+Use common pointer for private use.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+  usr/mmc.c  |   52 ++++++++++++++++++++++++++--------------------------
+  usr/smc.c  |   14 +++++++-------
+  usr/tgtd.h |    9 +++++----
+  3 files changed, 38 insertions(+), 37 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index f988f5a..65c66a7 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -59,7 +59,7 @@ struct mmc_info {
+
+  static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int ret;
+  	uint64_t end_offset;
+  	uint64_t offset, length;
+@@ -134,7 +134,7 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	uint64_t size;
+  	uint32_t *data;
+
+@@ -164,7 +164,7 @@ overflow:
+
+  static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	uint8_t *data;
+  	uint8_t buf[32];
+  	int toc_time, toc_format, toc_track;
+@@ -282,7 +282,7 @@ static int mmc_read_toc(int host_no, struct scsi_cmd 
+*cmd)
+
+  static int mmc_close_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+
+  	/* once we close the track it becomes a DVD_ROM */
+  	mmc-&gt;current_profile = PROFILE_DVD_ROM;
+@@ -292,7 +292,7 @@ static int mmc_close_track(int host_no, struct 
+scsi_cmd *cmd)
+
+  static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	unsigned char buf[34];
+
+  	if (mmc-&gt;current_profile == PROFILE_NO_PROFILE) {
+@@ -460,7 +460,7 @@ static int mmc_read_disc_information(int host_no, 
+struct scsi_cmd *cmd)
+
+  static void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -478,7 +478,7 @@ static void profile_dvd_rom(struct scsi_cmd *cmd, 
+char *data)
+
+  static void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -634,7 +634,7 @@ static char *feature_removable_medium(struct 
+scsi_cmd *cmd, char *data,
+  static char *feature_random_readable(struct scsi_cmd *cmd, char *data,
+  				     int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -684,7 +684,7 @@ static char *feature_random_readable(struct scsi_cmd 
+*cmd, char *data,
+  static char *feature_dvd_read(struct scsi_cmd *cmd, char *data,
+  			      int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -749,7 +749,7 @@ static char *feature_timeout(struct scsi_cmd *cmd, 
+char *data, int only_current)
+  static char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data,
+  					 int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -791,7 +791,7 @@ static char *feature_real_time_streaming(struct 
+scsi_cmd *cmd, char *data,
+  static char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data,
+  				int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -875,7 +875,7 @@ static char *feature_multi_read(struct scsi_cmd 
+*cmd, char *data,
+
+  static char *feature_dcbs(struct scsi_cmd *cmd, char *data, int 
+only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -961,7 +961,7 @@ struct feature_descriptor features[] = {
+
+  static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	char *data;
+  	char buf[1024];
+  	int rt, start;
+@@ -1017,7 +1017,7 @@ static int mmc_get_configuration(int host_no, 
+struct scsi_cmd *cmd)
+  static unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned 
+char *data,
+  				     unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	unsigned long tmp;
+
+  	switch (mmc-&gt;current_profile) {
+@@ -1170,7 +1170,7 @@ static unsigned char *track_type_lba(struct 
+scsi_cmd *cmd, unsigned char *data,
+  static unsigned char *track_type_track(struct scsi_cmd *cmd,
+  				       unsigned char *data, unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	unsigned long tmp;
+
+  	switch (mmc-&gt;current_profile) {
+@@ -1352,7 +1352,7 @@ struct track_type track_types[] = {
+
+  static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	struct track_type *t;
+  	unsigned char *data;
+  	unsigned char buf[4096];
+@@ -1402,7 +1402,7 @@ static int mmc_read_track_information(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int blocks;
+  	unsigned char buf[12];
+  	long tmp;
+@@ -1457,7 +1457,7 @@ static int mmc_read_buffer_capacity(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_synchronize_cache(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+
+  	if (mmc-&gt;current_profile == PROFILE_NO_PROFILE) {
+  		scsi_set_in_resid_by_actual(cmd, 0);
+@@ -1473,7 +1473,7 @@ static unsigned char *perf_type_write_speed(struct 
+scsi_cmd *cmd,
+  					    unsigned int type,
+  					    unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+
+  	/* write/except */
+  	*data++ = 0x00;
+@@ -1628,7 +1628,7 @@ static unsigned char *perf_type_perf_data(struct 
+scsi_cmd *cmd,
+  					  unsigned int type,
+  					  unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	int tolerance;
+  	int write_flag;
+  	int except;
+@@ -1786,7 +1786,7 @@ static unsigned char *dvd_format_phys_info(struct 
+scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	unsigned char *old_data;
+
+  	if (write_header) {
+@@ -1937,7 +1937,7 @@ static unsigned char *dvd_format_adip_info(struct 
+scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+
+  	if (write_header) {
+  		*data++ = DVD_FORMAT_ADIP_INFO;
+@@ -2107,7 +2107,7 @@ static unsigned char 
+*dvd_format_dvd_structure_list(struct scsi_cmd *cmd,
+
+  static int mmc_read_dvd_structure(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	long address;
+  	int format, layer;
+  	unsigned char *data;
+@@ -2159,7 +2159,7 @@ static int mmc_read_dvd_structure(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_reserve_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	uint64_t tmp;
+
+  	tmp = cmd-&gt;scb[5];
+@@ -2200,7 +2200,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+  	if (!mmc)
+  		return -ENOMEM;
+
+-	lu-&gt;mmc_p = mmc;
++	lu-&gt;xxc_p = mmc;
+
+  	if (spc_lu_init(lu))
+  		return TGTADM_NOMEM;
+@@ -2268,7 +2268,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+
+  static int mmc_lu_online(struct scsi_lu *lu)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)lu-&gt;mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)lu-&gt;xxc_p;
+  	struct stat st;
+
+  	mmc-&gt;current_profile = PROFILE_NO_PROFILE;
+diff --git a/usr/smc.c b/usr/smc.c
+index 9a46d30..5caaaf2 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -232,7 +232,7 @@ static int build_element_descriptors(uint8_t *data, 
+struct list_head *head,
+   */
+  static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd-&gt;dev-&gt;smc_p;
++	struct smc_info *smc = (struct smc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	uint8_t *data = NULL;
+  	uint8_t *scb;
+  	uint8_t element_type;
+@@ -354,7 +354,7 @@ sense:
+   */
+  static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd-&gt;dev-&gt;smc_p;
++	struct smc_info *smc = (struct smc_info *)cmd-&gt;dev-&gt;xxc_p;
+  	uint8_t *scb;
+  	uint16_t src;
+  	uint16_t dest;
+@@ -435,7 +435,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  	smc = zalloc(sizeof(struct smc_info));
+  	if (smc)
+-		lu-&gt;smc_p = smc;
++		lu-&gt;xxc_p = smc;
+  	else
+  		return -ENOMEM;
+
+@@ -473,7 +473,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  static void smc_lu_exit(struct scsi_lu *lu)
+  {
+-	struct smc_info *smc = lu-&gt;smc_p;
++	struct smc_info *smc = lu-&gt;xxc_p;
+
+  	dprintf(&quot;Medium Changer shutdown() called\n&quot;);
+
+@@ -547,7 +547,7 @@ static void slot_dump(struct list_head *head)
+
+  static int add_slt(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu-&gt;smc_p;
++	struct smc_info *smc = lu-&gt;xxc_p;
+  	int ret = TGTADM_INVALID_REQUEST;
+  	struct mode_pg *pg;
+  	struct slot *s;
+@@ -606,7 +606,7 @@ dont_do_slots:
+
+  static int config_slot(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu-&gt;smc_p;
++	struct smc_info *smc = lu-&gt;xxc_p;
+  	struct mode_pg *m = NULL;
+  	struct slot *s = NULL;
+  	int ret = TGTADM_INVALID_REQUEST;
+@@ -649,7 +649,7 @@ static int config_slot(struct scsi_lu *lu, struct 
+tmp_param *tmp)
+
+  static int __smc_lu_config(struct scsi_lu *lu, char *params)
+  {
+-	struct smc_info *smc = (struct smc_info *)lu-&gt;smc_p;
++	struct smc_info *smc = (struct smc_info *)lu-&gt;xxc_p;
+  	int err = TGTADM_SUCCESS;
+  	char *p;
+  	char buf[256];
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 2f128f6..d762039 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -148,10 +148,11 @@ struct scsi_lu {
+
+  	struct lu_phy_attr attrs;
+
+-	/* TODO: needs a structure for lots of device parameters */
+-	/* Currently only used by smc and mmc modules */
+-	void *smc_p;
+-	void *mmc_p;
++	/*
++	 * Structure pointer for each modules private use.
++	 * Currently used by smc and mmc modules
++	 */
++	void *xxc_p;
+  };
+
+  struct mgmt_req {
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001679.html">[Stgt-devel] [patch] 1x1 - remove spaces.
+</A></li>
+	<LI>Next message: <A HREF="001680.html">[Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1676">[ date ]</a>
+              <a href="thread.html#1676">[ thread ]</a>
+              <a href="subject.html#1676">[ subject ]</a>
+              <a href="author.html#1676">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

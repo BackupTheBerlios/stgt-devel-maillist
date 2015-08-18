@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200508231505.j7NF54t0005210%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000011.html">
+   <LINK REL="Next"  HREF="000024.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200508231505.j7NF54t0005210%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">tomof at acm.org
+       </A><BR>
+    <I>Tue Aug 23 17:05:03 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000011.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000024.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 00:59:16 -0500
+
+&gt;<i> This adds the beginings of a stgt_device_template for
+</I>&gt;<i> passthrough commands. It will end up using the block
+</I>&gt;<i> layer BLOCK_PC facility to pass the command to the
+</I>&gt;<i> underlying device similar to how we do it for SG_IO
+</I>&gt;<i> and dm-multipath hw_handlers like dm-emc.c.
+</I>&gt;<i> 
+</I>&gt;<i> It is not completely hooked in yet. The command
+</I>&gt;<i> handling needs to be done and so does the actual
+</I>&gt;<i> device creation.
+</I>&gt;<i> 
+</I>&gt;<i> This was built over my last patch.
+</I>
+I've attached the patch to enable IET to use your new features. Now we
+can use 'Lun' in the IET configure file (/etc/ietd.conf) again.
+
+For example, I put 'Lun 0 Path=/dev/hdb' line in my configuration
+file.
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at lily</A>:/sys/class$ find stgt_*
+stgt_device
+stgt_device/device0
+stgt_device/device0/path
+stgt_target
+stgt_target/target0
+stgt_target/target0/queued_cmnds
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at lily</A>:/sys/class$ cat stgt_device/device0/path
+/dev/hdb
+
+
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/config.c stgt.work/iscsi/kernel/config.c
+--- stgt.new/iscsi/kernel/config.c	2005-08-19 00:42:26.000000000 +0900
++++ stgt.work/iscsi/kernel/config.c	2005-08-23 22:29:50.000000000 +0900
+@@ -170,8 +170,7 @@
+ 	if ((err = copy_from_user(&amp;info, (void *) ptr, sizeof(info))) &lt; 0)
+ 		return err;
+ 
+-	return 0;
+-/* 	return volume_add(target, &amp;info); */
++	return volume_add(target, &amp;info);
+ }
+ 
+ static int del_volume(struct iscsi_target *target, unsigned long ptr)
+@@ -182,8 +181,7 @@
+ 	if ((err = copy_from_user(&amp;info, (void *) ptr, sizeof(info))) &lt; 0)
+ 		return err;
+ 
+-	return 0;
+-/* 	return iscsi_volume_del(target, &amp;info); */
++	return volume_del(target, &amp;info);
+ }
+ 
+ static int iscsi_param_config(struct iscsi_target *target, unsigned long ptr, int set)
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/iscsi.h stgt.work/iscsi/kernel/iscsi.h
+--- stgt.new/iscsi/kernel/iscsi.h	2005-08-23 18:56:10.000000000 +0900
++++ stgt.work/iscsi/kernel/iscsi.h	2005-08-23 22:48:38.000000000 +0900
+@@ -73,6 +73,7 @@
+ 	struct iscsi_trgt_param trgt_param;
+ 
+ 	struct list_head session_list;
++	struct list_head device_list;
+ 
+ 	struct network_thread_info nthread_info;
+ 
+@@ -231,6 +232,8 @@
+ struct iscsi_target *target_lookup_by_id(u32);
+ extern int target_add(struct target_info *);
+ extern int target_del(u32 id);
++extern int volume_del(struct iscsi_target *target, struct volume_info *info);
++extern int volume_add(struct iscsi_target *target, struct volume_info *info);
+ 
+ /* config.c */
+ extern int iet_procfs_init(void);
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/target.c stgt.work/iscsi/kernel/target.c
+--- stgt.new/iscsi/kernel/target.c	2005-08-23 18:56:10.000000000 +0900
++++ stgt.work/iscsi/kernel/target.c	2005-08-23 23:25:50.000000000 +0900
+@@ -11,6 +11,7 @@
+ #include &lt;iscsi_dbg.h&gt;
+ #include &lt;stgt.h&gt;
+ #include &lt;stgt_target.h&gt;
++#include &lt;stgt_device.h&gt;
+ 
+ #define	MAX_NR_TARGETS	(1UL &lt;&lt; 30)
+ 
+@@ -151,6 +152,7 @@
+ 	init_MUTEX(&amp;target-&gt;target_sem);
+ 
+ 	INIT_LIST_HEAD(&amp;target-&gt;session_list);
++	INIT_LIST_HEAD(&amp;target-&gt;device_list);
+ 	list_add(&amp;target-&gt;t_list, &amp;target_list);
+ 
+ 	nthread_init(target);
+@@ -277,3 +279,79 @@
+ 
+ 	return 0;
+ }
++
++/*
++ * Temporary device code
++ */
++
++struct iscsi_device {
++	uint64_t lun;
++	struct list_head list;
++	struct stgt_device *sd;
++};
++
++struct iscsi_device *volume_lookup(struct iscsi_target *target, u32 lun)
++{
++	struct iscsi_device *device;
++	list_for_each_entry(device, &amp;target-&gt;device_list, list) {
++		if (device-&gt;lun == lun)
++			return device;
++	}
++	return NULL;
++}
++
++int volume_add(struct iscsi_target *target, struct volume_info *info)
++{
++	char *path, *type, dtype[] = &quot;stgt_sd&quot;;
++	struct iscsi_device *device;
++	struct stgt_device *sd;
++
++	eprintk(&quot;%u %s\n&quot;, info-&gt;lun, info-&gt;args);
++
++	if (volume_lookup(target, info-&gt;lun)) {
++		eprintk(&quot;%u\n&quot;, info-&gt;lun);
++		return -EEXIST;
++	}
++
++	path = strstr(info-&gt;args, &quot;Path=&quot;);
++	if (!path)
++		return -EINVAL;
++	path += strlen(&quot;Path=&quot;);
++
++	device = kmalloc(sizeof(*device), GFP_KERNEL);
++	if (!device)
++		return -ENOMEM;
++
++	type = strstr(info-&gt;args, &quot;Type=&quot;);
++	if (type)
++		type += strlen(&quot;Type=&quot;);
++	else
++		type = dtype;
++
++	eprintk(&quot;%u %s %s\n&quot;, info-&gt;lun, path, type);
++	sd = stgt_device_create(target-&gt;stt, type, path, info-&gt;lun, 0);
++	if (!sd)
++		goto out;
++
++	device-&gt;sd = sd;
++	device-&gt;lun = info-&gt;lun;
++	list_add(&amp;device-&gt;list, &amp;target-&gt;device_list);
++	return 0;
++out:
++	kfree(device);
++	return -EINVAL;
++}
++
++int volume_del(struct iscsi_target *target, struct volume_info *info)
++{
++	struct iscsi_device *device;
++
++	device = volume_lookup(target, info-&gt;lun);
++	if (!device)
++		return -ENOENT;
++
++	stgt_device_destroy(device-&gt;sd);
++	list_del(&amp;device-&gt;list);
++	kfree(device);
++	return 0;
++}
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000011.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000024.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

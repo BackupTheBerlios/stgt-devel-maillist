@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%20implementation&In-Reply-To=%3Cc9a3e4540804140325m2239f082wace3061e876c511e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001520.html">
+   <LINK REL="Next"  HREF="001522.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%20implementation&In-Reply-To=%3Cc9a3e4540804140325m2239f082wace3061e876c511e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Mon Apr 14 12:25:10 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001520.html">[Stgt-devel] pyromaniac
+</A></li>
+        <LI>Next message: <A HREF="001522.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1521">[ date ]</a>
+              <a href="thread.html#1521">[ thread ]</a>
+              <a href="subject.html#1521">[ subject ]</a>
+              <a href="author.html#1521">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi List
+
+
+Please find attached a &quot;small&quot; (nothing is small when it comes to mmc)
+patch to the MMC emulation that adds
+support for three different profiles
+1, NO_PROFILE    which is triggered by the lun being offline and
+causes the emulation to behave as a dvd drive with no disk in the bay.
+2, PROFILE_DVD_ROM   which is triggered by the backing store being &gt;0
+bytes in size when the lun is brought online.
+   In this mode it behaves as a DVD drive with a ROM disk in the bay.
+Reads are honoured but nor writes. It reports that the media contains
+embossed data.
+3, PROFILE_DVD_PLUS_R which is triggered if the backing store file is
+==0 in size when the lun is brought online. In this mode it behaves as
+a DVD drive with a blank
+    writeable +R disk is in the bay.
+
+In the +R profile,  I have tested it with DVDDecrypted from windows
+and it works well. I can write/burn iso images to this +R dvd disk.
+Once the disk is burned and the application finishes the process by
+issuing the CloseTrack CDB, the emulation will &quot;morph&quot; the device and
+change the mode into being DVD_ROM instead.
+
+
+There are controversial changes to the core in this patch wich
+involves changing of how online/offline is handleded and also adds the
+possibility to add a LUN with a nonexisting backing store
+(the lun will be created but it never goes online).
+
+These changes, which are a small part of the diff, is likely to break
+other non MMC device emulations  so you may NOT want to import this
+patch as it is into the tree.
+
+But please feel free to review and comment on it.
+
+
+The emulation adds several large MMC CDBs but only adds what is
+required for DVD_ROM and DVD+R profiles to wurk under DVDDecrupter
+when burning an iso to a blank disk.
+Later it will be necessary to add emulation of additional CDBs and
+fields in CDBs to enable other dvd burning tools to work as well.
+It is only tested with DVD decrypter and it sworks well.
+
+
+Now, the next question, would STGT want to have DVD_ROM/DVD+R emulation?
+If so, how should i proceed?   the patch is pretty (&gt;2.6k lines) big
+since MMC is pretty enormous.
+What is the next step i need to do now, once i have shown a working prototype?
+(feel free to test it out, but dont add it to the git tree until the
+controversial parts have been resolved)
+
+I am willing to rework the patch into smaller pieces,
+maybe one piece with the online/offline changes, then one patch for
+each MMC CDB that is added ?
+
+
+comments?
+
+ronnie sahlberg
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: mmc.diff.gz
+Type: application/x-gzip
+Size: 12005 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080414/a85b1932/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080414/a85b1932/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001520.html">[Stgt-devel] pyromaniac
+</A></li>
+	<LI>Next message: <A HREF="001522.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1521">[ date ]</a>
+              <a href="thread.html#1521">[ thread ]</a>
+              <a href="subject.html#1521">[ subject ]</a>
+              <a href="author.html#1521">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C20080709170930W.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001735.html">
+   <LINK REL="Next"  HREF="001736.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C20080709170930W.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Jul  9 10:09:36 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001735.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+        <LI>Next message: <A HREF="001736.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1755">[ date ]</a>
+              <a href="thread.html#1755">[ thread ]</a>
+              <a href="subject.html#1755">[ subject ]</a>
+              <a href="author.html#1755">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 1 Jul 2008 09:34:00 +1000
+&quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+
+&gt;<i> Hi Tomasz,
+</I>&gt;<i> 
+</I>&gt;<i> I've also noticed there is only one tgtd process when running it in
+</I>&gt;<i> the foreground.
+</I>&gt;<i> 
+</I>&gt;<i> Running in the foreground has been the only way I've been successful
+</I>&gt;<i> in collecting core files in the past.
+</I>&gt;<i> 
+</I>&gt;<i> I still do not (read: never actually spent time looking) understand
+</I>&gt;<i> the why/what differences is between foreground and why there is two
+</I>&gt;<i> processes while in background.
+</I>
+We have two tgtd processes to write a log file safely (to avoid
+blocking).
+
+Let's suppose that we have only one tgtd process. The process calls
+syslog to write a log file. In an out-of-memory situation, syslog()
+blocks. It means that the process might sleeps for long time. We can't
+perform any SCSI processes so that commands from initiators are likely
+to be aborted due to timeout. With '-f' option, tgtd works in this
+way.
+
+By default, we have two processes. They use shared memory. The main
+process performs everything except for logging. The process writes a
+log message to the shared memory instead of calling syslog(). Another
+(logging) process calls syslog to write the message in the shared
+memory to a log file.  In an out-of-memory situation, the logging
+process might sleep for long time but the main process doesn't. If the
+shared memory is full, a log message is lost but the main process
+always works for initiators.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001735.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+	<LI>Next message: <A HREF="001736.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1755">[ date ]</a>
+              <a href="thread.html#1755">[ thread ]</a>
+              <a href="subject.html#1755">[ subject ]</a>
+              <a href="author.html#1755">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

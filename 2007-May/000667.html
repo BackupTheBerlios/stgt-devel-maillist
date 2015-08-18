@@ -1,0 +1,511 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch 1/2] passthrough target notification function
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%201/2%5D%20passthrough%20target%20notification%20function&In-Reply-To=%3C20070518181745.GA5340%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000691.html">
+   <LINK REL="Next"  HREF="000668.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch 1/2] passthrough target notification function</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%201/2%5D%20passthrough%20target%20notification%20function&In-Reply-To=%3C20070518181745.GA5340%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] [patch 1/2] passthrough target notification function">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Fri May 18 20:17:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000691.html">[Stgt-devel] [Iscsitarget-devel] Wiki - Data Consistency	and IOMode=wb
+</A></li>
+        <LI>Next message: <A HREF="000668.html">[Stgt-devel] [patch 2/2] passthrough target notification function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#667">[ date ]</a>
+              <a href="thread.html#667">[ thread ]</a>
+              <a href="subject.html#667">[ subject ]</a>
+              <a href="author.html#667">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>We spoke about this last week on the mailing list in relation to 
+pass-through for kernel lld's.  This would notify scsi_tgt of any
+target logical units that should be handled in the kernel.  Here is a
+first pass, this is the user-space portion.
+
+Send target state updates to the kernel (in-kernel pass-through enablement)
+
+ When a target is bound to an lld which resides in the kernel all of the 
+ devices that will be handled in the kernel (pass-through) will be
+ communicated to scsi_tgt.  Whenever a logicalunit is created or destroyed
+ which has a target bound to an in-kernel lld, scsi_tgt will be notified.
+
+ -Adding request and response handlers to pass information to the kernel
+   -lu_update_notify function pointer to the tgt_driver structure.  
+     This allows llds to track updates to logical units when needed.
+   -kspace_send_lu_update(...) to be used by lu_update_notify.
+     It should send enough info to the kernel to create or destroy a
+     logicalunit mapping in the kernel.
+   -kspace_recv_lu_update(...) will handle kernel responses to changes.
+     The response isn't processed before the request returns back the user
+     this is a bit limited, in that it can't warn the user of tgtadm of
+     the failure before tgtadm returns.  In the case that the request
+     asked for a device to be created or bound and the response from
+     the kernel indicates a failure the device is destroyed.
+
+ -The scsi_lu struct has several new fields.
+   Adding local_host_no, local_channel, local_scsi_id, and local_lun to 
+   store the scsi device data for the SG device associated with the 
+   logicalunit.  Also added in_kernel_bypass flag to show that this device
+   will use in-kernel processing of requests when an lld is kernel-based.
+
+ -Updated the open function for sgv3/sgv4 to populate new scsi_lu fields.
+   SG will get the use SG_GET_SCSI_ID to gather data for the new fields.
+
+ -Modified tgt_device_create, tgt_device_destroy, tgt_bind_host_to_target,
+  and tgt_target_destroy to call the lld's lu_update_notify function.
+
+---
+ usr/driver.h        |    1 +
+ usr/ibmvio/ibmvio.c |    1 +
+ usr/spt_sgv3.c      |   13 ++++++++
+ usr/spt_sgv4.c      |   13 ++++++++
+ usr/target.c        |   87 ++++++++++++++++++++++++++++++++++++++++++++--------
+ usr/tgtd.h          |   14 ++++++++
+ usr/tgtif.c         |   72 +++++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 188 insertions(+), 13 deletions(-)
+
+Index: b/usr/driver.h
+===================================================================
+--- a/usr/driver.h
++++ b/usr/driver.h
+@@ -16,6 +16,7 @@ struct tgt_driver {
+ 
+ 	int (*cmd_end_notify)(uint64_t nid, int result, struct scsi_cmd *);
+ 	int (*mgmt_end_notify)(struct mgmt_req *);
++	int (*lu_update_notify)(struct scsi_lu *, int, int);
+ 
+ 	struct backingstore_template *default_bst;
+ };
+Index: b/usr/ibmvio/ibmvio.c
+===================================================================
+--- a/usr/ibmvio/ibmvio.c
++++ b/usr/ibmvio/ibmvio.c
+@@ -277,5 +277,6 @@ struct tgt_driver ibmvio = {
+ 	.target_create		= ibmvio_target_create,
+ 	.cmd_end_notify		= kspace_send_cmd_res,
+ 	.mgmt_end_notify	= kspace_send_tsk_mgmt_res,
++	.lu_update_notify	= kspace_send_lu_update,
+ 	.default_bst		= &amp;mmap_bst,
+ };
+Index: b/usr/spt_sgv3.c
+===================================================================
+--- a/usr/spt_sgv3.c
++++ b/usr/spt_sgv3.c
+@@ -74,6 +74,7 @@ int spt_sg_open(struct scsi_lu *lu, char
+ {
+ 	int err;
+ 	int nr_queue_cmd;
++	Sg_scsi_id scsi_id;
+ 
+ 	*size = 0;
+ 	*fd = open(path, O_RDWR | O_NONBLOCK);
+@@ -88,6 +89,18 @@ int spt_sg_open(struct scsi_lu *lu, char
+ 		goto close_fd;
+ 	}
+ 
++	err = ioctl(*fd, SG_GET_SCSI_ID, &amp;scsi_id);
++	if (err) {
++		eprintf(&quot;can't get the scsi id for %s\n&quot;, path);
++		goto close_fd;
++	}
++
++	lu-&gt;in_kernel_bypass = 1;
++	lu-&gt;local_host_no = scsi_id.host_no;
++	lu-&gt;local_channel = scsi_id.channel;
++	lu-&gt;local_scsi_id = scsi_id.scsi_id;
++	lu-&gt;local_lun = scsi_id.lun;
++
+ 	err = tgt_event_add(*fd, EPOLLIN, sgv3_handler, lu);
+ 	if (err) {
+ 		free(lu);
+Index: b/usr/spt_sgv4.c
+===================================================================
+--- a/usr/spt_sgv4.c
++++ b/usr/spt_sgv4.c
+@@ -82,6 +82,7 @@ int spt_sg_open(struct scsi_lu *lu, char
+ 	struct timeval t;
+ 	struct sg_io_v4 hdr, *h;
+ 	int nr_queue_cmd;
++	Sg_scsi_id scsi_id;
+ 
+ 	/* we assume something like /dev/sda */
+ 	eprintf(&quot;%Zd %Zd %Zd\n&quot;, sizeof(hdr), sizeof(*h), sizeof(struct sg_io_v4));
+@@ -165,6 +166,18 @@ int spt_sg_open(struct scsi_lu *lu, char
+ 		goto close_fd;
+ 	}
+ 
++	err = ioctl(*fd, SG_GET_SCSI_ID, &amp;scsi_id);
++	if (err) {
++		eprintf(&quot;can't get the scsi id for %s\n&quot;, path);
++		goto close_fd;
++	}
++
++	lu-&gt;in_kernel_bypass = 1;
++	lu-&gt;local_host_no = scsi_id.host_no;
++	lu-&gt;local_channel = scsi_id.channel;
++	lu-&gt;local_scsi_id = scsi_id.scsi_id;
++	lu-&gt;local_lun = scsi_id.lun;
++
+ 	err = tgt_event_add(*fd, EPOLLIN, sgv4_handler, lu);
+ 	if (err) {
+ 		free(lu);
+Index: b/usr/target.c
+===================================================================
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -42,7 +42,7 @@ extern struct device_type_template sbc_t
+ 
+ static LIST_HEAD(target_list);
+ 
+-static struct target *target_lookup(int tid)
++struct target *target_lookup(int tid)
+ {
+ 	struct target *target;
+ 	list_for_each_entry(target, &amp;target_list, target_siblings)
+@@ -121,7 +121,7 @@ int it_nexus_destroy(int tid, uint64_t i
+ 	return 0;
+ }
+ 
+-static struct scsi_lu *device_lookup(struct target *target, uint64_t lun)
++struct scsi_lu *device_lookup(struct target *target, uint64_t lun)
+ {
+ 	struct scsi_lu *lu;
+ 
+@@ -207,12 +207,37 @@ __device_lookup(int tid, uint64_t lun, s
+ 	return lu;
+ }
+ 
++/*
++ * if we have lots of host, use something like radix tree for
++ * efficiency.
++ */
++static LIST_HEAD(bound_host_list);
++
++struct bound_host {
++	int host_no;
++	struct target *target;
++	struct list_head bhost_siblings;
++};
++
++int target_host_no(struct *target) {
++	struct bound_host *bhost;
++	int host_no = -1;
++	list_for_each_entry(bhost, &amp;bound_host_list, bhost_siblings) {
++		if (bhost-&gt;target == target) {
++			host_no = bhost-&gt;host_no;
++			break;
++		}
++	}
++	return host_no;
++}
++
+ int tgt_device_create(int tid, uint64_t lun, char *args)
+ {
+ 	char *p;
+ 	int err;
+ 	struct target *target;
+ 	struct scsi_lu *lu, *pos;
++	int host_no;
+ 
+ 	dprintf(&quot;%d %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+ 
+@@ -255,6 +280,17 @@ int tgt_device_create(int tid, uint64_t 
+ 	if (target-&gt;dev_type_template.device_init)
+ 		target-&gt;dev_type_template.device_init(lu);
+ 
++	if (lu-&gt;in_kernel_bypass) {
++		host_no = target_host_no(target);
++
++		if (host_no &gt;= 0 &amp;&amp;
++		    (tgt_drivers[target-&gt;lid])-&gt;lu_update_notify) {
++			(tgt_drivers[target-&gt;lid])-&gt;lu_update_notify(lu,
++			                                     host_no,
++			                                     TGT_LU_OP_CREATE);
++		}
++	}
++
+ 	list_for_each_entry(pos, &amp;target-&gt;device_list, device_siblings) {
+ 		if (lu-&gt;lun &lt; pos-&gt;lun)
+ 			break;
+@@ -269,6 +305,7 @@ int tgt_device_destroy(int tid, uint64_t
+ {
+ 	struct target *target;
+ 	struct scsi_lu *lu;
++	int host_no;
+ 
+ 	dprintf(&quot;%u %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+ 
+@@ -284,6 +321,17 @@ int tgt_device_destroy(int tid, uint64_t
+ 	free(lu-&gt;path);
+ 	list_del(&amp;lu-&gt;device_siblings);
+ 
++	if (lu-&gt;in_kernel_bypass) {
++		host_no = target_host_no(target);
++
++		if (host_no &gt;= 0 &amp;&amp;
++		    (tgt_drivers[target-&gt;lid])-&gt;lu_update_notify) {
++			(tgt_drivers[target-&gt;lid])-&gt;lu_update_notify(lu,
++			                                     host_no,
++			                                     TGT_LU_OP_DESTROY);
++		}
++	}
++
+ 	target-&gt;bst-&gt;bs_close(lu);
+ 	free(lu);
+ 	return 0;
+@@ -969,17 +1017,20 @@ char *acl_get(int tid, int idx)
+ 	return NULL;
+ }
+ 
+-/*
+- * if we have lots of host, use something like radix tree for
+- * efficiency.
+- */
+-static LIST_HEAD(bound_host_list);
++static void tgt_bound_host_update_lu(struct bound_host *bhost, int op)
++{
++	struct tgt_driver *drv;
++	struct scsi_lu *lu;
+ 
+-struct bound_host {
+-	int host_no;
+-	struct target *target;
+-	struct list_head bhost_siblings;
+-};
++	drv = tgt_drivers[bhost-&gt;target-&gt;lid];
++	if(drv-&gt;lu_update_notify) {
++		list_for_each_entry(lu, &amp;bhost-&gt;target-&gt;device_list,
++		                    device_siblings) {
++			if(lu-&gt;in_kernel_bypass)
++				drv-&gt;lu_update_notify(lu, bhost-&gt;host_no, op);
++		}
++	}
++}
+ 
+ int tgt_bind_host_to_target(int tid, int host_no)
+ {
+@@ -1006,6 +1057,8 @@ int tgt_bind_host_to_target(int tid, int
+ 	bhost-&gt;host_no = host_no;
+ 	bhost-&gt;target = target;
+ 
++	tgt_bound_host_update_lu(bhost, TGT_LU_OP_CREATE);
++
+ 	list_add(&amp;bhost-&gt;bhost_siblings, &amp;bound_host_list);
+ 
+ 	dprintf(&quot;bound the scsi host %d to the target %d\n&quot;, host_no, host_no);
+@@ -1023,6 +1076,9 @@ int tgt_unbind_host_to_target(int tid, i
+ 				eprintf(&quot;the target has IT_nexus\n&quot;);
+ 				return -EBUSY;
+ 			}
++
++			tgt_bound_host_update_lu(bhost, TGT_LU_OP_DESTROY);
++
+ 			list_del(&amp;bhost-&gt;bhost_siblings);
+ 			free(bhost);
+ 			return 0;
+@@ -1309,7 +1365,12 @@ int tgt_target_destroy(int lld_no, int t
+ 	while (!list_empty(&amp;target-&gt;device_list)) {
+ 		lu = list_entry(target-&gt;device_list.next, struct scsi_lu,
+ 				device_siblings);
+-		tgt_device_destroy(tid, lu-&gt;lun);
++		ret = tgt_device_destroy(tid, lu-&gt;lun);
++		if (ret == TGTADM_LUN_ACTIVE) {
++			eprintf(&quot;lun %#lld on target %d is still active\n&quot;,
++				lu-&gt;lun, tid);
++			return ret;
++		}
+ 	}
+ 
+ 	if (tgt_drivers[lld_no]-&gt;target_destroy) {
+Index: b/usr/tgtd.h
+===================================================================
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -38,6 +38,14 @@ struct scsi_lu {
+ 	char scsi_sn[SCSI_SN_LEN];
+ 	char *path;
+ 
++	/* the scsi id of the local device backing this logical unit,
++	 * used for pass-through when notifying kernel llds */
++	char in_kernel_bypass;
++	int local_host_no;
++	int local_channel;
++	int local_scsi_id;
++	int local_lun;
++
+ 	/* the list of devices belonging to a target */
+ 	struct list_head device_siblings;
+ 
+@@ -51,6 +59,9 @@ struct scsi_lu {
+ 	uint8_t d_sense;
+ };
+ 
++#define TGT_LU_OP_DESTROY	0x0000
++#define TGT_LU_OP_CREATE	0x0001
++
+ struct scsi_cmd {
+ 	struct target *c_target;
+ 	/* linked it_nexus-&gt;cmd_hash_list */
+@@ -128,6 +139,7 @@ struct device_type_template {
+ 
+ extern int kspace_send_tsk_mgmt_res(struct mgmt_req *mreq);
+ extern int kspace_send_cmd_res(uint64_t nid, int result, struct scsi_cmd *);
++extern int kspace_send_lu_update(struct scsi_lu *, int, int);
+ 
+ extern int ipc_init(void);
+ extern int tgt_device_create(int tid, uint64_t lun, char *args);
+@@ -136,6 +148,7 @@ extern int tgt_device_update(int tid, ui
+ extern int device_reserve(struct scsi_cmd *cmd);
+ extern int device_release(int tid, uint64_t itn_id, uint64_t lun, int force);
+ extern int device_reserved(struct scsi_cmd *cmd);
++extern struct scsi_lu *device_lookup(struct target *target, uint64_t lun);
+ 
+ extern int tgt_target_create(int lld, int tid, char *args, int t_type);
+ extern int tgt_target_destroy(int lld, int tid);
+@@ -152,6 +165,7 @@ extern void tgt_event_del(int fd);
+ extern int tgt_event_modify(int fd, int events);
+ extern int target_cmd_queue(int tid, struct scsi_cmd *cmd);
+ extern void target_cmd_done(struct scsi_cmd *cmd);
++extern struct target *target_lookup(int tid);
+ struct scsi_cmd *target_cmd_lookup(int tid, uint64_t itn_id, uint64_t tag);
+ extern void target_mgmt_request(int tid, uint64_t itn_id, uint64_t req_id,
+ 				int function, uint8_t *lun, uint64_t tag,
+Index: b/usr/tgtif.c
+===================================================================
+--- a/usr/tgtif.c
++++ b/usr/tgtif.c
+@@ -33,6 +33,7 @@
+ #include &lt;sys/stat.h&gt;
+ #include &lt;sys/sysmacros.h&gt;
+ #include &lt;linux/types.h&gt;
++#include &lt;linux/errno.h&gt;
+ #ifndef aligned_u64
+ #define aligned_u64 unsigned long long __attribute__((aligned(8)))
+ #endif
+@@ -88,6 +89,74 @@ static int kreq_send(struct tgt_event *p
+ 	return 0;
+ }
+ 
++int kspace_send_lu_update(struct scsi_lu *lu, int host_no, int op) {
++	struct tgt_event ev;
++	int ret;
++
++	memset(&amp;ev, 0, sizeof(ev));
++
++	ev.hdr.type = TGT_UEVENT_LU_UPDT_REQ;
++	ev.p.lu_updt_req.op = op;
++	ev.p.lu_updt_req.local_host_no = lu-&gt;local_host_no;
++	ev.p.lu_updt_req.local_channel = lu-&gt;local_channel;
++	ev.p.lu_updt_req.local_scsi_id = lu-&gt;local_scsi_id;
++	ev.p.lu_updt_req.local_lun = lu-&gt;local_lun;
++	ev.p.lu_updt_req.tgt_lun = lu-&gt;lun;
++	ev.p.lu_updt_req.tgt_host_no = host_no;
++
++	ret = kreq_send(&amp;ev);
++
++	return ret;
++}
++
++/* Process returning event from the kernel for logicalunit update operations.
++ * Find the original update and mark complete and store the return value
++ * from the kernel.
++ */
++int kspace_recv_lu_update(struct tgt_event *ev)
++{
++	int host_no;
++	uint64_t lun;
++	int tid;
++	void *tgt;
++	struct scsi_lu *lu;
++
++	/*
++	 * Reverse the operation (limited function)
++	 *
++	 * If there was a error binding the logical unit with a physical sg
++	 * device in the kernel, update the device to reflect that.
++	 *
++	 * Can't recreate a deleted device, what if the target has been
++	 * deleted already?  At best this can delete an added device,
++	 * but not add a deleted device.
++	 */
++	if (ev-&gt;p.lu_updt_rsp.result &amp;&amp;
++			ev-&gt;p.lu_updt_rsp.op == TGT_LU_OP_CREATE) {
++		host_no = ev-&gt;p.lu_updt_rsp.tgt_host_no;
++		lun = ev-&gt;p.lu_updt_rsp.tgt_lun;
++		tid = tgt_bound_target_lookup(host_no);
++		tgt = target_lookup(tid);
++		if(!tgt) {
++			/* target does not exist */
++			return -ENOENT;
++		}
++
++		lu = device_lookup(tgt, lun);
++		if (lu) {
++			dprintf(&quot;Kernel result of create for &quot;
++			        &quot;(%d:%#08llx) was %d, removing device\n.&quot;,
++				host_no, lun, ev-&gt;p.lu_updt_rsp.result);
++			/* Do not notify kernel */
++			lu-&gt;in_kernel_bypass = 0;
++			tgt_device_destroy(tid, lun);
++		}
++	}
++
++	return 0;
++}
++
++
+ int kspace_send_tsk_mgmt_res(struct mgmt_req *mreq)
+ {
+ 	struct tgt_event ev;
+@@ -281,6 +350,9 @@ retry:
+ 	case TGT_KEVENT_TSK_MGMT_REQ:
+ 		kern_mgmt_request(ev);
+ 		break;
++	case TGT_KEVENT_LU_UPDT_RSP:
++		kspace_recv_lu_update(ev);
++		break;
+ 	default:
+ 		eprintf(&quot;unknown event %u\n&quot;, ev-&gt;hdr.type);
+ 	}
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000691.html">[Stgt-devel] [Iscsitarget-devel] Wiki - Data Consistency	and IOMode=wb
+</A></li>
+	<LI>Next message: <A HREF="000668.html">[Stgt-devel] [patch 2/2] passthrough target notification function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#667">[ date ]</a>
+              <a href="thread.html#667">[ thread ]</a>
+              <a href="subject.html#667">[ subject ]</a>
+              <a href="author.html#667">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

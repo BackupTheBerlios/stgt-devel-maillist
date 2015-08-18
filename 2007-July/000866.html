@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20SCSI%20MEDIUM%20CHANGER%20support&In-Reply-To=%3C200707071237.l67CbnDc007262%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000865.html">
+   <LINK REL="Next"  HREF="000867.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20SCSI%20MEDIUM%20CHANGER%20support&In-Reply-To=%3C200707071237.l67CbnDc007262%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Jul  7 14:37:28 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000865.html">[Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support
+</A></li>
+        <LI>Next message: <A HREF="000867.html">[Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#866">[ date ]</a>
+              <a href="thread.html#866">[ thread ]</a>
+              <a href="subject.html#866">[ subject ]</a>
+              <a href="author.html#866">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support
+Date: Fri, 06 Jul 2007 18:22:06 +1000
+
+&gt;<i> Re-work of initial SMC commit based on latest git head MODE PAGE commit.
+</I>&gt;<i> 
+</I>&gt;<i> This version includes the ability to load/unload media from the
+</I>&gt;<i> DATA TRANSFER DEVICE at the configured TID/LUN address.
+</I>&gt;<i> 
+</I>&gt;<i> Update spc_test_unit() TEST UNIT READY op processing to 'understand'
+</I>&gt;<i> online, Poweron/Reset and removable flags. i.e. Response from TUR
+</I>&gt;<i> depends on the status of each of these flags.
+</I>&gt;<i>  - If poweron_reset, return POWER-ON or RESET occurred, then clear flag.
+</I>&gt;<i>  - If online - Return READY
+</I>&gt;<i>  - If off-line and non-removable media - UNIT BECOMING READY
+</I>&gt;<i>  - If off-line and removable media - MEDIUM NOT PRESENT
+</I>&gt;<i> 
+</I>&gt;<i> Online is when the backing file is open and ready for reading/writing.
+</I>&gt;<i> 
+</I>&gt;<i> To be done at at a later time:
+</I>&gt;<i> Other SCSI op codes need to be aware of these flags.
+</I>
+Applied, thanks a lot!
+
+Please separate logical changes into a single patch file next
+time. You could split this into load/unload media stuff and smc.
+
+
+After applying this patch, I fixed and cleaned up many things so check
+whether it works.
+
+
+&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  doc/README.lu_configuration |   47 +++
+</I>&gt;<i>  scripts/tgt-core-test       |  104 +++++-
+</I>&gt;<i>  usr/Makefile                |    5 +-
+</I>&gt;<i>  usr/media.h                 |   28 ++
+</I>&gt;<i>  usr/mmc.c                   |    1 +
+</I>&gt;<i>  usr/osd.c                   |    2 +
+</I>&gt;<i>  usr/sbc.c                   |    1 +
+</I>&gt;<i>  usr/smc.c                   |  846 +++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i>  usr/smc.h                   |  121 ++++++
+</I>&gt;<i>  usr/spc.c                   |   65 ++--
+</I>&gt;<i>  usr/spc.h                   |    5 +-
+</I>&gt;<i>  usr/target.c                |   62 ++++
+</I>&gt;<i>  usr/tgtadm.c                |    2 +
+</I>&gt;<i>  usr/tgtd.h                  |    7 +-
+</I>&gt;<i>  14 files changed, 1255 insertions(+), 41 deletions(-)
+</I>&gt;<i> 
+</I>
+(snip)
+
+
+&gt;<i> +static int test_slot_full(struct slot *s)
+</I>&gt;<i> +{
+</I>&gt;<i> +	return s-&gt;status &amp;&amp; 1;
+</I>&gt;<i> +}
+</I>
+?
+
+s-&gt;status &amp; 1;
+
+
+&gt;<i> @@ -1200,12 +1256,18 @@ int tgt_target_show_all(char *buf, int rest)
+</I>&gt;<i>  				 _TAB3 &quot;SCSI ID: %s\n&quot;
+</I>&gt;<i>  				 _TAB3 &quot;SCSI SN: %s\n&quot;
+</I>&gt;<i>  				 _TAB3 &quot;Size: %s\n&quot;
+</I>&gt;<i> +				 _TAB3 &quot;Online: %s\n&quot;
+</I>&gt;<i> +				 _TAB3 &quot;Poweron/Reset: %s\n&quot;
+</I>&gt;<i> +				 _TAB3 &quot;Removable media: %s\n&quot;
+</I>&gt;<i>  				 _TAB3 &quot;Backing store: %s\n&quot;,
+</I>&gt;<i>  				 lu-&gt;lun,
+</I>&gt;<i>    				 print_type(lu-&gt;attrs.device_type),
+</I>&gt;<i>  				 lu-&gt;attrs.scsi_id,
+</I>&gt;<i>  				 lu-&gt;attrs.scsi_sn,
+</I>&gt;<i>  				 print_disksize(lu-&gt;size),
+</I>&gt;<i> +				 lu-&gt;attrs.online ? &quot;Yes&quot; : &quot;No&quot;,
+</I>&gt;<i> +				 lu-&gt;attrs.reset ? &quot;Yes&quot; : &quot;No&quot;,
+</I>&gt;<i> +				 lu-&gt;attrs.removable ? &quot;Yes&quot; : &quot;No&quot;,
+</I>&gt;<i>  				 lu-&gt;path ? : &quot;No backing store&quot;);
+</I>&gt;<i>  
+</I>
+Probably, I'll change this later. I'd like to have more simple output.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000865.html">[Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support
+</A></li>
+	<LI>Next message: <A HREF="000867.html">[Stgt-devel] [Patch 1/1] Add SCSI MEDIUM CHANGER support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#866">[ date ]</a>
+              <a href="thread.html#866">[ thread ]</a>
+              <a href="subject.html#866">[ subject ]</a>
+              <a href="author.html#866">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

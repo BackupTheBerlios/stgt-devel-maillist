@@ -1,0 +1,1579 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 3/3] Re-work of SMC support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/3%5D%20Re-work%20of%20SMC%20support&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C016E9074%40TUS1XCHCLUPIN06.enterprise.veritas.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000838.html">
+   <LINK REL="Next"  HREF="000842.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 3/3] Re-work of SMC support</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/3%5D%20Re-work%20of%20SMC%20support&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C016E9074%40TUS1XCHCLUPIN06.enterprise.veritas.com%3E"
+       TITLE="[Stgt-devel] [Patch 3/3] Re-work of SMC support">mark_harvey at symantec.com
+       </A><BR>
+    <I>Tue Jun 26 01:23:07 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000838.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+        <LI>Next message: <A HREF="000842.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#841">[ date ]</a>
+              <a href="thread.html#841">[ thread ]</a>
+              <a href="subject.html#841">[ subject ]</a>
+              <a href="author.html#841">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Darn,
+
+A typo in patch description:
+&quot;Includes all SCSI op codes defined in SSC as MANDATORY.&quot;
+Should read:
+&quot;Includes all SCSI op codes defined in SMC as MANDATORY.&quot;
+
+Regards
+Mark
+
+-----Original Message-----
+From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>
+[mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of Mark Harvey
+Sent: Saturday, 23 June 2007 6:14 PM
+To: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>
+Subject: [Stgt-devel] [Patch 3/3] Re-work of SMC support
+
+&gt;<i>From 921b883ce4bb5f015d9d950c2f9b7e4fc89b1ba6 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Sat, 23 Jun 2007 17:34:03 +1000
+Subject: Initial commit of SMC module.
+
+Includes all SCSI op codes defined in SSC as MANDATORY.
+
+As yet, does not contain any way of signaling the DATA TRANSFER DEVICE
+a piece of medium has been moved / loaded.
+
+doc/README.lu_configuration updated with SMC specific options.
+
+scripts/tgt-core-test updated to create an SMC device as well.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ doc/README.lu_configuration |   43 +++
+ scripts/tgt-core-test       |   96 +++++-
+ usr/Makefile                |    5 +-
+ usr/media.h                 |   30 ++
+ usr/mmc.c                   |   19 +-
+ usr/osd.c                   |   18 +
+ usr/sbc.c                   |   19 +-
+ usr/scc.c                   |   18 +-
+ usr/smc.c                   |  811
++++++++++++++++++++++++++++++++++++++++++++
+ usr/smc.h                   |   77 ++++
+ usr/spc.c                   |   18 +-
+ usr/spc.h                   |    2 +-
+ usr/tgtadm.c                |    2 +
+ usr/tgtd.h                  |    5 +-
+ 14 files changed, 1143 insertions(+), 20 deletions(-)
+ create mode 100644 usr/media.h
+ create mode 100644 usr/smc.c
+ create mode 100644 usr/smc.h
+
+diff --git a/doc/README.lu_configuration b/doc/README.lu_configuration
+index d63668a..47e4912 100644
+--- a/doc/README.lu_configuration
++++ b/doc/README.lu_configuration
+@@ -84,6 +84,49 @@ tgtadm --lld iscsi --mode logicalunit --op update
+--tid 1 --lun 2 \
+          --params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
+ 
+ 
++SMC unique options
++------------------
++
++--params have several unique key=value pairs ontop of all other
+modules.
++ - element_type=&lt;1|2|3|4&gt;
++ - start_address=Number between 1 &amp; 65535
++ - quantity=Number between 1 &amp; 65535
++ - sides=1|2
++ - address=Number between 1 &amp; 65535
++ - barcode=&quot;Char string up to 10 chars&quot;
++ - tid=&lt;number&gt;
++ - lun=&lt;number&gt;
++
++Several of these parameters 'work together'
++
++e.g. To add 'quantity' slots as 'element_type' starting at
+'start_address'
++ - element_type=&lt;1|2|3|4&gt;
++ - start_address=Number between 1 &amp; 65535
++ - quantity=Number between 1 &amp; 65535
++
++Note: start_address + quantity should not overlap with any other
+slots..
++
++
++While 'configuring slot 'address' of 'element_type':
++ - Set barcode of meda (occupy slot)
++ - If element type is DATA TRANSFER DEVICE, then define TID &amp; LUN of
+device.
++
++ - element_type=&lt;1|2|3|4&gt;
++ - address=Number between 1 &amp; 65535
++ - barcode=&quot;String up to 10 chars&quot;
++ - sides=&lt;1|2&gt;
++ - tid=&lt;tid of device which belongs at this address&gt;
++ - lun=&lt;lun of device which belongs at this address&gt;
++
++
++It is the responsibility of the user not to configure overlapping slots
++of differing types.
++
++Slot types:
++ 1 -&gt; Medium Transport (picker arm)
++ 2 -&gt; Storage Element
++ 3 -&gt; Import/Export Element
++ 4 -&gt; Data Transfer device (CD drive, tape drive, MO drive etc)
+ 
+ Please refer to scripts/tgt-core-test for a working example.
+ 
+diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+index dce8d3c..bd168dc 100755
+--- a/scripts/tgt-core-test
++++ b/scripts/tgt-core-test
+@@ -17,15 +17,6 @@ fi
+ if [ ! -f $HOME/hd_block ]; then
+ 	dd if=/dev/zero of=$HOME/hd_block bs=1M count=8
+ fi
+-if [ ! -f $HOME/cd_block0 ]; then
+-	dd if=/dev/zero of=$HOME/cd_block0 bs=1M count=8
+-fi
+-if [ ! -f $HOME/cd_block1 ]; then
+-	dd if=/dev/zero of=$HOME/cd_block1 bs=1M count=8
+-fi
+-if [ ! -f $HOME/cd_block2 ]; then
+-	dd if=/dev/zero of=$HOME/cd_block2 bs=1M count=8
+-fi
+ 
+ set -x
+ 
+@@ -85,10 +76,13 @@ tgtadm --lld iscsi --mode logicalunit --op update
+--tid $TID --lun $LUN \
+ 	--params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
+ 
+ 
+-
+ for LUN in 2 3 4; do
++	if [ ! -f $HOME/cdrom$LUN ]; then
++		dd if=/dev/zero of=$HOME/cdrom$LUN bs=1M count=8
++	fi
++
+ 	# Create LUN - CD/ROM
+-	tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun
+$LUN -b $HOME/cd_block0 --device-type=cd
++	tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun
+$LUN -b $HOME/cdrom$LUN --device-type=cd
+ 	tgtadm --lld iscsi --mode logicalunit --op update --tid $TID
+--lun $LUN \
+ 		--params
+vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY1$LUN
+,removable=1
+ 	# Vendor Uniq - Mode page 0..
+@@ -102,6 +96,86 @@ for LUN in 2 3 4; do
+ 		--params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
+ done
+ 
++#######################################################################
+########
++# Set up SMC Medium Changer
++#######################################################################
+########
++LUN=5
++if [ ! -f $HOME/smc ]; then
++	dd if=/dev/zero of=$HOME/smc bs=1k count=1
++fi
++
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN \
++			-b $HOME/smc --device-type=changer
++
++#### Set up mode pages ####
++# From smc3-06.pdf
++# Page 0x02: Disconnect/Reconnect SPC-3
++# Page 0x0a: Control SPC-3
++# Page 0x18: Protocol Specific LUN SPC-3
++# Page 0x19: Protocol Specific Port SPC-3
++# Page 0x1a: Power Condition SPC-3
++# Page 0x1c: Informational Exceptions Control SPC-3
++# Page 0x1d: Element Address Assignment SMC-3 7.3.4
++# Page 0x1e: Transport Geometry Parameters SMC-3 7.3.5
++# Page 0x1f: Device Capabilities SMC-3 7.3.2
++# Page 0x1f/Subpage 0x41: Extended Device Capabilities SMC-3 7.3.3
++
++# Dummy 'page 0'
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params mode_page=0:0:0
++# Disconnect/Reconnect
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params mode_page=2:0:14:0x80:0x80:0:0xa:0:0:0:0:0:0:0:0:0:0
++# Power Condition
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params mode_page=0x1a:0:18:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0
++# Informational Exceptions Control Mode Page
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
++# Element Address Assignment - Setup afterwards.
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params
+mode_page=0x1d:0:0x12:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0
++# Transport Geometry Parameters
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params mode_page=0x1e:0:2:0:0
++# Device Capabilities
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params
+mode_page=0x1f:0:0x12:0x0f:7:0x0f:0x0f:0x0f:0x0f:0:0:0:0:0x0f:0x0f:0x0f:
+0x0f:0:0:0:0
++
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params
+vendor_id=STK,product_id=L700,product_rev=0010,scsi_sn=XYZZY_0,removable
+=1
++
++
++## Add Data Transfer devices (3 drives)
++# Define slot address for devices.
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=4,start_address=1,quantity=3
++# Now define which device at each address.
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=4,address=1,tid=1,lun=2
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=4,address=2,tid=1,lun=3
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=4,address=3,tid=1,lun=4
++
++# Medium Transport Elements (robot arm / picker)
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=1,start_address=16,quantity=1
++
++## Storage Elements - 8 starting at addr 1024
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=2,start_address=1024,quantity=8
++# Add 'media' to slots
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=2,address=1024,barcode=ABC123,Sides=1
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=2,address=1026,barcode=ULT001L3,Sides=1
++
++# Import/Export Elements - 5 starting at addr 32
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN
+\
++	--params element_type=3,start_address=32,quantity=5
++
++
+ # Allow ALL initiators to connect to this target
+ tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+ 
+diff --git a/usr/Makefile b/usr/Makefile
+index 14be34b..c7fb2ca 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -43,8 +43,9 @@ INCLUDES += -I.
+ CFLAGS += -Wall -g -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE
+$(INCLUDES)
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o spc.o sbc.o mmc.o osd.o spt.o scc.o
+scsi.o log.o \
+-	driver.o util.o work.o parser.o
++TGTD_OBJS += tgtd.o mgmt.o target.o \
++	spc.o sbc.o mmc.o osd.o spt.o scc.o smc.o \
++	scsi.o log.o driver.o util.o work.o parser.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/media.h b/usr/media.h
+new file mode 100644
+index 0000000..a04a27c
+--- /dev/null
++++ b/usr/media.h
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++#ifndef _MEDIA_H_
++#define _MEDIA_H_
++
++enum c_type {	/* Cartridge Types - Ref: smc3r06 - Table 20, page 37 */
++	CART_UNSPECIFIED,
++	CART_DATA,
++	CART_CLEAN,
++	CART_DIAGNOSTICS,
++	CART_WORM,
++	CART_MICROCODE,
++};
++
++#endif /* _MEDIA_H_ */
++
+diff --git a/usr/mmc.c b/usr/mmc.c
+index 891cb60..0672877 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -38,6 +38,7 @@
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;target.h&quot;
++#include &quot;tgtadm_error.h&quot;
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+@@ -174,10 +175,26 @@ static int mmc_lu_init(struct scsi_lu *lu)
+ 	return 0;
+ }
+ 
++static int mmc_lu_config(struct scsi_lu *lu, char * params)
++{
++	char	* mmc_params;
++	int	ret;
++
++	mmc_params = malloc(strlen(params) + 1);
++	if (!mmc_params)
++		return -ENOMEM;
++	mmc_params[0] = '\0';
++	ret = spc_lu_config(lu, params, mmc_params);
++	if (strlen(mmc_params))	/* We should not have any params left
+over */
++		ret = TGTADM_INVALID_REQUEST;
++	free(mmc_params);
++	return ret;
++}
++
+ static struct device_type_template mmc_template = {
+ 	.type		= TYPE_ROM,
+ 	.lu_init	= mmc_lu_init,
+-	.lu_config	= spc_lu_config,
++	.lu_config	= mmc_lu_config,
+ 	.ops		= {
+ 		{spc_test_unit,},
+ 		{spc_illegal_op,},
+diff --git a/usr/osd.c b/usr/osd.c
+index a48db32..2574086 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -29,6 +29,7 @@
+ #include &quot;list.h&quot;
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
++#include &quot;tgtadm_error.h&quot;
+ #include &quot;target.h&quot;
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+@@ -68,9 +69,26 @@ static int osd_lu_init(struct scsi_lu *lu)
+ 	return 0;
+ }
+ 
++static int osd_lu_config(struct scsi_lu *lu, char * params)
++{
++	char	* osd_params;
++	int	ret;
++
++	osd_params = malloc(strlen(params) + 1);
++	if (!osd_params)
++		return -ENOMEM;
++	osd_params[0] = '\0';
++	ret = spc_lu_config(lu, params, osd_params);
++	if (strlen(osd_params))	/* We should not have any params left
+over */
++		ret = TGTADM_INVALID_REQUEST;
++	free(osd_params);
++	return ret;
++}
++
+ static struct device_type_template osd_template = {
+ 	.type		= TYPE_OSD,
+ 	.lu_init	= osd_lu_init,
++	.lu_config	= osd_lu_config,
+ 	.ops		= {
+ 		[0x00 ... 0x0f] = {spc_illegal_op},
+ 
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 5996081..739f25c 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -34,6 +34,7 @@
+ #include &quot;list.h&quot;
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
++#include &quot;tgtadm_error.h&quot;
+ #include &quot;target.h&quot;
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+@@ -222,10 +223,26 @@ static int sbc_lu_init(struct scsi_lu *lu)
+ 	return 0;
+ }
+ 
++static int sbc_lu_config(struct scsi_lu *lu, char *params)
++{
++	char *sbc_params;
++	int ret;
++
++	sbc_params = malloc(strlen(params) + 1);
++	if (!sbc_params)
++		return TGTADM_NOMEM;
++	sbc_params[0] = '\0';
++	ret = spc_lu_config(lu, params, sbc_params);
++	if (strlen(sbc_params))	/* We should not have any params left
+over */
++		ret = TGTADM_INVALID_REQUEST;
++	free(sbc_params);
++	return ret;
++}
++
+ static struct device_type_template sbc_template = {
+ 	.type		= TYPE_DISK,
+ 	.lu_init	= sbc_lu_init,
+-	.lu_config	= spc_lu_config,
++	.lu_config	= sbc_lu_config,
+ 	.ops		= {
+ 		{spc_test_unit,},
+ 		{spc_illegal_op,},
+diff --git a/usr/scc.c b/usr/scc.c
+index 28cd813..38d892e 100644
+--- a/usr/scc.c
++++ b/usr/scc.c
+@@ -50,10 +50,26 @@ static int scc_lu_init(struct scsi_lu *lu)
+ 	return 0;
+ }
+ 
++static int scc_lu_config(struct scsi_lu *lu, char *params)
++{
++	char *scc_params;
++	int ret;
++
++	scc_params = malloc(strlen(params) + 1);
++	if (!scc_params)
++		return TGTADM_NOMEM;
++	scc_params[0] = '\0';
++	ret = spc_lu_config(lu, params, scc_params);
++	if (strlen(scc_params))	/* We should not have any params left
+over */
++		ret = TGTADM_INVALID_REQUEST;
++	free(scc_params);
++	return ret;
++}
++
+ static struct device_type_template scc_template = {
+ 	.type		= TYPE_RAID,
+ 	.lu_init	= scc_lu_init,
+-	.lu_config	= spc_lu_config,
++	.lu_config	= scc_lu_config,
+ 	.ops		= {
+ 		{spc_test_unit,},
+ 		{spc_illegal_op,},
+diff --git a/usr/smc.c b/usr/smc.c
+new file mode 100644
+index 0000000..c94be41
+--- /dev/null
++++ b/usr/smc.c
+@@ -0,0 +1,811 @@
++/*
++ * SCSI Medium Changer command processing
++ * Based on smc3r06.pdf document from t10.org
++ *
++ * (C) 2004-2007 FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
++ * (C) 2005-2007 Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
++ * (C) 2007      Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
++ *
++ * SCSI target emulation code is based on Ardis's iSCSI implementation.
++ *   <A HREF="http://www.ardistech.com/iscsi/">http://www.ardistech.com/iscsi/</A>
++ *   Copyright (C) 2002-2003 Ardis Technolgies &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">roman at ardistech.com</A>&gt;,
++ *   licensed under the terms of the GNU GPL v2.0,
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#include &lt;errno.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;linux/fs.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;target.h&quot;
++#include &quot;driver.h&quot;
++#include &quot;tgtadm_error.h&quot;
++#include &quot;scsi.h&quot;
++#include &quot;spc.h&quot;
++#include &quot;sense_codes.h&quot;
++#include &quot;parser.h&quot;
++#include &quot;smc.h&quot;
++#include &quot;media.h&quot;
++
++struct slot *slot_lookup(struct list_head *head, int element_type, int
+address);
++static void set_slot_full(struct slot *s, uint16_t src);
++static void set_slot_empty(struct slot *s);
++static int test_slot_full(struct slot *s);
++
++/* ********************************************************
++ * READ_ELEMENT_STATUS
++ *
++ * Ref: Working Draft SCSI Media Changer-3 (smc3r06.pdf), chapter 6.10
++ *
++ * The READ ELEMENT STATUS command request that the device server
+report the
++ * status of its internal elements to the application client.
++ * Support for READ ELEMENT STATUS command is mandatory.
++ * ******************************************************** */
++static int determine_element_sz(uint8_t dvcid, uint8_t vol_tag)
++{
++	if (vol_tag)
++		return (dvcid) ? 86 : 52;
++	else
++		return (dvcid) ? 50 : 16;
++}
++
++/* Fill in Element Status Header - Always 8 bytes long */
++static int element_status_data_hdr(uint8_t *data, uint8_t dvcid,
++					uint8_t vol_tag, int start, int
+count)
++{
++	int element_sz;
++	int size;
++
++	element_sz = determine_element_sz(dvcid, vol_tag);
++
++	/* First Element address reported */
++	*(uint16_t *)(data) = __cpu_to_be16(start);
++
++	/* Number of elements available */
++	*(uint16_t *)(data + 2) = __cpu_to_be16(count);
++
++	/* Byte count is the length required to return all valid data.
++	 * Allocated length is how much data the initiator will accept
+*/
++	size = ((8 + (count * element_sz)) &amp; 0xffffff);
++	*(uint32_t *)(data + 4) = __cpu_to_be32(size);
++
++return size;
++}
++
++static int add_element_descriptor(uint8_t *data, struct slot *s,
++			uint8_t element_type, uint8_t dvcid, uint8_t
+vol_tag)
++{
++	int ret = determine_element_sz(dvcid, vol_tag);
++
++	*(uint16_t *)(data) = __cpu_to_be16(s-&gt;slot_addr);
++	data[2] = s-&gt;status;
++	data[3] = 0;	/* Reserved */
++	data[4] = (s-&gt;asc &gt;&gt; 8) &amp; 0xff;	/* Additional Sense Code */
++	data[5] = s-&gt;asc &amp; 0xff;	/* Additional Sense Code
+Qualifier */
++	/* [6], [7] &amp; [8] reserved */
++	data[9] = (s-&gt;cart_type &amp; 0xf);
++	if (s-&gt;last_addr) {	/* Source address is valid ? */
++		data[9] |= 0x80;
++		*(uint16_t *)(data + 10) = __cpu_to_be16(s-&gt;last_addr);
++	}
++	if (vol_tag) {
++		if (s-&gt;barcode[0] == ' ')
++			memset( &amp;data[12], 0x20, 32); /* Pad with spaces
+*/
++		else
++			snprintf((char *)&amp;data[12], 32, &quot;%-32s&quot;,
+s-&gt;barcode);
++	}
++
++return ret;
++}
++
++/* Fill in Element details
++ *
++ * Fill each Element Descriptor for slot *s
++ *
++ * data : pointer
++ * head : Slot struct head
++ * element_type : Slot type we are interested in.
++ * first : Return address of first slot found
++ * start : Start processing from this element #
++ * dvcid : Device ID
++ * vol_tag : Volume tag (barcode)
++ *
++ * Return number of elements
++ */
++static int build_element_descriptors(uint8_t *data, struct list_head
+*head,
++					uint8_t elem_type, int *first,
++					uint16_t start,
++					uint8_t dvcid, uint8_t vol_tag)
++{
++	struct slot *s;
++	int count = 0;
++	int len = 0;
++	int elem_sz = determine_element_sz(dvcid, vol_tag);
++
++	list_for_each_entry(s, head, slot_siblings) {
++		if (s-&gt;element_type == elem_type) {
++			if (s-&gt;slot_addr &gt;= start) {
++				count++;
++				len +=
+add_element_descriptor(&amp;data[8+len],
++						s, elem_type, dvcid,
+vol_tag);
++			}
++		}
++		if (count == 1)	/* Record first found slot Address */
++			*first = s-&gt;slot_addr;
++	}
++
++	/* Fill in Element Status Page Header */
++	data[0] = elem_type;
++	data[1] = (vol_tag) ? 0x80 : 0;	/* Primary Vol Tag set */
++	*(uint16_t *)(data + 2) = __cpu_to_be16(elem_sz);
++
++	/* Total number of bytes in all element descriptors */
++	*(uint32_t *)(data + 4) = __cpu_to_be32((elem_sz * count) &amp;
+0xffffff);
++
++return count;
++}
++
++/* *********************************************
++ * READ ELEMENT STATUS op code
++ * ********************************************* */
++static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
++{
++	struct smc_info *smc = (struct smc_info *)cmd-&gt;dev-&gt;smc_p;
++	uint8_t *data;
++	uint8_t *scb;
++	uint8_t element_type;
++	uint8_t vol_tag;
++	uint16_t req_start_elem;
++//	FIXME: Take into account number of slots requested..
++//	uint16_t	number = __be16_to_cpu(*(uint16_t *)(scb[4]));
++	uint8_t dvcid;		/* Device ID */
++	uint32_t alloc_len;
++	uint16_t count = 0;
++	int first = 0;		/* First valid slot location */
++	int len = 8;
++	int elementSize;
++	int ret;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
++
++	scb = cmd-&gt;scb;
++	element_type = scb[1] &amp; 0x0f;
++	vol_tag	= (scb[1] &amp; 0x10) &gt;&gt; 4;
++	dvcid = scb[6] &amp; 0x01;
++	req_start_elem = __be16_to_cpu(*(uint16_t *)(scb + 2));
++	alloc_len = 0xffffff &amp; __be32_to_cpu(*(uint32_t *)(scb + 6));
++
++	elementSize = determine_element_sz(dvcid, vol_tag);
++
++	cmd-&gt;len = 0;
++	if (cmd-&gt;dev) {
++		ret = device_reserved(cmd);
++		if (ret) {
++			dprintf(&quot;Reservation Conflict\n&quot;);
++			return SAM_STAT_RESERVATION_CONFLICT;
++		}
++	}
++
++	if (pagesize &lt; alloc_len) {
++		dprintf(&quot;Can't allocate enough memory for cmd\n&quot;);
++		key = HARDWARE_ERROR;
++		asc = ASC_INTERNAL_TGT_FAILURE;
++		goto sense;
++	}
++	if ((data = valloc(pagesize)) == NULL) {
++		dprintf(&quot;valloc(%lu) failed\n&quot;, pagesize);
++		key = HARDWARE_ERROR;
++		asc = ASC_INTERNAL_TGT_FAILURE;
++		goto sense;
++	}
++	memset(data, 0, pagesize);
++
++	if (scb[11])	/* Reserved byte */
++		goto sense;
++
++	switch(element_type) {
++	case ELEMENT_ANY:
++		/* Return element in type order */
++		count = build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_MEDIUM_TRANSPORT,
+&amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		len = count * elementSize;
++		count += build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_STORAGE, &amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		len += count * elementSize;
++		count += build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_MAP, &amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		len += count * elementSize;
++		count += build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_DATA_TRANSFER, &amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		break;
++	case ELEMENT_MEDIUM_TRANSPORT:
++		count = build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_MEDIUM_TRANSPORT,
+&amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		break;
++	case ELEMENT_STORAGE:
++		count = build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_STORAGE, &amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		break;
++	case ELEMENT_MAP:
++		count = build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_MAP, &amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		break;
++	case ELEMENT_DATA_TRANSFER:
++		count = build_element_descriptors(&amp;data[len],
+&amp;smc-&gt;slots,
++					ELEMENT_DATA_TRANSFER, &amp;first,
++					req_start_elem,
++					dvcid, vol_tag);
++		break;
++	default:
++		goto sense;
++		break;
++	}
++
++	/* Lastly, fill in data header */
++	len = element_status_data_hdr(data, dvcid, vol_tag, first,
+count);
++
++	cmd-&gt;len = min_t(int, len, alloc_len);
++	cmd-&gt;uaddr = (unsigned long) data;
++	cmd-&gt;rw = READ;
++
++	return SAM_STAT_GOOD;
++
++sense:
++	cmd-&gt;len = 0;
++	sense_data_build(cmd, key, asc);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++/* *********************************************
++ * MOVE MEDIUM op code
++ * ********************************************* */
++static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
++{
++	struct smc_info *smc = (struct smc_info *)cmd-&gt;dev-&gt;smc_p;
++	uint8_t *scb;
++	uint16_t src;
++	uint16_t dest;
++	uint8_t invert;
++	struct slot *src_slot = NULL;
++	struct slot *dest_slot = NULL;
++	struct slot *s;
++	int key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
++
++	scb = cmd-&gt;scb;
++	src = __be16_to_cpu(*(uint16_t *)(scb + 4));
++	dest = __be16_to_cpu(*(uint16_t *)(scb + 6));
++	invert = scb[10] &amp; 1;
++
++	list_for_each_entry(s, &amp;smc-&gt;slots, slot_siblings) {
++		if (s-&gt;slot_addr == src)
++			src_slot = s;
++		if (s-&gt;slot_addr == dest)
++			dest_slot = s;
++	}
++
++	if (src_slot) {
++		if (!test_slot_full(src_slot)) {
++			asc = ASC_MEDIUM_SRC_EMPTY;
++			goto sense;
++		}
++	} else	/* Could not find src slot - Error */
++		goto sense;
++
++	if (dest_slot) {
++		if (test_slot_full(dest_slot)) {
++			asc = ASC_MEDIUM_DEST_FULL;
++			goto sense;
++		}
++	} else	/* Could not find dest slot - Error */
++		goto sense;
++
++	if (invert)
++		if (s-&gt;sides == 1)	/* Use default INVALID FIELD IN
+CDB */
++			goto sense;
++
++	memcpy(&amp;dest_slot-&gt;barcode, &amp;src_slot-&gt;barcode,
+sizeof(s-&gt;barcode));
++	set_slot_empty(src_slot);
++	set_slot_full(dest_slot, src);
++	cmd-&gt;len = 0;
++	return SAM_STAT_GOOD;
++
++sense:
++	cmd-&gt;len = 0;
++	sense_data_build(cmd, key, asc);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++/* *********************************************
++ * ****       House keeping routines        ****
++ * ********************************************* */
++
++/* Any housekeeping required at logical unit setup */
++static int smc_lu_init(struct scsi_lu *lu)
++{
++	struct smc_info *smc;
++
++	smc = zalloc(sizeof(struct smc_info));
++	if (smc)
++		lu-&gt;smc_p = smc;
++	else
++		return -ENOMEM;
++
++	spc_lu_init(lu);
++
++	strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CHANGER&quot;,
++
+sizeof(lu-&gt;attrs.product_id));
++	lu-&gt;attrs.version_desc[0] = 0x0480; /* SMC-3 no version claimed
+*/
++	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
++	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
++
++	INIT_LIST_HEAD(&amp;lu-&gt;mode_pages);
++
++	/* Vendor uniq - However most apps seem to call for mode page
+0*/
++	add_mode_page(lu, &quot;0:0:0&quot;);
++	/* Control page */
++	add_mode_page(lu, &quot;10:0:10:2:0:0:0:0:0:0:0:2:0&quot;);
++	/* Power Condition */
++	add_mode_page(lu, &quot;0x1a:0:10:8:0:0:0:0:0:0:0:0:0&quot;);
++	/* Informational Exceptions Control page */
++	add_mode_page(lu, &quot;0x1c:0:10:8:0:0:0:0:0:0:0:0:0&quot;);
++	/* Address Assignment */
++	add_mode_page(lu,
+&quot;0x1d:0:0x12:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0&quot;);
++	/* Transport Geometry Params */
++	add_mode_page(lu, &quot;0x1e:0:2:0:0&quot;);
++	/* Device Capabilities */
++	add_mode_page(lu,
+&quot;0x1f:0:0x12:15:7:15:15:15:15:0:0:0:0:15:15:15:15:0:0:0:0&quot;);
++
++	INIT_LIST_HEAD(&amp;smc-&gt;slots);
++
++	lu-&gt;attrs.online = 1;	/* Library will now report as Online */
++	lu-&gt;attrs.reset = 1;	/* Poweron/reset occurred */
++	lu-&gt;attrs.removable = 1; /* Default to removable media */
++
++	return 0;
++}
++
++/* Any housekeeping required at shutdown */
++static void smc_lu_exit(struct scsi_lu *lu)
++{
++	struct smc_info *smc = lu-&gt;smc_p;
++
++	dprintf(&quot;Medium Changer shutdown() called\n&quot;);
++
++	free(smc);
++}
++
++/* **************************************
++ * General utilities related to slot(s)
++ * **************************************/
++/* Set slot status to full */
++static void set_slot_full(struct slot *s, uint16_t src)
++{
++	s-&gt;status |= 1;
++	s-&gt;last_addr=src;
++}
++
++/* Set slot status to empty */
++static void set_slot_empty(struct slot *s)
++{
++	s-&gt; status &amp;= 0xfe;
++	s-&gt;last_addr=0;
++	memset(s-&gt;barcode, ' ', sizeof(s-&gt;barcode));
++}
++
++static int test_slot_full(struct slot *s)
++{
++	return s-&gt;status &amp;&amp; 1;
++}
++
++static int slot_insert(struct list_head *head, int element_type, int
+address)
++{
++	struct slot *s;
++
++	if ((s = zalloc(sizeof(struct slot))) == NULL)
++		return TGTADM_NOMEM;
++
++	s-&gt;slot_addr = address;
++	s-&gt;element_type = element_type;
++	s-&gt;sides = 1;
++	if (element_type == ELEMENT_DATA_TRANSFER)	/* Drive */
++		s-&gt;asc = ASC_INITIALIZING_REQUIRED;
++
++	list_add_tail(&amp;s-&gt;slot_siblings, head);
++
++	return 0;
++}
++
++/*
++ * If both address &amp; element type specified, check both values,
++ * else just check param that is defined.
++ *
++ * Return NULL if record not found.
++ */
++struct slot *slot_lookup(struct list_head *head, int element_type, int
+address)
++{
++	struct slot *s;
++
++	list_for_each_entry(s, head, slot_siblings) {
++		if (element_type &amp;&amp; address) {
++			if ((s-&gt;slot_addr == address) &amp;&amp;
++					(s-&gt;element_type ==
+element_type))
++				return s;
++		} else if (element_type) {
++			if (s-&gt;element_type == element_type)
++				return s;
++		} else if (address) {
++			if (s-&gt;slot_addr == address)
++				return s;
++		}
++	}
++	return NULL;
++}
++
++static void slot_dump(struct list_head *head)
++{
++	struct slot *s;
++
++	list_for_each_entry(s, head, slot_siblings)
++		if (s) {
++			dprintf(&quot;Slot %d Information\n&quot;, s-&gt;slot_addr);
++			dprintf(&quot;  Last Addr: %d\n&quot;, s-&gt;last_addr);
++			dprintf(&quot;  Type: %d\n&quot;, s-&gt;element_type);
++			dprintf(&quot;  Barcode: %s\n&quot;, s-&gt;barcode);
++			dprintf(&quot;  TID : %d\n&quot;, s-&gt;drive_tid);
++			dprintf(&quot;  LUN : %d\n&quot;, s-&gt;drive_lun);
++			dprintf(&quot;  ASC/ASCQ : %d\n\n&quot;, s-&gt;asc);
++		}
++}
++
++/* **************************************
++ * Adding Slots within the SMC device
++ * **************************************/
++static int add_slt(struct scsi_lu *lu, int element_type, int
+start_addr, int quantity)
++{
++	struct smc_info *smc = lu-&gt;smc_p;
++	int ret = TGTADM_INVALID_REQUEST;
++	struct mode *m;
++	struct slot *s;
++	uint16_t *element;
++	int sv_addr;
++	int qnty_save;
++	int i;
++
++	/* Update MODE PAGE 0x1d params */
++	if ((m = mode_page_lookup(&amp;lu-&gt;mode_pages, 0x1d)) == NULL) {
++		dprintf(&quot;Failed to find Element Address Assignment mode
+pg\n&quot;);
++		return TGTADM_UNKNOWN_ERR;
++	}
++	element = (uint16_t *)m-&gt;mode_data;
++
++	if (element_type &amp;&amp; start_addr &amp;&amp; quantity) {
++		/* Fiddle with element offset.*/
++		switch(element_type) {
++		case ELEMENT_MEDIUM_TRANSPORT:	/* Medium Transport */
++			break;
++		case ELEMENT_MAP:		/* Import/Export
+Elements */
++			element += 4;
++			break;
++		case ELEMENT_STORAGE:		/* Storage Elements */
++			element += 2;
++			break;
++		case ELEMENT_DATA_TRANSFER:	/* Data Transfer
+Elements */
++			element += 6;
++			break;
++		default:
++			goto dont_do_slots;
++			break;
++		}
++
++		/* Get existing values */
++		sv_addr = __be16_to_cpu(element[0]);
++		qnty_save  = __be16_to_cpu(element[1]);
++
++		/* Add existing values + passed params to config */
++		if (sv_addr)
++			element[0] =
++				__cpu_to_be16(min_t(int, start_addr,
+sv_addr));
++		else
++			element[0] = __cpu_to_be16(start_addr);
++		element[1] = __cpu_to_be16(quantity + qnty_save);
++
++		s = slot_lookup(&amp;smc-&gt;slots, element_type, start_addr);
++		if (s)	// Opps... Found a slot at this address..
++			goto dont_do_slots;
++
++		ret = TGTADM_SUCCESS;
++		for(i=start_addr; i &lt; (start_addr + quantity); i++)
++			if (slot_insert(&amp;smc-&gt;slots, element_type, i))
++				ret = TGTADM_INVALID_REQUEST;
++	}
++
++dont_do_slots:
++	return ret;
++}
++
++/* **************************************
++ * Configuring Slots within the SMC device
++ * **************************************/
++static int config_slot(struct scsi_lu *lu, int element_type,
++		int address, int tid, int lun, char *barcode, int sides)
++{
++	struct smc_info *smc = lu-&gt;smc_p;
++	struct mode *m = NULL;
++	struct slot *s = NULL;
++	int ret = TGTADM_INVALID_REQUEST;
++
++	switch(element_type) {
++	case ELEMENT_MEDIUM_TRANSPORT:
++		/* If medium has more than one side, set the 'rotate'
+bit */
++		m = mode_page_lookup(&amp;lu-&gt;mode_pages, 0x1e);
++		if (m) {
++			m-&gt;mode_data[0] = (sides &gt; 1) ? 1 : 0;
++			ret = TGTADM_SUCCESS;
++		}
++		break;
++	case ELEMENT_STORAGE:
++	case ELEMENT_MAP:
++		if ((s = slot_lookup(&amp;smc-&gt;slots, element_type,
+address)) == NULL)
++			break;	// Slot not found..
++		strncpy(s-&gt;barcode, barcode, sizeof(s-&gt;barcode));
++		set_slot_full(s, 0);
++		ret = TGTADM_SUCCESS;
++		break;
++	case ELEMENT_DATA_TRANSFER:
++		if (!tid)
++			break;	/* Fail if no TID specified */
++		if ((s = slot_lookup(&amp;smc-&gt;slots, element_type,
+address)) == NULL)
++			break;	// Slot not found..
++		s-&gt;asc  = NO_ADDITIONAL_SENSE;
++		s-&gt;drive_tid = tid;
++		s-&gt;drive_lun = lun;
++		ret = TGTADM_SUCCESS;
++		break;
++	}
++	return ret;
++}
++
++/* ***********************************
++ * Command argument processing
++ * ***********************************/
++#define ADD	1
++#define CONFIGURE 2
++
++static int smc_lu_config(struct scsi_lu *lu, char *params)
++{
++	struct smc_info *smc = (struct smc_info *)lu-&gt;smc_p;
++	int err = 0;
++	char *p;
++	char barcode[20] = &quot;&quot;;
++	char buf[20];
++	int operation = 0;
++	int element_type = 0;
++	int start_addr = 0;
++	int quantity = 0;
++	int sides = 1;
++	int address = 0;
++	int tid = 0;
++	int lun = 0;
++	char *smc_params;
++
++	smc_params = malloc(strlen(params) + 1);
++	if (!smc_params)
++		return TGTADM_NOMEM;
++	smc_params[0] = '\0';
++	err = spc_lu_config(lu, params, smc_params);
++
++	if (!strncmp(&quot;targetOps&quot;, smc_params, 9))
++		smc_params = smc_params + 10;
++
++	while ((p = strsep(&amp;smc_params, &quot;,&quot;)) != NULL) {
++		substring_t args[MAX_OPT_ARGS];
++		int token;
++		if (!*p)
++			continue;
++		token = match_token(p, tokens, args);
++		switch (token) {
++		case Opt_element_type:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			element_type = atoi(buf);
++			break;
++		case Opt_start_address:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			start_addr = atoi(buf);
++			operation = ADD;
++			break;
++		case Opt_quantity:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			quantity = atoi(buf);
++			break;
++		case Opt_sides:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			sides = atoi(buf);
++			break;
++		case Opt_address:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			address = atoi(buf);
++			operation = CONFIGURE;
++			break;
++		case Opt_barcode:
++			match_strncpy(barcode, &amp;args[0],
+sizeof(barcode));
++			break;
++		case Opt_tid:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			tid = atoi(buf);
++			break;
++		case Opt_lun:
++			match_strncpy(buf, &amp;args[0], sizeof(buf));
++			lun = atoi(buf);
++			break;
++		case Opt_dump:
++			slot_dump(&amp;smc-&gt;slots);
++			break;
++		default:
++			err = TGTADM_UNKNOWN_PARAM;
++		}
++	}
++
++	free(smc_params);
++
++	switch(operation) {
++		case ADD:
++			err = add_slt(lu, element_type, start_addr,
+quantity);
++			break;
++		case CONFIGURE:
++			err = config_slot(lu, element_type, address,
+tid,
++							lun, barcode,
+sides);
++			break;
++	}
++	return err;
++}
++
++/* ***********************************
++ * Device Template - entry routines
++ * ***********************************/
++struct device_type_template smc_template = {
++	.type		= TYPE_MEDIUM_CHANGER,
++	.lu_init	= smc_lu_init,
++	.lu_exit 	= smc_lu_exit,
++	.lu_config	= smc_lu_config,
++	.ops	= {
++		{spc_test_unit,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_request_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x10 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_inquiry,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_mode_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x20 ... 0x4f] = {spc_illegal_op,},
++
++		/* 0x50 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_mode_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x60 ... 0x9f] = {spc_illegal_op,},
++
++		/* 0xA0 */
++		{spc_report_luns,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{smc_move_medium,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_test_unit,},
++
++		/* 0xB0 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{smc_read_element_status,},	// Mandatory
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0xc0 ... 0xff] = {spc_illegal_op},
++	}
++};
++
++__attribute__((constructor)) static void smc_init(void)
++{
++	device_type_register(&amp;smc_template);
++}
+diff --git a/usr/smc.h b/usr/smc.h
+new file mode 100644
+index 0000000..fc37f9d
+--- /dev/null
++++ b/usr/smc.h
+@@ -0,0 +1,77 @@
++/*
++ * SCSI Medium Changer Command
++ *
++ * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef _SMC_H_
++#define _SMC_H_
++
++/**************************************************
++ * Slot description
++ **************************************************/
++#define ELEMENT_ANY		0
++#define	ELEMENT_MEDIUM_TRANSPORT	1
++#define	ELEMENT_STORAGE		2
++#define	ELEMENT_MAP		3
++#define	ELEMENT_DATA_TRANSFER	4
++
++struct slot {
++	struct	list_head	slot_siblings;
++	uint8_t		element_type;	/* Element Type 1, 2, 3 or 4 */
++	uint8_t		cart_type;	/* 0 Unspecified, 1 Data, 2
+Cleaning */
++	uint16_t	slot_addr;	/* 65535 slots should be
+enough.. */
++	uint16_t	last_addr;	/* Where the media came from..
+*/
++	uint16_t	asc;		/* Additional sense code */
++	uint8_t		status;		/* Used for MAP status bits */
++	uint8_t		sides;		/* Number of sides this media.
+*/
++	char		barcode[11];	/* Up to 10 char barcode */
++	/* Only used if slot contains a drive. */
++	uint8_t		drive_tid;
++	uint8_t		drive_lun;
++};
++
++/**************************************************
++ * Data structure for SMC device
++ * Top of the 'tree'
++ **************************************************/
++struct smc_info {
++	struct	list_head	slots;
++};
++
++enum {
++	Opt_element_type, Opt_start_address,
++	Opt_quantity, Opt_sides,
++	Opt_address, Opt_barcode,
++	Opt_tid, Opt_lun,
++	Opt_type, Opt_dump,
++	Opt_err,
++};
++
++static match_table_t tokens = {
++	{Opt_element_type, &quot;element_type=%s&quot;},
++	{Opt_start_address, &quot;start_address=%s&quot;},
++	{Opt_quantity, &quot;quantity=%s&quot;},
++	{Opt_sides, &quot;sides=%s&quot;},
++	{Opt_address, &quot;address=%s&quot;},
++	{Opt_barcode, &quot;barcode=%s&quot;},
++	{Opt_tid, &quot;tid=%s&quot;},
++	{Opt_lun, &quot;lun=%s&quot;},
++	{Opt_type, &quot;type=%s&quot;},
++	{Opt_dump, &quot;dump=%s&quot;},
++	{Opt_err, NULL},
++};
++#endif // _SMC_H_
+diff --git a/usr/spc.c b/usr/spc.c
+index 3eb605c..19a0403 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -500,7 +500,19 @@ static match_table_t tokens = {
+ 	{Opt_err, NULL},
+ };
+ 
+-int spc_lu_config(struct scsi_lu *lu, char *params) {
++/*
++ * Parse options received from user.
++ *
++ * User options are in 'char * params', while any unprocessed options
++ * are copied into 'char * ret_param' for further processing by the
++ * 'target' from which it was called.
++ *
++ * Note: It is the callers responsibility to make sure *ret_param has
+enough
++ * room to store up to &quot;strlen(params) + 1&quot; - In case we can not parse
+any
++ * params locally.
++ */
++int spc_lu_config(struct scsi_lu *lu, char *params, char *ret_param)
++{
+ 	int err = 0;
+ 	char *p;
+ 	char buf[256];
+@@ -551,7 +563,9 @@ int spc_lu_config(struct scsi_lu *lu, char *params)
+{
+ 			match_strncpy(buf, &amp;args[0], sizeof(buf));
+ 			err = add_mode_page(lu, buf);
+ 			break;
+-		default:
++		default:	/* Append any unprocessed args to
+ret_param */
++			strcat(ret_param, p);
++			strcat(ret_param, &quot;,&quot;);
+ 			err = TGTADM_INVALID_REQUEST;
+ 		}
+ 	}
+diff --git a/usr/spc.h b/usr/spc.h
+index c7e38c0..559a14e 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -16,7 +16,7 @@ extern int spc_test_unit(int host_no, struct scsi_cmd
+*cmd);
+ extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+ extern int spc_lu_init(struct scsi_lu *lu);
+-extern int spc_lu_config(struct scsi_lu *lu, char * params);
++extern int spc_lu_config(struct scsi_lu *lu, char *params, char
+*ret_params);
+ extern void dump_cdb(struct scsi_cmd *cmd);
+ extern int spc_mode_sense(int host_no, struct scsi_cmd *cmd);
+ struct mode *mode_page_lookup(struct list_head *head, uint8_t page);
+diff --git a/usr/tgtadm.c b/usr/tgtadm.c
+index c2315b6..0631a7d 100644
+--- a/usr/tgtadm.c
++++ b/usr/tgtadm.c
+@@ -300,6 +300,8 @@ static int str_to_device_type(char *str)
+ 		exit(EINVAL);
+ 	} else if (!strcmp(str, &quot;cd&quot;))
+ 		return TYPE_ROM;
++	else if (!strcmp(str, &quot;changer&quot;))
++		return TYPE_MEDIUM_CHANGER;
+ 	else if (!strcmp(str, &quot;osd&quot;))
+ 		return TYPE_OSD;
+ 	else if (!strcmp(str, &quot;pt&quot;))
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index bbacae2..271b260 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -100,8 +100,11 @@ struct scsi_lu {
+ 	uint8_t	mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+ 	struct list_head mode_pages;
+ 
+-	/* TODO: needs a structure for lots of device parameters */
+ 	struct lu_phy_attr attrs;
++
++	/* TODO: needs a structure for lots of device parameters */
++	/* Currently only used by smc module */
++	void *smc_p;
+ };
+ 
+ struct scsi_cmd {
+-- 
+1.5.2.1
+
+
+
+
+_______________________________________________
+Stgt-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000838.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+	<LI>Next message: <A HREF="000842.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#841">[ date ]</a>
+              <a href="thread.html#841">[ thread ]</a>
+              <a href="subject.html#841">[ subject ]</a>
+              <a href="author.html#841">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

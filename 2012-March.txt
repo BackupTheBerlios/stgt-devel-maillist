@@ -1,0 +1,136 @@
+From bogus@does.not.exist.com  Wed Mar 14 16:21:04 2012
+From: bogus@does.not.exist.com ()
+Date: Wed, 14 Mar 2012 15:21:04 -0000
+Subject: No subject
+Message-ID: <mailman.0.1331738466.12506.stgt-devel@lists.berlios.de>
+
+driver more smoothly (especially on the user-space daemon).
+
+
+-- iSCSI
+
+Now we don't know where iSCSI tcp for generic NICs and iSER drivers
+live. We will post kernel-space part of iSCSI tcp to scsi-ml for
+discussion. If we fail to put it into mainline, I'll implement iscsi
+target software in user space, which uses tgt user-space code.
+
+We like to support iSCSH HBAs like qla4xxx, but we need to see whether
+vendors provide their drivers and info.
+
+
+-- FC
+
+Mike has been working on qla2xxx. Probably, we need to try to add
+target support to scsi_transport_fc first because we will support
+other FC HBAs.
+
+I will work on fc support too, but it depends on how other work goes.
+
+
+From bogus@does.not.exist.com  Wed Mar 14 16:21:04 2012
+From: bogus@does.not.exist.com ()
+Date: Wed, 14 Mar 2012 15:21:04 -0000
+Subject: No subject
+Message-ID: <mailman.1.1331738466.12506.stgt-devel@lists.berlios.de>
+
+Address =3A UNHCR=2C Bangkok-Thailand
+Email =3A takiha=5Fsabri=40myway=2Ecom
+
+
+         Request for Investment assistance from Mrs=2E Al-Takiha Sabri
+ 
+Dear sir=2C
+ 
+Good day to you and your family=2C I know you may be suprise to receive my email knowing fully well that you never know me before this time=2C  I decided to unfold our investment plan to you after going through your profile from your country trade journal of which I was convince as to solicite for your assistance and help=2C before I proceed I will like to introduce myself to you for your refrence=2C=2C I am Mrs=2EAl-Takiha Sabri the Wife of late Mr=2E El-Naji Sabri =2C My late husband was the former Iraq foreign minister under Saddam Hussein rulling ba'ath party before the United State invassion of Iraq in 2003=2E 
+ 
+My late husband was captured and killed as one of the top Saddam Hussein rulling party officers=2C Before his death he was able to confirm to us of an existence deposit of US$9=2C000=2C000=2E00 =28 Nine Million US DOLLARS =29 which he secretly secured cash in oversea depository and finance security vault  through a diplonatic personel in Thailand for safekeeping =2E
+ 
+Presently I am Temporary  living a political exile life here in Thailand  along with my only son as political refugees  because our life is no longer safe in Iraq due to daily killing of all former top government officials and their families=2C On this reasons we have decided to invest this fund in a profitable business venture in your country  but being that we have no knowledge of any kind of business before this time and our current status here as a political refugee which limited us from handling such huge amount of Cash=2E 
+ 
+We are seeking for your help and assistance as our foreign partner so that we can finalize every arrangement to reach a long term investment partnership agreement to transfer the fund to your country and entrust the investment with trust in your management and control =2Ealready every process with the depository and finance security vault management for the release of the fund to us as the next of kin have been completed with all appropate documents of the fund in our poccession 
+ 
+1 =2EI will offer a 20% reasonable or negociable percentage of the total fund as a reward for your assistance toward your help =2E
+ 
+2=2E I will map out 5% of the total fund to meet up any expences made toward the successfull transfer of the fund to your country =2E
+ 
+3=2E To reach a long term investment partnership agreement to entrust the Investment in your management and control for the benefit of both parties=2E 
+ 
+4=2E To enable us relocate and settle in your country as soon as the fund is transfered=2E
+ 
+Kindly regard my contact to you through email as our only althernative for the security of the transaction=2E
+ 
+For further information and procedure I will be expecting your immediate reply as soon as possible as this will give us the opportunity to conclude all further arrangement in transfering of the fund to your bank in your country=2E thanks for your co-operation and hoping to see a good family relationship with you=2E 
+ 
+Yours sincerely=2C 
+Mrs=2E Al-Takiha Sabri and Son
+For Sabri's  family
+ 
+
+
+
+
+From bogus@does.not.exist.com  Wed Mar 14 16:21:04 2012
+From: bogus@does.not.exist.com ()
+Date: Wed, 14 Mar 2012 15:21:04 -0000
+Subject: No subject
+Message-ID: <mailman.2.1331738468.12506.stgt-devel@lists.berlios.de>
+
+the target is the 'ACL', so all setup can be safely performed before
+allowing any initiator to 'see' the target(s).
+
+
+My main issue with passing this information on the command line is:
+a. Length & complexity of the command.
+b. Limiting the changes to the existing code base - Trying to keep the
+SSC/SMC code as separate as possible.
+
+
+From bogus@does.not.exist.com  Wed Mar 14 16:21:04 2012
+From: bogus@does.not.exist.com ()
+Date: Wed, 14 Mar 2012 15:21:04 -0000
+Subject: No subject
+Message-ID: <mailman.3.1331738468.12506.stgt-devel@lists.berlios.de>
+
+e.g. Product Ident, Vendor Ident, Serial number etc.
+
+However for a changer (SMC) the list is much longer.
+i.e.
+ - Product Ident, Vendor Ident, Serial Num etc (same as SSC list)
+ - Starting number and quantity of storage slots (Storage Elements)
+ - Starting number and quantity of mailslots/CAP (Import/Export Elements)
+ - Starting number and quantity of picker arms (Medium Transport)
+ - Starting number and quantity of devices (Data Transport Elements)
+ - Type of each Data Transport Element (sbc, ssc etc)
+ - The contents of each slot (populate the Library with virtual media)
+
+
+I shall attempt to put together some ideas about the tgtadm syntax and
+post to the list for comment.
+
+Regards
+Mark
+
+
+From bogus@does.not.exist.com  Wed Mar 14 16:21:04 2012
+From: bogus@does.not.exist.com ()
+Date: Wed, 14 Mar 2012 15:21:04 -0000
+Subject: No subject
+Message-ID: <mailman.6.1331738471.12506.stgt-devel@lists.berlios.de>
+
+can't (yeah, user-space code does something like that, but it's
+wrong. it needs be fixed). We need to bind a scsi_host to a tgt
+scsi_host (please read the previous pass-through discussion).
+
+
+From bogus@does.not.exist.com  Wed Mar 14 16:21:04 2012
+From: bogus@does.not.exist.com ()
+Date: Wed, 14 Mar 2012 15:21:04 -0000
+Subject: No subject
+Message-ID: <mailman.12.1331738472.12506.stgt-devel@lists.berlios.de>
+
+then '--params scsisn=xxx' but not by much..
+
+Cheers
+Mark
+
+

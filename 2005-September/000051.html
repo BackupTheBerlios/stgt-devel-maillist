@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C200509091210.j89CAgSq017888%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000049.html">
+   <LINK REL="Next"  HREF="000052.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C200509091210.j89CAgSq017888%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Sep  9 14:10:41 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000049.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+        <LI>Next message: <A HREF="000052.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#51">[ date ]</a>
+              <a href="thread.html#51">[ thread ]</a>
+              <a href="subject.html#51">[ subject ]</a>
+              <a href="author.html#51">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Subject: Re: [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+Date: Fri, 09 Sep 2005 20:49:06 +0900
+
+&gt;<i> &gt; target driver (queue cmnd alloc buffer) -&gt; protocol (SCSI stuff) -&gt; STGT
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; So then the target driver can pass some protocol specifc values like cdb 
+</I>&gt;<i> &gt; and lun (and lun decoder if necessary) without the stgt core having to 
+</I>&gt;<i> &gt; worry about that stuff. This will also allow you to make it so target 
+</I>&gt;<i> &gt; drivers do not have to touch things like the cdb field (I can move that 
+</I>&gt;<i> &gt; to a protocol specific cmnd data finally).
+</I>&gt;<i> 
+</I>&gt;<i> I agreed. Now we should remove all protocol specific stuff in stgt. I
+</I>&gt;<i> tried to do this (though I'm not sure whether I've done in a right way
+</I>&gt;<i> about some of the changes).
+</I>
+By the way, it's time to rename stgt tgt (or something generic), I
+guess. 
+
+I also think about rename IET something generic like istgt or isstgt
+(iSCSI software target). After all, the code will be really very from
+the original IET code. Any suggestions?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000049.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+	<LI>Next message: <A HREF="000052.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#51">[ date ]</a>
+              <a href="thread.html#51">[ thread ]</a>
+              <a href="subject.html#51">[ subject ]</a>
+              <a href="author.html#51">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

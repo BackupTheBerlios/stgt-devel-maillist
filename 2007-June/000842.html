@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 3/3] Re-work of SMC support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/3%5D%20Re-work%20of%20SMC%20support&In-Reply-To=%3C20070627184319P.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000841.html">
+   <LINK REL="Next"  HREF="000845.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 3/3] Re-work of SMC support</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/3%5D%20Re-work%20of%20SMC%20support&In-Reply-To=%3C20070627184319P.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [Patch 3/3] Re-work of SMC support">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Jun 27 11:43:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000841.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+        <LI>Next message: <A HREF="000845.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#842">[ date ]</a>
+              <a href="thread.html#842">[ thread ]</a>
+              <a href="subject.html#842">[ subject ]</a>
+              <a href="author.html#842">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] [Patch 3/3] Re-work of SMC support
+Date: Sat, 23 Jun 2007 18:14:04 +1000
+
+&gt;<i> diff --git a/usr/media.h b/usr/media.h
+</I>&gt;<i> new file mode 100644
+</I>&gt;<i> index 0000000..a04a27c
+</I>&gt;<i> --- /dev/null
+</I>&gt;<i> +++ b/usr/media.h
+</I>&gt;<i> @@ -0,0 +1,30 @@
+</I>&gt;<i> +/*
+</I>&gt;<i> + * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
+</I>&gt;<i> + *
+</I>&gt;<i> + * This program is free software; you can redistribute it and/or modify
+</I>&gt;<i> + * it under the terms of the GNU General Public License as published by
+</I>&gt;<i> + * the Free Software Foundation; version 2 of the License.
+</I>&gt;<i> + *
+</I>&gt;<i> + * This program is distributed in the hope that it will be useful,
+</I>&gt;<i> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+</I>&gt;<i> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+</I>&gt;<i> + * GNU General Public License for more details.
+</I>&gt;<i> + *
+</I>&gt;<i> + * You should have received a copy of the GNU General Public License
+</I>&gt;<i> + * along with this program; if not, write to the Free Software
+</I>&gt;<i> + * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+</I>&gt;<i> + */
+</I>&gt;<i> +#ifndef _MEDIA_H_
+</I>&gt;<i> +#define _MEDIA_H_
+</I>&gt;<i> +
+</I>&gt;<i> +enum c_type {	/* Cartridge Types - Ref: smc3r06 - Table 20, page 37 */
+</I>&gt;<i> +	CART_UNSPECIFIED,
+</I>&gt;<i> +	CART_DATA,
+</I>&gt;<i> +	CART_CLEAN,
+</I>&gt;<i> +	CART_DIAGNOSTICS,
+</I>&gt;<i> +	CART_WORM,
+</I>&gt;<i> +	CART_MICROCODE,
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +#endif /* _MEDIA_H_ */
+</I>
+Why do you put this in smc.c?
+
+
+&gt;<i> diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> index 891cb60..0672877 100644
+</I>&gt;<i> --- a/usr/mmc.c
+</I>&gt;<i> +++ b/usr/mmc.c
+</I>&gt;<i> @@ -38,6 +38,7 @@
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i>  #include &quot;target.h&quot;
+</I>&gt;<i> +#include &quot;tgtadm_error.h&quot;
+</I>&gt;<i>  #include &quot;driver.h&quot;
+</I>&gt;<i>  #include &quot;scsi.h&quot;
+</I>&gt;<i>  #include &quot;spc.h&quot;
+</I>&gt;<i> @@ -174,10 +175,26 @@ static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int mmc_lu_config(struct scsi_lu *lu, char * params)
+</I>&gt;<i> +{
+</I>&gt;<i> +	char	* mmc_params;
+</I>&gt;<i> +	int	ret;
+</I>&gt;<i> +
+</I>&gt;<i> +	mmc_params = malloc(strlen(params) + 1);
+</I>&gt;<i> +	if (!mmc_params)
+</I>&gt;<i> +		return -ENOMEM;
+</I>&gt;<i> +	mmc_params[0] = '\0';
+</I>&gt;<i> +	ret = spc_lu_config(lu, params, mmc_params);
+</I>&gt;<i> +	if (strlen(mmc_params))	/* We should not have any params left over */
+</I>&gt;<i> +		ret = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> +	free(mmc_params);
+</I>&gt;<i> +	return ret;
+</I>&gt;<i> +}
+</I>
+strdup?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000841.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+	<LI>Next message: <A HREF="000845.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#842">[ date ]</a>
+              <a href="thread.html#842">[ thread ]</a>
+              <a href="subject.html#842">[ subject ]</a>
+              <a href="author.html#842">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

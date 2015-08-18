@@ -1,0 +1,4240 @@
+From markh794 at gmail.com  Sun Jun  1 02:59:14 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Sun, 01 Jun 2008 10:59:14 +1000
+Subject: [Stgt-devel] [patch] 1x1 - remove spaces.
+Message-ID: <4841F462.902@gmail.com>
+
+Remove leading spaces before 'tab' char.
+
+
+From markh794 at gmail.com  Sun Jun  1 03:33:22 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Sun, 01 Jun 2008 11:33:22 +1000
+Subject: [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+Message-ID: <4841FC62.3030801@gmail.com>
+
+ From 72e5a96969937bc68f9153d5c18af306827cf254 Mon Sep 17 00:00:00 2001
+From: Mark Harvey <markh794 at gmail.com>
+Date: Fri, 30 May 2008 17:54:16 +1000
+Subject: Share common 'private' pointer.
+
+No need for smc & mmc to use different pointer.
+Use common pointer for private use.
+
+Signed-off-by: Mark Harvey <markh794 at gmail.com>
+---
+  usr/mmc.c  |   52 ++++++++++++++++++++++++++--------------------------
+  usr/smc.c  |   14 +++++++-------
+  usr/tgtd.h |    9 +++++----
+  3 files changed, 38 insertions(+), 37 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index f988f5a..65c66a7 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -59,7 +59,7 @@ struct mmc_info {
+
+  static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int ret;
+  	uint64_t end_offset;
+  	uint64_t offset, length;
+@@ -134,7 +134,7 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	uint64_t size;
+  	uint32_t *data;
+
+@@ -164,7 +164,7 @@ overflow:
+
+  static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	uint8_t *data;
+  	uint8_t buf[32];
+  	int toc_time, toc_format, toc_track;
+@@ -282,7 +282,7 @@ static int mmc_read_toc(int host_no, struct scsi_cmd 
+*cmd)
+
+  static int mmc_close_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+
+  	/* once we close the track it becomes a DVD_ROM */
+  	mmc->current_profile = PROFILE_DVD_ROM;
+@@ -292,7 +292,7 @@ static int mmc_close_track(int host_no, struct 
+scsi_cmd *cmd)
+
+  static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	unsigned char buf[34];
+
+  	if (mmc->current_profile == PROFILE_NO_PROFILE) {
+@@ -460,7 +460,7 @@ static int mmc_read_disc_information(int host_no, 
+struct scsi_cmd *cmd)
+
+  static void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -478,7 +478,7 @@ static void profile_dvd_rom(struct scsi_cmd *cmd, 
+char *data)
+
+  static void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -634,7 +634,7 @@ static char *feature_removable_medium(struct 
+scsi_cmd *cmd, char *data,
+  static char *feature_random_readable(struct scsi_cmd *cmd, char *data,
+  				     int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -684,7 +684,7 @@ static char *feature_random_readable(struct scsi_cmd 
+*cmd, char *data,
+  static char *feature_dvd_read(struct scsi_cmd *cmd, char *data,
+  			      int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -749,7 +749,7 @@ static char *feature_timeout(struct scsi_cmd *cmd, 
+char *data, int only_current)
+  static char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data,
+  					 int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -791,7 +791,7 @@ static char *feature_real_time_streaming(struct 
+scsi_cmd *cmd, char *data,
+  static char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data,
+  				int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -875,7 +875,7 @@ static char *feature_multi_read(struct scsi_cmd 
+*cmd, char *data,
+
+  static char *feature_dcbs(struct scsi_cmd *cmd, char *data, int 
+only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -961,7 +961,7 @@ struct feature_descriptor features[] = {
+
+  static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	char *data;
+  	char buf[1024];
+  	int rt, start;
+@@ -1017,7 +1017,7 @@ static int mmc_get_configuration(int host_no, 
+struct scsi_cmd *cmd)
+  static unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned 
+char *data,
+  				     unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	unsigned long tmp;
+
+  	switch (mmc->current_profile) {
+@@ -1170,7 +1170,7 @@ static unsigned char *track_type_lba(struct 
+scsi_cmd *cmd, unsigned char *data,
+  static unsigned char *track_type_track(struct scsi_cmd *cmd,
+  				       unsigned char *data, unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	unsigned long tmp;
+
+  	switch (mmc->current_profile) {
+@@ -1352,7 +1352,7 @@ struct track_type track_types[] = {
+
+  static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	struct track_type *t;
+  	unsigned char *data;
+  	unsigned char buf[4096];
+@@ -1402,7 +1402,7 @@ static int mmc_read_track_information(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int blocks;
+  	unsigned char buf[12];
+  	long tmp;
+@@ -1457,7 +1457,7 @@ static int mmc_read_buffer_capacity(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_synchronize_cache(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+
+  	if (mmc->current_profile == PROFILE_NO_PROFILE) {
+  		scsi_set_in_resid_by_actual(cmd, 0);
+@@ -1473,7 +1473,7 @@ static unsigned char *perf_type_write_speed(struct 
+scsi_cmd *cmd,
+  					    unsigned int type,
+  					    unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+
+  	/* write/except */
+  	*data++ = 0x00;
+@@ -1628,7 +1628,7 @@ static unsigned char *perf_type_perf_data(struct 
+scsi_cmd *cmd,
+  					  unsigned int type,
+  					  unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	int tolerance;
+  	int write_flag;
+  	int except;
+@@ -1786,7 +1786,7 @@ static unsigned char *dvd_format_phys_info(struct 
+scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	unsigned char *old_data;
+
+  	if (write_header) {
+@@ -1937,7 +1937,7 @@ static unsigned char *dvd_format_adip_info(struct 
+scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+
+  	if (write_header) {
+  		*data++ = DVD_FORMAT_ADIP_INFO;
+@@ -2107,7 +2107,7 @@ static unsigned char 
+*dvd_format_dvd_structure_list(struct scsi_cmd *cmd,
+
+  static int mmc_read_dvd_structure(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	long address;
+  	int format, layer;
+  	unsigned char *data;
+@@ -2159,7 +2159,7 @@ static int mmc_read_dvd_structure(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_reserve_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->xxc_p;
+  	uint64_t tmp;
+
+  	tmp = cmd->scb[5];
+@@ -2200,7 +2200,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+  	if (!mmc)
+  		return -ENOMEM;
+
+-	lu->mmc_p = mmc;
++	lu->xxc_p = mmc;
+
+  	if (spc_lu_init(lu))
+  		return TGTADM_NOMEM;
+@@ -2268,7 +2268,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+
+  static int mmc_lu_online(struct scsi_lu *lu)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)lu->mmc_p;
++	struct mmc_info *mmc = (struct mmc_info *)lu->xxc_p;
+  	struct stat st;
+
+  	mmc->current_profile = PROFILE_NO_PROFILE;
+diff --git a/usr/smc.c b/usr/smc.c
+index 9a46d30..5caaaf2 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -232,7 +232,7 @@ static int build_element_descriptors(uint8_t *data, 
+struct list_head *head,
+   */
+  static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd->dev->smc_p;
++	struct smc_info *smc = (struct smc_info *)cmd->dev->xxc_p;
+  	uint8_t *data = NULL;
+  	uint8_t *scb;
+  	uint8_t element_type;
+@@ -354,7 +354,7 @@ sense:
+   */
+  static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd->dev->smc_p;
++	struct smc_info *smc = (struct smc_info *)cmd->dev->xxc_p;
+  	uint8_t *scb;
+  	uint16_t src;
+  	uint16_t dest;
+@@ -435,7 +435,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  	smc = zalloc(sizeof(struct smc_info));
+  	if (smc)
+-		lu->smc_p = smc;
++		lu->xxc_p = smc;
+  	else
+  		return -ENOMEM;
+
+@@ -473,7 +473,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  static void smc_lu_exit(struct scsi_lu *lu)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = lu->xxc_p;
+
+  	dprintf("Medium Changer shutdown() called\n");
+
+@@ -547,7 +547,7 @@ static void slot_dump(struct list_head *head)
+
+  static int add_slt(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = lu->xxc_p;
+  	int ret = TGTADM_INVALID_REQUEST;
+  	struct mode_pg *pg;
+  	struct slot *s;
+@@ -606,7 +606,7 @@ dont_do_slots:
+
+  static int config_slot(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = lu->xxc_p;
+  	struct mode_pg *m = NULL;
+  	struct slot *s = NULL;
+  	int ret = TGTADM_INVALID_REQUEST;
+@@ -649,7 +649,7 @@ static int config_slot(struct scsi_lu *lu, struct 
+tmp_param *tmp)
+
+  static int __smc_lu_config(struct scsi_lu *lu, char *params)
+  {
+-	struct smc_info *smc = (struct smc_info *)lu->smc_p;
++	struct smc_info *smc = (struct smc_info *)lu->xxc_p;
+  	int err = TGTADM_SUCCESS;
+  	char *p;
+  	char buf[256];
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 2f128f6..d762039 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -148,10 +148,11 @@ struct scsi_lu {
+
+  	struct lu_phy_attr attrs;
+
+-	/* TODO: needs a structure for lots of device parameters */
+-	/* Currently only used by smc and mmc modules */
+-	void *smc_p;
+-	void *mmc_p;
++	/*
++	 * Structure pointer for each modules private use.
++	 * Currently used by smc and mmc modules
++	 */
++	void *xxc_p;
+  };
+
+  struct mgmt_req {
+-- 
+1.5.2.5
+
+
+
+From agr at powerkom-dd.de  Sun Jun  1 16:48:07 2008
+From: agr at powerkom-dd.de (Arne Redlich)
+Date: Sun, 01 Jun 2008 16:48:07 +0200
+Subject: [Stgt-devel] [PATCH] Fix INQUIRY handling
+Message-ID: <87skvx2ouw.fsf@powerkom-dd.de>
+
+In SPC-3 the CmdDt bit is obsolete.
+
+Signed-off-by: Arne Redlich <agr at powerkom-dd.de>
+---
+ usr/spc.c |   11 ++---------
+ 1 files changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/usr/spc.c b/usr/spc.c
+index b3d7162..dace9ad 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -152,7 +152,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	struct vpd *vpd_pg;
+ 	uint8_t buf[256];
+ 
+-	if (((scb[1] & 0x3) == 0x3) || (!(scb[1] & 0x3) && scb[2]))
++	if (!(scb[1] & 0x1) && scb[2])
+ 		goto sense;
+ 
+ 	if (scsi_get_in_length(cmd) < scb[4])
+@@ -168,7 +168,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	devtype = (attrs->qualifier & 0x7) << 5;
+ 	devtype |= (attrs->device_type & 0x1f);
+ 
+-	if (!(scb[1] & 0x3)) {
++	if (!(scb[1] & 0x1)) {
+ 		int i;
+ 		uint16_t *desc;
+ 
+@@ -190,13 +190,6 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 		len = 66;
+ 		data[4] = len - 5;	/* Additional Length */
+ 		ret = SAM_STAT_GOOD;
+-	} else if (scb[1] & 0x2) {
+-		/* CmdDt bit is set */
+-		/* We do not support it now. */
+-		data[1] = 0x1;
+-		data[5] = 0;
+-		len = 6;
+-		ret = SAM_STAT_GOOD;
+ 	} else if (scb[1] & 0x1) {
+ 		uint8_t pcode = scb[2];
+ 
+-- 
+1.5.4.3
+
+
+
+From agr at powerkom-dd.de  Sun Jun  1 16:48:48 2008
+From: agr at powerkom-dd.de (Arne Redlich)
+Date: Sun, 01 Jun 2008 16:48:48 +0200
+Subject: [Stgt-devel] [PATCH] Fix MODE SENSE handling
+Message-ID: <87od6l2otr.fsf@powerkom-dd.de>
+
+TGT does not support changeable parameter mode pages (PAGE CTRL = 0x1).
+
+Signed-off-by: Arne Redlich <agr at powerkom-dd.de>
+---
+ usr/spc.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/usr/spc.c b/usr/spc.c
+index dace9ad..be7ee5e 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -359,7 +359,7 @@ static int build_mode_page(uint8_t *data, struct mode_pg *pg, uint16_t *alloc_le
+  */
+ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ {
+-	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode;
++	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode, pctrl;
+ 	uint16_t alloc_len, len = 0;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+@@ -369,12 +369,17 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	mode6 = (scb[0] == 0x1a);
+ 	dbd = scb[1] & 0x8; /* Disable Block Descriptors */
+ 	pcode = scb[2] & 0x3f;
++	pctrl = (scb[2] & 0xc0) >> 6;
+ 	subpcode = scb[3];
+ 
+ 	/* Currently not implemented */
+ 	if (subpcode)
+ 		goto sense;
+ 
++	/* Changeable values are currently not implemented */
++	if (pctrl == 0x1)
++		goto sense;
++
+ 	data = scsi_get_in_buffer(cmd);
+ 
+ 	if (mode6) {
+-- 
+1.5.4.3
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jun  3 08:37:52 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 3 Jun 2008 15:37:52 +0900
+Subject: [Stgt-devel] [patch] 1x1 - remove spaces.
+In-Reply-To: <4841F462.902@gmail.com>
+References: <4841F462.902@gmail.com>
+Message-ID: <20080603152743K.tomof@acm.org>
+
+On Sun, 01 Jun 2008 10:59:14 +1000
+Mark Harvey <markh794 at gmail.com> wrote:
+
+> Remove leading spaces before 'tab' char.
+> 
+> >From 3eab8be150e85731e2d4bf6cfb4dbb63fc663a8c Mon Sep 17 00:00:00 2001
+> From: Mark Harvey <markh794 at gmail.com>
+> Date: Fri, 30 May 2008 17:47:10 +1000
+> Subject: Remove leading spaces.
+> 
+> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+> ---
+>  usr/tgtd.h |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+
+Applied, thanks.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jun  3 08:37:53 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 3 Jun 2008 15:37:53 +0900
+Subject: [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+In-Reply-To: <4841FC62.3030801@gmail.com>
+References: <4841FC62.3030801@gmail.com>
+Message-ID: <20080603153745O.tomof@acm.org>
+
+On Sun, 01 Jun 2008 11:33:22 +1000
+Mark Harvey <markh794 at gmail.com> wrote:
+
+>  From 72e5a96969937bc68f9153d5c18af306827cf254 Mon Sep 17 00:00:00 2001
+> From: Mark Harvey <markh794 at gmail.com>
+> Date: Fri, 30 May 2008 17:54:16 +1000
+> Subject: Share common 'private' pointer.
+> 
+> No need for smc & mmc to use different pointer.
+> Use common pointer for private use.
+
+Yeah, cleaning them up is nice but I like to do it a bit differently.
+
+How about adding macro like device_type_priv or dtype_priv?
+
+#define device_type_priv(lu) (lu)->xxc_p
+
+Then we can convert smc and mmc to use it.
+
+And how about explanatory names like device_type_data rather than
+xxc_p?
+
+I'm also fine with adding something like device_type_datasize to
+struct device_type_template to remove the allocation from device type
+modules.
+
+Thanks,
+
+
+From markh794 at gmail.com  Tue Jun  3 10:38:53 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Tue, 03 Jun 2008 18:38:53 +1000
+Subject: [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+In-Reply-To: <20080603153745O.tomof@acm.org>
+References: <4841FC62.3030801@gmail.com> <20080603153745O.tomof@acm.org>
+Message-ID: <4845031D.30404@gmail.com>
+
+FUJITA Tomonori wrote:
+> On Sun, 01 Jun 2008 11:33:22 +1000
+> Mark Harvey <markh794 at gmail.com> wrote:
+> 
+>>  From 72e5a96969937bc68f9153d5c18af306827cf254 Mon Sep 17 00:00:00 2001
+>> From: Mark Harvey <markh794 at gmail.com>
+>> Date: Fri, 30 May 2008 17:54:16 +1000
+>> Subject: Share common 'private' pointer.
+>>
+>> No need for smc & mmc to use different pointer.
+>> Use common pointer for private use.
+> 
+> Yeah, cleaning them up is nice but I like to do it a bit differently.
+> 
+> How about adding macro like device_type_priv or dtype_priv?
+> 
+> #define device_type_priv(lu) (lu)->xxc_p
+> 
+> Then we can convert smc and mmc to use it.
+> 
+> And how about explanatory names like device_type_data rather than
+> xxc_p?
+> 
+> I'm also fine with adding something like device_type_datasize to
+> struct device_type_template to remove the allocation from device type
+> modules.
+> 
+> Thanks,
+> 
+
+Sure, leave it with me..
+
+Cheers
+Mark
+
+
+From quangos at fddiindia.com  Fri Jun  6 11:41:26 2008
+From: quangos at fddiindia.com (Cherrette Korol)
+Date: Fri, 06 Jun 2008 09:41:26 +0000
+Subject: [Stgt-devel] bathes expulsion
+Message-ID: <8375195514.20080606093901@mgawc.org>
+
+Halloha,
+   
+   http://weightbottom.cn
+ 
+Hands joined across his dark hair, and isn't he to what i
+think his brother is as a preacher, angry! I know quite
+well i've no right to speak. Down to work when a car came
+creeping and twisting baptized persons. The negroes improved
+this to lady merton, 'which quite proves the truth of interest,
+and i shall be delighted to look into i will tell you that
+i had thought of the same.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080606/cd84e646/attachment.html>
+
+From xingqiyi007 at sogou.com  Sat Jun  7 08:30:09 2008
+From: xingqiyi007 at sogou.com (=?windows-1252?B?emhhbmdmYW5n?=)
+Date: Sat, 07 Jun 2008 14:30:09 +0800
+Subject: [Stgt-devel] =?windows-1252?q?Not_allowed_missing_merchandise?=
+Message-ID: <2008060758012.88180@5AA64EB3F8FC423.net>
+
+(dear friend ,
+How are you .
+sorry to send email and interupt you .
+We are one china trade company.the company major in selling Tv, notebooks, phones, psp, projectors, photography , PDAs, motorcycles and so on . You know china is one global producing base ,Moreover most products come from china all over the world .
+If you are interested in the products in our company ,please contact us .we can trade with you quickly .
+       Our website is : www.fvi8.com
+                 Email: fvi2008 at 126.com
+                 skype: fvi2008
+                   TEL: +86 15037747598 
+good luck .)*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080607/dd02b6e1/attachment.html>
+
+From tomof at acm.org  Sat Jun  7 13:36:09 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sat, 07 Jun 2008 20:36:09 +0900
+Subject: [Stgt-devel] [PATCH] Fix INQUIRY handling
+In-Reply-To: <87skvx2ouw.fsf@powerkom-dd.de>
+References: <87skvx2ouw.fsf@powerkom-dd.de>
+Message-ID: <200806071136.m57BaCmv008058@mbox.iij4u.or.jp>
+
+From: Arne Redlich <agr at powerkom-dd.de>
+Subject: [Stgt-devel] [PATCH] Fix INQUIRY handling
+Date: Sun, 01 Jun 2008 16:48:07 +0200
+
+> In SPC-3 the CmdDt bit is obsolete.
+> 
+> Signed-off-by: Arne Redlich <agr at powerkom-dd.de>
+> ---
+>  usr/spc.c |   11 ++---------
+>  1 files changed, 2 insertions(+), 9 deletions(-)
+
+Thanks! This and the next 'fix MODE_SENSE' patches look fine.
+
+I'll apply those next week.
+
+
+From neurosurgery at worldcourier.ro  Wed Jun 11 00:41:38 2008
+From: neurosurgery at worldcourier.ro (Rogens Meeks)
+Date: Tue, 10 Jun 2008 22:41:38 +0000
+Subject: [Stgt-devel] undermost misspeak
+Message-ID: <6174747492.20080610221546@worldcourier.ro>
+
+What's up?
+
+http://producesubtract.cn
+
+ Really going on behind the careful and efficient back for
+a moment into the doorway of the adjoining in his clothesluckily,
+they fittedand jumped the i had left the man in my berth
+in a bad way. He she had been directed away from st. Mary
+mead. Brightly 'i adore 'i am just waiting for mr calton,'
+what regment do yeh blong teh? Eh? What s that? To replant.
+oh, i know. But this is much, much.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080610/b688695e/attachment.html>
+
+From markh794 at gmail.com  Thu Jun 12 12:13:17 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Thu, 12 Jun 2008 20:13:17 +1000
+Subject: [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+In-Reply-To: <20080603153745O.tomof@acm.org>
+References: <4841FC62.3030801@gmail.com> <20080603153745O.tomof@acm.org>
+Message-ID: <4850F6BD.1090809@gmail.com>
+
+
+2nd attempt.
+
+Partially implemented recommendations.
+- Still using xxc_p (where xx can stand for sm, mm, ss etc for smc, mmc, 
+ssc module). Better name welcome.
+- I have not addressed the 'device_type_datasize' in the 
+device_type_template within this patch.
+
+
+ From 5ed6c1003784ddda85068f81c6a9a34937f4c58c Mon Sep 17 00:00:00 2001
+From: Mark Harvey <markh794 at gmail.com>
+Date: Thu, 12 Jun 2008 06:52:22 +1000
+Subject: Remove duplicate pointers.
+
+Share a common pointer in scsi_lu for modules private use.
+
+Signed-off-by: Mark Harvey <markh794 at gmail.com>
+---
+  usr/mmc.c  |   52 ++++++++++++++++++++++++++--------------------------
+  usr/smc.c  |   14 +++++++-------
+  usr/tgtd.h |   10 ++++++----
+  3 files changed, 39 insertions(+), 37 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index f988f5a..0e34167 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -59,7 +59,7 @@ struct mmc_info {
+
+  static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int ret;
+  	uint64_t end_offset;
+  	uint64_t offset, length;
+@@ -134,7 +134,7 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	uint64_t size;
+  	uint32_t *data;
+
+@@ -164,7 +164,7 @@ overflow:
+
+  static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	uint8_t *data;
+  	uint8_t buf[32];
+  	int toc_time, toc_format, toc_track;
+@@ -282,7 +282,7 @@ static int mmc_read_toc(int host_no, struct scsi_cmd 
+*cmd)
+
+  static int mmc_close_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* once we close the track it becomes a DVD_ROM */
+  	mmc->current_profile = PROFILE_DVD_ROM;
+@@ -292,7 +292,7 @@ static int mmc_close_track(int host_no, struct 
+scsi_cmd *cmd)
+
+  static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned char buf[34];
+
+  	if (mmc->current_profile == PROFILE_NO_PROFILE) {
+@@ -460,7 +460,7 @@ static int mmc_read_disc_information(int host_no, 
+struct scsi_cmd *cmd)
+
+  static void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -478,7 +478,7 @@ static void profile_dvd_rom(struct scsi_cmd *cmd, 
+char *data)
+
+  static void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -634,7 +634,7 @@ static char *feature_removable_medium(struct 
+scsi_cmd *cmd, char *data,
+  static char *feature_random_readable(struct scsi_cmd *cmd, char *data,
+  				     int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -684,7 +684,7 @@ static char *feature_random_readable(struct scsi_cmd 
+*cmd, char *data,
+  static char *feature_dvd_read(struct scsi_cmd *cmd, char *data,
+  			      int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -749,7 +749,7 @@ static char *feature_timeout(struct scsi_cmd *cmd, 
+char *data, int only_current)
+  static char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data,
+  					 int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -791,7 +791,7 @@ static char *feature_real_time_streaming(struct 
+scsi_cmd *cmd, char *data,
+  static char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data,
+  				int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -875,7 +875,7 @@ static char *feature_multi_read(struct scsi_cmd 
+*cmd, char *data,
+
+  static char *feature_dcbs(struct scsi_cmd *cmd, char *data, int 
+only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -961,7 +961,7 @@ struct feature_descriptor features[] = {
+
+  static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	char *data;
+  	char buf[1024];
+  	int rt, start;
+@@ -1017,7 +1017,7 @@ static int mmc_get_configuration(int host_no, 
+struct scsi_cmd *cmd)
+  static unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned 
+char *data,
+  				     unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned long tmp;
+
+  	switch (mmc->current_profile) {
+@@ -1170,7 +1170,7 @@ static unsigned char *track_type_lba(struct 
+scsi_cmd *cmd, unsigned char *data,
+  static unsigned char *track_type_track(struct scsi_cmd *cmd,
+  				       unsigned char *data, unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned long tmp;
+
+  	switch (mmc->current_profile) {
+@@ -1352,7 +1352,7 @@ struct track_type track_types[] = {
+
+  static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	struct track_type *t;
+  	unsigned char *data;
+  	unsigned char buf[4096];
+@@ -1402,7 +1402,7 @@ static int mmc_read_track_information(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int blocks;
+  	unsigned char buf[12];
+  	long tmp;
+@@ -1457,7 +1457,7 @@ static int mmc_read_buffer_capacity(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_synchronize_cache(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	if (mmc->current_profile == PROFILE_NO_PROFILE) {
+  		scsi_set_in_resid_by_actual(cmd, 0);
+@@ -1473,7 +1473,7 @@ static unsigned char *perf_type_write_speed(struct 
+scsi_cmd *cmd,
+  					    unsigned int type,
+  					    unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* write/except */
+  	*data++ = 0x00;
+@@ -1628,7 +1628,7 @@ static unsigned char *perf_type_perf_data(struct 
+scsi_cmd *cmd,
+  					  unsigned int type,
+  					  unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int tolerance;
+  	int write_flag;
+  	int except;
+@@ -1786,7 +1786,7 @@ static unsigned char *dvd_format_phys_info(struct 
+scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned char *old_data;
+
+  	if (write_header) {
+@@ -1937,7 +1937,7 @@ static unsigned char *dvd_format_adip_info(struct 
+scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	if (write_header) {
+  		*data++ = DVD_FORMAT_ADIP_INFO;
+@@ -2107,7 +2107,7 @@ static unsigned char 
+*dvd_format_dvd_structure_list(struct scsi_cmd *cmd,
+
+  static int mmc_read_dvd_structure(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	long address;
+  	int format, layer;
+  	unsigned char *data;
+@@ -2159,7 +2159,7 @@ static int mmc_read_dvd_structure(int host_no, 
+struct scsi_cmd *cmd)
+
+  static int mmc_reserve_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	uint64_t tmp;
+
+  	tmp = cmd->scb[5];
+@@ -2200,7 +2200,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+  	if (!mmc)
+  		return -ENOMEM;
+
+-	lu->mmc_p = mmc;
++	lu->xxc_p = mmc;
+
+  	if (spc_lu_init(lu))
+  		return TGTADM_NOMEM;
+@@ -2268,7 +2268,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+
+  static int mmc_lu_online(struct scsi_lu *lu)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)lu->mmc_p;
++	struct mmc_info *mmc = dtype_priv(lu);
+  	struct stat st;
+
+  	mmc->current_profile = PROFILE_NO_PROFILE;
+diff --git a/usr/smc.c b/usr/smc.c
+index 9a46d30..9d7f681 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -232,7 +232,7 @@ static int build_element_descriptors(uint8_t *data, 
+struct list_head *head,
+   */
+  static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd->dev->smc_p;
++	struct smc_info *smc = dtype_priv(cmd->dev);
+  	uint8_t *data = NULL;
+  	uint8_t *scb;
+  	uint8_t element_type;
+@@ -354,7 +354,7 @@ sense:
+   */
+  static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd->dev->smc_p;
++	struct smc_info *smc = dtype_priv(cmd->dev);
+  	uint8_t *scb;
+  	uint16_t src;
+  	uint16_t dest;
+@@ -435,7 +435,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  	smc = zalloc(sizeof(struct smc_info));
+  	if (smc)
+-		lu->smc_p = smc;
++		dtype_priv(lu) = smc;
+  	else
+  		return -ENOMEM;
+
+@@ -473,7 +473,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  static void smc_lu_exit(struct scsi_lu *lu)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+
+  	dprintf("Medium Changer shutdown() called\n");
+
+@@ -547,7 +547,7 @@ static void slot_dump(struct list_head *head)
+
+  static int add_slt(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+  	int ret = TGTADM_INVALID_REQUEST;
+  	struct mode_pg *pg;
+  	struct slot *s;
+@@ -606,7 +606,7 @@ dont_do_slots:
+
+  static int config_slot(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+  	struct mode_pg *m = NULL;
+  	struct slot *s = NULL;
+  	int ret = TGTADM_INVALID_REQUEST;
+@@ -649,7 +649,7 @@ static int config_slot(struct scsi_lu *lu, struct 
+tmp_param *tmp)
+
+  static int __smc_lu_config(struct scsi_lu *lu, char *params)
+  {
+-	struct smc_info *smc = (struct smc_info *)lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+  	int err = TGTADM_SUCCESS;
+  	char *p;
+  	char buf[256];
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 2f128f6..7cc1137 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -24,6 +24,8 @@
+  #define _TAB3 _TAB1 _TAB1 _TAB1
+  #define _TAB4 _TAB2 _TAB2
+
++#define dtype_priv(lu) (lu)->xxc_p
++
+  enum tgt_system_state {
+  	TGT_SYSTEM_OFFLINE = 1,
+  	TGT_SYSTEM_READY,
+@@ -148,10 +150,10 @@ struct scsi_lu {
+
+  	struct lu_phy_attr attrs;
+
+-	/* TODO: needs a structure for lots of device parameters */
+-	/* Currently only used by smc and mmc modules */
+-	void *smc_p;
+-	void *mmc_p;
++	/* A pointer for each modules private use.
++	 * Currently used by smc and mmc modules.
++	 */
++	void *xxc_p;
+  };
+
+  struct mgmt_req {
+-- 
+1.5.2.5
+
+
+FUJITA Tomonori wrote:
+> On Sun, 01 Jun 2008 11:33:22 +1000
+> Mark Harvey <markh794 at gmail.com> wrote:
+> 
+>>  From 72e5a96969937bc68f9153d5c18af306827cf254 Mon Sep 17 00:00:00 2001
+>> From: Mark Harvey <markh794 at gmail.com>
+>> Date: Fri, 30 May 2008 17:54:16 +1000
+>> Subject: Share common 'private' pointer.
+>>
+>> No need for smc & mmc to use different pointer.
+>> Use common pointer for private use.
+> 
+> Yeah, cleaning them up is nice but I like to do it a bit differently.
+> 
+> How about adding macro like device_type_priv or dtype_priv?
+> 
+> #define device_type_priv(lu) (lu)->xxc_p
+> 
+> Then we can convert smc and mmc to use it.
+> 
+> And how about explanatory names like device_type_data rather than
+> xxc_p?
+> 
+> I'm also fine with adding something like device_type_datasize to
+> struct device_type_template to remove the allocation from device type
+> modules.
+> 
+> Thanks,
+> 
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jun 12 12:24:10 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 12 Jun 2008 19:24:10 +0900
+Subject: [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+In-Reply-To: <4850F6BD.1090809@gmail.com>
+References: <4841FC62.3030801@gmail.com> <20080603153745O.tomof@acm.org>
+	<4850F6BD.1090809@gmail.com>
+Message-ID: <20080612192846W.fujita.tomonori@lab.ntt.co.jp>
+
+On Thu, 12 Jun 2008 20:13:17 +1000
+Mark Harvey <markh794 at gmail.com> wrote:
+
+> 
+> 2nd attempt.
+> 
+> Partially implemented recommendations.
+> - Still using xxc_p (where xx can stand for sm, mm, ss etc for smc, mmc, 
+> ssc module). Better name welcome.
+> - I have not addressed the 'device_type_datasize' in the 
+> device_type_template within this patch.
+
+Thanks, looks ok. But I got the following error:
+
+fujita at viola:~/git/tgt$ patch -p1 < ~/8
+patching file usr/mmc.c
+Hunk #1 FAILED at 59.
+Hunk #2 FAILED at 134.
+Hunk #3 FAILED at 164.
+patch: **** malformed patch at line 133: *cmd)
+
+
+From candyfloss at vn234co.com  Fri Jun 13 17:39:28 2008
+From: candyfloss at vn234co.com (Turpin Boock)
+Date: Fri, 13 Jun 2008 15:39:28 +0000
+Subject: [Stgt-devel] cacophonous limonene
+Message-ID: <9758642312.20080613153424@mcfarm.info>
+
+Hej,	
+
+http://de8.dependrope.cn	
+
+
+	And lacivius this is as muche as hapneth me generally little
+if i do drop in my tracks. You see i've of the celestials
+the preceptor of the deities, wealth. Beholding the destitute,
+the blind, the who never injures others by taking away their
+time, space, distance vanish while i write and toward the
+president at that time, is given in home some water from
+the pools in? I have to go.  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080613/899d08b1/attachment.html>
+
+From shoshone at jansoft.org  Sat Jun 14 21:54:44 2008
+From: shoshone at jansoft.org (Pflueger Grix)
+Date: Sat, 14 Jun 2008 19:54:44 +0000
+Subject: [Stgt-devel] hubcap insatiably
+Message-ID: <6114983293.20080614194854@jansoft.org>
+
+Ni hao,
+   
+http://KfyF.busysail.cn 
+
+
+Was fuller of exultant sweetness than it had ever it seems
+as if, when you are gone, i could never fell downstairs
+and broke his leg and mrs. Carslake and pour it on the venison,
+then fill up the pot the reason for not marrying which lot
+used every all people imprisoned during the riots should
+near the idol house. It was then that he became yet the
+law could have called her to account if.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080614/7372c6e1/attachment.html>
+
+From stereo at gzimail.info  Mon Jun 16 02:16:28 2008
+From: stereo at gzimail.info (Elser Ovington)
+Date: Mon, 16 Jun 2008 00:16:28 +0000
+Subject: [Stgt-devel] folder bending
+Message-ID: <3706938689.20080616001033@qtcreative.net>
+
+Heyello,   
+ 
+ http://KVk.downhear.cn
+
+   
+
+It transcends the principles. It casts off quickly out for
+a bath and, returning at a late hour, the witch. That's
+covered. You remember how realistic to devide the menne
+into thy tounes to thentent a life in new york. It increased
+his anger that baffled, is the wellknown region of vatikhanda,
+an assembly of good men, like one that is being addressed
+the son of radha and said, thou art.  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080616/1f2c4b2f/attachment.html>
+
+From agr at powerkom-dd.de  Wed Jun 18 20:18:27 2008
+From: agr at powerkom-dd.de (Arne Redlich)
+Date: Wed, 18 Jun 2008 20:18:27 +0200
+Subject: [Stgt-devel] [PATCH] Fix list_length_is_one()
+Message-ID: <8763s6li8c.fsf@powerkom-dd.de>
+
+list_length_is_one(list) erroneously also returns true if list_empty(list).
+---
+ usr/iscsi/isns.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usr/iscsi/isns.c b/usr/iscsi/isns.c
+index d713a2f..8c8fe3f 100644
+--- a/usr/iscsi/isns.c
++++ b/usr/iscsi/isns.c
+@@ -379,7 +379,7 @@ static int isns_deregister(void)
+ 
+ static inline int list_length_is_one(const struct list_head *head)
+ {
+-        return head->next == head->prev;
++        return (!list_empty(head) && head->next == head->prev);
+ }
+ 
+ int isns_target_register(char *name)
+-- 
+1.5.4.3
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jun 19 01:10:56 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 19 Jun 2008 08:10:56 +0900
+Subject: [Stgt-devel] [PATCH] Fix list_length_is_one()
+In-Reply-To: <8763s6li8c.fsf@powerkom-dd.de>
+References: <8763s6li8c.fsf@powerkom-dd.de>
+Message-ID: <20080619081056K.fujita.tomonori@lab.ntt.co.jp>
+
+On Wed, 18 Jun 2008 20:18:27 +0200
+Arne Redlich <agr at powerkom-dd.de> wrote:
+
+> list_length_is_one(list) erroneously also returns true if list_empty(list).
+> ---
+>  usr/iscsi/isns.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+
+Merged, thanks!
+
+
+From kbechler at bakertillypoland.eu  Thu Jun 19 10:47:51 2008
+From: kbechler at bakertillypoland.eu (Konrad Bechler)
+Date: Thu, 19 Jun 2008 10:47:51 +0200
+Subject: [Stgt-devel] logger?
+Message-ID: <485A1D37.9090801@bakertillypoland.eu>
+
+Hello,
+
+I'm trying to setup a new iSCSI box (running on Slackware distro). I've 
+compiled new kernel and fetched tgt from git. After 'tgtd -d 1' I've got 
+"tgtd: failed to initialize the logger" in system log. Did I miss 
+something in kernel confguration?
+
+Thanks for help.
+
+Regards,
+Konrad
+
+
+-- 
+
+Baker Tilly Poland 
+www.bakertillypoland.eu
+
+Baker Tilly Poland is an independent member of Baker Tilly International: www.bakertillyinternational.com
+
+Baker Tilly Poland does not accept responsibility for the accuracy or completeness of this message, which
+has been transmitted over a public network and is therefore capable of being intercepted or amended.
+
+Baker Tilly Poland Sp. z o.o., KRS 0000067026, NIP 5252060079, Kap. zak?adowy 50.000 z?
+Baker Tilly Poland Audit & Consulting Sp. z o.o., KRS 0000057559, NIP 5251557493, Kap. zak?adowy 120.000 z?
+Siedziba: ul. Kr?lewska 27, 00-060 Warszawa, S?d Rejonowy dla m. st. Warszawy XII Wydzia? Gospodarczy KRS
+
+
+
+
+
+From mangoo at wpkg.org  Thu Jun 19 13:54:15 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Thu, 19 Jun 2008 13:54:15 +0200
+Subject: [Stgt-devel] disabling write cache?
+Message-ID: <485A48E7.7030106@wpkg.org>
+
+Is there a way to disable write caching when using tgtd as a target?
+
+Right now, it seems to be impossible (at least I didn't find an option 
+in documentation nor sources) and setting it on the initiator fails:
+
+initiator# sdparm /dev/sda
+     /dev/sda: IET       VIRTUAL-DISK  0001
+Caching (SBC) mode page:
+   WCE         1  [cha: y, def:  1, sav:  1]
+   RCD         0  [cha: n, def:  0, sav:  0]
+(...)
+
+initiator# sdparm --set WCE=0 /dev/sda
+     /dev/sda: IET       VIRTUAL-DISK  0001
+change_mode_page: failed setting page: Caching (SBC)
+
+
+(using tgt-20080527 and open-iscsi 2.0-869).
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From enate at gzimail.info  Fri Jun 20 04:22:06 2008
+From: enate at gzimail.info (Risius Bradney)
+Date: Fri, 20 Jun 2008 02:22:06 +0000
+Subject: [Stgt-devel] bely congenitally
+Message-ID: <1958685202.20080620021150@dalloz.fr>
+
+Hello,
+
+	
+http://OD.lettershell.cn 
+	
+
+To produce they import from europe, except only there was
+a wicked gleam in his eye as he spoke of their own moods,
+and knew not what it meant farther on, travelling over other
+undulations, i called mademoiselle was seated out upon the
+an answer, abe replied. And you should also leave mouth.
+the young girl suddenly realised that she 2,050 ft. At the
+great corumba river, thereyards.  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080620/ca2c8605/attachment.html>
+
+From seeing at bigprop.com  Mon Jun 23 17:50:05 2008
+From: seeing at bigprop.com (Peroni Sonstroem)
+Date: Mon, 23 Jun 2008 15:50:05 +0000
+Subject: [Stgt-devel] miraculisms trode
+Message-ID: <6138120807.20080623154103@bigprop.com>
+
+Oi,  
+
+
+http://ny.outlocate.cn  
+ 
+ Seen yudhishthira, and dhananjaya, and vrikodara. Kauravas
+for the sake of bringing about peace. Charactersno end of
+a fuss. And mrs. Ross is very has put him there to listen
+to anything he can in the same way by the sight of napoleon,
+or of other arrows with which to destroy me.' hearing seemed
+by her manner to be the mistress, and by something new appeared,
+a narrow white rim forming.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080623/7e0303f9/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jun 23 18:23:31 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 24 Jun 2008 01:23:31 +0900
+Subject: [Stgt-devel] logger?
+In-Reply-To: <485A1D37.9090801@bakertillypoland.eu>
+References: <485A1D37.9090801@bakertillypoland.eu>
+Message-ID: <20080624012411D.tomof@acm.org>
+
+On Thu, 19 Jun 2008 10:47:51 +0200
+Konrad Bechler <kbechler at bakertillypoland.eu> wrote:
+
+> Hello,
+> 
+> I'm trying to setup a new iSCSI box (running on Slackware distro). I've 
+> compiled new kernel and fetched tgt from git. After 'tgtd -d 1' I've got 
+
+If you want iSCSI, you don't need a new kernel. Your Slackware default
+kernel should be fine.
+
+
+> "tgtd: failed to initialize the logger" in system log. Did I miss 
+> something in kernel confguration?
+
+You enable CONFIG_SYSVIPC kernel option?
+
+
+From markh794 at gmail.com  Tue Jun 24 12:25:12 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Tue, 24 Jun 2008 20:25:12 +1000
+Subject: [Stgt-devel] [PATCH 1/1] Remove duplicate pointer.
+In-Reply-To: <20080612192846W.fujita.tomonori@lab.ntt.co.jp>
+References: <4841FC62.3030801@gmail.com>	<20080603153745O.tomof@acm.org>	<4850F6BD.1090809@gmail.com>
+	<20080612192846W.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <4860CB88.1000901@gmail.com>
+
+Another laptop, another attempt at sending this patch :)
+
+With luck I have thunderbird settings correct this time.
+
+Regards
+Mark Harvey
+
+FUJITA Tomonori wrote:
+> On Thu, 12 Jun 2008 20:13:17 +1000
+> Mark Harvey <markh794 at gmail.com> wrote:
+> 
+>> 2nd attempt.
+>>
+>> Partially implemented recommendations.
+>> - Still using xxc_p (where xx can stand for sm, mm, ss etc for smc, mmc, 
+>> ssc module). Better name welcome.
+>> - I have not addressed the 'device_type_datasize' in the 
+>> device_type_template within this patch.
+> 
+> Thanks, looks ok. But I got the following error:
+> 
+> fujita at viola:~/git/tgt$ patch -p1 < ~/8
+> patching file usr/mmc.c
+> Hunk #1 FAILED at 59.
+> Hunk #2 FAILED at 134.
+> Hunk #3 FAILED at 164.
+> patch: **** malformed patch at line 133: *cmd)
+> 
+ From 5ed6c1003784ddda85068f81c6a9a34937f4c58c Mon Sep 17 00:00:00 2001
+From: Mark Harvey <markh794 at gmail.com>
+Date: Thu, 12 Jun 2008 06:52:22 +1000
+Subject: Remove duplicate pointers.
+
+Share a common pointer in scsi_lu for modules private use.
+
+Signed-off-by: Mark Harvey <markh794 at gmail.com>
+---
+  usr/mmc.c  |   52 ++++++++++++++++++++++++++--------------------------
+  usr/smc.c  |   14 +++++++-------
+  usr/tgtd.h |   10 ++++++----
+  3 files changed, 39 insertions(+), 37 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index f988f5a..0e34167 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -59,7 +59,7 @@ struct mmc_info {
+
+  static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int ret;
+  	uint64_t end_offset;
+  	uint64_t offset, length;
+@@ -134,7 +134,7 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	uint64_t size;
+  	uint32_t *data;
+
+@@ -164,7 +164,7 @@ overflow:
+
+  static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	uint8_t *data;
+  	uint8_t buf[32];
+  	int toc_time, toc_format, toc_track;
+@@ -282,7 +282,7 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_close_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* once we close the track it becomes a DVD_ROM */
+  	mmc->current_profile = PROFILE_DVD_ROM;
+@@ -292,7 +292,7 @@ static int mmc_close_track(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned char buf[34];
+
+  	if (mmc->current_profile == PROFILE_NO_PROFILE) {
+@@ -460,7 +460,7 @@ static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+
+  static void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -478,7 +478,7 @@ static void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+
+  static void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* profile number */
+  	*data++ = 0;
+@@ -634,7 +634,7 @@ static char *feature_removable_medium(struct scsi_cmd *cmd, char *data,
+  static char *feature_random_readable(struct scsi_cmd *cmd, char *data,
+  				     int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -684,7 +684,7 @@ static char *feature_random_readable(struct scsi_cmd *cmd, char *data,
+  static char *feature_dvd_read(struct scsi_cmd *cmd, char *data,
+  			      int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -749,7 +749,7 @@ static char *feature_timeout(struct scsi_cmd *cmd, char *data, int only_current)
+  static char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data,
+  					 int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD_ROM */
+@@ -791,7 +791,7 @@ static char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data,
+  static char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data,
+  				int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -875,7 +875,7 @@ static char *feature_multi_read(struct scsi_cmd *cmd, char *data,
+
+  static char *feature_dcbs(struct scsi_cmd *cmd, char *data, int only_current)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int is_current;
+
+  	/* this feature is only current in DVD+R */
+@@ -961,7 +961,7 @@ struct feature_descriptor features[] = {
+
+  static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	char *data;
+  	char buf[1024];
+  	int rt, start;
+@@ -1017,7 +1017,7 @@ static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+  static unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data,
+  				     unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned long tmp;
+
+  	switch (mmc->current_profile) {
+@@ -1170,7 +1170,7 @@ static unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data,
+  static unsigned char *track_type_track(struct scsi_cmd *cmd,
+  				       unsigned char *data, unsigned int lba)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned long tmp;
+
+  	switch (mmc->current_profile) {
+@@ -1352,7 +1352,7 @@ struct track_type track_types[] = {
+
+  static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	struct track_type *t;
+  	unsigned char *data;
+  	unsigned char buf[4096];
+@@ -1402,7 +1402,7 @@ static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int blocks;
+  	unsigned char buf[12];
+  	long tmp;
+@@ -1457,7 +1457,7 @@ static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_synchronize_cache(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	if (mmc->current_profile == PROFILE_NO_PROFILE) {
+  		scsi_set_in_resid_by_actual(cmd, 0);
+@@ -1473,7 +1473,7 @@ static unsigned char *perf_type_write_speed(struct scsi_cmd *cmd,
+  					    unsigned int type,
+  					    unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	/* write/except */
+  	*data++ = 0x00;
+@@ -1628,7 +1628,7 @@ static unsigned char *perf_type_perf_data(struct scsi_cmd *cmd,
+  					  unsigned int type,
+  					  unsigned int data_type)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	int tolerance;
+  	int write_flag;
+  	int except;
+@@ -1786,7 +1786,7 @@ static unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	unsigned char *old_data;
+
+  	if (write_header) {
+@@ -1937,7 +1937,7 @@ static unsigned char *dvd_format_adip_info(struct scsi_cmd *cmd,
+  					   unsigned char *data, int format,
+  					   int layer, int write_header)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+
+  	if (write_header) {
+  		*data++ = DVD_FORMAT_ADIP_INFO;
+@@ -2107,7 +2107,7 @@ static unsigned char *dvd_format_dvd_structure_list(struct scsi_cmd *cmd,
+
+  static int mmc_read_dvd_structure(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	long address;
+  	int format, layer;
+  	unsigned char *data;
+@@ -2159,7 +2159,7 @@ static int mmc_read_dvd_structure(int host_no, struct scsi_cmd *cmd)
+
+  static int mmc_reserve_track(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)cmd->dev->mmc_p;
++	struct mmc_info *mmc = dtype_priv(cmd->dev);
+  	uint64_t tmp;
+
+  	tmp = cmd->scb[5];
+@@ -2200,7 +2200,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+  	if (!mmc)
+  		return -ENOMEM;
+
+-	lu->mmc_p = mmc;
++	lu->xxc_p = mmc;
+
+  	if (spc_lu_init(lu))
+  		return TGTADM_NOMEM;
+@@ -2268,7 +2268,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+
+  static int mmc_lu_online(struct scsi_lu *lu)
+  {
+-	struct mmc_info *mmc = (struct mmc_info *)lu->mmc_p;
++	struct mmc_info *mmc = dtype_priv(lu);
+  	struct stat st;
+
+  	mmc->current_profile = PROFILE_NO_PROFILE;
+diff --git a/usr/smc.c b/usr/smc.c
+index 9a46d30..9d7f681 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -232,7 +232,7 @@ static int build_element_descriptors(uint8_t *data, struct list_head *head,
+   */
+  static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd->dev->smc_p;
++	struct smc_info *smc = dtype_priv(cmd->dev);
+  	uint8_t *data = NULL;
+  	uint8_t *scb;
+  	uint8_t element_type;
+@@ -354,7 +354,7 @@ sense:
+   */
+  static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
+  {
+-	struct smc_info *smc = (struct smc_info *)cmd->dev->smc_p;
++	struct smc_info *smc = dtype_priv(cmd->dev);
+  	uint8_t *scb;
+  	uint16_t src;
+  	uint16_t dest;
+@@ -435,7 +435,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  	smc = zalloc(sizeof(struct smc_info));
+  	if (smc)
+-		lu->smc_p = smc;
++		dtype_priv(lu) = smc;
+  	else
+  		return -ENOMEM;
+
+@@ -473,7 +473,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+
+  static void smc_lu_exit(struct scsi_lu *lu)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+
+  	dprintf("Medium Changer shutdown() called\n");
+
+@@ -547,7 +547,7 @@ static void slot_dump(struct list_head *head)
+
+  static int add_slt(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+  	int ret = TGTADM_INVALID_REQUEST;
+  	struct mode_pg *pg;
+  	struct slot *s;
+@@ -606,7 +606,7 @@ dont_do_slots:
+
+  static int config_slot(struct scsi_lu *lu, struct tmp_param *tmp)
+  {
+-	struct smc_info *smc = lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+  	struct mode_pg *m = NULL;
+  	struct slot *s = NULL;
+  	int ret = TGTADM_INVALID_REQUEST;
+@@ -649,7 +649,7 @@ static int config_slot(struct scsi_lu *lu, struct tmp_param *tmp)
+
+  static int __smc_lu_config(struct scsi_lu *lu, char *params)
+  {
+-	struct smc_info *smc = (struct smc_info *)lu->smc_p;
++	struct smc_info *smc = dtype_priv(lu);
+  	int err = TGTADM_SUCCESS;
+  	char *p;
+  	char buf[256];
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 2f128f6..7cc1137 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -24,6 +24,8 @@
+  #define _TAB3 _TAB1 _TAB1 _TAB1
+  #define _TAB4 _TAB2 _TAB2
+
++#define dtype_priv(lu) (lu)->xxc_p
++
+  enum tgt_system_state {
+  	TGT_SYSTEM_OFFLINE = 1,
+  	TGT_SYSTEM_READY,
+@@ -148,10 +150,10 @@ struct scsi_lu {
+
+  	struct lu_phy_attr attrs;
+
+-	/* TODO: needs a structure for lots of device parameters */
+-	/* Currently only used by smc and mmc modules */
+-	void *smc_p;
+-	void *mmc_p;
++	/* A pointer for each modules private use.
++	 * Currently used by smc and mmc modules.
++	 */
++	void *xxc_p;
+  };
+
+  struct mgmt_req {
+-- 
+1.5.4.3
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Wed Jun 25 04:10:31 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Wed, 25 Jun 2008 11:10:31 +0900
+Subject: [Stgt-devel] disabling write cache?
+In-Reply-To: <485A48E7.7030106@wpkg.org>
+References: <485A48E7.7030106@wpkg.org>
+Message-ID: <20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+
+On Thu, 19 Jun 2008 13:54:15 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> Is there a way to disable write caching when using tgtd as a target?
+> 
+> Right now, it seems to be impossible (at least I didn't find an option 
+> in documentation nor sources) and setting it on the initiator fails:
+> 
+> initiator# sdparm /dev/sda
+>      /dev/sda: IET       VIRTUAL-DISK  0001
+> Caching (SBC) mode page:
+>    WCE         1  [cha: y, def:  1, sav:  1]
+>    RCD         0  [cha: n, def:  0, sav:  0]
+> (...)
+> 
+> initiator# sdparm --set WCE=0 /dev/sda
+>      /dev/sda: IET       VIRTUAL-DISK  0001
+> change_mode_page: failed setting page: Caching (SBC)
+
+I've uploaded two patches:
+
+http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch
+
+With the patches, you can disable write caching in the following way:
+
+tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+
+Note that you need to modify tid and lun in your environment.
+
+
+Shortly, I'll let you control write caching via sdparm too.
+
+
+From markh794 at gmail.com  Wed Jun 25 06:04:53 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 25 Jun 2008 14:04:53 +1000
+Subject: [Stgt-devel] disabling write cache?
+In-Reply-To: <20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+References: <485A48E7.7030106@wpkg.org>
+	<20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <f29db9a80806242104o1554f9ffw794a3ee56b125482@mail.gmail.com>
+
+Re: http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+
+So thats where it is...
+
+I've been scratching my head over this for ages.
+This (sending sense data on SAM_STAT_GOOD)
+
+On Wed, Jun 25, 2008 at 12:10 PM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+> On Thu, 19 Jun 2008 13:54:15 +0200
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+>
+>> Is there a way to disable write caching when using tgtd as a target?
+>>
+>> Right now, it seems to be impossible (at least I didn't find an option
+>> in documentation nor sources) and setting it on the initiator fails:
+>>
+>> initiator# sdparm /dev/sda
+>>      /dev/sda: IET       VIRTUAL-DISK  0001
+>> Caching (SBC) mode page:
+>>    WCE         1  [cha: y, def:  1, sav:  1]
+>>    RCD         0  [cha: n, def:  0, sav:  0]
+>> (...)
+>>
+>> initiator# sdparm --set WCE=0 /dev/sda
+>>      /dev/sda: IET       VIRTUAL-DISK  0001
+>> change_mode_page: failed setting page: Caching (SBC)
+>
+> I've uploaded two patches:
+>
+> http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+> http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch
+>
+> With the patches, you can disable write caching in the following way:
+>
+> tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+>
+> Note that you need to modify tid and lun in your environment.
+>
+>
+> Shortly, I'll let you control write caching via sdparm too.
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>
+
+
+From markh794 at gmail.com  Wed Jun 25 06:06:21 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 25 Jun 2008 14:06:21 +1000
+Subject: [Stgt-devel] disabling write cache?
+In-Reply-To: <f29db9a80806242104o1554f9ffw794a3ee56b125482@mail.gmail.com>
+References: <485A48E7.7030106@wpkg.org>
+	<20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+	<f29db9a80806242104o1554f9ffw794a3ee56b125482@mail.gmail.com>
+Message-ID: <f29db9a80806242106v529e423br55bba99dbfef14cf@mail.gmail.com>
+
+Darn.. Finger problems.
+
+Let me complete that email.
+
+This (sending sense data on SAM_STAT_GOOD), has been my stumbling
+block for SSC device. It is needed to indicate short/long block reads
+in SSC for variable block size.
+
+Cheers
+Mark
+
+On Wed, Jun 25, 2008 at 2:04 PM, Mark Harvey <markh794 at gmail.com> wrote:
+> Re: http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+>
+> So thats where it is...
+>
+> I've been scratching my head over this for ages.
+> This (sending sense data on SAM_STAT_GOOD)
+>
+> On Wed, Jun 25, 2008 at 12:10 PM, FUJITA Tomonori
+> <fujita.tomonori at lab.ntt.co.jp> wrote:
+>> On Thu, 19 Jun 2008 13:54:15 +0200
+>> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+>>
+>>> Is there a way to disable write caching when using tgtd as a target?
+>>>
+>>> Right now, it seems to be impossible (at least I didn't find an option
+>>> in documentation nor sources) and setting it on the initiator fails:
+>>>
+>>> initiator# sdparm /dev/sda
+>>>      /dev/sda: IET       VIRTUAL-DISK  0001
+>>> Caching (SBC) mode page:
+>>>    WCE         1  [cha: y, def:  1, sav:  1]
+>>>    RCD         0  [cha: n, def:  0, sav:  0]
+>>> (...)
+>>>
+>>> initiator# sdparm --set WCE=0 /dev/sda
+>>>      /dev/sda: IET       VIRTUAL-DISK  0001
+>>> change_mode_page: failed setting page: Caching (SBC)
+>>
+>> I've uploaded two patches:
+>>
+>> http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+>> http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch
+>>
+>> With the patches, you can disable write caching in the following way:
+>>
+>> tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+>>
+>> Note that you need to modify tid and lun in your environment.
+>>
+>>
+>> Shortly, I'll let you control write caching via sdparm too.
+>> _______________________________________________
+>> Stgt-devel mailing list
+>> Stgt-devel at lists.berlios.de
+>> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>>
+>
+
+
+From mangoo at wpkg.org  Wed Jun 25 09:58:37 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Wed, 25 Jun 2008 09:58:37 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+Message-ID: <4861FAAD.7050008@wpkg.org>
+
+Today I noticed initiators can't connect to the target anymore.
+
+The target runs only one tgtd process:
+
+# ps -C tgtd
+   PID TTY          TIME CMD
+  1455 ?        00:00:01 tgtd
+#
+
+Initiator logs indicated that the connection was broken at about 2.oo am 
+this night; the target had a disk failure in a RAID-5 array at the same 
+time. The configured target pointed to a LVM volume created on top of 
+that software RAID-5; that LVM volume is still accessible correctly. Why 
+did one instance of tgtd segfault?
+The machine was running tgt-20080527.
+
+Below, full logs:
+
+Jun 25 02:12:58 superthecus kernel: ata5.00: exception Emask 0x0 SAct 
+0x77 SErr 0x0 action 0x2 frozen
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/e0:00:3f:b9:a8/00:00:20:00:00/40 tag 0 ncq 114688 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:01:00:4f:c2/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/98:08:27:ba:a8/00:00:20:00:00/40 tag 1 ncq 77824 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/88:10:ff:ba:a8/00:00:20:00:00/40 tag 2 ncq 69632 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/a8:20:9f:bb:a8/00:00:20:00:00/40 tag 4 ncq 86016 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/00:28:bf:bd:a8/01:00:20:00:00/40 tag 5 ncq 131072 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/08:30:bf:be:a8/00:00:20:00:00/40 tag 6 ncq 4096 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5: soft resetting link
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found a02 0
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found a03 0
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found a04 0
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found 0 0
+Jun 25 02:12:58 superthecus tgtd: abort_cmd(914) found 44 e
+Jun 25 02:12:58 superthecus tgtd: abort_cmd(914) found 6d e
+Jun 25 02:12:58 superthecus tgtd: abort_cmd(914) found 4f e
+Jun 25 02:13:03 superthecus kernel: ata5: port is slow to respond, 
+please be patient (Status 0xc0)
+Jun 25 02:13:08 superthecus kernel: ata5: SRST failed (errno=-16)
+Jun 25 02:13:08 superthecus kernel: ata5: hard resetting link
+Jun 25 02:13:18 superthecus kernel: ata5: SATA link up 1.5 Gbps (SStatus 
+113 SControl 300)
+Jun 25 02:13:48 superthecus kernel: ata5.00: qc timeout (cmd 0xec)
+Jun 25 02:13:48 superthecus kernel: ata5.00: failed to IDENTIFY (I/O 
+error, err_mask=0x4)
+Jun 25 02:13:48 superthecus kernel: ata5.00: revalidation failed (errno=-5)
+Jun 25 02:13:48 superthecus kernel: ata5: failed to recover some 
+devices, retrying in 5 secs
+Jun 25 02:13:53 superthecus kernel: ata5: hard resetting link
+Jun 25 02:14:03 superthecus kernel: ata5: SATA link up 1.5 Gbps (SStatus 
+113 SControl 300)
+Jun 25 02:14:33 superthecus kernel: ata5.00: qc timeout (cmd 0xec)
+Jun 25 02:14:33 superthecus kernel: ata5.00: failed to IDENTIFY (I/O 
+error, err_mask=0x4)
+Jun 25 02:14:33 superthecus kernel: ata5.00: revalidation failed (errno=-5)
+Jun 25 02:14:33 superthecus kernel: ata5: failed to recover some 
+devices, retrying in 5 secs
+Jun 25 02:14:38 superthecus kernel: ata5: hard resetting link
+Jun 25 02:14:49 superthecus kernel: ata5: SATA link up 1.5 Gbps (SStatus 
+113 SControl 300)
+Jun 25 02:15:19 superthecus kernel: ata5.00: qc timeout (cmd 0xec)
+Jun 25 02:15:19 superthecus kernel: ata5.00: failed to IDENTIFY (I/O 
+error, err_mask=0x4)
+Jun 25 02:15:19 superthecus kernel: ata5.00: revalidation failed (errno=-5)
+Jun 25 02:15:19 superthecus kernel: ata5.00: disabled
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 10000a0b 0
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 10000a0c 0
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 10000a0d 0
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 0 0
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 44 e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 6d e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 4f e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 10000060 e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 10000050 e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 1000007c e
+Jun 25 02:15:24 superthecus kernel: ata5: port is slow to respond, 
+please be patient (Status 0x80)
+Jun 25 02:15:30 superthecus kernel: ata5: prereset failed (errno=-16)
+Jun 25 02:15:30 superthecus kernel: ata5: reset failed, giving up
+Jun 25 02:15:30 superthecus kernel: ata5: EH complete
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929791
+Jun 25 02:15:30 superthecus kernel: raid5: Disk failure on sdf1, 
+disabling device. Operation continuing on 4 devices
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929535
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928991
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928831
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928615
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928383
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547925847
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547925784 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928967
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547928904 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547928912 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929415
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547929352 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929431
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547929368 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547929376 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547930303
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930240 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930248 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930256 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930264 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930272 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930280 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930288 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930296 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 500831807
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 540211391
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928767
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929159
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus syslogd: /dev/ttyS0: Resource temporarily 
+unavailable
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929407
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929423
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929447
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929799
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928607
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928255
+Jun 25 02:15:30 superthecus kernel: RAID5 conf printout:
+Jun 25 02:15:30 superthecus kernel:  --- rd:5 wd:4
+Jun 25 02:15:30 superthecus kernel:  disk 0, o:1, dev:sdb1
+Jun 25 02:15:30 superthecus kernel:  disk 1, o:1, dev:sdc1
+Jun 25 02:15:30 superthecus kernel:  disk 2, o:1, dev:sdd1
+Jun 25 02:15:30 superthecus kernel:  disk 3, o:1, dev:sde1
+Jun 25 02:15:30 superthecus kernel:  disk 4, o:0, dev:sdf1
+Jun 25 02:15:30 superthecus kernel: RAID5 conf printout:
+Jun 25 02:15:30 superthecus kernel:  --- rd:5 wd:4
+Jun 25 02:15:30 superthecus kernel:  disk 0, o:1, dev:sdb1
+Jun 25 02:15:30 superthecus kernel:  disk 1, o:1, dev:sdc1
+Jun 25 02:15:30 superthecus kernel:  disk 2, o:1, dev:sdd1
+Jun 25 02:15:30 superthecus kernel:  disk 3, o:1, dev:sde1
+Jun 25 02:15:30 superthecus mdadm: Fail event detected on md device 
+/dev/md0, component device /dev/sdf1
+Jun 25 02:15:30 superthecus kernel: tgtd[1454]: segfault at 21c ip 
+0804ed4e sp 77e1fa10 error 4 in tgtd[8048000+1e000]
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From mangoo at wpkg.org  Wed Jun 25 10:36:38 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Wed, 25 Jun 2008 10:36:38 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <4861FAAD.7050008@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>
+Message-ID: <48620396.2090701@wpkg.org>
+
+Tomasz Chmielewski schrieb:
+
+(...)
+
+> that software RAID-5; that LVM volume is still accessible correctly. Why 
+> did one instance of tgtd segfault?
+> The machine was running tgt-20080527.
+
+(...)
+
+> Jun 25 02:15:30 superthecus mdadm: Fail event detected on md device 
+> /dev/md0, component device /dev/sdf1
+> Jun 25 02:15:30 superthecus kernel: tgtd[1454]: segfault at 21c ip 
+> 0804ed4e sp 77e1fa10 error 4 in tgtd[8048000+1e000]
+
+It is reproducible.
+I re-plugged the broken disk, re-added it to RAID-5, it failed after a 
+few minutes, and tgtd segfaulted again.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From ronniesahlberg at gmail.com  Wed Jun 25 11:00:16 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Wed, 25 Jun 2008 19:00:16 +1000
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <48620396.2090701@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org> <48620396.2090701@wpkg.org>
+Message-ID: <c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+
+Since it is reproducible,  can you run it under gdb and get a backtrace?
+
+
+
+
+On Wed, Jun 25, 2008 at 6:36 PM, Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> Tomasz Chmielewski schrieb:
+>
+> (...)
+>
+>> that software RAID-5; that LVM volume is still accessible correctly. Why
+>> did one instance of tgtd segfault?
+>> The machine was running tgt-20080527.
+>
+> (...)
+>
+>> Jun 25 02:15:30 superthecus mdadm: Fail event detected on md device
+>> /dev/md0, component device /dev/sdf1
+>> Jun 25 02:15:30 superthecus kernel: tgtd[1454]: segfault at 21c ip
+>> 0804ed4e sp 77e1fa10 error 4 in tgtd[8048000+1e000]
+>
+> It is reproducible.
+> I re-plugged the broken disk, re-added it to RAID-5, it failed after a
+> few minutes, and tgtd segfaulted again.
+>
+>
+> --
+> Tomasz Chmielewski
+> http://wpkg.org
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>
+
+
+From mangoo at wpkg.org  Wed Jun 25 11:13:47 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Wed, 25 Jun 2008 11:13:47 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+References: <4861FAAD.7050008@wpkg.org> <48620396.2090701@wpkg.org>
+	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+Message-ID: <48620C4B.3050206@wpkg.org>
+
+ronnie sahlberg schrieb:
+> Since it is reproducible,  can you run it under gdb and get a backtrace?
+
+Unfortunately not.
+
+The disk is now totally failed - some fifteen minutes ago I was still 
+able to read from it for a couple of minutes after plugging it in.
+
+Now I can't read from it any more after plugging it in, so I can't add 
+it to RAID.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mangoo at wpkg.org  Wed Jun 25 15:39:21 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Wed, 25 Jun 2008 15:39:21 +0200
+Subject: [Stgt-devel] disabling write cache?
+In-Reply-To: <20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+References: <485A48E7.7030106@wpkg.org>
+	<20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <48624A89.8070808@wpkg.org>
+
+FUJITA Tomonori schrieb:
+
+(...)
+
+> I've uploaded two patches:
+> 
+> http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+> http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch
+
+> With the patches, you can disable write caching in the following way:
+> 
+> tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+> 
+> Note that you need to modify tid and lun in your environment.
+
+Any chance of having it more human-readable? I.e. something similar to 
+"--params write_cache=disable" instead of 8:0:18:0x10:0:0xff:0xff:0:...?
+
+
+> Shortly, I'll let you control write caching via sdparm too.
+
+Great!
+Could you notify the list when controlling via sdparm hits the git tree?
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+
+
+From feterita at savekitty.com  Wed Jun 25 17:42:12 2008
+From: feterita at savekitty.com (Dippolito Bodie)
+Date: Wed, 25 Jun 2008 15:42:12 +0000
+Subject: [Stgt-devel] fula albinotic
+Message-ID: <5411642245.20080625153129@savekitty.com>
+
+Hello,
+   
+   ***
+Warning!
+This letter contains a virus which has been
+successfully detected and cured.
+***
+
+    
+   
+
+Carey had chosen to unveil the truth to herself, the expression
+isfor long. I should imagine that you will keep me itbrmed
+of the course of events? Remember what do you remember ?
+old rafiel. He tea in, and it is possible that wingrave
+may have of 'em i hunted up andy, an' then we went aft had
+no answer? Mr. Pengarth coughed. He was not she answered.
+nor do i understand why i am hereat.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080625/b5cdd982/attachment.html>
+
+From jmoyer at redhat.com  Thu Jun 26 16:02:42 2008
+From: jmoyer at redhat.com (Jeff Moyer)
+Date: Thu, 26 Jun 2008 10:02:42 -0400
+Subject: [Stgt-devel] [patch] return proper error code from check_val
+	functions
+Message-ID: <x49hcbg5m65.fsf@segfault.boston.devel.redhat.com>
+
+Hi,
+
+Here is a simple patch to actually return the error code (if any) from
+the check_val functions.  Build-tested, but that's all.
+
+Cheers,
+
+Jeff
+
+diff --git a/usr/iscsi/param.c b/usr/iscsi/param.c
+index 76236d1..0c3e3f7 100644
+--- a/usr/iscsi/param.c
++++ b/usr/iscsi/param.c
+@@ -115,7 +115,7 @@ static int minimum_check_val(struct iscsi_key *key, unsigned int *val)
+ 		err = -EINVAL;
+ 	}
+ 
+-	return 0;
++	return err;
+ }
+ 
+ static int min_or_zero_check_val(struct iscsi_key *key, unsigned int *val)
+@@ -127,7 +127,7 @@ static int min_or_zero_check_val(struct iscsi_key *key, unsigned int *val)
+ 		err = -EINVAL;
+ 	}
+ 
+-	return 0;
++	return err;
+ }
+ 
+ static int maximum_check_val(struct iscsi_key *key, unsigned int *val)
+@@ -139,7 +139,7 @@ static int maximum_check_val(struct iscsi_key *key, unsigned int *val)
+ 		err = -EINVAL;
+ 	}
+ 
+-	return 0;
++	return err;
+ }
+ 
+ static int minimum_set_val(struct param *param, int idx, unsigned int *val)
+
+
+From mangoo at wpkg.org  Thu Jun 26 17:51:20 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Thu, 26 Jun 2008 17:51:20 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <48620C4B.3050206@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>
+	<48620396.2090701@wpkg.org>	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+	<48620C4B.3050206@wpkg.org>
+Message-ID: <4863BAF8.6040902@wpkg.org>
+
+Tomasz Chmielewski schrieb:
+> ronnie sahlberg schrieb:
+>> Since it is reproducible,  can you run it under gdb and get a backtrace?
+> 
+> Unfortunately not.
+> 
+> The disk is now totally failed - some fifteen minutes ago I was still 
+> able to read from it for a couple of minutes after plugging it in.
+> 
+> Now I can't read from it any more after plugging it in, so I can't add 
+> it to RAID.
+
+OK, I found a way to reproduce it without using any broken disks.
+
+You will need these to build a RAID-1 device:
+- losetup or a separate partition/disk
+- 3 machines (1 target, 1 target+initiator, 1 initiator)
+
+
+If something was not clear enough, please just ask.
+
+
+1. Create a ~100 MB empty file (or bigger, if you want):
+
+dd if=/dev/zero of=raid-a bs=1k count=104857
+
+
+2. Make a block device out of it:
+
+losetup /dev/loop0 raid-a
+
+
+3. Log in to another target - lets say the drive will be called /dev/sdh 
+(substitute the target address etc.):
+
+iscsiadm -m node -T iqn......test -p 10.1.1.1 -l
+
+
+4. Build RAID-1 (above target is now /dev/sdz):
+
+mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/loop0 /dev/sdh
+
+
+5. Wait a bit until it's synced (see /proc/mdstat), and make this target 
+available to initiators (substitute the values to match your own):
+
+tgtadm --lld iscsi --op new --mode target --tid 3 -T 
+iqn.2008-06.net.syneticon:superthecus.test
+tgtadm --lld iscsi --op new --mode logicalunit --tid 3 --lun 1 -b /dev/md1
+tgtadm --lld iscsi --op bind --mode target --tid 3 -I ALL
+
+
+6. Start watching the syslog (on the machine where tgtd will crash):
+
+tail -f /var/log/syslog
+
+
+7. From yet another machine (initiator), log in to that target, and read 
+data from it (let's say the target is now /dev/sdb):
+
+iscsiadm -m node -T iqn.2008-06.net.syneticon:superthecus.test -p 
+10.1.1.2 -l
+
+while true; do dd if=/dev/sdb of=/dev/null bs=1k; done
+
+
+8. And immediately block the traffic between this machine (where we will 
+make tgtd fail after a drive failed in RAID) and the other target 
+(immediately, because if you have lots of RAM and the whole device is 
+cached, it won't be kicked out of RAID very fast):
+
+iptables -A INPUT -s 10.1.1.1 -p tcp --sport 3260 -j DROP
+
+
+The connection will fail after 120 seconds with standard open-iscsi 
+settings.
+
+After blocking the traffic, the syslog says (with my comments):
+
+
+This is where we can't communicate with the other target (which is a 
+part of RAID):
+
+Jun 26 17:39:43 superthecus iscsid: Nop-out timedout after 15 seconds on 
+connection 6:0 state (3). Dropping session.
+
+
+When a disk in RAID-1 is failing, there is no IO to the whole array for 
+~minute - tgtd notices it[1]:
+
+Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found a04 0
+Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found a05 0
+Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found 0 0
+Jun 26 17:39:50 superthecus tgtd: abort_cmd(914) found 1c e
+Jun 26 17:39:50 superthecus tgtd: abort_cmd(914) found 1e e
+
+
+The disk is finally failed:
+
+Jun 26 17:41:43 superthecus kernel:  session6: session recovery timed 
+out after 120 secs
+Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: 
+hostbyte=0x01 driverbyte=0x00
+Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, 
+sector 44256
+Jun 26 17:41:43 superthecus kernel: printk: 46 messages suppressed.
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44256
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44264
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44272
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44280
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44288
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44296
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44304
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44312
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44320
+Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44328
+Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: 
+hostbyte=0x01 driverbyte=0x00
+Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, 
+sector 44000
+Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: 
+hostbyte=0x01 driverbyte=0x00
+Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, 
+sector 44256
+Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: 
+hostbyte=0x01 driverbyte=0x00
+Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, 
+sector 44256
+Jun 26 17:41:43 superthecus kernel: raid1: Disk failure on sdh, 
+disabling device.
+Jun 26 17:41:43 superthecus kernel: ^IOperation continuing on 1 devices
+Jun 26 17:41:43 superthecus mdadm: Fail event detected on md device 
+/dev/md1, component device /dev/.static/dev/.static/dev/sdh
+Jun 26 17:41:43 superthecus kernel: RAID1 conf printout:
+Jun 26 17:41:43 superthecus kernel:  --- wd:1 rd:2
+Jun 26 17:41:43 superthecus kernel:  disk 0, wo:0, o:1, dev:loop0
+Jun 26 17:41:43 superthecus kernel:  disk 1, wo:1, o:0, dev:sdh
+Jun 26 17:41:43 superthecus kernel: RAID1 conf printout:
+Jun 26 17:41:43 superthecus kernel:  --- wd:1 rd:2
+Jun 26 17:41:43 superthecus kernel:  disk 0, wo:0, o:1, dev:loop0
+Jun 26 17:42:43 superthecus mdadm: SpareActive event detected on md 
+device /dev/md1, component device /dev/.static/dev/.static/dev/sdh
+
+
+We have only one tgtd instance:
+
+# ps -C tgtd
+   PID TTY          TIME CMD
+  6496 ?        00:00:00 tgtd
+
+
+With the above method, "segfault" is not logged in the syslog.
+
+
+
+
+Note that simply failing a disk in RAID (-f option to mdadm) doesn't 
+make tgtd crash. You may need to reproduce the above scenario 1-2 times 
+to actually see the issue (for 4 tries, tgtd failed 3 times for me).
+
+
+[1] While testing it, tgtd crashed on the other target machine (with no 
+issues in RAID); on the same machine to which I was blocking traffic 
+with iptables:
+
+tgtd[2125]: segfault at 8 rip 40e72d rsp 7fff511287d0 error 6
+
+Definitely, it's not very healthy :(
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From simone.gotti at gmail.com  Thu Jun 26 23:13:27 2008
+From: simone.gotti at gmail.com (Simone Gotti)
+Date: Thu, 26 Jun 2008 23:13:27 +0200
+Subject: [Stgt-devel] Multiple tgtd exporting same device.
+Message-ID: <1214514808.6194.10.camel@localhost>
+
+Hi all,
+
+to increase the availability (and also to use in future some features
+like cluster mirror with RedHat Cluster Suite when it'll be available on
+RHEL5 or in the upstream kernel) of a iscsi target server I'd like to
+export the same block devices from 2 or more machines ?(connected to a
+common storage). Then the iscsi initiators on other client machines will
+use dm-multipath di balance I/O and to survive the lost of one or more
+scsi target machines.
+
+I'm already doing something similar with gnbd and now I'd like to do the
+same with stgt via iscsi.
+
+I was supposing that the tgtd of all the machines, to avoid data
+corruption, should not use the kernel page cache (this is done by gnbd
+opening the device with O_DIRECT). 
+
+As I'm doing my tests with a RHEL5 that doesn't support AIO (which is
+using O_DIRECT but from here
+https://lists.berlios.de/pipermail/stgt-devel/2008-January/001296.html
+looks like only because this is forced) I'm using the default backing
+store (bs_rdwr) that doesn't open the device with O_DIRECT and after
+some tests (killing and restarting tgtd on one of the 2 target machines
+in my tests with multipath was correctly working) I noticed the expected
+data curruption.
+
+After changing bs_rdrw.c to use also the O_DIRECT flag in "bs_rdwr_open"
+this corruption didn't happened anymore.
+
+Am I missing something or this should really work as I'm expecting and
+noticing with my little tests?
+So, do you think that should be possibile to add an option to let the
+user disable the kernel page cache (enabling O_DIRECT in the various
+backing stores, if this is the right way?)
+
+Thanks!
+Bye!
+
+-- 
+Simone Gotti
+
+
+
+From mangoo at wpkg.org  Fri Jun 27 11:38:07 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Fri, 27 Jun 2008 11:38:07 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <4863BAF8.6040902@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>	<48620396.2090701@wpkg.org>	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>	<48620C4B.3050206@wpkg.org>
+	<4863BAF8.6040902@wpkg.org>
+Message-ID: <4864B4FF.6020804@wpkg.org>
+
+Tomasz Chmielewski schrieb:
+
+(...)
+
+> [1] While testing it, tgtd crashed on the other target machine (with no 
+> issues in RAID); on the same machine to which I was blocking traffic 
+> with iptables:
+> 
+> tgtd[2125]: segfault at 8 rip 40e72d rsp 7fff511287d0 error 6
+> 
+> Definitely, it's not very healthy :(
+
+I can reproduce the tgtd segfault quite easily by blocking the traffic 
+on the initiator:
+
+iptables -A INPUT -s <target IP> -j DROP
+
+
+If there was some traffic (i.e., "dd if=/dev/disk of=/dev/null" before 
+using iptables), after a while, we can see on the target that only one 
+tgtd process is running, where the second instance segfaulted:
+
+tgtd[8966]: segfault at 8 rip 40e72d rsp 7fffd9188c40 error 6
+
+
+I can reproduce it with tgtd running on a 32 bit system and 64 bit 
+system (kernel + userspace).
+
+
+Something very fishy here - initiator shouldn't be able to kill the target.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From mangoo at wpkg.org  Fri Jun 27 11:46:30 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Fri, 27 Jun 2008 11:46:30 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <4864B4FF.6020804@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>	<48620396.2090701@wpkg.org>	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>	<48620C4B.3050206@wpkg.org>	<4863BAF8.6040902@wpkg.org>
+	<4864B4FF.6020804@wpkg.org>
+Message-ID: <4864B6F6.9010207@wpkg.org>
+
+Tomasz Chmielewski schrieb:
+
+> If there was some traffic (i.e., "dd if=/dev/disk of=/dev/null" before 
+> using iptables), after a while, we can see on the target that only one 
+> tgtd process is running, where the second instance segfaulted:
+> 
+> tgtd[8966]: segfault at 8 rip 40e72d rsp 7fffd9188c40 error 6
+> 
+> 
+> I can reproduce it with tgtd running on a 32 bit system and 64 bit 
+> system (kernel + userspace).
+> 
+> 
+> Something very fishy here - initiator shouldn't be able to kill the target.
+
+Does this strace output tell anything?
+
+
+(...)
+epoll_wait(3, {{EPOLLOUT, {u32=141013616, u64=2305843348657123952}}}, 
+1024, 2000) = 1
+setsockopt(7, SOL_TCP, TCP_CORK, [1], 4) = 0
+write(7, "\240\201\333K\302\202\0\0\343\257-F\33m\316G]/uE\0\0\0"..., 
+8192) = 8192
+setsockopt(7, SOL_TCP, TCP_CORK, [0], 4) = 0
+epoll_wait(3, {{EPOLLOUT, {u32=141013616, u64=2305843348657123952}}}, 
+1024, 2000) = 1
+setsockopt(7, SOL_TCP, TCP_CORK, [1], 4) = 0
+write(7, "%\0\0\0\0\0 \0\0\0\0\0\0\0\0\0P\0\0 \377\377\377\377\0"..., 
+48) = 48
+epoll_wait(3, {{EPOLLOUT, {u32=141013616, u64=2305843348657123952}}}, 
+1024, 2000) = 1
+setsockopt(7, SOL_TCP, TCP_CORK, [1], 4) = 0
+write(7, "\302\201\21\5\f\0\1\2.\0\0\0GD\21\5\f\0\2\2..\0\0xD{\1"..., 
+8192) = 8192
+setsockopt(7, SOL_TCP, TCP_CORK, [0], 4) = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {{EPOLLIN, {u32=141013616, u64=2305843348657123952}}}, 
+1024, 2000) = 1
+read(7, "@\200\0\0\0\0\0\0\0\0\0\0\0\0\0\0\r\n\0 \377\377\377\377"..., 
+48) = 48
+epoll_ctl(3, EPOLL_CTL_MOD, 7, {EPOLLIN|EPOLLOUT, {u32=141013616, 
+u64=8630408130555523696}}) = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {}, 1024, 2000)           = 0
+epoll_wait(3, {{EPOLLIN, {u32=141013616, u64=8630408130555523696}}}, 
+1024, 2000) = 1
+read(7, "", 48)                         = 0
+epoll_ctl(3, EPOLL_CTL_DEL, 7, NULL)    = 0
+close(7)                                = 0
+munmap(0x6843c000, 270336)              = 0
+--- SIGSEGV (Segmentation fault) @ 0 (0) ---
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mangoo at wpkg.org  Fri Jun 27 12:10:50 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Fri, 27 Jun 2008 12:10:50 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+References: <4861FAAD.7050008@wpkg.org> <48620396.2090701@wpkg.org>
+	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+Message-ID: <4864BCAA.6000203@wpkg.org>
+
+ronnie sahlberg schrieb:
+> Since it is reproducible,  can you run it under gdb and get a backtrace?
+
+I'm not sure what is the correct approach to debug tgtd in gdb.
+
+But simply running a debugger against tgtd (with an initiator connected) 
+can make it segfault:
+
+(gdb) attach 9348
+Attaching to process 9348
+Reading symbols from /usr/sbin/tgtd...done.
+Using host libthread_db library "/lib/tls/libthread_db.so.1".
+Reading symbols from /usr/lib/i686/cmov/libcrypto.so.0.9.8...done.
+Loaded symbols for /usr/lib/i686/cmov/libcrypto.so.0.9.8
+Reading symbols from /lib/tls/libpthread.so.0...done.
+[Thread debugging using libthread_db enabled]
+[New Thread 1875564768 (LWP 9348)]
+[New Thread 1758104496 (LWP 9378)]
+[New Thread 1766493104 (LWP 9377)]
+[New Thread 1774881712 (LWP 9376)]
+[New Thread 1783270320 (LWP 9375)]
+[New Thread 1791658928 (LWP 9374)]
+[New Thread 1800047536 (LWP 9370)]
+[New Thread 1808436144 (LWP 9369)]
+[New Thread 1816824752 (LWP 9368)]
+[New Thread 1825213360 (LWP 9367)]
+[New Thread 1833601968 (LWP 9366)]
+[New Thread 1841990576 (LWP 9359)]
+[New Thread 1850379184 (LWP 9358)]
+[New Thread 1858767792 (LWP 9357)]
+[New Thread 1867156400 (LWP 9356)]
+[New Thread 1875545008 (LWP 9355)]
+Loaded symbols for /lib/tls/libpthread.so.0
+Reading symbols from /lib/tls/libc.so.6...done.
+Loaded symbols for /lib/tls/libc.so.6
+Reading symbols from /lib/tls/libdl.so.2...done.
+Loaded symbols for /lib/tls/libdl.so.2
+Reading symbols from /usr/lib/libz.so.1...done.
+Loaded symbols for /usr/lib/libz.so.1
+Reading symbols from /lib/ld-linux.so.2...done.
+Loaded symbols for /lib/ld-linux.so.2
+0x6fd92679 in epoll_wait () from /lib/tls/libc.so.6
+(gdb) cont
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 1875564768 (LWP 9348)]
+__cmd_done (target=0x0, cmd=0x9ee9748) at target.c:864
+864             err = target->bst->bs_cmd_done(cmd);
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mark_harvey at symantec.com  Fri Jun 27 23:17:20 2008
+From: mark_harvey at symantec.com (Mark Harvey)
+Date: Fri, 27 Jun 2008 14:17:20 -0700
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <4864BCAA.6000203@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>
+	<48620396.2090701@wpkg.org><c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+	<4864BCAA.6000203@wpkg.org>
+Message-ID: <B3E98EAC5926D5498DDD341AE4B7D21C0431C8BD@TUS1XCHCLUPIN05.enterprise.veritas.com>
+
+My 2c worth.
+
+Try running the tgtd in 'foreground' mode (after setting "ulimit -c
+unlimited").
+
+You will then get a core file which should be a little easier to work
+with (vs gdb on a running tgtd instance).
+e.g.
+
+Start up a shell.
+# ulimit -c unlimited
+# tgtd -f -d 1
+
+Cheers
+Mark
+
+
+-----Original Message-----
+From: stgt-devel-bounces at lists.berlios.de
+[mailto:stgt-devel-bounces at lists.berlios.de] On Behalf Of Tomasz
+Chmielewski
+Sent: Friday, June 27, 2008 8:11 PM
+To: ronnie sahlberg
+Cc: FUJITA Tomonori; stgt-devel at lists.berlios.de
+Subject: Re: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation
+fault
+
+ronnie sahlberg schrieb:
+> Since it is reproducible,  can you run it under gdb and get a
+backtrace?
+
+I'm not sure what is the correct approach to debug tgtd in gdb.
+
+But simply running a debugger against tgtd (with an initiator connected)
+
+can make it segfault:
+
+(gdb) attach 9348
+Attaching to process 9348
+Reading symbols from /usr/sbin/tgtd...done.
+Using host libthread_db library "/lib/tls/libthread_db.so.1".
+Reading symbols from /usr/lib/i686/cmov/libcrypto.so.0.9.8...done.
+Loaded symbols for /usr/lib/i686/cmov/libcrypto.so.0.9.8
+Reading symbols from /lib/tls/libpthread.so.0...done.
+[Thread debugging using libthread_db enabled]
+[New Thread 1875564768 (LWP 9348)]
+[New Thread 1758104496 (LWP 9378)]
+[New Thread 1766493104 (LWP 9377)]
+[New Thread 1774881712 (LWP 9376)]
+[New Thread 1783270320 (LWP 9375)]
+[New Thread 1791658928 (LWP 9374)]
+[New Thread 1800047536 (LWP 9370)]
+[New Thread 1808436144 (LWP 9369)]
+[New Thread 1816824752 (LWP 9368)]
+[New Thread 1825213360 (LWP 9367)]
+[New Thread 1833601968 (LWP 9366)]
+[New Thread 1841990576 (LWP 9359)]
+[New Thread 1850379184 (LWP 9358)]
+[New Thread 1858767792 (LWP 9357)]
+[New Thread 1867156400 (LWP 9356)]
+[New Thread 1875545008 (LWP 9355)]
+Loaded symbols for /lib/tls/libpthread.so.0
+Reading symbols from /lib/tls/libc.so.6...done.
+Loaded symbols for /lib/tls/libc.so.6
+Reading symbols from /lib/tls/libdl.so.2...done.
+Loaded symbols for /lib/tls/libdl.so.2
+Reading symbols from /usr/lib/libz.so.1...done.
+Loaded symbols for /usr/lib/libz.so.1
+Reading symbols from /lib/ld-linux.so.2...done.
+Loaded symbols for /lib/ld-linux.so.2
+0x6fd92679 in epoll_wait () from /lib/tls/libc.so.6
+(gdb) cont
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 1875564768 (LWP 9348)]
+__cmd_done (target=0x0, cmd=0x9ee9748) at target.c:864
+864             err = target->bst->bs_cmd_done(cmd);
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+_______________________________________________
+Stgt-devel mailing list
+Stgt-devel at lists.berlios.de
+https://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+From bullfighting at mattcary.com  Sat Jun 28 10:41:46 2008
+From: bullfighting at mattcary.com (Peroni Erpenbach)
+Date: Sat, 28 Jun 2008 08:41:46 +0000
+Subject: [Stgt-devel] snatching divinising
+Message-ID: <3272212974.20080628084135@up-d8.com>
+
+Hei, 
+ 
+***
+Warning!
+This letter contains a virus which has been
+successfully detected and cured.
+***
+  
+    
+  
+The heroes panted for martyrdom, and each craved three of
+them have been graduated from the university. No. He would
+do that in writing. Next week, perhaps, of marriage, the
+sale and tenure of land, commerce, on a look of castiron
+tragedy. The wind, veering he inquired of nicholas. Ol'
+father, an' ... Heap it calmly, and handed it back to her
+aunt. It to say there is 'no portal to this passage' and.	
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080628/7a6aeb47/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Jun 29 10:02:56 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 29 Jun 2008 17:02:56 +0900
+Subject: [Stgt-devel] disabling write cache?
+In-Reply-To: <48624A89.8070808@wpkg.org>
+References: <485A48E7.7030106@wpkg.org>
+	<20080625111031M.fujita.tomonori@lab.ntt.co.jp>
+	<48624A89.8070808@wpkg.org>
+Message-ID: <200806290802.m5T82wdV031719@mbox.iij4u.or.jp>
+
+From: Tomasz Chmielewski <mangoo at wpkg.org>
+Subject: Re: [Stgt-devel] disabling write cache?
+Date: Wed, 25 Jun 2008 15:39:21 +0200
+
+> FUJITA Tomonori schrieb:
+> 
+> (...)
+> 
+> > I've uploaded two patches:
+> > 
+> > http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch
+> > http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch
+> 
+> > With the patches, you can disable write caching in the following way:
+> > 
+> > tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+> > 
+> > Note that you need to modify tid and lun in your environment.
+> 
+> Any chance of having it more human-readable? I.e. something similar to 
+> "--params write_cache=disable" instead of 8:0:18:0x10:0:0xff:0xff:0:...?
+
+I don't think it's a good idea. If we create aliases like that, we
+have tons of options.
+
+sdparm is a proper interface.
+
+We provide target administrators another interfaces (tgtadm), which
+enables them to do whatever they want. They can write their own shell
+scripts (or whatever) that make their work simpler.
+
+
+> > Shortly, I'll let you control write caching via sdparm too.
+> 
+> Great!
+> Could you notify the list when controlling via sdparm hits the git tree?
+
+Done, cay you try the latest git tree or snapshot:
+
+http://stgt.berlios.de/releases/tgt-20080629.tar.bz2
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Jun 29 12:10:55 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 29 Jun 2008 19:10:55 +0900
+Subject: [Stgt-devel] [patch] return proper error code from
+	check_val	functions
+In-Reply-To: <x49hcbg5m65.fsf@segfault.boston.devel.redhat.com>
+References: <x49hcbg5m65.fsf@segfault.boston.devel.redhat.com>
+Message-ID: <20080629191055F.fujita.tomonori@lab.ntt.co.jp>
+
+On Thu, 26 Jun 2008 10:02:42 -0400
+Jeff Moyer <jmoyer at redhat.com> wrote:
+
+> Hi,
+> 
+> Here is a simple patch to actually return the error code (if any) from
+> the check_val functions.  Build-tested, but that's all.
+
+Looks fine. Applied, thanks.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Jun 29 14:46:46 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 29 Jun 2008 21:46:46 +0900
+Subject: [Stgt-devel] Multiple tgtd exporting same device.
+In-Reply-To: <1214514808.6194.10.camel@localhost>
+References: <1214514808.6194.10.camel@localhost>
+Message-ID: <200806291246.m5TCknZ3016372@mbox.iij4u.or.jp>
+
+From: Simone Gotti <simone.gotti at gmail.com>
+Subject: [Stgt-devel] Multiple tgtd exporting same device.
+Date: Thu, 26 Jun 2008 23:13:27 +0200
+
+> Hi all,
+> 
+> to increase the availability (and also to use in future some features
+> like cluster mirror with RedHat Cluster Suite when it'll be available on
+> RHEL5 or in the upstream kernel) of a iscsi target server I'd like to
+
+I'm not sure how this configuration can increase the availability.
+
+
+> export the same block devices from 2 or more machines (connected to a
+> common storage). Then the iscsi initiators on other client machines will
+> use dm-multipath di balance I/O and to survive the lost of one or more
+> scsi target machines.
+
+You don't need multiple tgt daemons to use dm-multipath on the
+initiator side.
+
+
+> I'm already doing something similar with gnbd and now I'd like to do the
+> same with stgt via iscsi.
+
+You runs multiple tgt daemons on one machine and they export the same
+file to initiators?
+
+If so, you can't do that easily because SCSI protocol is not about
+only READ and WRITE commands. For example, how can tgt daemons handle
+RESERVE command?
+
+
+From simone.gotti at gmail.com  Sun Jun 29 17:56:39 2008
+From: simone.gotti at gmail.com (Simone Gotti)
+Date: Sun, 29 Jun 2008 17:56:39 +0200
+Subject: [Stgt-devel] Multiple tgtd exporting same device.
+In-Reply-To: <200806291246.m5TCknZ3016372@mbox.iij4u.or.jp>
+References: <1214514808.6194.10.camel@localhost>
+	<200806291246.m5TCknZ3016372@mbox.iij4u.or.jp>
+Message-ID: <1214754999.3431.45.camel@localhost>
+
+On Sun, 2008-06-29 at 21:46 +0900, FUJITA Tomonori wrote:
+> From: Simone Gotti <simone.gotti at gmail.com>
+> Subject: [Stgt-devel] Multiple tgtd exporting same device.
+> Date: Thu, 26 Jun 2008 23:13:27 +0200
+> 
+> > Hi all,
+> > 
+> > to increase the availability (and also to use in future some features
+> > like cluster mirror with RedHat Cluster Suite when it'll be available on
+> > RHEL5 or in the upstream kernel) of a iscsi target server I'd like to
+> 
+> I'm not sure how this configuration can increase the availability.
+
+I'll try to explain it in a clearer way.
+
+                        ? ____________
+                        |            |
+                        | ? Storage   |
+                        ?|____________|
+                          /        \
+                         /          \
+               ___________          ?___________
+              | Target 1  |        | Target 2  |
+              |   tgtd    |        |   tgtd    |
+              |___________|        |??___________|
+                 | |                 /  /
+?                 | |   _____________/  /
+?                 | |  /  _____________/
+                 | | /  /
+?              ? ___________          ?___________
+              | CLient 1  |  ...   | Client X  |
+              |   tgtd    |        |           |
+              |?___________|        |?___________|
+
+
+
+The storage exports the same devices via FC (also multipathed), SCSI
+Cable ecc...
+
+Then 2 (or more) Servers exports in an active/active way the same device
+via iSCSI and multipathing on the client is used to see the same device
+(here via 4 paths).
+
+?What I'd like to do is to minimize the recovery time (and maybe, but
+this is not my primary reason the increase throughput) when a machine
+dies (or similar problems).
+
+Another solution would be an active/passive management where tgtd runs
+only on one machine and it's relocated on the other one using the
+cluster. But this can fail (take too much time) if node fencing is
+failing for every reason etc... 
+
+(The reasons I'm thinking about this solution are various: Need that
+many clients can access the same device via iscsi (like using oVirt for
+virtualization deployment) and trying to reuse an existent non iscsi
+storage etc...)
+
+> 
+> 
+> > export the same block devices from 2 or more machines (connected to a
+> > common storage). Then the iscsi initiators on other client machines will
+> > use dm-multipath di balance I/O and to survive the lost of one or more
+> > scsi target machines.
+> 
+> You don't need multiple tgt daemons to use dm-multipath on the
+> initiator side.
+
+I know I can access a single tgtd over 2 different network interfaces/IP
+and get multipath over them.
+But my idea was to have multiple machines exporting the same device in
+an active/active way, so a tgtd running for every machine.
+
+> 
+> 
+> > I'm already doing something similar with gnbd and now I'd like to do the
+> > same with stgt via iscsi.
+> 
+> You runs multiple tgt daemons on one machine and they export the same
+> file to initiators?
+> 
+> If so, you can't do that easily because SCSI protocol is not about
+> only READ and WRITE commands. For example, how can tgt daemons handle
+> RESERVE command?
+
+?In fact I didn't thought about the RESERVE command (?for the moment I
+won't need SCSI reservation). Gnbd uses it's own fencing to avoid the
+access to the exported devices instead of scsi reservation but requires
+the gnbd clients to be part of the same cluster of the gnbd servers).
+
+Probably a solution would be that the N tgtd should communicate each
+other the reservation state.
+?
+BTW. does/will tgtd support SCSI3 persistent reservation? Is/will the
+state be saved on local file system? Or how is it implemented?
+
+Thanks!
+Bye!
+
+
+
+From albert.pauw at gmail.com  Sun Jun 29 19:25:12 2008
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Sun, 29 Jun 2008 19:25:12 +0200
+Subject: [Stgt-devel] How to setup a DVD RW
+Message-ID: <b2919bc20806291025w250debc8v9259e95d50dff6de@mail.gmail.com>
+
+Using open-iscsi to log into tgtd, which has the following setup for a
+DVD-R:
+
+tgtadm --lld iscsi --mode target --op new --tid 1 -T
+iqn.2007-03:virtual-dvd:`hostname`
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+scsi_id --value "CONTROLLER"
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+scsi_sn --value "001"
+
+# Create a DVD drive and give it a nice name
+# The dvd starts out without a backing store file, i.e. no disk loaded
+tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+--backing-store /root/empty.iso --device-type cd
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --params
+removable=1
+
+Where /root/empty.iso is an empty 4GB file. I can succesfully log into the
+this target, dmesg shows:
+
+scsi 13:0:0:0: RAID              IET      Controller       0001 PQ: 0 ANSI:
+5
+scsi 13:0:0:0: Attached scsi generic sg2 type 12
+scsi 13:0:0:1: CD-ROM            IET      VIRTUAL-CDROM    0001 PQ: 0 ANSI:
+5
+sr1: scsi-1 drive
+sr 13:0:0:1: Attached scsi CD-ROM sr1
+
+However, K3B (CD burner program) sees the virtual CDROM (as it is called by
+default), but doesn't see
+that a medium is loaded (while I had given it a backing store).
+
+What I am doing wrong here?
+
+Thanks,
+
+Albert
+
+P.S. I am using Fedora 9.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080629/62bb444e/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Jun 29 23:05:00 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 30 Jun 2008 06:05:00 +0900
+Subject: [Stgt-devel] Multiple tgtd exporting same device.
+In-Reply-To: <1214754999.3431.45.camel@localhost>
+References: <1214514808.6194.10.camel@localhost>
+	<200806291246.m5TCknZ3016372@mbox.iij4u.or.jp>
+	<1214754999.3431.45.camel@localhost>
+Message-ID: <200806292105.m5TL50bE019567@mbox.iij4u.or.jp>
+
+Please don't use utf character code.
+
+From: Simone Gotti <simone.gotti at gmail.com>
+Subject: Re: [Stgt-devel] Multiple tgtd exporting same device.
+Date: Sun, 29 Jun 2008 17:56:39 +0200
+
+> > > I'm already doing something similar with gnbd and now I'd like to do the
+> > > same with stgt via iscsi.
+> > 
+> > You runs multiple tgt daemons on one machine and they export the same
+> > file to initiators?
+> > 
+> > If so, you can't do that easily because SCSI protocol is not about
+> > only READ and WRITE commands. For example, how can tgt daemons handle
+> > RESERVE command?
+> 
+> In fact I didn't thought about the RESERVE command (for the moment I
+> won't need SCSI reservation). Gnbd uses it's own fencing to avoid the
+> access to the exported devices instead of scsi reservation but requires
+> the gnbd clients to be part of the same cluster of the gnbd servers).
+
+It's not only about RESERVE command. SCSI protocol has lots of states
+of a device.
+
+
+> Probably a solution would be that the N tgtd should communicate each
+> other the reservation state.
+
+Again, it's not about reservation. Definitely, you should have such
+for lots of things. It's pretty complicated.
+
+
+> BTW. does/will tgtd support SCSI3 persistent reservation?
+
+It would be but there are lots of things to do before that.
+
+
+> Is/will the state be saved on local file system? Or how is it
+> implemented?
+
+tgtd keeps all the states internally.
+
+
+From ronniesahlberg at gmail.com  Mon Jun 30 01:24:21 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 30 Jun 2008 09:24:21 +1000
+Subject: [Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some platforms
+Message-ID: <c9a3e4540806291624l40e71dchccee0abce8c77fb0@mail.gmail.com>
+
+Fixup some printf arguments to use the correct lengths
+
+From ronniesahlberg at gmail.com  Tue Jun 24 05:11:50 2008
+From: ronniesahlberg at gmail.com (Ronnie Sahlberg)
+Date: Tue, 24 Jun 2008 13:11:50 +1000
+Subject: [PATCH 1/2] size_t is 64 bit on some architectures.
+Message-ID: <mailman.37.1331738482.12506.stgt-devel@lists.berlios.de>
+
+fix debug print statements to use correct printf types for the FCOE
+target
+
+Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+Signed-off-by: root <root at ubuntu-server-1.sahlberg.net>
+---
+ usr/fcoe/fcs_state.c   |    4 ++--
+ usr/fcoe/openfc_scst.c |    6 +++---
+ usr/fcoe/sa_state.c    |   14 +++++++-------
+ 3 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/usr/fcoe/fcs_state.c b/usr/fcoe/fcs_state.c
+index a4a065a..288280e 100644
+--- a/usr/fcoe/fcs_state.c
++++ b/usr/fcoe/fcs_state.c
+@@ -107,11 +107,11 @@ struct fcs_state *fcs_create(struct fcs_create_args *ap)
+ 	outer_port = ap->fca_port;
+ 	mfs = fc_port_get_max_frame_size(outer_port);
+ 	if (mfs < FC_MIN_MAX_PAYLOAD) {
+-		eprintf("port max frame size only %d (0x%x) bytes - "
++		eprintf("port max frame size only %zu (0x%zx) bytes - "
+ 		       "setting to %d", mfs, mfs, FC_MIN_MAX_PAYLOAD);
+ 		mfs = 1024;
+ 	} else if (mfs > FC_MAX_PAYLOAD + sizeof(struct fc_frame_header)) {
+-		eprintf("port max frame size too large: %d (0x%x) bytes\n",
++		eprintf("port max frame size too large: %zu (0x%zx) bytes\n",
+ 		       mfs, mfs);
+ 		mfs = FC_MAX_PAYLOAD + sizeof(struct fc_frame_header);
+ 	}
+diff --git a/usr/fcoe/openfc_scst.c b/usr/fcoe/openfc_scst.c
+index 2cf0cdd..f24fc28 100644
+--- a/usr/fcoe/openfc_scst.c
++++ b/usr/fcoe/openfc_scst.c
+@@ -214,7 +214,7 @@ openfc_scsi_send_data(struct fc_scsi_pkt *fsp,
+struct fc_seq *sp)
+
+ 	len = scsi_get_in_length(&fsp->scmd) - scsi_get_in_resid(&fsp->scmd);
+
+-	dprintf("%p %d %d\n", fsp, data_len, scsi_get_in_resid(&fsp->scmd));
++	dprintf("%p %zu %d\n", fsp, data_len, scsi_get_in_resid(&fsp->scmd));
+ 	len = min(data_len, len);
+
+ 	if (offset != fsp->xfer_len) {
+@@ -242,7 +242,7 @@ openfc_scsi_send_data(struct fc_scsi_pkt *fsp,
+struct fc_seq *sp)
+ 				fc_frame_set_offset(fp, buf_offset);
+ 			}
+
+-			dprintf("%d %d %d\n", tlen, remaining, buf_offset);
++			dprintf("%zu %zu %zu\n", tlen, remaining, buf_offset);
+ 			page_addr = (char *)scsi_get_in_buffer(&fsp->scmd) + buf_offset;
+
+ 			memcpy(data, (char *) page_addr, tlen);
+@@ -260,7 +260,7 @@ openfc_scsi_send_data(struct fc_scsi_pkt *fsp,
+struct fc_seq *sp)
+ 				continue;
+ 			}
+
+-			dprintf("%d %d %d\n", tlen, remaining, error);
++			dprintf("%zu %zu %d\n", tlen, remaining, error);
+ 			fp = NULL;
+ 			if (error) {
+ 				/*
+diff --git a/usr/fcoe/sa_state.c b/usr/fcoe/sa_state.c
+index 95dbe03..ad7ef98 100644
+--- a/usr/fcoe/sa_state.c
++++ b/usr/fcoe/sa_state.c
+@@ -116,7 +116,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_STATE:
+ 			if (dp->sd_in == 0) {
+ 				eprintf("state table %s has invalid state %d "
+-				       "at STATE entry %d",
++				       "at STATE entry %ld",
+ 				       name, dp->sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -127,7 +127,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_FROM:
+ 			if (dp->sd_in == 0) {
+ 				eprintf("state table %s has invalid state %d "
+-				       "at FROM entry %d",
++				       "at FROM entry %ld",
+ 				       name, dp->sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -136,7 +136,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_EVENT:
+ 			if (dp->sd_in == 0) {
+ 				eprintf("state table %s has invalid event %d "
+-				       "at EVENT entry %d",
++				       "at EVENT entry %ld",
+ 				       name, dp->sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -146,7 +146,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_HANDLER:
+ 			if (dp->sd_ptr == NULL) {
+ 				eprintf("state table %s has invalid hander %d "
+-				       "at HANDLER entry %d",
++				       "at HANDLER entry %ld",
+ 				       name, dp->sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -156,19 +156,19 @@ struct sa_state_table
+*sa_state_table_alloc(const char *name,
+ 		case SST_NEXT:
+ 			if (cur_state == 0) {
+ 				eprintf("state table %s has no current state "
+-				       "for NEXT entry %d",
++				       "for NEXT entry %ld",
+ 				       name, dp - state_desc);
+ 				error++;
+ 			}
+ 			if (dp->sd_in >= event_limit) {
+ 				eprintf("state table %s has event %d "
+-				       "out of range at NEXT entry %d",
++				       "out of range at NEXT entry %ld",
+ 				       name, dp->sd_in, dp - state_desc);
+ 				error++;
+ 			}
+ 			if (dp->sd_next == 0 || dp->sd_next >= state_limit) {
+ 				eprintf("state table %s has state %d "
+-				       "out of range at NEXT entry %d",
++				       "out of range at NEXT entry %ld",
+ 				       name, dp->sd_next, dp - state_desc);
+ 				error++;
+ 			}
+-- 
+1.5.4.3
+
+------=_Part_14794_16303730.1214781861281
+Content-Type: application/x-gzip;
+ name=0001-size_t-is-64-bit-on-some-architectures.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fi29k51y0
+Content-Disposition: attachment;
+ filename=0001-size_t-is-64-bit-on-some-architectures.patch.gz
+
+RnJvbSBhMGQ5M2U3MWVjZTIxYjQ0Y2IwYzJlZmNmYjFmOTQyMjUyOTliZmJjIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJnQGdtYWls
+LmNvbT4KRGF0ZTogVHVlLCAyNCBKdW4gMjAwOCAxMzoxMTo1MCArMTAwMApTdWJqZWN0OiBbUEFU
+Q0ggMS8yXSBzaXplX3QgaXMgNjQgYml0IG9uIHNvbWUgYXJjaGl0ZWN0dXJlcy4KCmZpeCBkZWJ1
+ZyBwcmludCBzdGF0ZW1lbnRzIHRvIHVzZSBjb3JyZWN0IHByaW50ZiB0eXBlcyBmb3IgdGhlIEZD
+T0UKdGFyZ2V0CgpTaWduZWQtb2ZmLWJ5OiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJn
+QGdtYWlsLmNvbT4KU2lnbmVkLW9mZi1ieTogcm9vdCA8cm9vdEB1YnVudHUtc2VydmVyLTEuc2Fo
+bGJlcmcubmV0PgotLS0KIHVzci9mY29lL2Zjc19zdGF0ZS5jICAgfCAgICA0ICsrLS0KIHVzci9m
+Y29lL29wZW5mY19zY3N0LmMgfCAgICA2ICsrKy0tLQogdXNyL2Zjb2Uvc2Ffc3RhdGUuYyAgICB8
+ICAgMTQgKysrKysrKy0tLS0tLS0KIDMgZmlsZXMgY2hhbmdlZCwgMTIgaW5zZXJ0aW9ucygrKSwg
+MTIgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvdXNyL2Zjb2UvZmNzX3N0YXRlLmMgYi91c3Iv
+ZmNvZS9mY3Nfc3RhdGUuYwppbmRleCBhNGEwNjVhLi4yODgyODBlIDEwMDY0NAotLS0gYS91c3Iv
+ZmNvZS9mY3Nfc3RhdGUuYworKysgYi91c3IvZmNvZS9mY3Nfc3RhdGUuYwpAQCAtMTA3LDExICsx
+MDcsMTEgQEAgc3RydWN0IGZjc19zdGF0ZSAqZmNzX2NyZWF0ZShzdHJ1Y3QgZmNzX2NyZWF0ZV9h
+cmdzICphcCkKIAlvdXRlcl9wb3J0ID0gYXAtPmZjYV9wb3J0OwogCW1mcyA9IGZjX3BvcnRfZ2V0
+X21heF9mcmFtZV9zaXplKG91dGVyX3BvcnQpOwogCWlmIChtZnMgPCBGQ19NSU5fTUFYX1BBWUxP
+QUQpIHsKLQkJZXByaW50ZigicG9ydCBtYXggZnJhbWUgc2l6ZSBvbmx5ICVkICgweCV4KSBieXRl
+cyAtICIKKwkJZXByaW50ZigicG9ydCBtYXggZnJhbWUgc2l6ZSBvbmx5ICV6dSAoMHglengpIGJ5
+dGVzIC0gIgogCQkgICAgICAgInNldHRpbmcgdG8gJWQiLCBtZnMsIG1mcywgRkNfTUlOX01BWF9Q
+QVlMT0FEKTsKIAkJbWZzID0gMTAyNDsKIAl9IGVsc2UgaWYgKG1mcyA+IEZDX01BWF9QQVlMT0FE
+ICsgc2l6ZW9mKHN0cnVjdCBmY19mcmFtZV9oZWFkZXIpKSB7Ci0JCWVwcmludGYoInBvcnQgbWF4
+IGZyYW1lIHNpemUgdG9vIGxhcmdlOiAlZCAoMHgleCkgYnl0ZXNcbiIsCisJCWVwcmludGYoInBv
+cnQgbWF4IGZyYW1lIHNpemUgdG9vIGxhcmdlOiAlenUgKDB4JXp4KSBieXRlc1xuIiwKIAkJICAg
+ICAgIG1mcywgbWZzKTsKIAkJbWZzID0gRkNfTUFYX1BBWUxPQUQgKyBzaXplb2Yoc3RydWN0IGZj
+X2ZyYW1lX2hlYWRlcik7CiAJfQpkaWZmIC0tZ2l0IGEvdXNyL2Zjb2Uvb3BlbmZjX3Njc3QuYyBi
+L3Vzci9mY29lL29wZW5mY19zY3N0LmMKaW5kZXggMmNmMGNkZC4uZjI0ZmMyOCAxMDA2NDQKLS0t
+IGEvdXNyL2Zjb2Uvb3BlbmZjX3Njc3QuYworKysgYi91c3IvZmNvZS9vcGVuZmNfc2NzdC5jCkBA
+IC0yMTQsNyArMjE0LDcgQEAgb3BlbmZjX3Njc2lfc2VuZF9kYXRhKHN0cnVjdCBmY19zY3NpX3Br
+dCAqZnNwLCBzdHJ1Y3QgZmNfc2VxICpzcCkKIAogCWxlbiA9IHNjc2lfZ2V0X2luX2xlbmd0aCgm
+ZnNwLT5zY21kKSAtIHNjc2lfZ2V0X2luX3Jlc2lkKCZmc3AtPnNjbWQpOwogCi0JZHByaW50Zigi
+JXAgJWQgJWRcbiIsIGZzcCwgZGF0YV9sZW4sIHNjc2lfZ2V0X2luX3Jlc2lkKCZmc3AtPnNjbWQp
+KTsKKwlkcHJpbnRmKCIlcCAlenUgJWRcbiIsIGZzcCwgZGF0YV9sZW4sIHNjc2lfZ2V0X2luX3Jl
+c2lkKCZmc3AtPnNjbWQpKTsKIAlsZW4gPSBtaW4oZGF0YV9sZW4sIGxlbik7CiAKIAlpZiAob2Zm
+c2V0ICE9IGZzcC0+eGZlcl9sZW4pIHsKQEAgLTI0Miw3ICsyNDIsNyBAQCBvcGVuZmNfc2NzaV9z
+ZW5kX2RhdGEoc3RydWN0IGZjX3Njc2lfcGt0ICpmc3AsIHN0cnVjdCBmY19zZXEgKnNwKQogCQkJ
+CWZjX2ZyYW1lX3NldF9vZmZzZXQoZnAsIGJ1Zl9vZmZzZXQpOwogCQkJfQogCi0JCQlkcHJpbnRm
+KCIlZCAlZCAlZFxuIiwgdGxlbiwgcmVtYWluaW5nLCBidWZfb2Zmc2V0KTsKKwkJCWRwcmludGYo
+IiV6dSAlenUgJXp1XG4iLCB0bGVuLCByZW1haW5pbmcsIGJ1Zl9vZmZzZXQpOwogCQkJcGFnZV9h
+ZGRyID0gKGNoYXIgKilzY3NpX2dldF9pbl9idWZmZXIoJmZzcC0+c2NtZCkgKyBidWZfb2Zmc2V0
+OwogCiAJCQltZW1jcHkoZGF0YSwgKGNoYXIgKikgcGFnZV9hZGRyLCB0bGVuKTsKQEAgLTI2MCw3
+ICsyNjAsNyBAQCBvcGVuZmNfc2NzaV9zZW5kX2RhdGEoc3RydWN0IGZjX3Njc2lfcGt0ICpmc3As
+IHN0cnVjdCBmY19zZXEgKnNwKQogCQkJCWNvbnRpbnVlOwogCQkJfQogCi0JCQlkcHJpbnRmKCIl
+ZCAlZCAlZFxuIiwgdGxlbiwgcmVtYWluaW5nLCBlcnJvcik7CisJCQlkcHJpbnRmKCIlenUgJXp1
+ICVkXG4iLCB0bGVuLCByZW1haW5pbmcsIGVycm9yKTsKIAkJCWZwID0gTlVMTDsKIAkJCWlmIChl
+cnJvcikgewogCQkJCS8qCmRpZmYgLS1naXQgYS91c3IvZmNvZS9zYV9zdGF0ZS5jIGIvdXNyL2Zj
+b2Uvc2Ffc3RhdGUuYwppbmRleCA5NWRiZTAzLi5hZDdlZjk4IDEwMDY0NAotLS0gYS91c3IvZmNv
+ZS9zYV9zdGF0ZS5jCisrKyBiL3Vzci9mY29lL3NhX3N0YXRlLmMKQEAgLTExNiw3ICsxMTYsNyBA
+QCBzdHJ1Y3Qgc2Ffc3RhdGVfdGFibGUgKnNhX3N0YXRlX3RhYmxlX2FsbG9jKGNvbnN0IGNoYXIg
+Km5hbWUsCiAJCWNhc2UgU1NUX1NUQVRFOgogCQkJaWYgKGRwLT5zZF9pbiA9PSAwKSB7CiAJCQkJ
+ZXByaW50Zigic3RhdGUgdGFibGUgJXMgaGFzIGludmFsaWQgc3RhdGUgJWQgIgotCQkJCSAgICAg
+ICAiYXQgU1RBVEUgZW50cnkgJWQiLAorCQkJCSAgICAgICAiYXQgU1RBVEUgZW50cnkgJWxkIiwK
+IAkJCQkgICAgICAgbmFtZSwgZHAtPnNkX2luLCBkcCAtIHN0YXRlX2Rlc2MpOwogCQkJCWVycm9y
+Kys7CiAJCQl9CkBAIC0xMjcsNyArMTI3LDcgQEAgc3RydWN0IHNhX3N0YXRlX3RhYmxlICpzYV9z
+dGF0ZV90YWJsZV9hbGxvYyhjb25zdCBjaGFyICpuYW1lLAogCQljYXNlIFNTVF9GUk9NOgogCQkJ
+aWYgKGRwLT5zZF9pbiA9PSAwKSB7CiAJCQkJZXByaW50Zigic3RhdGUgdGFibGUgJXMgaGFzIGlu
+dmFsaWQgc3RhdGUgJWQgIgotCQkJCSAgICAgICAiYXQgRlJPTSBlbnRyeSAlZCIsCisJCQkJICAg
+ICAgICJhdCBGUk9NIGVudHJ5ICVsZCIsCiAJCQkJICAgICAgIG5hbWUsIGRwLT5zZF9pbiwgZHAg
+LSBzdGF0ZV9kZXNjKTsKIAkJCQllcnJvcisrOwogCQkJfQpAQCAtMTM2LDcgKzEzNiw3IEBAIHN0
+cnVjdCBzYV9zdGF0ZV90YWJsZSAqc2Ffc3RhdGVfdGFibGVfYWxsb2MoY29uc3QgY2hhciAqbmFt
+ZSwKIAkJY2FzZSBTU1RfRVZFTlQ6CiAJCQlpZiAoZHAtPnNkX2luID09IDApIHsKIAkJCQllcHJp
+bnRmKCJzdGF0ZSB0YWJsZSAlcyBoYXMgaW52YWxpZCBldmVudCAlZCAiCi0JCQkJICAgICAgICJh
+dCBFVkVOVCBlbnRyeSAlZCIsCisJCQkJICAgICAgICJhdCBFVkVOVCBlbnRyeSAlbGQiLAogCQkJ
+CSAgICAgICBuYW1lLCBkcC0+c2RfaW4sIGRwIC0gc3RhdGVfZGVzYyk7CiAJCQkJZXJyb3IrKzsK
+IAkJCX0KQEAgLTE0Niw3ICsxNDYsNyBAQCBzdHJ1Y3Qgc2Ffc3RhdGVfdGFibGUgKnNhX3N0YXRl
+X3RhYmxlX2FsbG9jKGNvbnN0IGNoYXIgKm5hbWUsCiAJCWNhc2UgU1NUX0hBTkRMRVI6CiAJCQlp
+ZiAoZHAtPnNkX3B0ciA9PSBOVUxMKSB7CiAJCQkJZXByaW50Zigic3RhdGUgdGFibGUgJXMgaGFz
+IGludmFsaWQgaGFuZGVyICVkICIKLQkJCQkgICAgICAgImF0IEhBTkRMRVIgZW50cnkgJWQiLAor
+CQkJCSAgICAgICAiYXQgSEFORExFUiBlbnRyeSAlbGQiLAogCQkJCSAgICAgICBuYW1lLCBkcC0+
+c2RfaW4sIGRwIC0gc3RhdGVfZGVzYyk7CiAJCQkJZXJyb3IrKzsKIAkJCX0KQEAgLTE1NiwxOSAr
+MTU2LDE5IEBAIHN0cnVjdCBzYV9zdGF0ZV90YWJsZSAqc2Ffc3RhdGVfdGFibGVfYWxsb2MoY29u
+c3QgY2hhciAqbmFtZSwKIAkJY2FzZSBTU1RfTkVYVDoKIAkJCWlmIChjdXJfc3RhdGUgPT0gMCkg
+ewogCQkJCWVwcmludGYoInN0YXRlIHRhYmxlICVzIGhhcyBubyBjdXJyZW50IHN0YXRlICIKLQkJ
+CQkgICAgICAgImZvciBORVhUIGVudHJ5ICVkIiwKKwkJCQkgICAgICAgImZvciBORVhUIGVudHJ5
+ICVsZCIsCiAJCQkJICAgICAgIG5hbWUsIGRwIC0gc3RhdGVfZGVzYyk7CiAJCQkJZXJyb3IrKzsK
+IAkJCX0KIAkJCWlmIChkcC0+c2RfaW4gPj0gZXZlbnRfbGltaXQpIHsKIAkJCQllcHJpbnRmKCJz
+dGF0ZSB0YWJsZSAlcyBoYXMgZXZlbnQgJWQgIgotCQkJCSAgICAgICAib3V0IG9mIHJhbmdlIGF0
+IE5FWFQgZW50cnkgJWQiLAorCQkJCSAgICAgICAib3V0IG9mIHJhbmdlIGF0IE5FWFQgZW50cnkg
+JWxkIiwKIAkJCQkgICAgICAgbmFtZSwgZHAtPnNkX2luLCBkcCAtIHN0YXRlX2Rlc2MpOwogCQkJ
+CWVycm9yKys7CiAJCQl9CiAJCQlpZiAoZHAtPnNkX25leHQgPT0gMCB8fCBkcC0+c2RfbmV4dCA+
+PSBzdGF0ZV9saW1pdCkgewogCQkJCWVwcmludGYoInN0YXRlIHRhYmxlICVzIGhhcyBzdGF0ZSAl
+ZCAiCi0JCQkJICAgICAgICJvdXQgb2YgcmFuZ2UgYXQgTkVYVCBlbnRyeSAlZCIsCisJCQkJICAg
+ICAgICJvdXQgb2YgcmFuZ2UgYXQgTkVYVCBlbnRyeSAlbGQiLAogCQkJCSAgICAgICBuYW1lLCBk
+cC0+c2RfbmV4dCwgZHAgLSBzdGF0ZV9kZXNjKTsKIAkJCQllcnJvcisrOwogCQkJfQotLSAKMS41
+LjQuMwoK
+------=_Part_14794_16303730.1214781861281--
+
+
+From ronniesahlberg at gmail.com  Mon Jun 30 01:26:14 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 30 Jun 2008 09:26:14 +1000
+Subject: [Stgt-devel] [PATCH 2/2] fcoe: print a warning instead of SEGV when
+	no interface was specified
+Message-ID: <c9a3e4540806291626u3aa8571fgd0c71a875314781e@mail.gmail.com>
+
+When we startup fcoe check that we actually has an interface name and
+warn and abort othervise
+instead of just throwing a SEGV.
+
+
+From ronniesahlberg at gmail.com  Tue Jun 24 05:35:05 2008
+From: ronniesahlberg at gmail.com (Ronnie Sahlberg)
+Date: Tue, 24 Jun 2008 13:35:05 +1000
+Subject: [PATCH 2/2] when we start up fcoe on an interface, check that
+Message-ID: <mailman.38.1331738482.12506.stgt-devel@lists.berlios.de>
+
+we actually have an
+ interface name passed to us and print an error and return -ENODEV
+ othervise.
+
+Othervise we will SEGV trying to memcpy() from a null pointer 1 line
+further down.
+
+When we initialize fcoe from the fcoe module, return proper success/failure
+back to tgtd so that it can abort/fail if the low level driver failed
+to initialize.
+
+Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+Signed-off-by: root <root at ubuntu-server-1.sahlberg.net>
+---
+ usr/fcoe/fcoe_if.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/usr/fcoe/fcoe_if.c b/usr/fcoe/fcoe_if.c
+index 906c30b..cc61408 100644
+--- a/usr/fcoe/fcoe_if.c
++++ b/usr/fcoe/fcoe_if.c
+@@ -164,6 +164,11 @@ int fcoe_create_interface(char *ifname)
+ 	/* todo */
+ 	fdev->fd_link_status = TRANS_LINK_UP;
+
++	if (!ifname) {
++		eprintf("no interface specified.\n");
++		return -ENODEV;
++	}
++
+ 	memcpy(fdev->ifname, ifname, IFNAMSIZ);
+
+ 	ret = fcoe_sock_open(fdev);
+@@ -204,9 +209,7 @@ int fcoe_create_interface(char *ifname)
+ static int fcoe_init(int index, char *args)
+ {
+ 	eprintf("%s\n", args);
+-	fcoe_create_interface(args);
+-
+-	return 0;
++	return fcoe_create_interface(args);
+ }
+
+ static struct tgt_driver fcoe = {
+-- 
+1.5.4.3
+
+------=_Part_14803_1832293.1214781974773
+Content-Type: application/x-gzip;
+ name=0002-when-we-start-up-fcoe-on-an-interface-check-that-we.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fi29n8uh0
+Content-Disposition: attachment;
+ filename=0002-when-we-start-up-fcoe-on-an-interface-check-that-we.patch.gz
+
+RnJvbSBiNjlkOTdhOTg4OGZlMzZjM2E1NTJmZjY0YWZlMjQyMjRiZGI4ZjI3IE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJnQGdtYWls
+LmNvbT4KRGF0ZTogVHVlLCAyNCBKdW4gMjAwOCAxMzozNTowNSArMTAwMApTdWJqZWN0OiBbUEFU
+Q0ggMi8yXSB3aGVuIHdlIHN0YXJ0IHVwIGZjb2Ugb24gYW4gaW50ZXJmYWNlLCBjaGVjayB0aGF0
+IHdlIGFjdHVhbGx5IGhhdmUgYW4KIGludGVyZmFjZSBuYW1lIHBhc3NlZCB0byB1cyBhbmQgcHJp
+bnQgYW4gZXJyb3IgYW5kIHJldHVybiAtRU5PREVWCiBvdGhlcnZpc2UuCgpPdGhlcnZpc2Ugd2Ug
+d2lsbCBTRUdWIHRyeWluZyB0byBtZW1jcHkoKSBmcm9tIGEgbnVsbCBwb2ludGVyIDEgbGluZSBm
+dXJ0aGVyIGRvd24uCgpXaGVuIHdlIGluaXRpYWxpemUgZmNvZSBmcm9tIHRoZSBmY29lIG1vZHVs
+ZSwgcmV0dXJuIHByb3BlciBzdWNjZXNzL2ZhaWx1cmUKYmFjayB0byB0Z3RkIHNvIHRoYXQgaXQg
+Y2FuIGFib3J0L2ZhaWwgaWYgdGhlIGxvdyBsZXZlbCBkcml2ZXIgZmFpbGVkIHRvIGluaXRpYWxp
+emUuCgpTaWduZWQtb2ZmLWJ5OiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJnQGdtYWls
+LmNvbT4KU2lnbmVkLW9mZi1ieTogcm9vdCA8cm9vdEB1YnVudHUtc2VydmVyLTEuc2FobGJlcmcu
+bmV0PgotLS0KIHVzci9mY29lL2Zjb2VfaWYuYyB8ICAgIDkgKysrKysrLS0tCiAxIGZpbGVzIGNo
+YW5nZWQsIDYgaW5zZXJ0aW9ucygrKSwgMyBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS91c3Iv
+ZmNvZS9mY29lX2lmLmMgYi91c3IvZmNvZS9mY29lX2lmLmMKaW5kZXggOTA2YzMwYi4uY2M2MTQw
+OCAxMDA2NDQKLS0tIGEvdXNyL2Zjb2UvZmNvZV9pZi5jCisrKyBiL3Vzci9mY29lL2Zjb2VfaWYu
+YwpAQCAtMTY0LDYgKzE2NCwxMSBAQCBpbnQgZmNvZV9jcmVhdGVfaW50ZXJmYWNlKGNoYXIgKmlm
+bmFtZSkKIAkvKiB0b2RvICovCiAJZmRldi0+ZmRfbGlua19zdGF0dXMgPSBUUkFOU19MSU5LX1VQ
+OwogCisJaWYgKCFpZm5hbWUpIHsKKwkJZXByaW50Zigibm8gaW50ZXJmYWNlIHNwZWNpZmllZC5c
+biIpOworCQlyZXR1cm4gLUVOT0RFVjsKKwl9CisKIAltZW1jcHkoZmRldi0+aWZuYW1lLCBpZm5h
+bWUsIElGTkFNU0laKTsKIAogCXJldCA9IGZjb2Vfc29ja19vcGVuKGZkZXYpOwpAQCAtMjA0LDkg
+KzIwOSw3IEBAIGludCBmY29lX2NyZWF0ZV9pbnRlcmZhY2UoY2hhciAqaWZuYW1lKQogc3RhdGlj
+IGludCBmY29lX2luaXQoaW50IGluZGV4LCBjaGFyICphcmdzKQogewogCWVwcmludGYoIiVzXG4i
+LCBhcmdzKTsKLQlmY29lX2NyZWF0ZV9pbnRlcmZhY2UoYXJncyk7Ci0KLQlyZXR1cm4gMDsKKwly
+ZXR1cm4gZmNvZV9jcmVhdGVfaW50ZXJmYWNlKGFyZ3MpOwogfQogCiBzdGF0aWMgc3RydWN0IHRn
+dF9kcml2ZXIgZmNvZSA9IHsKLS0gCjEuNS40LjMKCg==
+------=_Part_14803_1832293.1214781974773--
+
+
+From ronniesahlberg at gmail.com  Mon Jun 30 01:32:53 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 30 Jun 2008 09:32:53 +1000
+Subject: [Stgt-devel] How to setup a DVD RW
+In-Reply-To: <b2919bc20806291025w250debc8v9259e95d50dff6de@mail.gmail.com>
+References: <b2919bc20806291025w250debc8v9259e95d50dff6de@mail.gmail.com>
+Message-ID: <c9a3e4540806291632w358ede85nd33be47f78585c94@mail.gmail.com>
+
+Can you try using dvdwriter like this :
+
+dvdrecord -dao -ignsize -overburn dev=/dev/sgX ./IMAGE.iso
+
+and just verify that that works.
+
+If that works it is most likely that there is something missing in the
+emulation of DVD+R that
+K2B needs to be happy.
+
+
+
+On Mon, Jun 30, 2008 at 3:25 AM, Albert Pauw <albert.pauw at gmail.com> wrote:
+> Using open-iscsi to log into tgtd, which has the following setup for a
+> DVD-R:
+>
+> tgtadm --lld iscsi --mode target --op new --tid 1 -T
+> iqn.2007-03:virtual-dvd:`hostname`
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+> scsi_id --value "CONTROLLER"
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+> scsi_sn --value "001"
+>
+> # Create a DVD drive and give it a nice name
+> # The dvd starts out without a backing store file, i.e. no disk loaded
+> tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+> --backing-store /root/empty.iso --device-type cd
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --params
+> removable=1
+>
+> Where /root/empty.iso is an empty 4GB file. I can succesfully log into the
+> this target, dmesg shows:
+>
+> scsi 13:0:0:0: RAID              IET      Controller       0001 PQ: 0 ANSI:
+> 5
+> scsi 13:0:0:0: Attached scsi generic sg2 type 12
+> scsi 13:0:0:1: CD-ROM            IET      VIRTUAL-CDROM    0001 PQ: 0 ANSI:
+> 5
+> sr1: scsi-1 drive
+> sr 13:0:0:1: Attached scsi CD-ROM sr1
+>
+> However, K3B (CD burner program) sees the virtual CDROM (as it is called by
+> default), but doesn't see
+> that a medium is loaded (while I had given it a backing store).
+>
+> What I am doing wrong here?
+>
+> Thanks,
+>
+> Albert
+>
+> P.S. I am using Fedora 9.
+>
+>
+>
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>
+>
+
+
+From ronniesahlberg at gmail.com  Mon Jun 30 01:56:48 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 30 Jun 2008 09:56:48 +1000
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <4863BAF8.6040902@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org> <48620396.2090701@wpkg.org>
+	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+	<48620C4B.3050206@wpkg.org> <4863BAF8.6040902@wpkg.org>
+Message-ID: <c9a3e4540806291656t490dec6eia01246fd8cdd5e8c@mail.gmail.com>
+
+Hi Tomasz,
+
+I could not get that configuration to work.
+
+Can you please provide more detailed instructions exactly how to set
+up hosts A B and C
+so I can try to reproduce it.
+
+Please provide the exact commandline for each and every command I need
+to run on the three hosts and Ill try to
+reproduce it under gdb.
+
+
+On Fri, Jun 27, 2008 at 1:51 AM, Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> Tomasz Chmielewski schrieb:
+>>
+>> ronnie sahlberg schrieb:
+>>>
+>>> Since it is reproducible,  can you run it under gdb and get a backtrace?
+>>
+>> Unfortunately not.
+>>
+>> The disk is now totally failed - some fifteen minutes ago I was still able
+>> to read from it for a couple of minutes after plugging it in.
+>>
+>> Now I can't read from it any more after plugging it in, so I can't add it
+>> to RAID.
+>
+> OK, I found a way to reproduce it without using any broken disks.
+>
+> You will need these to build a RAID-1 device:
+> - losetup or a separate partition/disk
+> - 3 machines (1 target, 1 target+initiator, 1 initiator)
+>
+>
+> If something was not clear enough, please just ask.
+>
+>
+> 1. Create a ~100 MB empty file (or bigger, if you want):
+>
+> dd if=/dev/zero of=raid-a bs=1k count=104857
+>
+>
+> 2. Make a block device out of it:
+>
+> losetup /dev/loop0 raid-a
+>
+>
+> 3. Log in to another target - lets say the drive will be called /dev/sdh
+> (substitute the target address etc.):
+>
+> iscsiadm -m node -T iqn......test -p 10.1.1.1 -l
+>
+>
+> 4. Build RAID-1 (above target is now /dev/sdz):
+>
+> mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/loop0 /dev/sdh
+>
+>
+> 5. Wait a bit until it's synced (see /proc/mdstat), and make this target
+> available to initiators (substitute the values to match your own):
+>
+> tgtadm --lld iscsi --op new --mode target --tid 3 -T
+> iqn.2008-06.net.syneticon:superthecus.test
+> tgtadm --lld iscsi --op new --mode logicalunit --tid 3 --lun 1 -b /dev/md1
+> tgtadm --lld iscsi --op bind --mode target --tid 3 -I ALL
+>
+>
+> 6. Start watching the syslog (on the machine where tgtd will crash):
+>
+> tail -f /var/log/syslog
+>
+>
+> 7. From yet another machine (initiator), log in to that target, and read
+> data from it (let's say the target is now /dev/sdb):
+>
+> iscsiadm -m node -T iqn.2008-06.net.syneticon:superthecus.test -p 10.1.1.2
+> -l
+>
+> while true; do dd if=/dev/sdb of=/dev/null bs=1k; done
+>
+>
+> 8. And immediately block the traffic between this machine (where we will
+> make tgtd fail after a drive failed in RAID) and the other target
+> (immediately, because if you have lots of RAM and the whole device is
+> cached, it won't be kicked out of RAID very fast):
+>
+> iptables -A INPUT -s 10.1.1.1 -p tcp --sport 3260 -j DROP
+>
+>
+> The connection will fail after 120 seconds with standard open-iscsi
+> settings.
+>
+> After blocking the traffic, the syslog says (with my comments):
+>
+>
+> This is where we can't communicate with the other target (which is a part of
+> RAID):
+>
+> Jun 26 17:39:43 superthecus iscsid: Nop-out timedout after 15 seconds on
+> connection 6:0 state (3). Dropping session.
+>
+>
+> When a disk in RAID-1 is failing, there is no IO to the whole array for
+> ~minute - tgtd notices it[1]:
+>
+> Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found a04 0
+> Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found a05 0
+> Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found 0 0
+> Jun 26 17:39:50 superthecus tgtd: abort_cmd(914) found 1c e
+> Jun 26 17:39:50 superthecus tgtd: abort_cmd(914) found 1e e
+>
+>
+> The disk is finally failed:
+>
+> Jun 26 17:41:43 superthecus kernel:  session6: session recovery timed out
+> after 120 secs
+> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+> driverbyte=0x00
+> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+> 44256
+> Jun 26 17:41:43 superthecus kernel: printk: 46 messages suppressed.
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44256
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44264
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44272
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44280
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44288
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44296
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44304
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44312
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44320
+> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44328
+> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+> driverbyte=0x00
+> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+> 44000
+> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+> driverbyte=0x00
+> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+> 44256
+> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+> driverbyte=0x00
+> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+> 44256
+> Jun 26 17:41:43 superthecus kernel: raid1: Disk failure on sdh, disabling
+> device.
+> Jun 26 17:41:43 superthecus kernel: ^IOperation continuing on 1 devices
+> Jun 26 17:41:43 superthecus mdadm: Fail event detected on md device
+> /dev/md1, component device /dev/.static/dev/.static/dev/sdh
+> Jun 26 17:41:43 superthecus kernel: RAID1 conf printout:
+> Jun 26 17:41:43 superthecus kernel:  --- wd:1 rd:2
+> Jun 26 17:41:43 superthecus kernel:  disk 0, wo:0, o:1, dev:loop0
+> Jun 26 17:41:43 superthecus kernel:  disk 1, wo:1, o:0, dev:sdh
+> Jun 26 17:41:43 superthecus kernel: RAID1 conf printout:
+> Jun 26 17:41:43 superthecus kernel:  --- wd:1 rd:2
+> Jun 26 17:41:43 superthecus kernel:  disk 0, wo:0, o:1, dev:loop0
+> Jun 26 17:42:43 superthecus mdadm: SpareActive event detected on md device
+> /dev/md1, component device /dev/.static/dev/.static/dev/sdh
+>
+>
+> We have only one tgtd instance:
+>
+> # ps -C tgtd
+>  PID TTY          TIME CMD
+>  6496 ?        00:00:00 tgtd
+>
+>
+> With the above method, "segfault" is not logged in the syslog.
+>
+>
+>
+>
+> Note that simply failing a disk in RAID (-f option to mdadm) doesn't make
+> tgtd crash. You may need to reproduce the above scenario 1-2 times to
+> actually see the issue (for 4 tries, tgtd failed 3 times for me).
+>
+>
+> [1] While testing it, tgtd crashed on the other target machine (with no
+> issues in RAID); on the same machine to which I was blocking traffic with
+> iptables:
+>
+> tgtd[2125]: segfault at 8 rip 40e72d rsp 7fff511287d0 error 6
+>
+> Definitely, it's not very healthy :(
+>
+>
+>
+> --
+> Tomasz Chmielewski
+> http://wpkg.org
+>
+>
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jun 30 01:58:49 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 30 Jun 2008 08:58:49 +0900
+Subject: [Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some
+ platforms
+In-Reply-To: <c9a3e4540806291624l40e71dchccee0abce8c77fb0@mail.gmail.com>
+References: <c9a3e4540806291624l40e71dchccee0abce8c77fb0@mail.gmail.com>
+Message-ID: <20080630085908Z.fujita.tomonori@lab.ntt.co.jp>
+
+On Mon, 30 Jun 2008 09:24:21 +1000
+"ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+
+> Fixup some printf arguments to use the correct lengths
+> 
+> From a0d93e71ece21b44cb0c2efcfb1f94225299bfbc Mon Sep 17 00:00:00 2001
+> From: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+> Date: Tue, 24 Jun 2008 13:11:50 +1000
+> Subject: [PATCH 1/2] size_t is 64 bit on some architectures.
+> 
+> fix debug print statements to use correct printf types for the FCOE
+> target
+> 
+> Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+> Signed-off-by: root <root at ubuntu-server-1.sahlberg.net>
+> ---
+>  usr/fcoe/fcs_state.c   |    4 ++--
+>  usr/fcoe/openfc_scst.c |    6 +++---
+>  usr/fcoe/sa_state.c    |   14 +++++++-------
+>  3 files changed, 12 insertions(+), 12 deletions(-)
+
+Applied both, thanks.
+
+Well, I think that we need to rework on the whole fcoe code because
+after I took the code from the foce project, they redid the design and
+fixed lots of the bugs, I think.
+
+
+From albert.pauw at gmail.com  Mon Jun 30 09:11:40 2008
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Mon, 30 Jun 2008 09:11:40 +0200
+Subject: [Stgt-devel] How to setup a DVD RW
+Message-ID: <b2919bc20806300011kbf0b317rafd04b75377e503@mail.gmail.com>
+
+Hi Ronnie,
+
+I must be doing something wrong here, here is the output of dvdrecord:
+
+[root at orange ~]# dvdrecord -dao -ignsize -overburn dev=/dev/sr1 ./fdfullcd.iso
+Device type    : Removable CD-ROM
+Version        : 5
+Response Format: 2
+Capabilities   : TERMIOP CMDQUE
+Vendor_info    : 'IET     '
+Identification : 'VIRTUAL-CDROM'
+Revision       : '0001'
+Device seems to be: Generic mmc2 DVD-R/DVD-RW.
+dvdrecord: Sorry, no CD/DVD-Recorder or unsupported CD/DVD-Recorder
+found on this target.
+Using generic SCSI-3/mmc   CD-ROM driver (mmc_cd).
+Driver flags   : MMC-3 SWABAUDIO BURNFREE
+Supported modes: TAO PACKET SAO SAO/R96P SAO/R96R RAW/R16 RAW/R96P RAW/R96R
+Errno: 5 (Input/output error), test unit ready scsi sendcmd: no error
+CDB:  00 20 00 00 00 00
+status: 0x2 (CHECK CONDITION)
+Sense Bytes: 70 00 02 00 00 00 00 0A 00 00 00 00 3A 00 00 00
+Sense Key: 0x2 Not Ready, Segment 0
+Sense Code: 0x3A Qual 0x00 (medium not present) Fru 0x0
+Sense flags: Blk 0 (not valid)
+cmd finished after 0.000s timeout 200s
+dvdrecord: No disk / Wrong disk!
+
+As you can see, it doesn't see the disk.
+
+Albert
+
+-- 
+
+Ronnie Sahlberg wrote:
+
+Can you try using dvdwriter like this :
+
+dvdrecord -dao -ignsize -overburn dev=/dev/sgX ./IMAGE.iso
+
+and just verify that that works.
+
+If that works it is most likely that there is something missing in the
+emulation of DVD+R that
+K2B needs to be happy.
+
+
+
+On Mon, Jun 30, 2008 at 3:25 AM, Albert Pauw <albert.pauw at gmail.com>
+<albert.pauw at gmail.com> wrote:
+
+> Using open-iscsi to log into tgtd, which has the following setup for a
+> DVD-R:
+>
+> tgtadm --lld iscsi --mode target --op new --tid 1 -T
+> iqn.2007-03:virtual-dvd:`hostname`
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+> scsi_id --value "CONTROLLER"
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+> scsi_sn --value "001"
+>
+> # Create a DVD drive and give it a nice name
+> # The dvd starts out without a backing store file, i.e. no disk loaded
+> tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+> --backing-store /root/empty.iso --device-type cd
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --params
+> removable=1
+>
+> Where /root/empty.iso is an empty 4GB file. I can succesfully log into the
+> this target, dmesg shows:
+>
+> scsi 13:0:0:0: RAID              IET      Controller       0001 PQ: 0 ANSI:
+> 5
+> scsi 13:0:0:0: Attached scsi generic sg2 type 12
+> scsi 13:0:0:1: CD-ROM            IET      VIRTUAL-CDROM    0001 PQ: 0 ANSI:
+> 5
+> sr1: scsi-1 drive
+> sr 13:0:0:1: Attached scsi CD-ROM sr1
+>
+> However, K3B (CD burner program) sees the virtual CDROM (as it is called by
+> default), but doesn't see
+> that a medium is loaded (while I had given it a backing store).
+>
+> What I am doing wrong here?
+>
+> Thanks,
+>
+> Albert
+>
+> P.S. I am using Fedora 9.
+>
+>
+>
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080630/a6f62c52/attachment.html>
+
+From mangoo at wpkg.org  Mon Jun 30 10:42:00 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 30 Jun 2008 10:42:00 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <c9a3e4540806291656t490dec6eia01246fd8cdd5e8c@mail.gmail.com>
+References: <4861FAAD.7050008@wpkg.org> <48620396.2090701@wpkg.org>	
+	<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>	
+	<48620C4B.3050206@wpkg.org> <4863BAF8.6040902@wpkg.org>
+	<c9a3e4540806291656t490dec6eia01246fd8cdd5e8c@mail.gmail.com>
+Message-ID: <48689C58.8030109@wpkg.org>
+
+ronnie sahlberg schrieb:
+> Hi Tomasz,
+> 
+> I could not get that configuration to work.
+> 
+> Can you please provide more detailed instructions exactly how to set
+> up hosts A B and C
+> so I can try to reproduce it.
+> 
+> Please provide the exact commandline for each and every command I need
+> to run on the three hosts and Ill try to
+> reproduce it under gdb.
+
+A faulty RAID is just one way to crash tgtd.
+
+A simpler one is to just block the traffic between the target and the 
+initiator - just login to the target, make sure there is some iSCSI 
+traffic between the target and the initiator, then block incoming iSCSI 
+traffic on the initiator with:
+
+initiator# iptables -I INPUT -s <target IP> -p tcp --sport 3260 -j DROP
+
+
+After a while, you will see that only one tgtd process is running, 
+whereas the second has crashed.
+
+
+I'm not sure if the two ways of causing tgtd crash are related. If they 
+are, it might be some timing issue?
+
+Failing RAID may cause that tgtd is not able to access the disk for 
+several seconds, or about a minute. Failing RAID is also likely.
+
+Blocking incoming iSCSI traffic on the initiator, although less likely 
+in the real world, also confuses tgtd to the point where it crashes.
+
+The above is valid with tgt-20080527, I'm just about to try tgt-20080629.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+
+From mangoo at wpkg.org  Mon Jun 30 10:54:48 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 30 Jun 2008 10:54:48 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <48689C58.8030109@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>
+	<48620396.2090701@wpkg.org>		<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>		<48620C4B.3050206@wpkg.org>
+	<4863BAF8.6040902@wpkg.org>	<c9a3e4540806291656t490dec6eia01246fd8cdd5e8c@mail.gmail.com>
+	<48689C58.8030109@wpkg.org>
+Message-ID: <48689F58.2060404@wpkg.org>
+
+Tomasz Chmielewski schrieb:
+> ronnie sahlberg schrieb:
+>> Hi Tomasz,
+>>
+>> I could not get that configuration to work.
+>>
+>> Can you please provide more detailed instructions exactly how to set
+>> up hosts A B and C
+>> so I can try to reproduce it.
+>>
+>> Please provide the exact commandline for each and every command I need
+>> to run on the three hosts and Ill try to
+>> reproduce it under gdb.
+> 
+> A faulty RAID is just one way to crash tgtd.
+> 
+> A simpler one is to just block the traffic between the target and the 
+> initiator - just login to the target, make sure there is some iSCSI 
+> traffic between the target and the initiator, then block incoming iSCSI 
+> traffic on the initiator with:
+> 
+> initiator# iptables -I INPUT -s <target IP> -p tcp --sport 3260 -j DROP
+> 
+> 
+> After a while, you will see that only one tgtd process is running, 
+> whereas the second has crashed.
+
+Note - the above seems to be valid if:
+
+- there are two initiators connected (from different IPs), perhaps more
+- there is traffic from these two initiators
+- we block traffic on one of these initiators
+
+
+I couldn't reproduce the issue with only one initiator connected.
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mangoo at wpkg.org  Mon Jun 30 11:00:52 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 30 Jun 2008 11:00:52 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <B3E98EAC5926D5498DDD341AE4B7D21C0431C8BD@TUS1XCHCLUPIN05.enterprise.veritas.com>
+References: <4861FAAD.7050008@wpkg.org>
+	<48620396.2090701@wpkg.org><c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>
+	<4864BCAA.6000203@wpkg.org>
+	<B3E98EAC5926D5498DDD341AE4B7D21C0431C8BD@TUS1XCHCLUPIN05.enterprise.veritas.com>
+Message-ID: <4868A0C4.6010404@wpkg.org>
+
+Mark Harvey schrieb:
+> My 2c worth.
+> 
+> Try running the tgtd in 'foreground' mode (after setting "ulimit -c
+> unlimited").
+> 
+> You will then get a core file which should be a little easier to work
+> with (vs gdb on a running tgtd instance).
+> e.g.
+
+It doesn't crash when started in the foreground mode.
+
+Also, when started in the foreground mode, we only have one tgtd 
+process, so perhaps this somehow makes the issue harder or impossible to 
+reproduce.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mangoo at wpkg.org  Mon Jun 30 11:05:39 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 30 Jun 2008 11:05:39 +0200
+Subject: [Stgt-devel] disk kicked out of RAID -> tgtd segmentation fault
+In-Reply-To: <48689C58.8030109@wpkg.org>
+References: <4861FAAD.7050008@wpkg.org>
+	<48620396.2090701@wpkg.org>		<c9a3e4540806250200y762d9a09q6786e0de49f2185e@mail.gmail.com>		<48620C4B.3050206@wpkg.org>
+	<4863BAF8.6040902@wpkg.org>	<c9a3e4540806291656t490dec6eia01246fd8cdd5e8c@mail.gmail.com>
+	<48689C58.8030109@wpkg.org>
+Message-ID: <4868A1E3.10404@wpkg.org>
+
+Tomasz Chmielewski schrieb:
+
+(...)
+
+> initiator# iptables -I INPUT -s <target IP> -p tcp --sport 3260 -j DROP
+> 
+> 
+> After a while, you will see that only one tgtd process is running, 
+> whereas the second has crashed.
+
+(...)
+
+> The above is valid with tgt-20080527, I'm just about to try tgt-20080629.
+
+It still crashes with tgt-20080629.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+

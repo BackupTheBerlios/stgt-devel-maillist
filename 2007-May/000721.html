@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch 1/2] passthrough target notification	function
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%201/2%5D%20passthrough%20target%20notification%0A%09function&In-Reply-To=%3C20070531012629.GA10833%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000672.html">
+   <LINK REL="Next"  HREF="000722.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch 1/2] passthrough target notification	function</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%201/2%5D%20passthrough%20target%20notification%0A%09function&In-Reply-To=%3C20070531012629.GA10833%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] [patch 1/2] passthrough target notification	function">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Thu May 31 03:26:29 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000672.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+        <LI>Next message: <A HREF="000722.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#721">[ date ]</a>
+              <a href="thread.html#721">[ thread ]</a>
+              <a href="subject.html#721">[ subject ]</a>
+              <a href="author.html#721">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>* FUJITA Tomonori (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>) wrote:
+&gt;<i> From: Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] [patch 1/2] passthrough target notification function
+</I>&gt;<i> Date: Fri, 18 May 2007 13:17:45 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; We spoke about this last week on the mailing list in relation to 
+</I>&gt;<i> &gt; pass-through for kernel lld's.  This would notify scsi_tgt of any
+</I>&gt;<i> &gt; target logical units that should be handled in the kernel.  Here is a
+</I>&gt;<i> &gt; first pass, this is the user-space portion.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Send target state updates to the kernel (in-kernel pass-through enablement)
+</I>&gt;<i> 
+</I>&gt;<i> Thanks a lot.
+</I>&gt;<i> 
+</I>&gt;<i> From a quick look, you try to bind an lld to a scsi_host? If so, we
+</I>&gt;<i> can't (yeah, user-space code does something like that, but it's
+</I>&gt;<i> wrong. it needs be fixed). We need to bind a scsi_host to a tgt
+</I>&gt;<i> scsi_host (please read the previous pass-through discussion).
+</I>
+If I'm understanding you correctly, the target software assigns one
+scsi_host to only one remote initiator.  This would mean that you want to
+assign an entire physical adapter on the target side to a tgt scsi_host
+that an initiator will see?  And then this would be a 1:1 relationship
+of initiator to target.  Is this all correct?
+
+--Rob Jennings
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000672.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+	<LI>Next message: <A HREF="000722.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#721">[ date ]</a>
+              <a href="thread.html#721">[ thread ]</a>
+              <a href="subject.html#721">[ subject ]</a>
+              <a href="author.html#721">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

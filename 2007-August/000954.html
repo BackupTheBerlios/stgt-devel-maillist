@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20iser_task%20object%20%28was%3A%20dd%20fails%20with%20iSER%29&In-Reply-To=%3C46C2C6E1.6040604%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000944.html">
+   <LINK REL="Next"  HREF="000957.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Adding iser_task object (was: dd fails with iSER)</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20iser_task%20object%20%28was%3A%20dd%20fails%20with%20iSER%29&In-Reply-To=%3C46C2C6E1.6040604%40voltaire.com%3E"
+       TITLE="[Stgt-devel] Adding iser_task object (was: dd fails with iSER)">erezz at voltaire.com
+       </A><BR>
+    <I>Wed Aug 15 11:26:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000944.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000957.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#954">[ date ]</a>
+              <a href="thread.html#954">[ thread ]</a>
+              <a href="subject.html#954">[ subject ]</a>
+              <a href="author.html#954">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Pete Wyckoff wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Tue, 14 Aug 2007 17:04 +0300:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> I went over the iSER target code, and something looks strange (unless
+</I>&gt;&gt;<i> I'm missing something here):
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> iscsi_iser_read calls iser_parse_hdr, which reads the iSER header and
+</I>&gt;&gt;<i> saves the remote va &amp; stag on the conn_info object. Later,
+</I>&gt;&gt;<i> iser_rdma_read/write is called (from another context?), and uses the
+</I>&gt;&gt;<i> remote va &amp; stag. The problem that I see is: what happens if another cmd
+</I>&gt;&gt;<i> is received before RDMA read/write is performed for the 1st cmd?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I can see that on the log file:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> The last 3 cmds that were received have stags 6004a, 6004b &amp; 6004c
+</I>&gt;&gt;<i> respectively.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> [iSER]:iSCSI control type PDU.
+</I>&gt;&gt;<i> [iSER]:rem_write_stag 6004a rem_write_va 69cea000.
+</I>&gt;&gt;<i> [iSER]:iscsi_iser_read ret 48.
+</I>&gt;&gt;<i> tgtd: iscsi_scsi_cmd_rx_start(1462) 1 2a 0 8192 131072 1 42
+</I>&gt;&gt;<i> [iSER]:meml 0x634d88 buf 0x2aaaaad30010.
+</I>&gt;&gt;<i> tgtd: iscsi_scsi_cmd_rx_start(1489) 0 122880 0 8192
+</I>&gt;&gt;<i> [iSER]:in iscsi_iser_read buf 0x2aaaaad302b0 nbytes 8192.
+</I>&gt;&gt;<i> [iSER]:iscsi_iser_read ret 8192.
+</I>&gt;&gt;<i> tgtd: iscsi_task_queue(1403) 42 42 1
+</I>&gt;&gt;<i> tgtd: iser_event_modify(1435) ep 0 events 5
+</I>&gt;&gt;<i> tgtd: iser_event_modify(1442) ep 0 was already on the list.  Track?
+</I>&gt;&gt;<i> [iSER]:handle_wc() Done processing recv 0x642228, reposted it.
+</I>&gt;&gt;<i> [iSER]:handle_wc() Incoming Cmd - COMPLETE (8268 bytes).
+</I>&gt;&gt;<i> [iSER]:in iscsi_iser_read buf 0x636eb0 nbytes 48.
+</I>&gt;&gt;<i> [iSER]:iSCSI control type PDU.
+</I>&gt;&gt;<i> [iSER]:rem_write_stag 6004b rem_write_va 6a74a000.
+</I>&gt;&gt;<i> [iSER]:iscsi_iser_read ret 48.
+</I>&gt;&gt;<i> tgtd: iscsi_scsi_cmd_rx_start(1462) 1 2a 0 8192 131072 1 43
+</I>&gt;&gt;<i> [iSER]:meml 0x634da0 buf 0x2aaaaadb1010.
+</I>&gt;&gt;<i> tgtd: iscsi_scsi_cmd_rx_start(1489) 0 122880 0 8192
+</I>&gt;&gt;<i> [iSER]:in iscsi_iser_read buf 0x2aaaaadb12b0 nbytes 8192.
+</I>&gt;&gt;<i> [iSER]:iscsi_iser_read ret 8192.
+</I>&gt;&gt;<i> tgtd: iscsi_task_queue(1403) 43 43 1
+</I>&gt;&gt;<i> tgtd: iser_event_modify(1435) ep 0 events 5
+</I>&gt;&gt;<i> tgtd: iser_event_modify(1442) ep 0 was already on the list.  Track?
+</I>&gt;&gt;<i> [iSER]:handle_wc() Done processing recv 0x6432f8, reposted it.
+</I>&gt;&gt;<i> [iSER]:handle_wc() Incoming Cmd - COMPLETE (8268 bytes).
+</I>&gt;&gt;<i> [iSER]:in iscsi_iser_read buf 0x636eb0 nbytes 48.
+</I>&gt;&gt;<i> [iSER]:iSCSI control type PDU.
+</I>&gt;&gt;<i> [iSER]:rem_write_stag 6004c rem_write_va 6a18a000.
+</I>&gt;&gt;<i> [iSER]:iscsi_iser_read ret 48.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Later, RDMA read is performed for the cmds. For all cmds, the stag is
+</I>&gt;&gt;<i> 6004c - just like the last stag that was received:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> [iSER]:in iser_rdma_read.
+</I>&gt;&gt;<i> [iSER]:in iser_post_rdma_wr size 122880 rem_va 6a18a000 rem_stag 6004c
+</I>&gt;&gt;<i> wr_id = 0x63f010 (itt = 0x3d)
+</I>&gt;&gt;<i> .
+</I>&gt;&gt;<i> [iSER]:iser_post_rdma_wr() Exit rdma = 0x63f010.
+</I>&gt;&gt;<i> tgtd: iser_progress(1382) trying tx on fd 0 conn 0x636d90
+</I>&gt;&gt;<i> tgtd: iscsi_task_tx_start(1750) found a task 3e 131072 8192 122880
+</I>&gt;&gt;<i> [iSER]:in iser_rdma_read.
+</I>&gt;&gt;<i> [iSER]:in iser_post_rdma_wr size 122880 rem_va 6a1a8000 rem_stag 6004c
+</I>&gt;&gt;<i> wr_id = 0x63f090 (itt = 0x3e)
+</I>&gt;&gt;<i> .
+</I>&gt;&gt;<i> [iSER]:iser_post_rdma_wr() Exit rdma = 0x63f090.
+</I>&gt;&gt;<i> tgtd: iser_progress(1382) trying tx on fd 0 conn 0x636d90
+</I>&gt;&gt;<i> tgtd: iscsi_task_tx_start(1750) found a task 3f 131072 8192 122880
+</I>&gt;&gt;<i> [iSER]:in iser_rdma_read.
+</I>&gt;&gt;<i> [iSER]:in iser_post_rdma_wr size 122880 rem_va 6a1c6000 rem_stag 6004c
+</I>&gt;&gt;<i> wr_id = 0x63f110 (itt = 0x3f)
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> You're absolutely right.  That's a pretty glaring problem and
+</I>&gt;<i> there's even a TODO in struct conn_info that notices there is an
+</I>&gt;<i> issue.  With the OSD initiator applications we use, multiple
+</I>&gt;<i> commands are not in flight.
+</I>&gt;<i>
+</I>&gt;<i> Probably what has to happen is to move the per-task stag and va
+</I>&gt;<i> fields from conn_info into iscsi_task.  You are certainly welcome to
+</I>&gt;<i> hack on the code yourself, or somebody here will take a look at it
+</I>&gt;<i> if you don't find the time.
+</I>&gt;<i>   
+</I>
+At first, I thought that this will be easy to fix - just move the va &amp;
+stag from the conn object to the task object. However, when ep_read
+(iscsi_iser_read in iSER's case) is called, the task isn't allocated
+yet. iSER must save the data from the received iSER header in some task
+object (e.g. iser_task).
+
+The solution that I see for that is:
+
+    * When iSER detects that a new cmd was received, it allocates an
+      iSER task (iser_task). iser_task will contain the following data:
+          o read va &amp; stag
+          o write va &amp; stag
+          o itt
+
+    The new iser_task will be stored (in a hash table according to its
+    itt?), and will be used later.
+
+    * When the target calls ep_rdma_read/write, it will also send the
+      iscsi_task object (or itt, at least). iSER will extract the
+      iser_task (according to the itt) and use the va &amp; stag.
+    * The iser_task will be released when iscsi_task is released.
+
+
+Please send your comments. Can you think about other possible solutions?
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000944.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000957.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#954">[ date ]</a>
+              <a href="thread.html#954">[ thread ]</a>
+              <a href="subject.html#954">[ subject ]</a>
+              <a href="author.html#954">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

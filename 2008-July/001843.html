@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%205/7%5D%20Add%20direct-store%20option%20to%20the%0A%09configuration%20file&In-Reply-To=%3C46b8a8850807231547o44e44974s594d0cfe2d69392e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001821.html">
+   <LINK REL="Next"  HREF="001822.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%205/7%5D%20Add%20direct-store%20option%20to%20the%0A%09configuration%20file&In-Reply-To=%3C46b8a8850807231547o44e44974s594d0cfe2d69392e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Thu Jul 24 00:47:51 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001821.html">[Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file
+</A></li>
+        <LI>Next message: <A HREF="001822.html">[Stgt-devel] [PATCH 6/7] target reconfiguration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1843">[ date ]</a>
+              <a href="thread.html#1843">[ thread ]</a>
+              <a href="subject.html#1843">[ subject ]</a>
+              <a href="author.html#1843">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Jul 22, 2008 at 4:20 AM, Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt; wrote:
+&gt;<i> Add direct-store option to the configuration file
+</I>&gt;<i> It is used in order to export the real device properties.
+</I>&gt;<i> When several targets export the same device to the initiator we
+</I>&gt;<i> will be able to use dm-multipath on the initiator.
+</I>&gt;<i>
+</I>&gt;<i> Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>
+Acked-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+
+&gt;<i> ---
+</I>&gt;<i>  scripts/tgt-admin |   32 ++++++++++++++++++++++++++++++++
+</I>&gt;<i>  1 files changed, 32 insertions(+), 0 deletions(-)
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+</I>&gt;<i> index 8eea44f..846437a 100755
+</I>&gt;<i> --- a/scripts/tgt-admin
+</I>&gt;<i> +++ b/scripts/tgt-admin
+</I>&gt;<i> @@ -146,6 +146,38 @@ sub process_options {
+</I>&gt;<i>                }
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i> +       if ( $option eq &quot;direct-store&quot; ) {
+</I>&gt;<i> +               my $inq;
+</I>&gt;<i> +               my $vendor_id=&quot;&quot;;
+</I>&gt;<i> +               my $prod_id=&quot;&quot;;
+</I>&gt;<i> +               my $prod_rev=&quot;&quot;;
+</I>&gt;<i> +               my $scsi_serial=&quot;&quot;;
+</I>&gt;<i> +               # if we have one command, force it to be an array anyway
+</I>&gt;<i> +               unless (ref($value) eq 'ARRAY') {
+</I>&gt;<i> +                       $value = [ $value ];
+</I>&gt;<i> +               }
+</I>&gt;<i> +               my @value_arr = @$value;
+</I>&gt;<i> +               my $i = 1;
+</I>&gt;<i> +               foreach my $direct_store (@value_arr) {
+</I>&gt;<i> +                       $inq=`sg_inq $direct_store`;
+</I>&gt;<i> +                       if ($inq=~/Vendor identification:\s*(\w+)\s*\n*Product identification:\s*([\w\s\/\-]+)\n\s*\n*Product revision level:\s*(\w*)\s*\n*Unit serial number:\s*(\w+)/)
+</I>&gt;<i> +                       {
+</I>&gt;<i> +                               $vendor_id=&quot;$1&quot;;
+</I>&gt;<i> +                               $prod_id=&quot;$2&quot;;
+</I>&gt;<i> +                               $prod_rev=&quot;$3&quot;;
+</I>&gt;<i> +                               $scsi_serial=&quot;$4&quot;;
+</I>&gt;<i> +                       }
+</I>&gt;<i> +                       $vendor_id =~ s/\s+$//;
+</I>&gt;<i> +                       $prod_id =~ s/\s+$//;
+</I>&gt;<i> +                       $prod_rev =~ s/\s+$//;
+</I>&gt;<i> +                       $scsi_serial =~ s/\s+$//;
+</I>&gt;<i> +
+</I>&gt;<i> +                       execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun 1 -b $direct_store&quot;);
+</I>&gt;<i> +                       execute(&quot;tgtadm --lld iscsi --op update --mode logicalunit --tid  $next_tid --lun 1 --params vendor_id=\&quot;$vendor_id\&quot;,product_id=\&quot;$prod_id\&quot;,product_rev=\&quot;$prod_rev\&quot;,scsi_sn=\&quot;$scsi_serial\&quot;&quot;);
+</I>&gt;<i> +                       $i += 1;
+</I>&gt;<i> +               }
+</I>&gt;<i> +       }
+</I>&gt;<i> +
+</I>&gt;<i>        if ( $option eq &quot;incominguser&quot; ) {
+</I>&gt;<i>                if (ref($value) eq &quot;ARRAY&quot;) {
+</I>&gt;<i>                        my @value_arr = @$value;
+</I>&gt;<i> --
+</I>&gt;<i> 1.5.3.8
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001821.html">[Stgt-devel] [PATCH 5/7] Add direct-store option to the	configuration file
+</A></li>
+	<LI>Next message: <A HREF="001822.html">[Stgt-devel] [PATCH 6/7] target reconfiguration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1843">[ date ]</a>
+              <a href="thread.html#1843">[ thread ]</a>
+              <a href="subject.html#1843">[ subject ]</a>
+              <a href="author.html#1843">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vtl patch.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3C20070405142013H.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000512.html">
+   <LINK REL="Next"  HREF="000516.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vtl patch.</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3C20070405142013H.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] vtl patch.">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Apr  5 07:20:22 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000512.html">[Stgt-devel] vtl patch.
+</A></li>
+        <LI>Next message: <A HREF="000516.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#515">[ date ]</a>
+              <a href="thread.html#515">[ thread ]</a>
+              <a href="subject.html#515">[ subject ]</a>
+              <a href="author.html#515">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] vtl patch.
+Date: Thu, 5 Apr 2007 13:05:45 +1000
+
+&gt;<i> Re-sending updated ssc3.c &amp; smc.c in full.
+</I>
+Thanks. I'll review and merge the patch soon.
+
+
+&gt;<i> Includes first couple of &quot;improvements&quot; pointed out by Ming.
+</I>&gt;<i>  - memory leak fixed.
+</I>&gt;<i>  - case insensitive compare.
+</I>&gt;<i> 
+</I>&gt;<i> The 3rd one (referenced below), I shall look at later on today.
+</I>
+I like the current approach.
+
+
+&gt;<i> Cheers
+</I>&gt;<i> Mark Harvey
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> On 4/5/07, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; On 4/5/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; On Thu, 2007-04-05 at 09:56 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; &gt; &gt; +       .ops    = {
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_test_unit,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_request_sense,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt; &gt; +               {spc_illegal_op,},
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; instead of having tons of these spc_illegal_op, can we have them by
+</I>&gt;<i> &gt; &gt; default to be NULL and the caller check if NULL, if NULL call
+</I>&gt;<i> &gt; &gt; spc_illegal_op directly?
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I basically copied the sbc.c module and followed its syntax, and
+</I>&gt;<i> &gt; called/set all un-implemented routines to spc_illegal_op for the time
+</I>&gt;<i> &gt; being.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; But I like your suggestion.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Cheers
+</I>&gt;<i> &gt; Mark
+</I>&gt;<i> &gt;
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000512.html">[Stgt-devel] vtl patch.
+</A></li>
+	<LI>Next message: <A HREF="000516.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#515">[ date ]</a>
+              <a href="thread.html#515">[ thread ]</a>
+              <a href="subject.html#515">[ subject ]</a>
+              <a href="author.html#515">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

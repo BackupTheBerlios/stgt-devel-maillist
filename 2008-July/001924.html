@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20Add%20option%20to%20delete%20all%20the%20targets&In-Reply-To=%3C488DB518.2030005%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001909.html">
+   <LINK REL="Next"  HREF="001926.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/7] Add option to delete all the targets</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20Add%20option%20to%20delete%20all%20the%20targets&In-Reply-To=%3C488DB518.2030005%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [PATCH 2/7] Add option to delete all the targets">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Jul 28 14:01:28 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001909.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+        <LI>Next message: <A HREF="001926.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1924">[ date ]</a>
+              <a href="thread.html#1924">[ thread ]</a>
+              <a href="subject.html#1924">[ subject ]</a>
+              <a href="author.html#1924">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+
+(...)
+
+&gt;&gt;<i> Why are we touching the config file here anyway?
+</I>&gt;&gt;<i> IMO, &quot;-d&quot; flag should just remove all targets from a running tgtd; it 
+</I>&gt;&gt;<i> shouldn't try to backup or modify the config file.
+</I>&gt;<i> 
+</I>&gt;<i> Agreed, I prefer to have an explicit option to touch (update) my
+</I>&gt;<i> ocnfiguration file; other options just change my running targets'
+</I>&gt;<i> configurations.
+</I>
+What is the preferred approach to delete the targets via tgt-admin?
+
+1) delete only the targets which have no initiators connected - this is what we do right now; we offline them before we try to delete
+
+2) delete ALL targets, even if initiators are connected (supported since &quot;support to close a connection by force and to shut down tgtd&quot;)
+
+
+Or, make it two separate options? I.e.:
+
+- leave the first one (offline, try to delete) like it is now
+- add a new option - --delete-force - would forcibly remove all or specified targets; examples:
+
+--delete-force ALL - will remove all targets
+--delete-force iqn.2008-06.com.example:blah.blah
+--delete-force tid=5
+
+?
+
+
+-- 
+Tomasz Chmielewski 
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001909.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+	<LI>Next message: <A HREF="001926.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1924">[ date ]</a>
+              <a href="thread.html#1924">[ thread ]</a>
+              <a href="subject.html#1924">[ subject ]</a>
+              <a href="author.html#1924">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

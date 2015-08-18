@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3C46b8a8850807282228x268a9d39h602de24da549eef1%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001941.html">
+   <LINK REL="Next"  HREF="001962.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3C46b8a8850807282228x268a9d39h602de24da549eef1%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Tue Jul 29 07:28:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001941.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+        <LI>Next message: <A HREF="001962.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1942">[ date ]</a>
+              <a href="thread.html#1942">[ thread ]</a>
+              <a href="subject.html#1942">[ subject ]</a>
+              <a href="author.html#1942">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, Jul 28, 2008 at 10:24 PM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Mon, 28 Jul 2008 20:58:42 -0700
+</I>&gt;<i> &quot;Richard Sharpe&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;&gt;<i> On Mon, Jul 28, 2008 at 8:50 PM, FUJITA Tomonori
+</I>&gt;&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;&gt;<i> &gt; On Mon, 28 Jul 2008 20:09:34 -0700
+</I>&gt;&gt;<i> &gt; &quot;Richard Sharpe&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i> &gt;
+</I>&gt;&gt;<i> &gt;&gt; On Mon, Jul 28, 2008 at 7:49 PM, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i> &gt;&gt; &gt; Richard Sharpe wrote:
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;&gt; From a16d368a29298170df2c21fd19d8490c248f06b1 Mon Sep 17 00:00:00 2001
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; From: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; Date: Mon, 28 Jul 2008 14:34:12 -0700
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; Subject: [PATCH] Make changes so that VTL stuff works properly ...
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; Signed-off-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; There are three changes here.
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; In target.h I expose device_lookup for use by the smc.c code.
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; In target.h I modify tgt_device_path_update so that we can call it to
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; both open and close a file that has been allocated to a
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; data_transfer_station.
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; In smc.c I modified set_slot_full and set_slot_empty to call the
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; modified tgt_device_path_update to achieve my goals. We call
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; device_lookup to figure out the device we are interested in.
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; I have tested this by loading and unloading tapes and DVDs, doing tar
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; to the drive and using cdrecord on the device, and verifying with lsof
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; that the tgtd has the files open when they are in the transfer station
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; and does not have them open when the station has been unloaded.
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; It all seems to work. I have attached the patch as well because gmail
+</I>&gt;&gt;<i> &gt;&gt; &gt;&gt; seems to kill patches ... I hope the attached patch is OK.
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; Sorry, I don't quite understand the reason for this patch.
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; The smc already calls a non-static dtd_load_unload() which performs a
+</I>&gt;&gt;<i> &gt;&gt; &gt; similar function to tgt_device_path_update() but with different args.
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; int dtd_load_unload(int tid, uint64_t lun, int load, char *file)
+</I>&gt;&gt;<i> &gt;&gt; &gt; vs
+</I>&gt;&gt;<i> &gt;&gt; &gt; int tgt_device_path_update(struct target *target, struct scsi_lu *lu, char
+</I>&gt;&gt;<i> &gt;&gt; &gt; *path)
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; i.e. dtd_load_unload calls __device_lookup() and then opens/closes the
+</I>&gt;&gt;<i> &gt;&gt; &gt; backing store.
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; All this patch seems to do is call the 'open' or 'close' backing store
+</I>&gt;&gt;<i> &gt;&gt; &gt; twice.
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; Perhaps 'fixing' dtd_load_unload() so it then calls tgt_device_path_update()
+</I>&gt;&gt;<i> &gt;&gt; &gt; if this function is not correct.
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; FWIW: dtd_load_unload == Data Transfer Device load/unload
+</I>&gt;&gt;<i> &gt;&gt; &gt;
+</I>&gt;&gt;<i> &gt;&gt; &gt; At the time this function was added, the tgt_device_path_update() did not
+</I>&gt;&gt;<i> &gt;&gt; &gt; exist.
+</I>&gt;&gt;<i> &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; All I know is that the current code segfaults when you ask for a tape
+</I>&gt;&gt;<i> &gt;&gt; to be loaded into the transfer station.
+</I>&gt;&gt;<i> &gt;
+</I>&gt;&gt;<i> &gt; Can you tell me what commands you performs? I want to reproduce the
+</I>&gt;&gt;<i> &gt; ssc segfault to see what's wrong.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I sent out a set of commands that I use to setup SMC/MMC for testing.
+</I>&gt;&gt;<i> There is one mistake in the set of commands (wrong target number in
+</I>&gt;&gt;<i> one place) but the same problem occurs with SMC/MMC.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I can't send you the tape stuff until tomorrow when I am back in the office.
+</I>&gt;<i>
+</I>&gt;<i> I see. Can you send both to the mailing list?
+</I>
+Here's on. mmc has problems with this. I will send the tape config tomorrow.
+
+# Create a DVD target ...
+./usr/tgtadm --lld iscsi --op new    --mode target      --tid 2 -T iqn.2008-03.c
+om.datalane-inc:storage.dvd1.tyan1U00.sys1
+
+# Now the DVD drive
+./usr/tgtadm --lld iscsi --op new    --mode logicalunit --tid 2 --lun 1 -Y cd
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 1 --params
+ vendor_id=STGT_DVD,product_id=DVD101,product_rev=0010,scsi_sn=STGTDVD01,removab
+le=1
+
+./usr/tgtadm --lld iscsi --op new    --mode logicalunit --tid 2 --lun 2 -b /mnt/
+testing/virtual-tapes/smc --device-type=changer
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ vendor_id=STK,product_id=L700,product_rev=0010,scsi_sn=STK0101,removable=1
+
+# A data transfer unit ...
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=4,start_address=1,quantity=1
+
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=4,address=1,tid=2,lun=1
+
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=1,start_address=16,quantity=1
+
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ media_home=/mnt/testing/virtual-tapes
+
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=2,start_address=1024,quantity=8
+
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=2,address=1024,barcode=DVD00,sides=1
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=2,address=1025,barcode=DVD01,sides=1
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=2,address=1026,barcode=DVD02,sides=1
+./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 2 --lun 2 --params
+ element_type=2,address=1027,barcode=DVD03,sides=1
+
+./usr/tgtadm --lld iscsi --op bind   --mode target      --tid 2 -I ALL
+./usr/tgtadm --lld iscsi --mode target --op show
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001941.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+	<LI>Next message: <A HREF="001962.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1942">[ date ]</a>
+              <a href="thread.html#1942">[ thread ]</a>
+              <a href="subject.html#1942">[ subject ]</a>
+              <a href="author.html#1942">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

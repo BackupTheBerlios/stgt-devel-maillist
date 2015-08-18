@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20Add%20option%20to%20delete%20all%20the%20targets&In-Reply-To=%3C488C788A.7010607%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001875.html">
+   <LINK REL="Next"  HREF="001909.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/7] Add option to delete all the targets</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20Add%20option%20to%20delete%20all%20the%20targets&In-Reply-To=%3C488C788A.7010607%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 2/7] Add option to delete all the targets">dorons at voltaire.com
+       </A><BR>
+    <I>Sun Jul 27 15:30:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001875.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+        <LI>Next message: <A HREF="001909.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1902">[ date ]</a>
+              <a href="thread.html#1902">[ thread ]</a>
+              <a href="subject.html#1902">[ subject ]</a>
+              <a href="author.html#1902">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Modify delete function to delete only the active targets
+without touching the configuration file.
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ scripts/tgt-admin |   25 +++++++++++++++++++------
+ 1 files changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index 76fab79..9083417 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -328,10 +328,23 @@ if (($execute == 1) || ($pretend == 1)) {
+ # Delete all the targets and backup the current conf file
+ sub delete {
+ 	print &quot;deleting targets...\n&quot;;
+-	print &quot;a copy of the conf file is on:/etc/tgt/targets.conf.bkp\n&quot;;
+-	`mv $configfile /etc/tgt/targets.conf.bkp`;
+-	open FILE, &quot;&gt;&quot;, &quot;$configfile&quot; or die $!;
+-	print FILE &quot;&lt;target&gt;\n&quot;;
+-	print FILE &quot;&lt;/target&gt;\n&quot;;
+-	close FILE;
++	# We need to run as root
++	if ( $&gt; ) {
++		die(&quot;You must be root to run this program.\n&quot;);
++	}	
++	
++	my @show_target = `tgtadm --lld iscsi --op show --mode target`;
++	my @tids=();
++	
++	# Find all the active targets' tids
++	foreach my $show_target_line (@show_target) {
++		if ( $show_target_line =~ m/^Target (\d*): (.+)/ ) {
++			push(@tids,$1);
++		}
++	}
++        # Run over all the active targets and delete them
++        foreach my $tid (@tids) {
++		execute(&quot;tgtadm --op update --mode target --tid=$tid -n state -v offline&quot;);
++		execute(&quot;tgtadm --mode target --op delete --tid=$tid&quot;);
++	}
+ }
+-- 
+1.5.2
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001875.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+	<LI>Next message: <A HREF="001909.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1902">[ date ]</a>
+              <a href="thread.html#1902">[ thread ]</a>
+              <a href="subject.html#1902">[ subject ]</a>
+              <a href="author.html#1902">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

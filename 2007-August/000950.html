@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070814225206.GA11031%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000951.html">
+   <LINK REL="Next"  HREF="000953.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi fix xmit param</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070814225206.GA11031%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi fix xmit param">pw at osc.edu
+       </A><BR>
+    <I>Wed Aug 15 00:52:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000951.html">[Stgt-devel] ibmvio is slow
+</A></li>
+        <LI>Next message: <A HREF="000953.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#950">[ date ]</a>
+              <a href="thread.html#950">[ thread ]</a>
+              <a href="subject.html#950">[ subject ]</a>
+              <a href="author.html#950">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>This might be a hack.  In fixing the defaults earlier, I put the
+SCSI default for MaxRecvDataSegmentLength in place for the
+ISCSI_PARAM_MAX_XMIT_DLENGTH.  But really it should be whatever
+the initiator tells us.  So override the &quot;minimum&quot; function and
+just set the thing directly.  Perhaps this parameter should live
+outside the conn-&gt;session_param[] structure---there are many exceptions
+for it scattered around the code.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index e092462..a1bae20 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -305,7 +305,12 @@ static void text_scan_login(struct iscsi_connection *conn)
+ 			}
+ 
+ 			err = param_check_val(session_keys, idx, &amp;val);
+-			err = param_set_val(session_keys, conn-&gt;session_param, idx, &amp;val);
++			if (idx == ISCSI_PARAM_MAX_XMIT_DLENGTH)
++				/* just record whatever he wants,
++				 * assuming it fits in the limits */
++				conn-&gt;session_param[idx].val = val;
++			else
++				err = param_set_val(session_keys, conn-&gt;session_param, idx, &amp;val);
+ 
+ 			switch (conn-&gt;session_param[idx].state) {
+ 			case KEY_STATE_START:
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000951.html">[Stgt-devel] ibmvio is slow
+</A></li>
+	<LI>Next message: <A HREF="000953.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#950">[ date ]</a>
+              <a href="thread.html#950">[ thread ]</a>
+              <a href="subject.html#950">[ subject ]</a>
+              <a href="author.html#950">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

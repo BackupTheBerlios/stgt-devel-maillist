@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%20Linux%20kernel&In-Reply-To=%3C47D511E9.7020209%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001446.html">
+   <LINK REL="Next"  HREF="001448.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%20Linux%20kernel&In-Reply-To=%3C47D511E9.7020209%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Mar 10 11:48:09 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001446.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+        <LI>Next message: <A HREF="001448.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1447">[ date ]</a>
+              <a href="thread.html#1447">[ thread ]</a>
+              <a href="subject.html#1447">[ subject ]</a>
+              <a href="author.html#1447">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+
+(...)
+
+&gt;&gt;<i> But it looks that there is still this issue then - so it may fail sometimes:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>   there is a race
+</I>&gt;&gt;<i>   between the first and second operations (that is, you need to peform
+</I>&gt;&gt;<i>   the second right after the first, before the initiator tries to
+</I>&gt;&gt;<i>   connect). I'm fine with changing the default state to 'offline'.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> ?
+</I>&gt;<i> 
+</I>&gt;<i> Then, at least, try that to see it works for you. After that, you can
+</I>&gt;<i> say something like, it works for me, but I want the default state
+</I>&gt;<i> 'offline'.
+</I>
+No, it doesn't work for me because of the race mentioned above, or, 
+described once again, below - this is what happens to the target and 
+initiator if we want to restart the target (i.e., target software 
+upgrade or target machine restart, because of kernel, hardware upgrade 
+etc.):
+
+   TARGET                        INITIATOR
+* target running                initiator connected
+* data transferred              data transferred
+* target restarted              initiator tries to reconnect
+* target not yet configured,    initiator tries to reconnect
+   but listens already
+* target failed ini connection  initiator reconnected, but
+                                 was rejected (no such target),
+                                 IO error
+* the target is configured      too late to recover
+
+
+Note: I tested it with tgt-20071227, as it was the latest tar.bz2 
+package available - so iptables workaround was still needed.
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001446.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+	<LI>Next message: <A HREF="001448.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1447">[ date ]</a>
+              <a href="thread.html#1447">[ thread ]</a>
+              <a href="subject.html#1447">[ subject ]</a>
+              <a href="author.html#1447">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

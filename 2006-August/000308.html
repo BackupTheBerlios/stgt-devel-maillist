@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3CD4F8F0B3820E754C887699BEF26A8940014CF85A%40taurus.voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000306.html">
+   <LINK REL="Next"  HREF="000309.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Dan Bar Dov</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3CD4F8F0B3820E754C887699BEF26A8940014CF85A%40taurus.voltaire.com%3E"
+       TITLE="[Stgt-devel] User-mode iSER">danb at voltaire.com
+       </A><BR>
+    <I>Sun Aug  6 09:59:36 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000306.html">[Stgt-devel] Investment assistance / Help ( From Mrs. Al-Takiha	Sabri )
+</A></li>
+        <LI>Next message: <A HREF="000309.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#308">[ date ]</a>
+              <a href="thread.html#308">[ thread ]</a>
+              <a href="subject.html#308">[ subject ]</a>
+              <a href="author.html#308">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE> 
+
+&gt;<i> -----Original Message-----
+</I>&gt;<i> From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A> 
+</I>&gt;<i> [mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of 
+</I>&gt;<i> FUJITA Tomonori
+</I>&gt;<i> Sent: Thursday, August 03, 2006 6:20 PM
+</I>&gt;<i> To: Dan Bar Dov
+</I>&gt;<i> Cc: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>; 
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>
+</I>&gt;<i> Subject: Re: [Stgt-devel] User-mode iSER
+</I>&gt;<i> 
+</I>&gt;<i> From: &quot;Dan Bar Dov&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">danb at voltaire.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] User-mode iSER
+</I>&gt;<i> Date: Thu, 3 Aug 2006 11:34:33 +0300
+</I>&gt;<i> 
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; -----Original Message-----
+</I>&gt;<i> &gt; &gt; From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A> 
+</I>&gt;<i> &gt; &gt; [mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of 
+</I>&gt;<i> Ming Zhang
+</I>&gt;<i> &gt; &gt; Sent: Wednesday, August 02, 2006 5:20 PM
+</I>&gt;<i> &gt; &gt; To: Tom Tucker
+</I>&gt;<i> &gt; &gt; Cc: FUJITA Tomonori; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; &gt; Subject: Re: [Stgt-devel] User-mode iSER
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; On Wed, 2006-08-02 at 09:01 -0500, Tom Tucker wrote:
+</I>&gt;<i> &gt; &gt; &gt; [...snip...]
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; I think this is the area where we will need to get 
+</I>&gt;<i> &gt; &gt; fancy if we want
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; higher performance. To avoid the copy, we would have to 
+</I>&gt;<i> &gt; &gt; migrate to
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; netchannels (if they every happen) or implement our own 
+</I>&gt;<i> &gt; &gt; simple tear-away
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; buffer scheme on top of a socket. I think this is 
+</I>&gt;<i> &gt; &gt; phase-ii, however. 
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; ok, otherwise copy to user space and copy back to kernel 
+</I>&gt;<i> &gt; &gt; for disk = low
+</I>&gt;<i> &gt; &gt; &gt; &gt; performance. yes, direct io can be used here, but then u 
+</I>&gt;<i> &gt; &gt; lose whole
+</I>&gt;<i> &gt; &gt; &gt; &gt; cache benefits.
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; Can you elaborate on the loss of &quot;whole cache benefits&quot;. 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; if you use a Linux box as a storage server, it will be 
+</I>&gt;<i> desired to use
+</I>&gt;<i> &gt; &gt; page cache as storage cache. though this will bring data integrity
+</I>&gt;<i> &gt; &gt; issues, but so many people still want to have it for specific
+</I>&gt;<i> &gt; &gt; applications.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I don't think page cache as storage cache makes sense. If you look
+</I>&gt;<i> &gt; at the networked storage, you have caching on the initiator 
+</I>&gt;<i> (client) side
+</I>&gt;<i> &gt; and you have caching on the target (storage server) side. Storage
+</I>&gt;<i> &gt; servers usually have write-behind cache, and the better ones, have
+</I>&gt;<i> &gt; it battery backed up for data integrity's sake. Storage 
+</I>&gt;<i> admins know to
+</I>&gt;<i> &gt; shutd down write behind caching if it is not backed up.
+</I>&gt;<i> 
+</I>&gt;<i> Modern operating systems and applications (like file systems) does not
+</I>&gt;<i> need help from battery-backed memory to enjoy write-behind cache on
+</I>&gt;<i> SAN target devices for better performance without data corruption
+</I>&gt;<i> risks. So page cache is always useful.
+</I>
+Since we are working on the SAN target, my point is we need to know if
+this serving target is write-behind or not. If our code relies on page cache, 
+it can not operate in any mode except write behind, however, this is
+an implicit write behind. We could provide a faster response with an explicit 
+write behind.
+
+&gt;<i> 
+</I>&gt;<i> Of cource, we can implement own read-ahead or more clever cache
+</I>&gt;<i> algorithms, however we can use page cache for free.
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="http://bat.berlios.de/mailman/listinfo/stgt-devel">http://bat.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000306.html">[Stgt-devel] Investment assistance / Help ( From Mrs. Al-Takiha	Sabri )
+</A></li>
+	<LI>Next message: <A HREF="000309.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#308">[ date ]</a>
+              <a href="thread.html#308">[ thread ]</a>
+              <a href="subject.html#308">[ subject ]</a>
+              <a href="author.html#308">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

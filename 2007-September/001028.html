@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070905144618.GA26761%40lemming.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001026.html">
+   <LINK REL="Next"  HREF="001029.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070905144618.GA26761%40lemming.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Wed Sep  5 16:46:18 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001026.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001029.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1028">[ date ]</a>
+              <a href="thread.html#1028">[ thread ]</a>
+              <a href="subject.html#1028">[ subject ]</a>
+              <a href="author.html#1028">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Sep 04, 2007 at 04:19:12PM -0400, Pete Wyckoff wrote:
+&gt;<i>I haven't done much testing of throughput vs packet size lately, and
+</I>&gt;<i>in fact, ripping out the unsignaled completions may have slowed
+</I>&gt;<i>things down some.  But they were a mess as far as tracking RDMA
+</I>&gt;<i>resources went.  Would love some help with tuning if you are so
+</I>&gt;<i>inclined.
+</I>
+the good news:
+
+I'm not seeing any of the iSER resource starvation/flow control
+problems I was seeing before. with latest <A HREF="git://git.osc.edu/tgt">git://git.osc.edu/tgt</A> that
+looks to be fixed.
+
+so, trying out a few speed tests -&gt;
+
+bypassing the page cache (and readahead?) with O_DIRECT:
+ eg. dd if=/dev/zero of=/dev/sdc bs=1k count=8000 oflag=direct
+   bs   write MB/s read MB/s
+  10M     1200      520
+   1M      790      460
+ 200k      480      350
+   4k       40       34
+   1k       11        9
+large writes look fabulous, but reads seem to be limited by something
+other than IB bandwidth.
+
+in the more usual usage case via the page cache:
+ eg. dd if=/dev/zero of=/dev/sdc bs=1k count=8000000 
+   bs   write MB/s read MB/s
+  10M     1100      260
+   1M     1100      270
+   4k      960      270
+   1k       30      240
+so maybe extra copies to/from page cache are getting in the way of the
+read bandwidth and are lowering it by a factor of 2.
+I'm guessing the good small block read performance here is due to
+readahead, and the mostly better writes are from aggregation.
+
+setup is DDR IB, 2.6.22.6 kernel, centos5 x86_64 with ofed 1.2
+userland, server with 7G ramfs backing store, single client with
+mem=512M.
+
+the bad news:
+
+if I make an ext3 filesystem on the iSER device and then dd a few G to
+a file in the filesystem then I very quickly get an ext3 shutdown.
+  Sep  5 23:06:03 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 393216, length 1
+  Sep  5 23:06:03 x11 kernel: Aborting journal on device sdc.
+  Sep  5 23:06:03 x11 kernel: ext3_abort called.
+  Sep  5 23:06:03 x11 kernel: EXT3-fs error (device sdc): ext3_journal_start_sb: Detected aborted journal
+  Sep  5 23:06:03 x11 kernel: Remounting filesystem read-only
+  Sep  5 23:06:03 x11 kernel: EXT3-fs error (device sdc): ext3_free_blocks: Freeing blocks in system zones - Block = 393216, count = 1
+  Sep  5 23:06:03 x11 kernel: EXT3-fs error (device sdc) in ext3_free_blocks_sb: Journal has aborted
+  Sep  5 23:06:03 x11 kernel: __journal_remove_journal_head: freeing b_committed_data
+
+if I leave out the iSER setup steps and use IPoIB instead then it works ok.
+I tried with a centos kernel and ofed1.1, and also 2.6.22.6 and ofed1.2.
+
+the above error message is from the centos kernel. 2.6.22.6 generates these:
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164279, length 1
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164280, length 1
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164281, length 1
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164282, length 1
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164283, length 1
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164284, length 1
+  Sep  5 23:48:33 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 164285, length 1
+  ... and many more
+
+which looks a bit like a miscommunication of the size/geometry of the
+device? or maybe corruption? :-/ the dd's were all smaller (few G) than
+the size of the filesystem (6+G) so it wasn't running out of space.
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001026.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001029.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1028">[ date ]</a>
+              <a href="thread.html#1028">[ thread ]</a>
+              <a href="subject.html#1028">[ subject ]</a>
+              <a href="author.html#1028">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C48689C58.8030109%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001727.html">
+   <LINK REL="Next"  HREF="001731.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C48689C58.8030109%40wpkg.org%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Jun 30 10:42:00 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001727.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+        <LI>Next message: <A HREF="001731.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1730">[ date ]</a>
+              <a href="thread.html#1730">[ thread ]</a>
+              <a href="subject.html#1730">[ subject ]</a>
+              <a href="author.html#1730">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>ronnie sahlberg schrieb:
+&gt;<i> Hi Tomasz,
+</I>&gt;<i> 
+</I>&gt;<i> I could not get that configuration to work.
+</I>&gt;<i> 
+</I>&gt;<i> Can you please provide more detailed instructions exactly how to set
+</I>&gt;<i> up hosts A B and C
+</I>&gt;<i> so I can try to reproduce it.
+</I>&gt;<i> 
+</I>&gt;<i> Please provide the exact commandline for each and every command I need
+</I>&gt;<i> to run on the three hosts and Ill try to
+</I>&gt;<i> reproduce it under gdb.
+</I>
+A faulty RAID is just one way to crash tgtd.
+
+A simpler one is to just block the traffic between the target and the 
+initiator - just login to the target, make sure there is some iSCSI 
+traffic between the target and the initiator, then block incoming iSCSI 
+traffic on the initiator with:
+
+initiator# iptables -I INPUT -s &lt;target IP&gt; -p tcp --sport 3260 -j DROP
+
+
+After a while, you will see that only one tgtd process is running, 
+whereas the second has crashed.
+
+
+I'm not sure if the two ways of causing tgtd crash are related. If they 
+are, it might be some timing issue?
+
+Failing RAID may cause that tgtd is not able to access the disk for 
+several seconds, or about a minute. Failing RAID is also likely.
+
+Blocking incoming iSCSI traffic on the initiator, although less likely 
+in the real world, also confuses tgtd to the point where it crashes.
+
+The above is valid with tgt-20080527, I'm just about to try tgt-20080629.
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001727.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+	<LI>Next message: <A HREF="001731.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1730">[ date ]</a>
+              <a href="thread.html#1730">[ thread ]</a>
+              <a href="subject.html#1730">[ subject ]</a>
+              <a href="author.html#1730">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

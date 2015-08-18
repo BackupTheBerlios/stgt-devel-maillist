@@ -1,0 +1,276 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/7] iser docs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/7%5D%20iser%20docs&In-Reply-To=%3C20070730185549.GO12789%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000894.html">
+   <LINK REL="Next"  HREF="000896.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/7] iser docs</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/7%5D%20iser%20docs&In-Reply-To=%3C20070730185549.GO12789%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/7] iser docs">pw at osc.edu
+       </A><BR>
+    <I>Mon Jul 30 20:55:49 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000894.html">[Stgt-devel] iser patches
+</A></li>
+        <LI>Next message: <A HREF="000896.html">[Stgt-devel] [PATCH 2/7] iser counter events
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#895">[ date ]</a>
+              <a href="thread.html#895">[ thread ]</a>
+              <a href="subject.html#895">[ subject ]</a>
+              <a href="author.html#895">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>A document describing what iSCSI on RDMA is about, how it is
+implemented in tgtd, and how to use it.  Also things that
+should be fixed someday.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ doc/README.iser |  196 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 196 insertions(+), 0 deletions(-)
+ create mode 100644 doc/README.iser
+
+diff --git a/doc/README.iser b/doc/README.iser
+new file mode 100644
+index 0000000..6dd3470
+--- /dev/null
++++ b/doc/README.iser
+@@ -0,0 +1,196 @@
++iSCSI Extensions for RDMA (iSER)
++================================
++
++Background
++----------
++
++There is a draft specification at ietf.org to extend the iSCSI protocol
++to work on RDMA-capable networks as well as on traditional TCP/IP.  The
++current version is:
++
++	&quot;iSCSI Extensions for RDMA Specification&quot;, Mike Ko, 20-Oct-05,
++	&lt;draft-ietf-ips-iser-06.txt&gt;
++
++RDMA stands for Remote Direct Memory Access, a way of accessing memory
++of a remote node directly through the network without involving the
++processor of that remote node.  Many network devices implement some form
++of RDMA.  Two of the more popular network devices are InfiniBand (IB)
++and iWARP.  IB uses its own physical and network layer, while iWARP sits
++on top of TCP/IP (or SCTP).
++
++Using these devices requires a new application programming interface
++(API).  The Linux kernel has many components of the OpenFabrics software
++stack, including APIs for access from user space and drivers for some
++popular RDMA-capable NICs, including IB cards with the Mellanox chipset
++and iWARP cards from NetEffect, Chelsio, and Ammasso.  Most Linux
++distributions ship the user space libraries for device access and RDMA
++connection management.
++
++
++RDMA in tgtd
++------------
++
++The Linux kernel can act as a SCSI initiator on the iSER transport, but
++not as a target.  tgtd is a user space target that supports multiple
++transports, including iSCSI/TCP, and now iSER on RDMA devices.
++
++The iSER code was written by researchers at the Ohio Supercomputer
++Center in early 2007:
++
++	Dennis Dalessandro &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dennis at osc.edu</A>&gt;
++	Ananth Devulapalli &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ananth at osc.edu</A>&gt;
++	Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
++
++We wanted to use a faster transport to test the capabilities of an
++object-based storage device (OSD) emulator we had previously written.
++Our cluster has InfiniBand cards, and while running TCP/IP over IB is
++possible, the performance is not nearly as good as using native IB
++directly.
++
++A short technical report describing this implementation and some
++performance results is available at:
++
++	<A HREF="http://www.osc.edu/~pw/papers/iser-techreport.pdf">http://www.osc.edu/~pw/papers/iser-techreport.pdf</A>
++
++The code mostly lives in iscsi/iscsi_rdma.c, with a few places in
++iscsi/iscsid.c that check if the transport is RDMA or not and behave
++accordingly.  iSCSI already had the idea of a transport, with just the
++single TCP one defined.  We added the RDMA transport and virtualized
++some more functions where TCP and RDMA behave differently.
++
++
++Design Issues
++-------------
++
++In general, a SCSI system includes two components, an initiator and a
++target. The initiator submits commands and awaits responses.  The target
++services commands from initiators and returns responses.  Data may flow
++from the initiator, from the client, or both (bidirectional).  The iSER
++specification requires all data transfers to be started by the target,
++regardless of direction.  In a read operation, the target uses RDMA
++Write to move data to the initiator, while a write operation uses RDMA
++Read to fetch data from the initiator.
++
++
++1. Memory registration
++
++One of the most severe stumbling blocks in moving any application to
++take advantage of RDMA features is memory registration.  Before using
++RDMA, both the sending and receiving buffers must be registered with the
++operating system.  This operation ensures that the underlying hardware
++pages will not be modified during the transfer, and provides the
++physical addresses of the buffers to the network card.  However, the
++process itself is time consuming, and CPU intensive.  Previous
++investigations have shown that for InfiniBand, with a nominal transfer
++rate of 900 MB/s, the throughput drops to around 500 MB/s when memory
++registration and deregistration are included in the critical path.
++
++Our target implementation uses pre-registered buffers for RDMA
++operations.  In general such a scheme is difficult to justify due to the
++large per-connection resource requirements.  However, in this
++application it may be appropriate.  Since the target always initiates
++RDMA operations and never advertises RDMA buffers, it can securely use
++one pool of buffers for multiple clients and can manage its memory
++resources explicitly.  Also, the architecture of the code is such that
++the iSCSI layer dictates incoming and outgoing buffer locations to the
++storage device layer, so supplying a registered buffer is relatively
++easy.
++
++
++2. Event management
++
++There is a mismatch between what the tgtd event framework assumes and
++what the RDMA notification interface provides.  The existing TCP-based
++iSCSI target code has one file descriptor per connection and it is
++driven by readability or writeability of the socket.  A single poll
++system call returns which sockets can be serviced, driving the TCP code
++to read or write as appropriate.  The RDMA interface can be used in
++accordance with this design by requesting interrupts from the network
++card on work request completions.  Notifications appear on the file
++descriptor that represents a completion queue to which all RDMA events
++are delivered.
++
++However, the existing sockets-based code goes beyond this and changes
++the bitmask of requested events to control its code flow.  For instance,
++after it finishes sending a response, it will modify the bitmask to only
++look for readability.  Even if the socket is writeable, there is no data
++to write, hence polling for that status is not useful.  The code also
++disables new message arrival during command execution as a sort of
++exclusion facility, again by modifying the bitmask.  We cannot do this
++with the RDMA interface.  Hence we must maintain an active list of tasks
++that have data to write and drive a progress engine to service them.
++The need for progress is tracked by a counter, and the tgtd event loop
++checks this counter and calls into the iSER-specific while the counter
++is still non-zero.  tgtd will block in the poll call when it must wait
++on network activity.  No dedicated thread is needed for iSER.
++
++
++3. Padding
++
++The iSCSI specification clearly states that all segments in the protocol
++data unit (PDU) must be individually padded to four-byte boundaries.
++However, the iSER specification remains mute on the subject of padding.
++It is clear from an implementation perspective that padding data
++segments is both unnecessary and would add considerable overhead to
++implement.  (Possibly a memory copy or extra SG entry on the initiator
++when sending directly from user memory.)   RDMA is used to move all
++data, with byte granularity provided by the network.  The need for
++padding in the TCP case was motivated by the optional marker support to
++work around the limitations of the streaming mode of TCP.  IB and iWARP
++are message-based networks and would never need markers.  And finally,
++the Linux initiator does not add padding either.
++
++
++Using iSER
++----------
++
++Compile tgtd with &quot;make ISCSI_RDMA=1&quot; to build iSER too.  You'll need to
++have two libraries installed on your system:  libibverbs.so and
++librdmacm.so.  If they are not installed in system paths, modify
++CFLAGS and LIBS to find them.
++
++The target will listen on all TCP interfaces (as usual), as well as all
++RDMA devices.  Both use the same default iSCSI port, 3260.  Clients on
++TCP or RDMA will connect to the same tgtd instance.
++
++To make your initiator use RDMA, make sure the &quot;ib_iser&quot; module is
++installed in your kernel.  Then do discovery as usual, over TCP, then
++type something like the following to change the transport type:
++
++	iscsiadm -m node -p $targetip -T $targetname --op update \
++	    -n node.transport_name -v iser
++
++Next, login as usual.  The negotiation phases go across TCP, then both
++sides switch to RDMA for full feature mode.
++
++Note that iSER does not use data or header digests.  This is a feature
++of the specification:  IB and iWARP use better checksums than TCP, so
++digesting is not needed in the application.
++
++
++Errata
++------
++
++The Linux kernel iSER initiator is currently lacking support for
++bidirectional transfers, and for extended command descriptors (CDBs).
++We'll send the patches for these soon.
++
++The Linux kernel iSER initiator uses a different header structure on its
++packets than is in the iSER draft specification.  This is described in
++an InfiniBand document and is required for that network, which only
++supports for Zero-Based Addressing.  If you are using a non-IB initiator
++that doesn't need this header extension, it won't work with tgtd.  There
++may be some way to negotiate the header format.  Using iWARP hardware
++devices with the Linux kernel iSER initiator should be fine, but has not
++been tested yet.
++
++There's no way to find out the IP address of a connecting initiator, so
++ACL support for network addresses is disabled in RDMA mode.  Anybody can
++connect if they are using RDMA.  CHAP authentication still works.
++
++The current code hard-codes the sizes of its resources.  This works fine
++for our particular initiator, but should be dynamic to support other
++initiators.  And Linux iSER does not support the
++MaxOutstandingUnexpectedPDUs parameter, making it rather difficult to
++implement there.
++
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000894.html">[Stgt-devel] iser patches
+</A></li>
+	<LI>Next message: <A HREF="000896.html">[Stgt-devel] [PATCH 2/7] iser counter events
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#895">[ date ]</a>
+              <a href="thread.html#895">[ thread ]</a>
+              <a href="subject.html#895">[ subject ]</a>
+              <a href="author.html#895">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

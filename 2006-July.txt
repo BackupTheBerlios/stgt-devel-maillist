@@ -1,0 +1,520 @@
+From tom at opengridcomputing.com  Wed Jul 12 16:22:44 2006
+From: tom at opengridcomputing.com (Tom Tucker)
+Date: Wed, 12 Jul 2006 09:22:44 -0500
+Subject: [Stgt-devel] Test
+Message-ID: <1152714164.5950.2.camel@trinity.ogc.int>
+
+Test Message
+
+
+
+From tom at opengridcomputing.com  Wed Jul 12 16:44:03 2006
+From: tom at opengridcomputing.com (Tom Tucker)
+Date: Wed, 12 Jul 2006 09:44:03 -0500
+Subject: [Stgt-devel] Linux Kernel Version
+Message-ID: <1152715443.5950.9.camel@trinity.ogc.int>
+
+Tomo:
+
+What is the plan regarding following kernel.org? By that I mean what
+dependencies are not upstream that the current stgt project relies on
+and what is the schedule to get those dependencies pushed upstream?
+
+The OpenFabrics stack and iWARP branch are pre-requisites for iSER
+support and these branches are way upstream from James's git tree. 
+
+Would it be possible to get James to post a patch patch for the required
+kernel changes so that we could apply this patch to the kernel we need?
+
+Thanks,
+
+Tom
+
+
+
+From jlentini at netapp.com  Wed Jul 12 18:59:49 2006
+From: jlentini at netapp.com (James Lentini)
+Date: Wed, 12 Jul 2006 12:59:49 -0400 (EDT)
+Subject: [Stgt-devel] Re: Linux Kernel Version
+Message-ID: <Pine.LNX.4.64.0607121255470.17188@jlentini-linux.nane.netapp.com>
+
+> Tomo:
+>
+> What is the plan regarding following kernel.org? By that I mean what 
+> dependencies are not upstream that the current stgt project relies 
+> on and what is the schedule to get those dependencies pushed 
+> upstream?
+>
+> The OpenFabrics stack and iWARP branch are pre-requisites for iSER 
+> support and these branches are way upstream from James's git tree.
+>
+> Would it be possible to get James to post a patch patch for the 
+> required kernel changes so that we could apply this patch to the 
+> kernel we need?
+> 
+> Thanks,
+> 
+> Tom
+
+I'll second Tom's motion. The iSER target would be easier to work with 
+if there was a simple way to build the STGT project against the 
+mainline kernel.
+
+james
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jul 13 03:59:24 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 13 Jul 2006 10:59:24 +0900
+Subject: [Stgt-devel] Linux Kernel Version
+In-Reply-To: <1152715443.5950.9.camel@trinity.ogc.int>
+References: <1152715443.5950.9.camel@trinity.ogc.int>
+Message-ID: <200607130159.k6D1xOM1003127@r-dd.iij4u.or.jp>
+
+From: Tom Tucker <tom at opengridcomputing.com>
+Subject: [Stgt-devel] Linux Kernel Version
+Date: Wed, 12 Jul 2006 09:44:03 -0500
+
+> What is the plan regarding following kernel.org? By that I mean what
+> dependencies are not upstream that the current stgt project relies on
+> and what is the schedule to get those dependencies pushed upstream?
+
+Now we have three parts related with tgt in -mm kernels (through
+scsi-target git tree).
+
+o tgt core : we have only one not-merged patch in the svn tree
+o ibmvscsi target driver
+o libsrp : provides SRP library functions, ibmvscsi target driver
+depends on this
+
+So almost everything that ibmvscsi target driver needs is in -mm
+kernels.
+
+About iSCSI (and iSER), we need three following parts in addition to
+the above parts.
+
+o libiscsi : we add to target support to the current code.
+o scsi_transport_iscsi : ditto
+o iscsi_tcp : we takes initiator specific stuff out of this and move
+it to iscsi_tcp_initiator.
+o iscsi_tcp_initiator : see above 
+o iscsi_tcp_target : provies target specific stuff
+
+You can see them at:
+
+http://svn.berlios.de/svnroot/repos/stgt/trunk/istgt
+
+They got a bit out of data. They are based on open-iscsi r596 code.
+
+Mike has been reviewing them and we will post them to scsi-ml. We need
+to get permission to put them into mainline.
+
+
+iSER needs modifications to libiscsi and iscsi_iser. Possibly, we have
+something like iscsi_target.
+
+About schedule, please ask James. :) I think that tgt core and
+ibmvscsi driver is not so far. Andrew said last month, "SCSI target
+patches are being worked on - perhaps a 2.6.18/2.6.19 feature" (though
+we already missed 2.6.18).
+
+http://www.osdl.jp/docs/Seminar0613/AndrewMorton_Status_and_Direction_of_Kernel_Development.pdf
+
+
+> The OpenFabrics stack and iWARP branch are pre-requisites for iSER
+> support and these branches are way upstream from James's git tree. 
+> 
+> Would it be possible to get James to post a patch patch for the required
+> kernel changes so that we could apply this patch to the kernel we need?
+
+I made the tgt patch for 2.6.17. Would it help?
+
+http://svn.berlios.de/svnroot/repos/stgt/trunk/patchset/tgt-2.6.17.patch
+
+Sorry. There is no instruction about it yet. I will write something
+later on.
+
+As you said, it's complicated to run tgt right now. I've been working
+on it because some people might be interested in tgt after OLS. I want
+to make sure that everyone can run tgt without effort. I'm in the
+middle of large user-space rewrite (I've commited some last night).
+
+Sorry for delay about iSER tgt stuff. I will work on it after OLS. If
+you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+right after OLS. :)
+
+
+From tom at opengridcomputing.com  Thu Jul 13 19:52:53 2006
+From: tom at opengridcomputing.com (Tom Tucker)
+Date: Thu, 13 Jul 2006 12:52:53 -0500
+Subject: [Stgt-devel] Linux Kernel Version
+In-Reply-To: <20060714023901A.fujita.tomonori@lab.ntt.co.jp>
+References: <1152715443.5950.9.camel@trinity.ogc.int>
+	<200607130159.k6D1xOM1003127@r-dd.iij4u.or.jp>
+	<1152802833.8110.35.camel@trinity.ogc.int>
+	<20060714023901A.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1152813173.13184.2.camel@trinity.ogc.int>
+
+Tomo:
+
+I don't think you should merge it yet because the transport side hasn't
+been tested yet. Will you have time at OLS to get together and
+whiteboard a few design ideas (including the one I proposed) and discuss
+the trade-offs?
+
+Thanks,
+Tom
+
+On Fri, 2006-07-14 at 02:39 +0900, FUJITA Tomonori wrote:
+> From: Tom Tucker <tom at opengridcomputing.com>
+> Subject: Re: [Stgt-devel] Linux Kernel Version
+> Date: Thu, 13 Jul 2006 10:00:33 -0500
+> 
+> > > As you said, it's complicated to run tgt right now. I've been working
+> > > on it because some people might be interested in tgt after OLS. I want
+> > > to make sure that everyone can run tgt without effort. I'm in the
+> > > middle of large user-space rewrite (I've commited some last night).
+> > > 
+> > > Sorry for delay about iSER tgt stuff. I will work on it after OLS. 
+> > 
+> > The biggest thing I'd like some guidance on is how we want to plug into
+> > the transport switch. If connection management (not LOGIN, just the 
+> > listen/accept paths), is pushed into the kernel, then the user-mode
+> > code is insulated from the transport switch. This requires pushing the 
+> > current TCP connection management into the kernel though and adding netlink 
+> > messages for listen/accept. 
+> > 
+> > Otherwise, we need to replicate the switch in user-mode. The TCP tgt can
+> > still use sockets in user mode, but he RDMA side will need to have the 
+> > netlink messages anyway. The issue is that unlike a socket, the RDMA 
+> > user-mode CM doesn't have the ability to have user-mode code and 
+> > kernel-mode code both doing I/O on the transport like a socket. 
+> > 
+> > I've coded up the kernel-only approach, but haven't gotten much feedback 
+> > on it, so I'm assuming that it's not the preferred method ;-)
+> 
+> I guess that you are doing something like open-iscsi iSER code (the
+> user-space daemon asks the kernel module to do transport staff, called
+> endpoint in open-iscsi). It is fine by me. I will read your patch
+> (really sorry about delay again) and merge it.
+> 
+> 
+> > > If
+> > > you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+> > > right after OLS. :)
+> > 
+> > Here's a How-To on bringing up the Chelsio code for RDMA
+> 
+> Looks really helpful. Thanks. I'll try after OLS.
+
+
+
+From tom at opengridcomputing.com  Thu Jul 13 17:00:33 2006
+From: tom at opengridcomputing.com (Tom Tucker)
+Date: Thu, 13 Jul 2006 10:00:33 -0500
+Subject: [Stgt-devel] Linux Kernel Version
+In-Reply-To: <200607130159.k6D1xOM1003127@r-dd.iij4u.or.jp>
+References: <1152715443.5950.9.camel@trinity.ogc.int>
+	<200607130159.k6D1xOM1003127@r-dd.iij4u.or.jp>
+Message-ID: <1152802833.8110.35.camel@trinity.ogc.int>
+
+Tomo:
+
+Thanks for the update. 
+
+[...snip...]
+
+> I made the tgt patch for 2.6.17. Would it help?
+> 
+> http://svn.berlios.de/svnroot/repos/stgt/trunk/patchset/tgt-2.6.17.patch
+> 
+> Sorry. There is no instruction about it yet. I will write something
+> later on.
+
+Great, thanks. I'm not sure we really need instructions. I'll give it a
+whirl and see how it goes.
+
+> 
+> As you said, it's complicated to run tgt right now. I've been working
+> on it because some people might be interested in tgt after OLS. I want
+> to make sure that everyone can run tgt without effort. I'm in the
+> middle of large user-space rewrite (I've commited some last night).
+> 
+> Sorry for delay about iSER tgt stuff. I will work on it after OLS. 
+
+The biggest thing I'd like some guidance on is how we want to plug into
+the transport switch. If connection management (not LOGIN, just the 
+listen/accept paths), is pushed into the kernel, then the user-mode
+code is insulated from the transport switch. This requires pushing the 
+current TCP connection management into the kernel though and adding netlink 
+messages for listen/accept. 
+
+Otherwise, we need to replicate the switch in user-mode. The TCP tgt can
+still use sockets in user mode, but he RDMA side will need to have the 
+netlink messages anyway. The issue is that unlike a socket, the RDMA 
+user-mode CM doesn't have the ability to have user-mode code and 
+kernel-mode code both doing I/O on the transport like a socket. 
+
+I've coded up the kernel-only approach, but haven't gotten much feedback 
+on it, so I'm assuming that it's not the preferred method ;-)
+>
+> If
+> you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+> right after OLS. :)
+
+Here's a How-To on bringing up the Chelsio code for RDMA
+
+============================================
+Setup kernel tree.
+============================================
+
+Pull your favorite post 2.6.16.18 kernel tree from kernel.org. 
+
+NOTE: The openib iwarp branch stays up to date with the latest 
+kernel.org release.
+
+============================================
+Checkout iWARP branch:
+============================================
+Pull the iwarp branch using svn.  You will need access to this code
+on your victim machine.
+
+# svn co https://openib.org/svn/gen2/branches/iwarp
+
+
+============================================
+Apply the notifier patch.
+============================================
+
+To support MAC address changes and next hop routing changes, you need
+to install the notifier patch.
+
+# cd path_to_kernel
+# patch -p1 < ${path_to_iwarp_branch}/src/linux-kernel/patches/cxgb3/notifier.patch
+
+Depending on the kernel you're using you may need to merge this patch.
+
+============================================
+Link the iWARP branch into your kernel tree
+============================================
+
+# cd ${path_to_kernel}/drivers
+# mv infiniband infinband.org
+# ln -s ${path_to_iwarp_branch}/src/linux-kernel/infiniband .
+
+# cd ${path_to_kernel}/include
+# mv rdma rdma.org
+# ln -s path_to_kernel/drivers/infiniband/include/rdma .
+
+Link in the cxgb3 LLD Driver:
+
+# cd ${path_to_kernel}/drivers/net
+
+If there is already a cxgb3 driver there, move it.
+# mv cxgb3 cxgb3.org
+
+# ln -sf path_to_iwarp_branch/src/linux-kernel/net/cxgb3 .
+
+Apply the kernel patches to build the cxgb3 LLD Driver:
+
+# cd ${path_to_kernel}
+# patch -p0 < ${path_to_iwarp_branch}/src/linux-kernel/patches/cxgb3/cxgb3-Kconfig.patch
+# patch -p0 < ${path_to_iwarp_branch}/src/linux-kernel/patches/cxgb3/cxgb3-Makefile.patch
+
+============================================
+Configure, build, install, and boot kernel and modules.
+============================================
+
+# cd ${path_to_kernel}
+# make menuconfig
+
+Device Drivers->Network device support->Ethernet (10000 Mbit)->
+<M> Chelsio T3 10Gb Ethernet support
+
+Make sure you turn on the "Chelsio T3" driver and turn OFF 
+any other Chelsio net driver that may be present. 
+
+Device Drivers->Infiniband support->
+<M> Infiniband support
+<M> Infiniband userspace MAD support
+<M> Infiniband userspace access (verbs & cm)
+<M> Chelsio OpenIB module
+<M> Kernel RDMA Ping Module
+
+# make
+# make modules_install
+# make install
+# <edit grub file if needed>
+# reboot
+
+============================================
+Configure, build, and install userspace libraries
+============================================
+
+Here's a link to the OpenFabrics wiki on building userspace
+support. You can ignore the stuff in this wiki up to the point
+where you build the userspace libraries.
+
+BTW, I have seen issues with autogen.sh on some 64b distros. The symptom 
+is a failing configure script with an error like "unable to determine 
+sizeof (long)". The work-around is to move the 
+AC_CHECK_SIZEOF(long) in the configure.in file up to just below
+AC_PROG_CC. 
+
+https://openib.org/tiki/tiki-index.php?page=Installation+Cheat+Sheet
+
+In addition to the libraries in the wiki, you need to
+build and install the following:
+
+# cd ${path_to_iwarp_branch}/src/userspace
+# (cd librdmacm && ./autogen.sh && ./configure && make && make install)
+# (cd libcxgb3 && ./autogen.sh && ./configure && make && make install)
+
+You need device files for kernel modules we just built.  We could add
+them later, manually, but udev is more convenient.
+
+Create a new file /etc/udev/rules.d/90-ib.rules:
+
+KERNEL="umad*", NAME="infiniband/%k"
+KERNEL="issm*", NAME="infiniband/%k"
+KERNEL="uverbs*", NAME="infiniband/%k", MODE="0666"
+KERNEL="ucm*", NAME="infiniband/%k", MODE="0666"
+KERNEL="rdma_cm", NAME="infiniband/%k", MODE="0666"
+
+Load all the OpenIB Modules:
+
+# modprobe cxgb3
+# modprobe iw_cxgb3
+# modprobe ib_mad
+# modprobe rdma_cm
+# modprobe ib_umad
+# modprobe ib_uverbs
+# modprobe ib_ucm
+# modprobe rdma_ucm
+# modprobe rdma_krping
+# udevstart 2>&1 >/dev/null &
+
+============================================
+Test everything with rdma_krping:
+============================================
+
+Configure the Ethernet interfaces for your cxgb3 device. 
+
+Then on the server machine:
+
+echo "verbose,server,addr=$server_ip_addr,port=9999" > /proc/krping
+
+And on the client machine:
+
+# echo "verbose,client,addr=$server_ip_addr,port=9999" > /proc/krping
+
+If you cat /proc/krping, you'll see data indicating how many messages, 
+bytes, etc...have been sent for the various RDMA message types. 
+
+You can also tail -f /var/log/messages to see messages output there as well.
+
+Hope this helps, and don't hesitate to e-mail or call me (512-343-9196 x 108) 
+if you need help.
+
+Tom
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jul 13 19:39:01 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 14 Jul 2006 02:39:01 +0900
+Subject: [Stgt-devel] Linux Kernel Version
+In-Reply-To: <1152802833.8110.35.camel@trinity.ogc.int>
+References: <1152715443.5950.9.camel@trinity.ogc.int>
+	<200607130159.k6D1xOM1003127@r-dd.iij4u.or.jp>
+	<1152802833.8110.35.camel@trinity.ogc.int>
+Message-ID: <20060714023901A.fujita.tomonori@lab.ntt.co.jp>
+
+From: Tom Tucker <tom at opengridcomputing.com>
+Subject: Re: [Stgt-devel] Linux Kernel Version
+Date: Thu, 13 Jul 2006 10:00:33 -0500
+
+> > As you said, it's complicated to run tgt right now. I've been working
+> > on it because some people might be interested in tgt after OLS. I want
+> > to make sure that everyone can run tgt without effort. I'm in the
+> > middle of large user-space rewrite (I've commited some last night).
+> > 
+> > Sorry for delay about iSER tgt stuff. I will work on it after OLS. 
+> 
+> The biggest thing I'd like some guidance on is how we want to plug into
+> the transport switch. If connection management (not LOGIN, just the 
+> listen/accept paths), is pushed into the kernel, then the user-mode
+> code is insulated from the transport switch. This requires pushing the 
+> current TCP connection management into the kernel though and adding netlink 
+> messages for listen/accept. 
+> 
+> Otherwise, we need to replicate the switch in user-mode. The TCP tgt can
+> still use sockets in user mode, but he RDMA side will need to have the 
+> netlink messages anyway. The issue is that unlike a socket, the RDMA 
+> user-mode CM doesn't have the ability to have user-mode code and 
+> kernel-mode code both doing I/O on the transport like a socket. 
+> 
+> I've coded up the kernel-only approach, but haven't gotten much feedback 
+> on it, so I'm assuming that it's not the preferred method ;-)
+
+I guess that you are doing something like open-iscsi iSER code (the
+user-space daemon asks the kernel module to do transport staff, called
+endpoint in open-iscsi). It is fine by me. I will read your patch
+(really sorry about delay again) and merge it.
+
+
+> > If
+> > you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+> > right after OLS. :)
+> 
+> Here's a How-To on bringing up the Chelsio code for RDMA
+
+Looks really helpful. Thanks. I'll try after OLS.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jul 13 20:06:26 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 14 Jul 2006 03:06:26 +0900
+Subject: [Stgt-devel] Linux Kernel Version
+In-Reply-To: <1152813173.13184.2.camel@trinity.ogc.int>
+References: <1152802833.8110.35.camel@trinity.ogc.int>
+	<20060714023901A.fujita.tomonori@lab.ntt.co.jp>
+	<1152813173.13184.2.camel@trinity.ogc.int>
+Message-ID: <20060714030626X.fujita.tomonori@lab.ntt.co.jp>
+
+From: Tom Tucker <tom at opengridcomputing.com>
+Subject: Re: [Stgt-devel] Linux Kernel Version
+Date: Thu, 13 Jul 2006 12:52:53 -0500
+
+> Tomo:
+> 
+> I don't think you should merge it yet because the transport side hasn't
+> been tested yet. Will you have time at OLS to get together and
+> whiteboard a few design ideas (including the one I proposed) and discuss
+> the trade-offs?
+
+I'll be there all days of the conference and have time.
+
+
+From tom at opengridcomputing.com  Mon Jul 31 23:05:23 2006
+From: tom at opengridcomputing.com (Tom Tucker)
+Date: Mon, 31 Jul 2006 16:05:23 -0500
+Subject: [Stgt-devel] User-mode iSER
+Message-ID: <1154379923.8544.4.camel@trinity.ogc.int>
+
+Tomo:
+
+I heard a rumor that moving even more of the iSER target design into
+user mode was considered at the OLS. I think this is a very interesting
+idea and would like to know what you and others think of this in general
+and if there are any specific issues that people think make this
+difficult.
+
+Thanks,
+
+Tom
+
+
+
+

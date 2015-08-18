@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iscsi target works, minor fixes
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C200611031604.kA3G4uHf003736%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000353.html">
+   <LINK REL="Next"  HREF="000350.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iscsi target works, minor fixes</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C200611031604.kA3G4uHf003736%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] iscsi target works, minor fixes">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Nov  3 17:04:55 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000353.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+        <LI>Next message: <A HREF="000350.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#346">[ date ]</a>
+              <a href="thread.html#346">[ thread ]</a>
+              <a href="subject.html#346">[ subject ]</a>
+              <a href="author.html#346">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: [Stgt-devel] iscsi target works, minor fixes
+Date: Thu, 2 Nov 2006 19:45:48 -0500
+
+&gt;<i> I've been playing with the user-space iscsi target, looking at the
+</I>&gt;<i> latest stgt SVN and linux-2.6-target git today.  One little fix I
+</I>&gt;<i> need in the userspace code is this:
+</I>&gt;<i> 
+</I>&gt;<i> Index: trunk/usr/bd_aio.c
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- trunk/usr/bd_aio.c	(revision 609)
+</I>&gt;<i> +++ trunk/usr/bd_aio.c	(working copy)
+</I>&gt;<i> @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+</I>&gt;<i>  
+</I>&gt;<i>  	for (i = 0; i &lt; nr; i++) {
+</I>&gt;<i>  		iocb = bai-&gt;events[i].obj;
+</I>&gt;<i> -		dprintf(&quot;%p\n&quot;, iocb-&gt;data);
+</I>&gt;<i> -		target_cmd_io_done(iocb-&gt;data, 0);
+</I>&gt;<i> +		dprintf(&quot;%p\n&quot;, bai-&gt;events[i].data);
+</I>&gt;<i> +		target_cmd_io_done(bai-&gt;events[i].data, 0);
+</I>&gt;<i>  	}
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> While I don't understand exactly what's going on, this data pointer
+</I>&gt;<i> from struct io_event is the correct struct cmd *, and without the
+</I>&gt;<i> patch, tgtd segfaults trying to access fields in the (bogus) cmd
+</I>&gt;<i> from iocb-&gt;data.
+</I>&gt;<i> 
+</I>&gt;<i> It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+</I>&gt;<i> was the wrong one to apply?  There was one minor reject that was
+</I>&gt;<i> easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+</I>&gt;<i> linux-2.6-target.git + aiopoll + other minor patches.
+</I>
+The lastest git tree and the updated aiopoll patch
+(patch/aiopoll-git.diff) work for me.
+
+Is iocb-&gt;data bogus? It means that io_event-&gt;obj does not refer to
+the appropriate iocb. I have no idea why.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000353.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+	<LI>Next message: <A HREF="000350.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#346">[ date ]</a>
+              <a href="thread.html#346">[ thread ]</a>
+              <a href="subject.html#346">[ subject ]</a>
+              <a href="author.html#346">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

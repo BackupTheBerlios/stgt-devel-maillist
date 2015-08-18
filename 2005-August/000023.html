@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200508231713.j7NHDY9I015902%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000012.html">
+   <LINK REL="Next"  HREF="000025.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200508231713.j7NHDY9I015902%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">tomof at acm.org
+       </A><BR>
+    <I>Tue Aug 23 19:13:33 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000012.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000025.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#23">[ date ]</a>
+              <a href="thread.html#23">[ thread ]</a>
+              <a href="subject.html#23">[ subject ]</a>
+              <a href="author.html#23">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 11:05:54 -0500
+
+&gt;<i> &gt; Do we need to use GFP_ATOMIC instead of GFP_KERNEL in
+</I>&gt;<i> &gt; stgt_device_create()?
+</I>&gt;<i> 
+</I>&gt;<i> I do not think so. It does not seem like we will be in
+</I>&gt;<i> interrupt context and it does not look like we
+</I>&gt;<i> are under a spin_lock. Was there something else
+</I>&gt;<i> you were thinking of (probably was :))?
+</I>
+I thought that possibly we are in interrupt context, though as far as
+I know, no HBA drivers do it.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000012.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000025.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#23">[ date ]</a>
+              <a href="thread.html#23">[ thread ]</a>
+              <a href="subject.html#23">[ subject ]</a>
+              <a href="author.html#23">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

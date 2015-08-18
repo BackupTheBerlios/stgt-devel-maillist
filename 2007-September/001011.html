@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 04/18] iser bidi alloc read buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/18%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C20070904200818.GH6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001010.html">
+   <LINK REL="Next"  HREF="001012.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 04/18] iser bidi alloc read buf</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/18%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C20070904200818.GH6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 04/18] iser bidi alloc read buf">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:08:18 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001010.html">[Stgt-devel] [PATCH 03/18] iser transport buf
+</A></li>
+        <LI>Next message: <A HREF="001012.html">[Stgt-devel] [PATCH 05/18] iser cpu to be 64
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1011">[ date ]</a>
+              <a href="thread.html#1011">[ thread ]</a>
+              <a href="subject.html#1011">[ subject ]</a>
+              <a href="author.html#1011">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Allocate the read buffer for bidirectional commands in the transport to
+pass down to devices.  A device can fill and return this buffer in
+task-&gt;uaddr, and thus choose to do the read or write processing in any
+order.  Unfortunately, this allocation can not be combined with the task
+and task-&gt;data allocation as the bidi read size is not known until after
+AHS processing.
+
+Necessary for iscsi RDMA transport to be able to provide its own buffers
+for the read phase too.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |   27 +++++++++++++++++++--------
+ usr/tgtd.h         |    2 ++
+ 2 files changed, 21 insertions(+), 8 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 41d5cad..4b4e35f 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -992,6 +992,8 @@ void iscsi_free_task(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 
++	if (task-&gt;addr &amp;&amp; task-&gt;addr != (unsigned long) task-&gt;data)
++		free((void *) (unsigned long) task-&gt;addr);
+ 	free(task);
+ 	/* from alloc */
+ 	conn_put(conn);
+@@ -1007,10 +1009,6 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ 	target_cmd_done(&amp;task-&gt;scmd);
+ 
+ 	list_del(&amp;task-&gt;c_hlist);
+-	if (task-&gt;data) {
+-		if ((unsigned long) task-&gt;data != task-&gt;addr)
+-			free((void *) (unsigned long) task-&gt;addr);
+-	}
+ 	iscsi_free_task(task);
+ }
+ 
+@@ -1073,7 +1071,6 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 	struct scsi_cmd *scmd = &amp;task-&gt;scmd;
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &amp;task-&gt;req;
+-	unsigned long uaddr = (unsigned long) task-&gt;data;
+ 	uint32_t data_len;
+ 	uint8_t *ahs;
+ 	int ahslen;
+@@ -1116,18 +1113,32 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 
+ 	/* figure out incoming (write) and outgoing (read) sizes */
+ 	data_len = 0;
++	scmd-&gt;bidi_uaddr = 0;
++	scmd-&gt;bidi_len = 0;
++	task-&gt;read_len = 0;
+ 	task-&gt;write_len = 0;
++
+ 	if (task-&gt;dir == WRITE || task-&gt;dir == BIDIRECTIONAL) {
+ 		task-&gt;write_len = ntohl(req-&gt;data_length);
+ 		data_len = task-&gt;write_len;
+ 	}
+-	task-&gt;read_len = 0;
+ 	if (task-&gt;dir == BIDIRECTIONAL &amp;&amp; ahslen &gt;= 8) {
+ 		struct iscsi_rlength_ahdr *ahs_bidi = (void *) ahs;
+ 		if (ahs_bidi-&gt;ahstype == ISCSI_AHSTYPE_RLENGTH) {
+ 			task-&gt;read_len = ntohl(ahs_bidi-&gt;read_length);
+ 			dprintf(&quot;bidi read len %u\n&quot;, task-&gt;read_len);
+ 		}
++		if (task-&gt;read_len) {
++			uint32_t len;
++			void *buf;
++
++			len = roundup(task-&gt;read_len, 4);
++			buf = malloc(len);
++			if (!buf)
++				return -ENOMEM;
++			scmd-&gt;bidi_uaddr = (unsigned long) buf;
++			scmd-&gt;bidi_len = task-&gt;read_len;
++		}
+ 	}
+ 	if (task-&gt;dir == READ) {
+ 		task-&gt;read_len = ntohl(req-&gt;data_length);
+@@ -1136,10 +1147,10 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 
+ 	memcpy(scmd-&gt;lun, task-&gt;req.lun, sizeof(scmd-&gt;lun));
+ 	scmd-&gt;rw = req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE;
+-	scmd-&gt;len = ntohl(req-&gt;data_length);
++	scmd-&gt;len = data_len;
+ 	scmd-&gt;attribute = cmd_attr(task);
+ 	scmd-&gt;tag = req-&gt;itt;
+-	scmd-&gt;uaddr = uaddr;
++	scmd-&gt;uaddr = (unsigned long) task-&gt;data;
+ 
+ 	return target_cmd_queue(conn-&gt;session-&gt;target-&gt;tid, scmd);
+ }
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index a260588..c92b663 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -129,6 +129,8 @@ struct scsi_cmd {
+ 
+ 	uint64_t uaddr;
+ 	uint32_t len;
++	uint64_t bidi_uaddr;  /* for read part when bidi */
++	uint32_t bidi_len;
+ 	int mmapped;
+ 	struct scsi_lu *dev;
+ 	unsigned long state;
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001010.html">[Stgt-devel] [PATCH 03/18] iser transport buf
+</A></li>
+	<LI>Next message: <A HREF="001012.html">[Stgt-devel] [PATCH 05/18] iser cpu to be 64
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1011">[ date ]</a>
+              <a href="thread.html#1011">[ thread ]</a>
+              <a href="subject.html#1011">[ subject ]</a>
+              <a href="author.html#1011">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

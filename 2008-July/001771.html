@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel]  How to setup a DVD RW
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%20How%20to%20setup%20a%20DVD%20RW&In-Reply-To=%3C4878E9E7.4080402%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001770.html">
+   <LINK REL="Next"  HREF="001772.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel]  How to setup a DVD RW</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%20How%20to%20setup%20a%20DVD%20RW&In-Reply-To=%3C4878E9E7.4080402%40gmail.com%3E"
+       TITLE="[Stgt-devel]  How to setup a DVD RW">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Jul 12 19:29:11 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001770.html">No subject
+</A></li>
+        <LI>Next message: <A HREF="001772.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1771">[ date ]</a>
+              <a href="thread.html#1771">[ thread ]</a>
+              <a href="subject.html#1771">[ subject ]</a>
+              <a href="author.html#1771">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Finally can confirm that the dvdrecord command works.
+
+What I did wrong was NOT using a file with length zero to start with as 
+the backend,
+so it was seen as a readonly CD/DVD, forgot that READMEs are there to 
+read ;-) because
+it can be found in README.mmc
+
+K3B and nautilus (the Fedora desktop, rightclick  &quot;Open CD/DVD Creator) 
+don't work. They both keep asking to insert a blank CD/DVD.
+As said the dvdrecord command works like a charm, so it is mostly working.
+
+Albert
+
+ &gt; Can you try using dvdwriter like this :
+ &gt;
+ &gt; dvdrecord -dao -ignsize -overburn dev=/dev/sgX ./IMAGE.iso
+ &gt;
+ &gt; and just verify that that works.
+ &gt;
+ &gt; If that works it is most likely that there is something missing in the
+ &gt; emulation of DVD+R that
+ &gt; K2B needs to be happy.
+
+
+
+On Mon, Jun 30, 2008 at 3:25 AM, Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+ &gt; &gt; Using open-iscsi to log into tgtd, which has the following setup for a
+ &gt; &gt; DVD-R:
+ &gt; &gt;
+ &gt; &gt; tgtadm --lld iscsi --mode target --op new --tid 1 -T
+ &gt; &gt; iqn.2007-03:virtual-dvd:`hostname`
+ &gt; &gt; tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 
+--name
+ &gt; &gt; scsi_id --value &quot;CONTROLLER&quot;
+ &gt; &gt; tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 
+--name
+ &gt; &gt; scsi_sn --value &quot;001&quot;
+ &gt; &gt;
+ &gt; &gt; # Create a DVD drive and give it a nice name
+ &gt; &gt; # The dvd starts out without a backing store file, i.e. no disk loaded
+ &gt; &gt; tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+ &gt; &gt; --backing-store /root/empty.iso --device-type cd
+ &gt; &gt; tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 
+--params
+ &gt; &gt; removable=1
+ &gt; &gt;
+ &gt; &gt; Where /root/empty.iso is an empty 4GB file. I can succesfully log 
+into the
+ &gt; &gt; this target, dmesg shows:
+ &gt; &gt;
+ &gt; &gt; scsi 13:0:0:0: RAID              IET      Controller       0001 PQ: 
+0 ANSI:
+ &gt; &gt; 5
+ &gt; &gt; scsi 13:0:0:0: Attached scsi generic sg2 type 12
+ &gt; &gt; scsi 13:0:0:1: CD-ROM            IET      VIRTUAL-CDROM    0001 PQ: 
+0 ANSI:
+ &gt; &gt; 5
+ &gt; &gt; sr1: scsi-1 drive
+ &gt; &gt; sr 13:0:0:1: Attached scsi CD-ROM sr1
+ &gt; &gt;
+ &gt; &gt; However, K3B (CD burner program) sees the virtual CDROM (as it is 
+called by
+ &gt; &gt; default), but doesn't see
+ &gt; &gt; that a medium is loaded (while I had given it a backing store).
+ &gt; &gt;
+ &gt; &gt; What I am doing wrong here?
+ &gt; &gt;
+ &gt; &gt; Thanks,
+ &gt; &gt;
+ &gt; &gt; Albert
+ &gt; &gt;
+ &gt; &gt; P.S. I am using Fedora 9.
+ &gt; &gt;
+ &gt; &gt;
+ &gt; &gt;
+ &gt; &gt; _______________________________________________
+ &gt; &gt; Stgt-devel mailing list
+ &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+ &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+ &gt; &gt;
+ &gt; &gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001770.html">No subject
+</A></li>
+	<LI>Next message: <A HREF="001772.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1771">[ date ]</a>
+              <a href="thread.html#1771">[ thread ]</a>
+              <a href="subject.html#1771">[ subject ]</a>
+              <a href="author.html#1771">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

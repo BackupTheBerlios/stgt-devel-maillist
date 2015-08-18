@@ -1,0 +1,37 @@
+From fujita.tomonori at lab.ntt.co.jp  Fri Sep 19 16:44:55 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 19 Sep 2008 23:44:55 +0900
+Subject: [Stgt-devel] Fwd: Delivery Status Notification (Failure)
+In-Reply-To: <d937bde80809190431x7a36bfc3v57803873474f9124@mail.gmail.com>
+References: <d937bde80809190428r5e9e0fa0y373b9e35bd05580d@mail.gmail.com>
+	<0016e644c2ceb4faff04573e0124@googlemail.com>
+	<d937bde80809190431x7a36bfc3v57803873474f9124@mail.gmail.com>
+Message-ID: <20080919234455N.fujita.tomonori@lab.ntt.co.jp>
+
+On Fri, 19 Sep 2008 17:01:44 +0530
+"aniket agashe" <agasheac at gmail.com> wrote:
+
+> Sir
+>  i have 2 machines A & B
+> i installed iser initiator on A and target on B where i am using RAID disk
+> as target
+> i have installed ext3 on raid disk after creating login session with B, i
+> mounted file system on the disk which is visible to the A machine on the A
+> machine
+> 
+> 
+> 
+> but whenever i am creating new file on A machine on the file system which is
+> mounted it is visible to local machine(B) as -
+
+First, please use stgt at vger.kernel.org
+
+stgt-devel at lists.berlios.de doesn't accept mails any more.
+
+Second, what you try to do is not impossible with the combination of
+iSCSI and ext3.
+
+Just use NFS. If you want iSER, you need to use a cluseter file system
+like GFS.
+
+

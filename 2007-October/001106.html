@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/4%5D%20bs_mmap%20/%20kreq_send%20threading&In-Reply-To=%3C20071023211400.GA6091%40linux.vnet.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001112.html">
+   <LINK REL="Next"  HREF="001107.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/4%5D%20bs_mmap%20/%20kreq_send%20threading&In-Reply-To=%3C20071023211400.GA6091%40linux.vnet.ibm.com%3E"
+       TITLE="[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Tue Oct 23 23:14:01 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001112.html">[Stgt-devel] Which kernel should be used for stgt?
+</A></li>
+        <LI>Next message: <A HREF="001107.html">[Stgt-devel] [Patch 1/4] bs_mmap threading
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1106">[ date ]</a>
+              <a href="thread.html#1106">[ thread ]</a>
+              <a href="subject.html#1106">[ subject ]</a>
+              <a href="author.html#1106">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>A little threading work like we have in bs_sync for bs_mmap.  The mmap
+can be taken care of with a small pool of worker threads this way.
+
+After the mmap the completed commands enter back into the main tgtd
+thread and would be sent to the kernel for in-kernel drivers through
+kreq_send.  Unfortunately kreq_send can sleep in blk_rq_map_user or
+scsi_map_user_pages and hold up processing in tgtd.  So kreq_send can
+add the command to a list and hand it off to a small thread pool to
+process sending the replies to the kernel.
+
+I've also included a kernel patch for our tree to change the processing
+of command from userspace such that it only processes one command per
+write.  This allows us to thread the blk_rq_map_user/scsi_map_user_pages
+calls with our thread pool.
+
+Last patch changes the way we open the backed device in the bs_mmap code
+to add O_SYNC.
+
+Regards,
+Robert Jennings
+
+---
+Robert C. Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcjenn at us.ibm.com</A>&gt;
+IBM Linux Technology Center, Austin
++1.512.838.4964 (t/l 678.4964)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001112.html">[Stgt-devel] Which kernel should be used for stgt?
+</A></li>
+	<LI>Next message: <A HREF="001107.html">[Stgt-devel] [Patch 1/4] bs_mmap threading
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1106">[ date ]</a>
+              <a href="thread.html#1106">[ thread ]</a>
+              <a href="subject.html#1106">[ subject ]</a>
+              <a href="author.html#1106">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

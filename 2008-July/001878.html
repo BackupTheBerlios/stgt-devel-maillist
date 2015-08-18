@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch] Segmentation fault in conn_close
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Segmentation%20fault%20in%20conn_close&In-Reply-To=%3C4889CD76.6020900%40redhat.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001872.html">
+   <LINK REL="Next"  HREF="001879.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch] Segmentation fault in conn_close</H1>
+    <B>Tomas Henzl</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Segmentation%20fault%20in%20conn_close&In-Reply-To=%3C4889CD76.6020900%40redhat.com%3E"
+       TITLE="[Stgt-devel] [Patch] Segmentation fault in conn_close">thenzl at redhat.com
+       </A><BR>
+    <I>Fri Jul 25 14:56:22 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001872.html">[Stgt-devel] [PATCH] Create and initialise Mandatory SSC mode pages
+</A></li>
+        <LI>Next message: <A HREF="001879.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1878">[ date ]</a>
+              <a href="thread.html#1878">[ thread ]</a>
+              <a href="subject.html#1878">[ subject ]</a>
+              <a href="author.html#1878">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I noticed a segfault which is probably caused by the patch 
+&quot;iscsi: needs to call iscsi_free_cmd_task for commands in tx_clist&quot;
+b723430058dcbe3b201a2a2c38ce114217dc5273
+
+it looks like that for some reason iscsi_free_cmd_task(task); gets called  with
+appropriate scmd zeroed out (not initialized ?) and then it causes a segfault
+in list_del.
+
+I don't know how could it happen that this structure (scmd) is empty. The patch 
+below solves my problem - it restores the old behaviour if the scmd is empty
+as it was before the patch mentioned above.
+
+Tomas
+
+Signed-off-by: Tomas Henzl &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">thenzl at redhat.com</A>&gt;
+---
+diff -Naurp tgt2/usr/iscsi/conn.c tgt/usr/iscsi/conn.c
+--- tgt2/usr/iscsi/conn.c	2008-06-13 14:14:37.000000000 +0200
++++ tgt/usr/iscsi/conn.c	2008-07-24 14:04:30.000000000 +0200
+@@ -109,7 +109,12 @@ void conn_close(struct iscsi_connection 
+ 	list_for_each_entry_safe(task, tmp, &amp;conn-&gt;tx_clist, c_list) {
+ 		dprintf(&quot;Forcing release of tx task %&quot; PRIx64 &quot;\n&quot;,
+ 			task-&gt;tag);
+-		iscsi_free_cmd_task(task);
++		if (task-&gt;scmd.c_target)
++			iscsi_free_cmd_task(task);
++		else {
++			list_del(&amp;task-&gt;c_list);
++			iscsi_free_task(task);
++		}	
+ 	}
+ 
+ 	if (conn-&gt;rx_task) {
+--
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001872.html">[Stgt-devel] [PATCH] Create and initialise Mandatory SSC mode pages
+</A></li>
+	<LI>Next message: <A HREF="001879.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1878">[ date ]</a>
+              <a href="thread.html#1878">[ thread ]</a>
+              <a href="subject.html#1878">[ subject ]</a>
+              <a href="author.html#1878">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

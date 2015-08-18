@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/7%5D%20option%20to%20specify%20an%20alternative%0A%09configuration%20file&In-Reply-To=%3C4885C22F.6000208%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001841.html">
+   <LINK REL="Next"  HREF="001842.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/7%5D%20option%20to%20specify%20an%20alternative%0A%09configuration%20file&In-Reply-To=%3C4885C22F.6000208%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file">dorons at voltaire.com
+       </A><BR>
+    <I>Tue Jul 22 13:19:11 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001841.html">[Stgt-devel] [PATCH 3/7] add option to show all targets
+</A></li>
+        <LI>Next message: <A HREF="001842.html">[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1820">[ date ]</a>
+              <a href="thread.html#1820">[ thread ]</a>
+              <a href="subject.html#1820">[ subject ]</a>
+              <a href="author.html#1820">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add -c flag.
+Specify an alternative configuration file.
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ scripts/tgt-admin |   29 ++++++++++++++++++++++-------
+ 1 files changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index 9bbe710..8eea44f 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -26,13 +26,14 @@ Usage:
+ tgt-admin [OPTION]...
+ This tool configures tgt targets.
+ 
+-  -e, --execute   read $configfile and execute tgtadm commands
+-  -d, --delete    delete all the targets
+-  -s, --show      show all the targets
+-  -f, --force     don't exit on tgtadm errors
+-  -p, --pretend   only print tgtadm options
+-  -v, --verbose   increase verbosity (no effect in &quot;pretend&quot; mode)
+-  -h, --help      show this help
++  -e, --execute              read $configfile and execute tgtadm commands
++  -d, --delete               delete all the targets
++  -s, --show                 show all the targets
++  -c, --conf &lt;conf file&gt;     specify an alternative configuration file
++  -f, --force                don't exit on tgtadm errors
++  -p, --pretend              only print tgtadm options
++  -v, --verbose              increase verbosity (no effect in &quot;pretend&quot; mode)
++  -h, --help                 show this help
+ 
+ EOF
+ 	exit;
+@@ -44,6 +45,7 @@ my $param = $ARGV[0];
+ my $execute = 0;
+ my $delete = 0;
+ my $show = 0;
++my $alternate_conf=&quot;0&quot;;
+ my $force = 0;
+ my $pretend = 0;
+ my $verbose = 0;
+@@ -52,6 +54,7 @@ my $result = GetOptions (
+ 	&quot;e|execute&quot; =&gt; \$execute,
+ 	&quot;d|delete&quot;  =&gt; \$delete,
+ 	&quot;s|show&quot;    =&gt; \$show,
++	&quot;c|conf=s&quot;    =&gt; \$alternate_conf,
+ 	&quot;f|force&quot;   =&gt; \$force,
+ 	&quot;p|pretend&quot; =&gt; \$pretend,
+ 	&quot;v|verbose&quot; =&gt; \$verbose,
+@@ -68,6 +71,18 @@ if ($show == 1) {
+ 	exit;
+ }
+ 
++# Check if alternative configuration file was given
++if ($alternate_conf ne 0) {
++	# Check if alternative configuration file exist
++	if (-e $alternate_conf) {
++		execute(&quot;# Using $alternate_conf as configuration file\n&quot;);
++		%conf = ParseConfig(-ConfigFile =&gt; &quot;$alternate_conf&quot;, -UseApacheInclude =&gt; 1, -IncludeGlob =&gt; 1,);
++	}
++	else {
++		die(&quot;file $alternate_conf not found. Exiting...\n&quot;);
++	}
++}
++
+ # Some variables/arrays/hashes we will use globally
+ my %tgtadm_output;
+ my %tgtadm_output_tid;
+-- 
+1.5.3.8
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001841.html">[Stgt-devel] [PATCH 3/7] add option to show all targets
+</A></li>
+	<LI>Next message: <A HREF="001842.html">[Stgt-devel] [PATCH 4/7] option to specify an alternative	configuration file
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1820">[ date ]</a>
+              <a href="thread.html#1820">[ thread ]</a>
+              <a href="subject.html#1820">[ subject ]</a>
+              <a href="author.html#1820">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question for pass-through target design
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C20070504193306.GC16528%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000708.html">
+   <LINK REL="Next"  HREF="000604.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question for pass-through target design</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C20070504193306.GC16528%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] Question for pass-through target design">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Fri May  4 21:33:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000708.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+        <LI>Next message: <A HREF="000604.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#602">[ date ]</a>
+              <a href="thread.html#602">[ thread ]</a>
+              <a href="subject.html#602">[ subject ]</a>
+              <a href="author.html#602">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>* FUJITA Tomonori (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>) wrote:
+&gt;<i> From: Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] Question for pass-through target design
+</I>&gt;<i> Date: Fri, 4 May 2007 11:07:12 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; It looks like the pass-through target support is currently broken, at
+</I>&gt;<i> &gt; least as I've checked for ibmvstgt, but I think it's a general problem.
+</I>&gt;<i> &gt; I wanted to check my assumptions and get ideas.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, unfortunately, it works only with the iSCSI target driver (which
+</I>&gt;<i> runs in user space).
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; The code isn't allocating any memory to pass along to the sg code to store
+</I>&gt;<i> &gt; the result of a read or data for a write.  Currently, dxferp for sg_io_hdr
+</I>&gt;<i> &gt; or dout_xferp/din_xferp for sg_io_v4 are assigned to the value of uaddr,
+</I>&gt;<i> &gt; which is set to 0 in kern_queue_cmd.  With the pointer set to NULL,
+</I>&gt;<i> &gt; the pass-through target isn't going to function.  Even if we had memory
+</I>&gt;<i> &gt; allocated, there isn't a means of getting data to be written via sg down
+</I>&gt;<i> &gt; this code path.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; What ideas are there as to how the data will get to user-space so that
+</I>&gt;<i> &gt; we can use sg?
+</I>&gt;<i> 
+</I>&gt;<i> For kernel-space drivers, we don't need to go to user-space. We can do
+</I>&gt;<i> the pass-through in kernel space. I talked with James about this last
+</I>&gt;<i> year and he said that if the code is implemented cleanly, he would
+</I>&gt;<i> merges it into mainline.
+</I>
+That sounds fine, how can we make the lld in kernel space aware that the
+target is pass-through?  
+
+Should the kernel driver operate as usual and queue the command to tgtd
+and then tgtd would see that it's a pass-through target and communicate
+back to the lld that the command should be processed in-kernel?  I think
+that's probably the simplest method of achieving this without making
+the kernel drivers aware of all target configuration and status but it
+would mean a trip to tgtd for every command.  Otherwise we'd want to
+communicate every change in configuration for the targets to the kernel
+lld's and any other operational changes for tgtd.  Thoughts?
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000708.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+	<LI>Next message: <A HREF="000604.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#602">[ date ]</a>
+              <a href="thread.html#602">[ thread ]</a>
+              <a href="subject.html#602">[ subject ]</a>
+              <a href="author.html#602">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

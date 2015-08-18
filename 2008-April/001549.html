@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540804281419r4b187385g8364bf65b29acd6e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001543.html">
+   <LINK REL="Next"  HREF="001551.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540804281419r4b187385g8364bf65b29acd6e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Mon Apr 28 23:19:49 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001543.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+        <LI>Next message: <A HREF="001551.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1549">[ date ]</a>
+              <a href="thread.html#1549">[ thread ]</a>
+              <a href="subject.html#1549">[ subject ]</a>
+              <a href="author.html#1549">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Apr 29, 2008 at 3:47 AM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Mon, 28 Apr 2008 05:36:34 +1000
+</I>&gt;<i>  &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;<i>  &gt; Hi,
+</I>&gt;<i>  &gt;
+</I>&gt;<i>  &gt; Please find attached a series of patches to enhance the MMC emulation
+</I>&gt;<i>  &gt; to allow writing to emulated DVD+R disks.
+</I>&gt;<i>  &gt; The emulation checks the backing store file when coming online and
+</I>&gt;<i>  &gt; decides which type of emulation profile should be used :
+</I>&gt;<i>  &gt; If there is no backingstore file   or the device is offline  this is
+</I>&gt;<i>  &gt; emulated as NO_PROFILE and behaves as if there is no media in the &quot;dvd
+</I>&gt;<i>  &gt; drive&quot;.
+</I>&gt;<i>  &gt; If the backing store file is &gt;0 bytes in size, this is emulated as
+</I>&gt;<i>  &gt; DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+</I>&gt;<i>  &gt; &quot;dvd drive&quot; that can be read from.
+</I>&gt;<i>  &gt; If the backing store file is ==0 bytes in size, this is emulated as if
+</I>&gt;<i>  &gt; there is a blank writeable DVD+R disk in the &quot;dvd drive&quot;, allowing a
+</I>&gt;<i>  &gt; user to burn to the device.
+</I>&gt;<i>  &gt; Once finished burning and the application issues a CLOSE_TRACK
+</I>&gt;<i>  &gt; command, the device morphs from DVD+R into the DVD_ROM profile.
+</I>&gt;<i>
+</I>&gt;<i>  Great, thanks!
+</I>&gt;<i>
+</I>&gt;<i>  Can you merge this patchset with
+</I>&gt;<i>
+</I>&gt;<i>  Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i>
+</I>&gt;<i>  ?
+</I>&gt;<i>
+</I>
+Sure I can.
+How do I do this (I'm not very git-experienced)?
+
+What git commands should I use to redo the diffs so they get the sign-off text?
+
+ronnie sahlberg
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001543.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+	<LI>Next message: <A HREF="001551.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1549">[ date ]</a>
+              <a href="thread.html#1549">[ thread ]</a>
+              <a href="subject.html#1549">[ subject ]</a>
+              <a href="author.html#1549">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

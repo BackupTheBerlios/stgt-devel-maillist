@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/20%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C200711141504.lAEF4akJ027279%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001143.html">
+   <LINK REL="Next"  HREF="001141.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/20%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C200711141504.lAEF4akJ027279%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf">tomof at acm.org
+       </A><BR>
+    <I>Wed Nov 14 15:21:12 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001143.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+        <LI>Next message: <A HREF="001141.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1146">[ date ]</a>
+              <a href="thread.html#1146">[ thread ]</a>
+              <a href="subject.html#1146">[ subject ]</a>
+              <a href="author.html#1146">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+Date: Mon, 12 Nov 2007 23:14:34 +0900
+
+&gt;<i> On Tue, 16 Oct 2007 11:19:03 -0400
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Allocate the read buffer for bidirectional commands in the transport to
+</I>&gt;<i> &gt; pass down to devices.  A device can fill and return this buffer in
+</I>&gt;<i> &gt; task-&gt;uaddr, and thus choose to do the read or write processing in any
+</I>&gt;<i> &gt; order.  Unfortunately, this allocation can not be combined with the task
+</I>&gt;<i> &gt; and task-&gt;data allocation as the bidi read size is not known until after
+</I>&gt;<i> &gt; AHS processing.
+</I>&gt;<i> 
+</I>&gt;<i> I've been cleaning up the code in preparation for bidi. For exmaple,
+</I>&gt;<i> moving bidi stuff in iscsi_task (read_len, write_len, and
+</I>&gt;<i> data_direction) to scsi_cmd so that everyone can use bidi.
+</I>&gt;<i> 
+</I>&gt;<i> I'll add bidi support like this when I finish the preparation.
+</I>
+I merged this:
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 9bcd6df..e227cb2 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -269,7 +269,8 @@ void *iscsi_tcp_alloc_data_buf(struct iscsi_connection *conn, size_t sz)
+ 
+ void iscsi_tcp_free_data_buf(struct iscsi_connection *conn, void *buf)
+ {
+-	free(buf);
++	if (buf)
++		free(buf);
+ }
+ 
+ struct iscsi_transport iscsi_tcp = {
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 1db41b7..8d8cdab 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1000,10 +1000,10 @@ void iscsi_free_task(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 
+-	if (task-&gt;data)
+-		conn-&gt;tp-&gt;free_data_buf(conn, task-&gt;data);
++	conn-&gt;tp-&gt;free_data_buf(conn, scsi_get_in_buffer(&amp;task-&gt;scmd));
++	conn-&gt;tp-&gt;free_data_buf(conn, scsi_get_out_buffer(&amp;task-&gt;scmd));
++
+ 	free(task);
+-	/* from alloc */
+ 	conn_put(conn);
+ }
+ 
+@@ -1134,9 +1134,21 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 	if (dir == DATA_BIDIRECTIONAL &amp;&amp; ahslen &gt;= 8) {
+ 		struct iscsi_rlength_ahdr *ahs_bidi = (void *) ahs;
+ 		if (ahs_bidi-&gt;ahstype == ISCSI_AHSTYPE_RLENGTH) {
+-			scsi_set_in_length(scmd, ntohl(ahs_bidi-&gt;read_length));
+-			dprintf(&quot;bidi read len %u\n&quot;,
+-				ntohl(ahs_bidi-&gt;read_length));
++			uint32_t in_length = ntohl(ahs_bidi-&gt;read_length);
++
++			dprintf(&quot;bidi read len %u\n&quot;, in_length);
++
++			if (in_length) {
++				void *buf;
++
++				in_length = roundup(in_length, 4);
++				buf = conn-&gt;tp-&gt;alloc_data_buf(conn, in_length);
++				if (!buf)
++					return -ENOMEM;
++
++				scsi_set_in_buffer(scmd, buf);
++				scsi_set_in_length(scmd, in_length);
++			}
+ 		}
+ 	}
+ 
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001143.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+	<LI>Next message: <A HREF="001141.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1146">[ date ]</a>
+              <a href="thread.html#1146">[ thread ]</a>
+              <a href="subject.html#1146">[ subject ]</a>
+              <a href="author.html#1146">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C43B5FAA1.9000800%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000218.html">
+   <LINK REL="Next"  HREF="000220.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C43B5FAA1.9000800%40cs.wisc.edu%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Sat Dec 31 04:27:29 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000218.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000220.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>James Bottomley wrote:
+&gt;<i> On Tue, 2005-12-27 at 08:53 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i>Mike and I have worked on the tgt mmap version.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>o It does read/write commands like sg by using mmap in user space and
+</I>&gt;&gt;<i>get_user_pages in kernel space.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>o It does non-read/write commands like direct I/O by allocating
+</I>&gt;&gt;<i>aligned buffers in user space and using get_user_pages in kernel space.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>It works like the simple tap that you suggested. It does not allocate
+</I>&gt;&gt;<i>buffers in kernel space at all and does zero copy on all sorts of
+</I>&gt;&gt;<i>commands.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>Here are some performance results with open-iscsi (which are better
+</I>&gt;&gt;<i>than the previous results that I got with sfnet).
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>o IET
+</I>&gt;&gt;<i>
+</I>&gt;&gt;|<i> 2005/12/27-07:50:59 | STAT  | 6827 | v1.2.8 | /dev/sdc | Total write throughput: 53790310.4B/s (51.30MB/s), IOPS 6566.2/s.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>o current tgt (I/O in kernel space)
+</I>&gt;&gt;<i>
+</I>&gt;&gt;|<i> 2005/12/27-08:07:50 | STAT  | 7294 | v1.2.8 | /dev/sdc | Total write throughput: 49666457.6B/s (47.37MB/s), IOPS 6062.8/s.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>o tgt mmap
+</I>&gt;&gt;<i>
+</I>&gt;&gt;|<i> 2005/12/27-08:42:51 | STAT  | 5286 | v1.2.8 | /dev/sdc | Total write
+</I>&gt;&gt;<i>throughput: 44701286.4B/s (42.63MB/s), IOPS 5456.7/s.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>We can get something like this if we avoid calling mmap/munmap per
+</I>&gt;&gt;<i>command (by using some sorts of caching).
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>o tgt mmap (mmap caching)
+</I>&gt;&gt;<i>
+</I>&gt;&gt;|<i> 2005/12/27-07:53:19 | STAT  | 6996 | v1.2.8 | /dev/sdc | Total write throughput: 48253337.6B/s (46.02MB/s), IOPS 5890.3/s.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>James, can we get your approval of the this mmap design?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Yes, that looks fine ... it runs in user space, which was really all I
+</I>&gt;<i> was looking for.
+</I>&gt;<i> 
+</I>&gt;<i> There is another half to this, which is that I'd like the tap to come
+</I>&gt;<i> via a SCSI API.  This isn't strictly necessary for iSCSI but it would
+</I>&gt;<i> allow us to integrate a generic target approach that could work for all
+</I>&gt;<i> SCSI HBA's as well as just iSCSI.
+</I>&gt;<i> 
+</I>
+The code we currently have is designed to work with software iscsi 
+targets or software AoE and HW cards like qlogic or emulex's FC cards. 
+There are a lot of places we could use scsi-ml or block layer structs 
+like the request or scsi_cmnd.
+
+To support HW like qlogic or emulex's FC target mode, are you thinking 
+you might want us to add on to the scsi-ml's scsi_host_template or add a 
+scsi_target_template? If we add on to the scsi_host_template and if that 
+one PCI device would be in initiator and target mode at the same time 
+would we have one scsi_host for that resource and just add our target 
+related fields to the scsi_host? Is this what you mean?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000218.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000220.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

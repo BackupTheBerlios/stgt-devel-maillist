@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1165856307.2769.135.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000355.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] sg_turs on stgt iscsi drive is very slow</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1165856307.2769.135.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] sg_turs on stgt iscsi drive is very slow">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Mon Dec 11 17:58:27 CET 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000355.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#354">[ date ]</a>
+              <a href="thread.html#354">[ thread ]</a>
+              <a href="subject.html#354">[ subject ]</a>
+              <a href="author.html#354">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi, all
+
+Try to compare IET and STGT. 
+
+Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+r598.
+
+Want to know how efficient stgt handle context switch. 
+
+run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+
+vmstat 1 on target side shows this.
+
+ 0  0      0 1024792  10560  52112    0    0     0     0 2942 10763  0
+65 35  0
+ 0  0      0 1024792  10560  52112    0    0     0     0 2947 10760  0
+63 37  0
+ 0  0      0 1024792  10560  52112    0    0     0     0 3000 10650  0
+71 29  0
+ 0  0      0 1024792  10568  52104    0    0     0    16 3999  8654  0
+69 31  0
+ 0  0      0 1024792  10568  52112    0    0     0     0 4270  8043  0
+44 56  0
+ 0  0      0 1024792  10568  52112    0    0     0     0 3768  9971  0
+60 40  0
+ 0  0      0 1024792  10568  52112    0    0     0     0 2938 10712  0
+68 32  0
+ 0  0      0 1024792  10568  52112    0    0     0     0 2931 10719  0
+66 34  0
+ 0  0      0 1024792  10576  52104    0    0     0    16 2933 10715  0
+65 35  0
+
+run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+operations/sec. yes, 250.
+
+vmstat 1 on target side show 
+
+procs -----------memory---------- ---swap-- -----io---- --system--
+----cpu----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in    cs us sy
+id wa
+ 1  0      0  40340 1032816  25288    0    0     0     0  603   760  0
+0 100  0
+ 0  0      0  38232 1032816  25288    0    0     0     0  632   761  0
+0 100  0
+ 0  0      0  36248 1032816  25288    0    0     0     0  678   759  0
+0 100  0
+ 0  0      0  34264 1032816  25288    0    0     0     0  632   763  0
+0 100  0
+
+if i recompile the target kernel with all kernel debug options disabled,
+i can get 6000 operations/sec on IET, but still _SAME_ on stgt.
+
+so why stgt can only process a TEST_UNIT_READY command so slowly?
+
+Ming
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000355.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#354">[ date ]</a>
+              <a href="thread.html#354">[ thread ]</a>
+              <a href="subject.html#354">[ subject ]</a>
+              <a href="author.html#354">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

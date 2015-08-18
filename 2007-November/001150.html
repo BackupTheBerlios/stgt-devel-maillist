@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 13/20] iser close free
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2013/20%5D%20iser%20close%20free&In-Reply-To=%3C20071115112056I.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001153.html">
+   <LINK REL="Next"  HREF="001151.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 13/20] iser close free</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2013/20%5D%20iser%20close%20free&In-Reply-To=%3C20071115112056I.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 13/20] iser close free">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Nov 15 03:20:56 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001153.html">[Stgt-devel] [PATCH 15/20] iser rounding
+</A></li>
+        <LI>Next message: <A HREF="001151.html">[Stgt-devel] [PATCH 11/20] iser connection init
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1150">[ date ]</a>
+              <a href="thread.html#1150">[ thread ]</a>
+              <a href="subject.html#1150">[ subject ]</a>
+              <a href="author.html#1150">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 16 Oct 2007 11:21:22 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> Separate transport close operation from the free operation, as RDMA will
+</I>&gt;<i> initiate a close, but must not free resources until all references to
+</I>&gt;<i> the connection have gone away.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/conn.c      |    3 ++-
+</I>&gt;<i>  usr/iscsi/iscsi_tcp.c |   12 +++++++++---
+</I>&gt;<i>  usr/iscsi/transport.h |    3 ++-
+</I>&gt;<i>  3 files changed, 13 insertions(+), 5 deletions(-)
+</I>
+I think that this isn't necessary any more because of commit
+a718768930f8d5cdd0f648b1050b13a3d5c65ecd.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001153.html">[Stgt-devel] [PATCH 15/20] iser rounding
+</A></li>
+	<LI>Next message: <A HREF="001151.html">[Stgt-devel] [PATCH 11/20] iser connection init
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1150">[ date ]</a>
+              <a href="thread.html#1150">[ thread ]</a>
+              <a href="subject.html#1150">[ subject ]</a>
+              <a href="author.html#1150">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

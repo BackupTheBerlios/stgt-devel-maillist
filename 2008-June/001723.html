@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH 1/2] size_t is 64 bit on some architectures.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%201/2%5D%20size_t%20is%2064%20bit%20on%20some%20architectures.&In-Reply-To=%3Cmailman.37.1331738482.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001696.html">
+   <LINK REL="Next"  HREF="001725.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH 1/2] size_t is 64 bit on some architectures.</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%201/2%5D%20size_t%20is%2064%20bit%20on%20some%20architectures.&In-Reply-To=%3Cmailman.37.1331738482.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH 1/2] size_t is 64 bit on some architectures.">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue Jun 24 05:11:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001696.html">[Stgt-devel] miraculisms trode
+</A></li>
+        <LI>Next message: <A HREF="001725.html">[PATCH 2/2] when we start up fcoe on an interface, check that
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1723">[ date ]</a>
+              <a href="thread.html#1723">[ thread ]</a>
+              <a href="subject.html#1723">[ subject ]</a>
+              <a href="author.html#1723">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>fix debug print statements to use correct printf types for the FCOE
+target
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+Signed-off-by: root &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ubuntu-server-1.sahlberg.net</A>&gt;
+---
+ usr/fcoe/fcs_state.c   |    4 ++--
+ usr/fcoe/openfc_scst.c |    6 +++---
+ usr/fcoe/sa_state.c    |   14 +++++++-------
+ 3 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/usr/fcoe/fcs_state.c b/usr/fcoe/fcs_state.c
+index a4a065a..288280e 100644
+--- a/usr/fcoe/fcs_state.c
++++ b/usr/fcoe/fcs_state.c
+@@ -107,11 +107,11 @@ struct fcs_state *fcs_create(struct fcs_create_args *ap)
+ 	outer_port = ap-&gt;fca_port;
+ 	mfs = fc_port_get_max_frame_size(outer_port);
+ 	if (mfs &lt; FC_MIN_MAX_PAYLOAD) {
+-		eprintf(&quot;port max frame size only %d (0x%x) bytes - &quot;
++		eprintf(&quot;port max frame size only %zu (0x%zx) bytes - &quot;
+ 		       &quot;setting to %d&quot;, mfs, mfs, FC_MIN_MAX_PAYLOAD);
+ 		mfs = 1024;
+ 	} else if (mfs &gt; FC_MAX_PAYLOAD + sizeof(struct fc_frame_header)) {
+-		eprintf(&quot;port max frame size too large: %d (0x%x) bytes\n&quot;,
++		eprintf(&quot;port max frame size too large: %zu (0x%zx) bytes\n&quot;,
+ 		       mfs, mfs);
+ 		mfs = FC_MAX_PAYLOAD + sizeof(struct fc_frame_header);
+ 	}
+diff --git a/usr/fcoe/openfc_scst.c b/usr/fcoe/openfc_scst.c
+index 2cf0cdd..f24fc28 100644
+--- a/usr/fcoe/openfc_scst.c
++++ b/usr/fcoe/openfc_scst.c
+@@ -214,7 +214,7 @@ openfc_scsi_send_data(struct fc_scsi_pkt *fsp,
+struct fc_seq *sp)
+
+ 	len = scsi_get_in_length(&amp;fsp-&gt;scmd) - scsi_get_in_resid(&amp;fsp-&gt;scmd);
+
+-	dprintf(&quot;%p %d %d\n&quot;, fsp, data_len, scsi_get_in_resid(&amp;fsp-&gt;scmd));
++	dprintf(&quot;%p %zu %d\n&quot;, fsp, data_len, scsi_get_in_resid(&amp;fsp-&gt;scmd));
+ 	len = min(data_len, len);
+
+ 	if (offset != fsp-&gt;xfer_len) {
+@@ -242,7 +242,7 @@ openfc_scsi_send_data(struct fc_scsi_pkt *fsp,
+struct fc_seq *sp)
+ 				fc_frame_set_offset(fp, buf_offset);
+ 			}
+
+-			dprintf(&quot;%d %d %d\n&quot;, tlen, remaining, buf_offset);
++			dprintf(&quot;%zu %zu %zu\n&quot;, tlen, remaining, buf_offset);
+ 			page_addr = (char *)scsi_get_in_buffer(&amp;fsp-&gt;scmd) + buf_offset;
+
+ 			memcpy(data, (char *) page_addr, tlen);
+@@ -260,7 +260,7 @@ openfc_scsi_send_data(struct fc_scsi_pkt *fsp,
+struct fc_seq *sp)
+ 				continue;
+ 			}
+
+-			dprintf(&quot;%d %d %d\n&quot;, tlen, remaining, error);
++			dprintf(&quot;%zu %zu %d\n&quot;, tlen, remaining, error);
+ 			fp = NULL;
+ 			if (error) {
+ 				/*
+diff --git a/usr/fcoe/sa_state.c b/usr/fcoe/sa_state.c
+index 95dbe03..ad7ef98 100644
+--- a/usr/fcoe/sa_state.c
++++ b/usr/fcoe/sa_state.c
+@@ -116,7 +116,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_STATE:
+ 			if (dp-&gt;sd_in == 0) {
+ 				eprintf(&quot;state table %s has invalid state %d &quot;
+-				       &quot;at STATE entry %d&quot;,
++				       &quot;at STATE entry %ld&quot;,
+ 				       name, dp-&gt;sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -127,7 +127,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_FROM:
+ 			if (dp-&gt;sd_in == 0) {
+ 				eprintf(&quot;state table %s has invalid state %d &quot;
+-				       &quot;at FROM entry %d&quot;,
++				       &quot;at FROM entry %ld&quot;,
+ 				       name, dp-&gt;sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -136,7 +136,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_EVENT:
+ 			if (dp-&gt;sd_in == 0) {
+ 				eprintf(&quot;state table %s has invalid event %d &quot;
+-				       &quot;at EVENT entry %d&quot;,
++				       &quot;at EVENT entry %ld&quot;,
+ 				       name, dp-&gt;sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -146,7 +146,7 @@ struct sa_state_table *sa_state_table_alloc(const
+char *name,
+ 		case SST_HANDLER:
+ 			if (dp-&gt;sd_ptr == NULL) {
+ 				eprintf(&quot;state table %s has invalid hander %d &quot;
+-				       &quot;at HANDLER entry %d&quot;,
++				       &quot;at HANDLER entry %ld&quot;,
+ 				       name, dp-&gt;sd_in, dp - state_desc);
+ 				error++;
+ 			}
+@@ -156,19 +156,19 @@ struct sa_state_table
+*sa_state_table_alloc(const char *name,
+ 		case SST_NEXT:
+ 			if (cur_state == 0) {
+ 				eprintf(&quot;state table %s has no current state &quot;
+-				       &quot;for NEXT entry %d&quot;,
++				       &quot;for NEXT entry %ld&quot;,
+ 				       name, dp - state_desc);
+ 				error++;
+ 			}
+ 			if (dp-&gt;sd_in &gt;= event_limit) {
+ 				eprintf(&quot;state table %s has event %d &quot;
+-				       &quot;out of range at NEXT entry %d&quot;,
++				       &quot;out of range at NEXT entry %ld&quot;,
+ 				       name, dp-&gt;sd_in, dp - state_desc);
+ 				error++;
+ 			}
+ 			if (dp-&gt;sd_next == 0 || dp-&gt;sd_next &gt;= state_limit) {
+ 				eprintf(&quot;state table %s has state %d &quot;
+-				       &quot;out of range at NEXT entry %d&quot;,
++				       &quot;out of range at NEXT entry %ld&quot;,
+ 				       name, dp-&gt;sd_next, dp - state_desc);
+ 				error++;
+ 			}
+-- 
+1.5.4.3
+
+------=_Part_14794_16303730.1214781861281
+Content-Type: application/x-gzip;
+ name=0001-size_t-is-64-bit-on-some-architectures.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fi29k51y0
+Content-Disposition: attachment;
+ filename=0001-size_t-is-64-bit-on-some-architectures.patch.gz
+
+RnJvbSBhMGQ5M2U3MWVjZTIxYjQ0Y2IwYzJlZmNmYjFmOTQyMjUyOTliZmJjIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJnQGdtYWls
+LmNvbT4KRGF0ZTogVHVlLCAyNCBKdW4gMjAwOCAxMzoxMTo1MCArMTAwMApTdWJqZWN0OiBbUEFU
+Q0ggMS8yXSBzaXplX3QgaXMgNjQgYml0IG9uIHNvbWUgYXJjaGl0ZWN0dXJlcy4KCmZpeCBkZWJ1
+ZyBwcmludCBzdGF0ZW1lbnRzIHRvIHVzZSBjb3JyZWN0IHByaW50ZiB0eXBlcyBmb3IgdGhlIEZD
+T0UKdGFyZ2V0CgpTaWduZWQtb2ZmLWJ5OiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJn
+QGdtYWlsLmNvbT4KU2lnbmVkLW9mZi1ieTogcm9vdCA8cm9vdEB1YnVudHUtc2VydmVyLTEuc2Fo
+bGJlcmcubmV0PgotLS0KIHVzci9mY29lL2Zjc19zdGF0ZS5jICAgfCAgICA0ICsrLS0KIHVzci9m
+Y29lL29wZW5mY19zY3N0LmMgfCAgICA2ICsrKy0tLQogdXNyL2Zjb2Uvc2Ffc3RhdGUuYyAgICB8
+ICAgMTQgKysrKysrKy0tLS0tLS0KIDMgZmlsZXMgY2hhbmdlZCwgMTIgaW5zZXJ0aW9ucygrKSwg
+MTIgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvdXNyL2Zjb2UvZmNzX3N0YXRlLmMgYi91c3Iv
+ZmNvZS9mY3Nfc3RhdGUuYwppbmRleCBhNGEwNjVhLi4yODgyODBlIDEwMDY0NAotLS0gYS91c3Iv
+ZmNvZS9mY3Nfc3RhdGUuYworKysgYi91c3IvZmNvZS9mY3Nfc3RhdGUuYwpAQCAtMTA3LDExICsx
+MDcsMTEgQEAgc3RydWN0IGZjc19zdGF0ZSAqZmNzX2NyZWF0ZShzdHJ1Y3QgZmNzX2NyZWF0ZV9h
+cmdzICphcCkKIAlvdXRlcl9wb3J0ID0gYXAtPmZjYV9wb3J0OwogCW1mcyA9IGZjX3BvcnRfZ2V0
+X21heF9mcmFtZV9zaXplKG91dGVyX3BvcnQpOwogCWlmIChtZnMgPCBGQ19NSU5fTUFYX1BBWUxP
+QUQpIHsKLQkJZXByaW50ZigicG9ydCBtYXggZnJhbWUgc2l6ZSBvbmx5ICVkICgweCV4KSBieXRl
+cyAtICIKKwkJZXByaW50ZigicG9ydCBtYXggZnJhbWUgc2l6ZSBvbmx5ICV6dSAoMHglengpIGJ5
+dGVzIC0gIgogCQkgICAgICAgInNldHRpbmcgdG8gJWQiLCBtZnMsIG1mcywgRkNfTUlOX01BWF9Q
+QVlMT0FEKTsKIAkJbWZzID0gMTAyNDsKIAl9IGVsc2UgaWYgKG1mcyA+IEZDX01BWF9QQVlMT0FE
+ICsgc2l6ZW9mKHN0cnVjdCBmY19mcmFtZV9oZWFkZXIpKSB7Ci0JCWVwcmludGYoInBvcnQgbWF4
+IGZyYW1lIHNpemUgdG9vIGxhcmdlOiAlZCAoMHgleCkgYnl0ZXNcbiIsCisJCWVwcmludGYoInBv
+cnQgbWF4IGZyYW1lIHNpemUgdG9vIGxhcmdlOiAlenUgKDB4JXp4KSBieXRlc1xuIiwKIAkJICAg
+ICAgIG1mcywgbWZzKTsKIAkJbWZzID0gRkNfTUFYX1BBWUxPQUQgKyBzaXplb2Yoc3RydWN0IGZj
+X2ZyYW1lX2hlYWRlcik7CiAJfQpkaWZmIC0tZ2l0IGEvdXNyL2Zjb2Uvb3BlbmZjX3Njc3QuYyBi
+L3Vzci9mY29lL29wZW5mY19zY3N0LmMKaW5kZXggMmNmMGNkZC4uZjI0ZmMyOCAxMDA2NDQKLS0t
+IGEvdXNyL2Zjb2Uvb3BlbmZjX3Njc3QuYworKysgYi91c3IvZmNvZS9vcGVuZmNfc2NzdC5jCkBA
+IC0yMTQsNyArMjE0LDcgQEAgb3BlbmZjX3Njc2lfc2VuZF9kYXRhKHN0cnVjdCBmY19zY3NpX3Br
+dCAqZnNwLCBzdHJ1Y3QgZmNfc2VxICpzcCkKIAogCWxlbiA9IHNjc2lfZ2V0X2luX2xlbmd0aCgm
+ZnNwLT5zY21kKSAtIHNjc2lfZ2V0X2luX3Jlc2lkKCZmc3AtPnNjbWQpOwogCi0JZHByaW50Zigi
+JXAgJWQgJWRcbiIsIGZzcCwgZGF0YV9sZW4sIHNjc2lfZ2V0X2luX3Jlc2lkKCZmc3AtPnNjbWQp
+KTsKKwlkcHJpbnRmKCIlcCAlenUgJWRcbiIsIGZzcCwgZGF0YV9sZW4sIHNjc2lfZ2V0X2luX3Jl
+c2lkKCZmc3AtPnNjbWQpKTsKIAlsZW4gPSBtaW4oZGF0YV9sZW4sIGxlbik7CiAKIAlpZiAob2Zm
+c2V0ICE9IGZzcC0+eGZlcl9sZW4pIHsKQEAgLTI0Miw3ICsyNDIsNyBAQCBvcGVuZmNfc2NzaV9z
+ZW5kX2RhdGEoc3RydWN0IGZjX3Njc2lfcGt0ICpmc3AsIHN0cnVjdCBmY19zZXEgKnNwKQogCQkJ
+CWZjX2ZyYW1lX3NldF9vZmZzZXQoZnAsIGJ1Zl9vZmZzZXQpOwogCQkJfQogCi0JCQlkcHJpbnRm
+KCIlZCAlZCAlZFxuIiwgdGxlbiwgcmVtYWluaW5nLCBidWZfb2Zmc2V0KTsKKwkJCWRwcmludGYo
+IiV6dSAlenUgJXp1XG4iLCB0bGVuLCByZW1haW5pbmcsIGJ1Zl9vZmZzZXQpOwogCQkJcGFnZV9h
+ZGRyID0gKGNoYXIgKilzY3NpX2dldF9pbl9idWZmZXIoJmZzcC0+c2NtZCkgKyBidWZfb2Zmc2V0
+OwogCiAJCQltZW1jcHkoZGF0YSwgKGNoYXIgKikgcGFnZV9hZGRyLCB0bGVuKTsKQEAgLTI2MCw3
+ICsyNjAsNyBAQCBvcGVuZmNfc2NzaV9zZW5kX2RhdGEoc3RydWN0IGZjX3Njc2lfcGt0ICpmc3As
+IHN0cnVjdCBmY19zZXEgKnNwKQogCQkJCWNvbnRpbnVlOwogCQkJfQogCi0JCQlkcHJpbnRmKCIl
+ZCAlZCAlZFxuIiwgdGxlbiwgcmVtYWluaW5nLCBlcnJvcik7CisJCQlkcHJpbnRmKCIlenUgJXp1
+ICVkXG4iLCB0bGVuLCByZW1haW5pbmcsIGVycm9yKTsKIAkJCWZwID0gTlVMTDsKIAkJCWlmIChl
+cnJvcikgewogCQkJCS8qCmRpZmYgLS1naXQgYS91c3IvZmNvZS9zYV9zdGF0ZS5jIGIvdXNyL2Zj
+b2Uvc2Ffc3RhdGUuYwppbmRleCA5NWRiZTAzLi5hZDdlZjk4IDEwMDY0NAotLS0gYS91c3IvZmNv
+ZS9zYV9zdGF0ZS5jCisrKyBiL3Vzci9mY29lL3NhX3N0YXRlLmMKQEAgLTExNiw3ICsxMTYsNyBA
+QCBzdHJ1Y3Qgc2Ffc3RhdGVfdGFibGUgKnNhX3N0YXRlX3RhYmxlX2FsbG9jKGNvbnN0IGNoYXIg
+Km5hbWUsCiAJCWNhc2UgU1NUX1NUQVRFOgogCQkJaWYgKGRwLT5zZF9pbiA9PSAwKSB7CiAJCQkJ
+ZXByaW50Zigic3RhdGUgdGFibGUgJXMgaGFzIGludmFsaWQgc3RhdGUgJWQgIgotCQkJCSAgICAg
+ICAiYXQgU1RBVEUgZW50cnkgJWQiLAorCQkJCSAgICAgICAiYXQgU1RBVEUgZW50cnkgJWxkIiwK
+IAkJCQkgICAgICAgbmFtZSwgZHAtPnNkX2luLCBkcCAtIHN0YXRlX2Rlc2MpOwogCQkJCWVycm9y
+Kys7CiAJCQl9CkBAIC0xMjcsNyArMTI3LDcgQEAgc3RydWN0IHNhX3N0YXRlX3RhYmxlICpzYV9z
+dGF0ZV90YWJsZV9hbGxvYyhjb25zdCBjaGFyICpuYW1lLAogCQljYXNlIFNTVF9GUk9NOgogCQkJ
+aWYgKGRwLT5zZF9pbiA9PSAwKSB7CiAJCQkJZXByaW50Zigic3RhdGUgdGFibGUgJXMgaGFzIGlu
+dmFsaWQgc3RhdGUgJWQgIgotCQkJCSAgICAgICAiYXQgRlJPTSBlbnRyeSAlZCIsCisJCQkJICAg
+ICAgICJhdCBGUk9NIGVudHJ5ICVsZCIsCiAJCQkJICAgICAgIG5hbWUsIGRwLT5zZF9pbiwgZHAg
+LSBzdGF0ZV9kZXNjKTsKIAkJCQllcnJvcisrOwogCQkJfQpAQCAtMTM2LDcgKzEzNiw3IEBAIHN0
+cnVjdCBzYV9zdGF0ZV90YWJsZSAqc2Ffc3RhdGVfdGFibGVfYWxsb2MoY29uc3QgY2hhciAqbmFt
+ZSwKIAkJY2FzZSBTU1RfRVZFTlQ6CiAJCQlpZiAoZHAtPnNkX2luID09IDApIHsKIAkJCQllcHJp
+bnRmKCJzdGF0ZSB0YWJsZSAlcyBoYXMgaW52YWxpZCBldmVudCAlZCAiCi0JCQkJICAgICAgICJh
+dCBFVkVOVCBlbnRyeSAlZCIsCisJCQkJICAgICAgICJhdCBFVkVOVCBlbnRyeSAlbGQiLAogCQkJ
+CSAgICAgICBuYW1lLCBkcC0+c2RfaW4sIGRwIC0gc3RhdGVfZGVzYyk7CiAJCQkJZXJyb3IrKzsK
+IAkJCX0KQEAgLTE0Niw3ICsxNDYsNyBAQCBzdHJ1Y3Qgc2Ffc3RhdGVfdGFibGUgKnNhX3N0YXRl
+X3RhYmxlX2FsbG9jKGNvbnN0IGNoYXIgKm5hbWUsCiAJCWNhc2UgU1NUX0hBTkRMRVI6CiAJCQlp
+ZiAoZHAtPnNkX3B0ciA9PSBOVUxMKSB7CiAJCQkJZXByaW50Zigic3RhdGUgdGFibGUgJXMgaGFz
+IGludmFsaWQgaGFuZGVyICVkICIKLQkJCQkgICAgICAgImF0IEhBTkRMRVIgZW50cnkgJWQiLAor
+CQkJCSAgICAgICAiYXQgSEFORExFUiBlbnRyeSAlbGQiLAogCQkJCSAgICAgICBuYW1lLCBkcC0+
+c2RfaW4sIGRwIC0gc3RhdGVfZGVzYyk7CiAJCQkJZXJyb3IrKzsKIAkJCX0KQEAgLTE1NiwxOSAr
+MTU2LDE5IEBAIHN0cnVjdCBzYV9zdGF0ZV90YWJsZSAqc2Ffc3RhdGVfdGFibGVfYWxsb2MoY29u
+c3QgY2hhciAqbmFtZSwKIAkJY2FzZSBTU1RfTkVYVDoKIAkJCWlmIChjdXJfc3RhdGUgPT0gMCkg
+ewogCQkJCWVwcmludGYoInN0YXRlIHRhYmxlICVzIGhhcyBubyBjdXJyZW50IHN0YXRlICIKLQkJ
+CQkgICAgICAgImZvciBORVhUIGVudHJ5ICVkIiwKKwkJCQkgICAgICAgImZvciBORVhUIGVudHJ5
+ICVsZCIsCiAJCQkJICAgICAgIG5hbWUsIGRwIC0gc3RhdGVfZGVzYyk7CiAJCQkJZXJyb3IrKzsK
+IAkJCX0KIAkJCWlmIChkcC0+c2RfaW4gPj0gZXZlbnRfbGltaXQpIHsKIAkJCQllcHJpbnRmKCJz
+dGF0ZSB0YWJsZSAlcyBoYXMgZXZlbnQgJWQgIgotCQkJCSAgICAgICAib3V0IG9mIHJhbmdlIGF0
+IE5FWFQgZW50cnkgJWQiLAorCQkJCSAgICAgICAib3V0IG9mIHJhbmdlIGF0IE5FWFQgZW50cnkg
+JWxkIiwKIAkJCQkgICAgICAgbmFtZSwgZHAtPnNkX2luLCBkcCAtIHN0YXRlX2Rlc2MpOwogCQkJ
+CWVycm9yKys7CiAJCQl9CiAJCQlpZiAoZHAtPnNkX25leHQgPT0gMCB8fCBkcC0+c2RfbmV4dCA+
+PSBzdGF0ZV9saW1pdCkgewogCQkJCWVwcmludGYoInN0YXRlIHRhYmxlICVzIGhhcyBzdGF0ZSAl
+ZCAiCi0JCQkJICAgICAgICJvdXQgb2YgcmFuZ2UgYXQgTkVYVCBlbnRyeSAlZCIsCisJCQkJICAg
+ICAgICJvdXQgb2YgcmFuZ2UgYXQgTkVYVCBlbnRyeSAlbGQiLAogCQkJCSAgICAgICBuYW1lLCBk
+cC0+c2RfbmV4dCwgZHAgLSBzdGF0ZV9kZXNjKTsKIAkJCQllcnJvcisrOwogCQkJfQotLSAKMS41
+LjQuMwoK
+------=_Part_14794_16303730.1214781861281--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001696.html">[Stgt-devel] miraculisms trode
+</A></li>
+	<LI>Next message: <A HREF="001725.html">[PATCH 2/2] when we start up fcoe on an interface, check that
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1723">[ date ]</a>
+              <a href="thread.html#1723">[ thread ]</a>
+              <a href="subject.html#1723">[ subject ]</a>
+              <a href="author.html#1723">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

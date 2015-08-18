@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Dealing with filemarks in SSC ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Dealing%20with%20filemarks%20in%20SSC%20...&In-Reply-To=%3Cf29db9a80807301508k1526891am203b8bde5a16271c%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001986.html">
+   <LINK REL="Next"  HREF="001990.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Dealing with filemarks in SSC ...</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Dealing%20with%20filemarks%20in%20SSC%20...&In-Reply-To=%3Cf29db9a80807301508k1526891am203b8bde5a16271c%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Dealing with filemarks in SSC ...">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Jul 31 00:08:25 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001986.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+        <LI>Next message: <A HREF="001990.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1988">[ date ]</a>
+              <a href="thread.html#1988">[ thread ]</a>
+              <a href="subject.html#1988">[ subject ]</a>
+              <a href="author.html#1988">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, Jul 31, 2008 at 6:22 AM, Richard Sharpe
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+&gt;<i> Hi,
+</I>&gt;<i>
+</I>&gt;<i> I have moved closer to properly implementing filemarks (and setmarks)
+</I>&gt;<i> by thinking through the issues associated with the approach I want to
+</I>&gt;<i> take.
+</I>One other thing I feel needs to be kept in mind. How to support
+variable block mode.
+(or compressed data for that matter).
+
+The current flat file backing store assumes every block is 512bytes.
+If zlib was added and this block was compressed, the backing store
+would have no way of determining the size of the data to read (when it
+was time to read the data back).
+e.g.
+Write 512 bytes | zlib(compress) | write to file...
+
+Now when we attempt to read this block back, how much data to we read
+off disk ??
+
+Same basic problem with variable block writes. The size of the
+original data + size of data written to backing store (perhaps its
+been compressed &amp; encrypted by the ssc module) so the attempt to read
+this data back will succeed - and/or return appropriate SENSE
+under/over-run data.
+
+How are the LOCATE / READ POSITION op codes to be implemented ?
+
+The other fundamental problem I can see is how to detect when we hit a
+filemark/setmark/&lt;insert metadata type here&gt;.
+Each read, block locate, seek op code is going to have to search the
+array to determine if the metadata matches.
+
+Attempting to keep an array of meta-data with pointers seems to be a
+difficult way of achieving this.
+
+Sorry - I keep going back to a double-linked-list with the attached
+data block as my preferred solution.
+
+Each block header keeps the metadata for the block.
+i.e. If the block is a filemark/setmark - there is no data just the metadata.
+The block number is stored within the header. So LOCATE / READ
+POSITION are simply implemented.
+The original size of data + size of data stored is also stored in the
+metadata header, making it relatively simple to handle variable block
+/ compressed data.
+
+My 2c worth. :)
+
+Cheers
+Mark
+&gt;<i> That is to keep an array of marks (file and set) with offsets into the
+</I>&gt;<i> backing store file. Whether these are then stored as extended
+</I>&gt;<i> attributes or as a separate metadata file is an implementation
+</I>&gt;<i> decision that I am happy with either way.
+</I>&gt;<i>
+</I>&gt;<i> By the look of things, the cost of detecting a mark on each read op,
+</I>&gt;<i> at least for fixed block size devices, is a couple of additions and a
+</I>&gt;<i> comparison in the fast-path (although the code does lots of seeks that
+</I>&gt;<i> seem unnecessary at the moment as well). I suspect it will amount to
+</I>&gt;<i> the same for variable block-size devices as well.
+</I>&gt;<i>
+</I>&gt;<i> Once I have btape tests working correctly I will post a patch for consideration.
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001986.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+	<LI>Next message: <A HREF="001990.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1988">[ date ]</a>
+              <a href="thread.html#1988">[ thread ]</a>
+              <a href="subject.html#1988">[ subject ]</a>
+              <a href="author.html#1988">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

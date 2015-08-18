@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Initial patch to add Tape and Library support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Initial%20patch%20to%20add%20Tape%20and%20Library%20support&In-Reply-To=%3C4602E7C0.2050300%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000465.html">
+   <LINK REL="Next"  HREF="000468.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Initial patch to add Tape and Library support</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Initial%20patch%20to%20add%20Tape%20and%20Library%20support&In-Reply-To=%3C4602E7C0.2050300%40torque.net%3E"
+       TITLE="[Stgt-devel] Initial patch to add Tape and Library support">dougg at torque.net
+       </A><BR>
+    <I>Thu Mar 22 21:32:00 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000465.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+        <LI>Next message: <A HREF="000468.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#467">[ date ]</a>
+              <a href="thread.html#467">[ thread ]</a>
+              <a href="subject.html#467">[ subject ]</a>
+              <a href="author.html#467">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] Initial patch to add Tape and Library support
+</I>&gt;<i> Date: Thu, 22 Mar 2007 13:37:57 +1100
+</I>&gt;<i> 
+</I>&gt;&gt;<i> Sorry for the 'attachment' but it seems a little too big to include in-line.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I can chop it up if requested.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Note: Most (read all except Inquiry) commands are not supported yet.
+</I>&gt;<i> 
+</I>&gt;<i> diff -urN -x TAGS -x .svn reference/doc/README.vtl vtl/doc/README.vtl
+</I>&gt;<i> --- reference/doc/README.vtl	1970-01-01 10:00:00.000000000 +1000
+</I>&gt;<i> +++ vtl/doc/README.vtl	2007-03-22 10:57:24.000000000 +1100
+</I>&gt;<i> @@ -0,0 +1,35 @@
+</I>&gt;<i> +Initial support for SCSI Streaming and SCSI Medium Changer devices.
+</I>&gt;<i> +markh794 at gmail dot com
+</I>&gt;<i> +mark_harvey at symantec dot com
+</I>&gt;<i> +
+</I>&gt;<i> +
+</I>&gt;<i> +To set up a changer and tape device..
+</I>&gt;<i> +./usr/tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2007-03:marks-vtl_smc:`hostname` --target-type changer
+</I>&gt;<i> +./usr/tgtadm --lld iscsi --op new --mode target --tid 2 -T iqn.2007-03:marks-vtl_ssc:`hostname` --target-type tape
+</I>&gt;<i> +
+</I>&gt;<i> +I'm hijacking the 'backing device' for use as the configuration file.
+</I>&gt;<i> 
+</I>&gt;<i> This isn't a good idea. tgt doesn't use any configuration files (or
+</I>&gt;<i> database). Everything should be configured via tgtadm. We leave
+</I>&gt;<i> storing configurations to other projects like Openfiler.
+</I>
+Do the current stgt kernel based transport drivers come
+up in an &quot;off the bus state&quot;? If they are visible to
+the transport before tgtd and tgtadm have got their acts
+together then you have a problem.
+
+I noticed a problem with a MPT SAS HBA. Its firmware settings
+make it a SAS target and (perhaps prior to any mpt* drivers
+being loaded) SAS SMP inititiators in that SAS domain will
+be prompted to re-run discovery during which the firmware
+identifiers itself as a SSP target. Then an INQUIRY gets sent
+as _all_ SCSI targets should respond to that, even if there
+are no logical units.
+
+Doug Gilbert
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000465.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+	<LI>Next message: <A HREF="000468.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#467">[ date ]</a>
+              <a href="thread.html#467">[ thread ]</a>
+              <a href="subject.html#467">[ subject ]</a>
+              <a href="author.html#467">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

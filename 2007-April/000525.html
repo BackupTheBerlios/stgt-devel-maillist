@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio - broken after tgtd restart
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20broken%20after%20tgtd%20restart&In-Reply-To=%3C20070405153445.GA25132%40wavehammer.waldi.eu.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000524.html">
+   <LINK REL="Next"  HREF="000549.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio - broken after tgtd restart</H1>
+    <B>Bastian Blank</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20broken%20after%20tgtd%20restart&In-Reply-To=%3C20070405153445.GA25132%40wavehammer.waldi.eu.org%3E"
+       TITLE="[Stgt-devel] ibmvio - broken after tgtd restart">waldi at berlios.de
+       </A><BR>
+    <I>Thu Apr  5 17:34:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000524.html">[Stgt-devel] [patch] support different type in one target.
+</A></li>
+        <LI>Next message: <A HREF="000549.html">[Stgt-devel] ibmvio - broken after tgtd restart
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#525">[ date ]</a>
+              <a href="thread.html#525">[ thread ]</a>
+              <a href="subject.html#525">[ subject ]</a>
+              <a href="author.html#525">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi folks
+
+Active ibmvio targets are broken after I restart tgtd.
+
+The client reports:
+|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227bbb8
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227bbb8
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227bd40
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227bd40
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227bec8
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227bec8
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c050
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c050
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c1d8
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c1d8
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c360
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c360
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c4e8
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c4e8
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c670
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c670
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c7f8
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c7f8
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227c980
+</I>|<i> ibmvscsi: abort code 2 for task tag 0xc00000000227c980
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc00000000227cb08
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc000000002278000
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc000000002278188
+</I>|<i> ibmvscsi: aborting command. lun 0x8100000000000000, tag 0xc000000002278310
+</I>|<i> ibmvscsi: resetting device. lun 0x8100000000000000
+</I>
+The server reports:
+|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffacf0 -17
+</I>|<i> ibmvstgt_tsk_mgmt_response(732) c000000020ffad50 0
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>|<i> process_iu(502) Error getting IU from pool, c00000000bf41550
+</I>
+After an unload-load cycle of ibmvstgt it seems to works again and the client
+reports correctly:
+|<i> ibmvscsi: partner initialized
+</I>|<i> ibmvscsic: sent SRP login
+</I>|<i> ibmvscsi: SRP_LOGIN succeeded
+</I>|<i> ibmvscsi: host srp version: 16.a, host partition XXX (YY), OS 2, max io 131072
+</I>
+But at least sometimes the client seems to hang.
+
+Bastian
+
+-- 
+You!  What PLANET is this!
+		-- McCoy, &quot;The City on the Edge of Forever&quot;, stardate 3134.0
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: signature.asc
+Type: application/pgp-signature
+Size: 197 bytes
+Desc: Digital signature
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070405/bc8b4621/attachment.pgp">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070405/bc8b4621/attachment.pgp</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000524.html">[Stgt-devel] [patch] support different type in one target.
+</A></li>
+	<LI>Next message: <A HREF="000549.html">[Stgt-devel] ibmvio - broken after tgtd restart
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#525">[ date ]</a>
+              <a href="thread.html#525">[ thread ]</a>
+              <a href="subject.html#525">[ subject ]</a>
+              <a href="author.html#525">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

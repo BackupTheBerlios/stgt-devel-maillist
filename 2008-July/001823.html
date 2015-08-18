@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 7/7] generic handling for array and single	elements
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20generic%20handling%20for%20array%20and%20single%0A%09elements&In-Reply-To=%3C4885C2E1.8030506%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001952.html">
+   <LINK REL="Next"  HREF="001845.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20generic%20handling%20for%20array%20and%20single%0A%09elements&In-Reply-To=%3C4885C2E1.8030506%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements">dorons at voltaire.com
+       </A><BR>
+    <I>Tue Jul 22 13:22:09 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001952.html">[Stgt-devel] [PATCH 6/7] target reconfiguration
+</A></li>
+        <LI>Next message: <A HREF="001845.html">[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1823">[ date ]</a>
+              <a href="thread.html#1823">[ thread ]</a>
+              <a href="subject.html#1823">[ subject ]</a>
+              <a href="author.html#1823">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>make generic handling for array and single elements (e.g. devices)
+this makes code more compact and readable
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ scripts/tgt-admin |   75 ++++++++++++++++++++++++++---------------------------
+ 1 files changed, 37 insertions(+), 38 deletions(-)
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index 11e5552..28af47d 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -133,19 +133,25 @@ sub add_targets {
+ 	}
+ }
+ 
+-
+ # Process options from the config file
+ sub process_options {
+ 	if ( $option eq &quot;backing-store&quot; ) {
+-		if (ref($value) eq &quot;ARRAY&quot;) {
+-			my @value_arr = @$value;
+-			my $i = 1;
+-                        foreach my $backing_store (@value_arr) {
+-                                execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
++        # if we have one command, force it to be an array anyway
++		unless (ref($value) eq 'ARRAY') {
++			$value = [ $value ];
++		}
++		my @value_arr = @$value;
++		my $i = 1;
++		foreach my $backing_store (@value_arr) {
++			# Check if device exists
++			if ( -e $backing_store) {
++				execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
+ 				$i += 1;
+-                        }
+-		} else {
+-			execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun 1 -b $value&quot;);
++			}
++			else {
++				print(&quot;skipping device $backing_store\n&quot;);
++				print(&quot;$backing_store does not exist - please check the configuration file\n&quot;);
++			}
+ 		}
+ 	}
+ 
+@@ -182,16 +188,13 @@ sub process_options {
+ 	}
+ 
+ 	if ( $option eq &quot;incominguser&quot; ) {
+-		if (ref($value) eq &quot;ARRAY&quot;) {
+-			my @value_arr = @$value;
+-			foreach my $incominguser (@value_arr) {
+-				my @userpass = split(/ /, $incominguser);
+-				execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+-				execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+-				execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0]&quot;);
+-			}
+-		} else {
+-			my @userpass = split(/ /, $value);
++	        # if we have one command, force it to be an array anyway
++		unless (ref($value) eq 'ARRAY') {
++			$value = [ $value ];
++		}
++		my @value_arr = @$value;
++		foreach my $incominguser (@value_arr) {
++			my @userpass = split(/ /, $incominguser);
+ 			execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+ 			execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+ 			execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0]&quot;);
+@@ -199,33 +202,29 @@ sub process_options {
+ 	}
+ 
+ 	if ( $option eq &quot;outgoinguser&quot; ) {
+-		if (ref($value) eq &quot;ARRAY&quot;) {
+-			execute(&quot;# Warning: only one outgoinguser is allowed. Will only use the first one.&quot;);
+-			my @userpass = split(/ /, @$value[0]);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
+-		} else {
+-			my @userpass = split(/ /, $value);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
++	        # if we have one command, force it to be an array anyway
++		unless (ref($value) eq 'ARRAY') {
++			$value = [ $value ];
+ 		}
++		execute(&quot;# Warning: only one outgoinguser is allowed. Will only use the first one.&quot;);
++		my @userpass = split(/ /, @$value[0]);
++		execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
++		execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
++		execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
+ 	}
+ 
+ 	if ( $option eq &quot;initiator-address&quot; ) {
+-		if (ref($value) eq &quot;ARRAY&quot;) {
+-			my @value_arr = @$value;
+-			foreach my $initiator_address (@value_arr) {
+-				execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $initiator_address&quot;);
+-			}
+-		} else {
+-			execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $value&quot;);
++	        # if we have one command, force it to be an array anyway
++		unless (ref($value) eq 'ARRAY') {
++			$value = [ $value ];
++		}
++		my @value_arr = @$value;
++		foreach my $initiator_address (@value_arr) {
++			execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $initiator_address&quot;);
+ 		}
+ 	}
+ }
+ 
+-
+ # Look up which targets are configured
+ sub process_configs {
+ 	# We need to run as root
+-- 
+1.5.3.8
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001952.html">[Stgt-devel] [PATCH 6/7] target reconfiguration
+</A></li>
+	<LI>Next message: <A HREF="001845.html">[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1823">[ date ]</a>
+              <a href="thread.html#1823">[ thread ]</a>
+              <a href="subject.html#1823">[ subject ]</a>
+              <a href="author.html#1823">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tape drive not supported yet?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tape%20drive%20not%20supported%20yet%3F&In-Reply-To=%3C4878EC85.9060107%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001771.html">
+   <LINK REL="Next"  HREF="001780.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tape drive not supported yet?</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tape%20drive%20not%20supported%20yet%3F&In-Reply-To=%3C4878EC85.9060107%40gmail.com%3E"
+       TITLE="[Stgt-devel] tape drive not supported yet?">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Jul 12 19:40:21 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001771.html">[Stgt-devel]  How to setup a DVD RW
+</A></li>
+        <LI>Next message: <A HREF="001780.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1772">[ date ]</a>
+              <a href="thread.html#1772">[ thread ]</a>
+              <a href="subject.html#1772">[ subject ]</a>
+              <a href="author.html#1772">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tried to set up a tape drive target:
+
+LUN=$(($LUN+1))
+ID=Tape
+SN=54321
+tgtadm --lld iscsi --op new --mode logicalunit --tid $TID --lun $LUN \
+--device-type tape
+
+Unfortunately, tgtadm tells me:
+
+tgtadm: type emulation isn't supported yet
+
+Is this correct?
+
+Thanks,
+
+Albert
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001771.html">[Stgt-devel]  How to setup a DVD RW
+</A></li>
+	<LI>Next message: <A HREF="001780.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1772">[ date ]</a>
+              <a href="thread.html#1772">[ thread ]</a>
+              <a href="subject.html#1772">[ subject ]</a>
+              <a href="author.html#1772">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

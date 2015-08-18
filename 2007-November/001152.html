@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 16/20] iser params
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2016/20%5D%20iser%20params&In-Reply-To=%3C20071115112445G.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001151.html">
+   <LINK REL="Next"  HREF="001155.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 16/20] iser params</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2016/20%5D%20iser%20params&In-Reply-To=%3C20071115112445G.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 16/20] iser params">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Nov 15 03:24:45 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001151.html">[Stgt-devel] [PATCH 11/20] iser connection init
+</A></li>
+        <LI>Next message: <A HREF="001155.html">[Stgt-devel] [PATCH 14/20] iser transport mxdsl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1152">[ date ]</a>
+              <a href="thread.html#1152">[ thread ]</a>
+              <a href="subject.html#1152">[ subject ]</a>
+              <a href="author.html#1152">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 16 Oct 2007 11:21:24 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> Add iSCSI parameters as defined in the draft iSER specification.
+</I>&gt;<i> Handle special parameter cases for RDMA:
+</I>&gt;<i> 
+</I>&gt;<i>     - no digests
+</I>&gt;<i>     - do not offer iSER parameters unless initiator requests them
+</I>&gt;<i>     - do not offer MRDSL (use [IT]RDSL instead)
+</I>&gt;<i> 
+</I>&gt;<i> Except do not advertise MaxOutstandingUnexpectedPDUs just yet, as
+</I>&gt;<i> the open-iscsi initiatior does not understand it.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/iscsi_if.h |    5 +++++
+</I>&gt;<i>  usr/iscsi/iscsid.c   |   21 ++++++++++++++++++++-
+</I>&gt;<i>  usr/iscsi/param.c    |   38 ++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i>  usr/iscsi/target.c   |    8 ++++++++
+</I>&gt;<i>  4 files changed, 71 insertions(+), 1 deletions(-)
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/iscsi_if.h b/usr/iscsi/iscsi_if.h
+</I>&gt;<i> index 58a76a2..b4f1e04 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsi_if.h
+</I>&gt;<i> +++ b/usr/iscsi/iscsi_if.h
+</I>&gt;<i> @@ -215,6 +215,11 @@ enum iscsi_param {
+</I>&gt;<i>  	ISCSI_PARAM_OFMARKINT,
+</I>&gt;<i>  	ISCSI_PARAM_IFMARKINT,
+</I>&gt;<i>  	ISCSI_PARAM_MAXCONNECTIONS,
+</I>&gt;<i> +	/* iSER draft */
+</I>&gt;<i> +	ISCSI_PARAM_RDMA_EXTENSIONS,
+</I>&gt;<i> +	ISCSI_PARAM_TARGET_RDSL,
+</I>&gt;<i> +	ISCSI_PARAM_INITIATOR_RDSL,
+</I>&gt;<i> +	ISCSI_PARAM_MAX_OUTST_PDU,
+</I>&gt;<i>  	/* must always be last */
+</I>&gt;<i>  	ISCSI_PARAM_MAX,
+</I>&gt;<i>  };
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> index 6d5471e..d7c7128 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> @@ -270,7 +270,7 @@ static void login_security_done(struct iscsi_connection *conn)
+</I>&gt;<i>  static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i>  {
+</I>&gt;<i>  	char *key, *value, *data;
+</I>&gt;<i> -	int datasize, idx;
+</I>&gt;<i> +	int datasize, idx, is_rdma = 0;
+</I>&gt;<i>  	struct iscsi_login_rsp *rsp = (struct iscsi_login_rsp *)&amp;conn-&gt;rsp.bhs;
+</I>&gt;<i>  
+</I>&gt;<i>  	data = conn-&gt;req.data;
+</I>&gt;<i> @@ -289,6 +289,9 @@ static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i>  			if (idx == ISCSI_PARAM_MAX_RECV_DLENGTH)
+</I>&gt;<i>  				idx = ISCSI_PARAM_MAX_XMIT_DLENGTH;
+</I>&gt;<i>  
+</I>&gt;<i> +			if (idx == ISCSI_PARAM_RDMA_EXTENSIONS)
+</I>&gt;<i> +				is_rdma = 1;
+</I>&gt;<i> +
+</I>&gt;<i>  			if (param_str_to_val(session_keys, idx, value, &amp;val) &lt; 0) {
+</I>&gt;<i>  				if (conn-&gt;session_param[idx].state
+</I>&gt;<i>  				    == KEY_STATE_START) {
+</I>&gt;<i> @@ -335,6 +338,15 @@ static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i>  			text_key_add(conn, key, &quot;NotUnderstood&quot;);
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	if (is_rdma) {
+</I>&gt;<i> +		/* do not try to do digests, not supported in iser */
+</I>&gt;<i> +		conn-&gt;session_param[ISCSI_PARAM_HDRDGST_EN].val = DIGEST_NONE;
+</I>&gt;<i> +		conn-&gt;session_param[ISCSI_PARAM_DATADGST_EN].val = DIGEST_NONE;
+</I>&gt;<i> +	} else {
+</I>&gt;<i> +		/* do not offer RDMA, initiator must explicitly request */
+</I>&gt;<i> +		conn-&gt;session_param[ISCSI_PARAM_RDMA_EXTENSIONS].val = 0;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i>  out:
+</I>&gt;<i>  	return;
+</I>&gt;<i>  }
+</I>&gt;<i> @@ -354,6 +366,13 @@ static int text_check_param(struct iscsi_connection *conn)
+</I>&gt;<i>  					p[i].state = KEY_STATE_DONE;
+</I>&gt;<i>  					continue;
+</I>&gt;<i>  				}
+</I>&gt;<i> +				if (p[ISCSI_PARAM_RDMA_EXTENSIONS].val == 1) {
+</I>&gt;<i> +					if (i == ISCSI_PARAM_MAX_RECV_DLENGTH)
+</I>&gt;<i> +						continue;
+</I>&gt;<i> +				} else {
+</I>&gt;<i> +					if (i &gt;= ISCSI_PARAM_RDMA_EXTENSIONS)
+</I>&gt;<i> +						continue;
+</I>&gt;<i> +				}
+</I>&gt;<i>  				memset(buf, 0, sizeof(buf));
+</I>&gt;<i>  				param_val_to_str(session_keys, i, p[i].val,
+</I>&gt;<i>  						 buf);
+</I>&gt;<i> diff --git a/usr/iscsi/param.c b/usr/iscsi/param.c
+</I>&gt;<i> index 9eac62c..76236d1 100644
+</I>&gt;<i> --- a/usr/iscsi/param.c
+</I>&gt;<i> +++ b/usr/iscsi/param.c
+</I>&gt;<i> @@ -118,6 +118,18 @@ static int minimum_check_val(struct iscsi_key *key, unsigned int *val)
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int min_or_zero_check_val(struct iscsi_key *key, unsigned int *val)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int err = 0;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (*val != 0 &amp;&amp; (*val &lt; key-&gt;min || key-&gt;max &lt; *val)) {
+</I>&gt;<i> +		*val = key-&gt;min;
+</I>&gt;<i> +		err = -EINVAL;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  static int maximum_check_val(struct iscsi_key *key, unsigned int *val)
+</I>&gt;<i>  {
+</I>&gt;<i>  	int err = 0;
+</I>&gt;<i> @@ -140,6 +152,16 @@ static int minimum_set_val(struct param *param, int idx, unsigned int *val)
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int min_or_zero_set_val(struct param *param, int idx, unsigned int *val)
+</I>&gt;<i> +{
+</I>&gt;<i> +	if (*val &gt; param[idx].val || *val == 0)
+</I>&gt;<i> +		*val = param[idx].val;
+</I>&gt;<i> +	else
+</I>&gt;<i> +		param[idx].val = *val;
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  static int maximum_set_val(struct param *param, int idx, unsigned int *val)
+</I>&gt;<i>  {
+</I>&gt;<i>  	if (param[idx].val &gt; *val)
+</I>&gt;<i> @@ -265,6 +287,13 @@ static struct iscsi_key_ops minimum_ops = {
+</I>&gt;<i>  	.set_val = minimum_set_val,
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> +static struct iscsi_key_ops min_or_zero_ops = {
+</I>&gt;<i> +	.val_to_str = range_val_to_str,
+</I>&gt;<i> +	.str_to_val = range_str_to_val,
+</I>&gt;<i> +	.check_val = min_or_zero_check_val,
+</I>&gt;<i> +	.set_val = min_or_zero_set_val,
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i>  static struct iscsi_key_ops maximum_ops = {
+</I>&gt;<i>  	.val_to_str = range_val_to_str,
+</I>&gt;<i>  	.str_to_val = range_str_to_val,
+</I>&gt;<i> @@ -345,6 +374,15 @@ struct iscsi_key session_keys[] = {
+</I>&gt;<i>  	{&quot;IFMarkInt&quot;, 2048, 1, 65535, &amp;marker_ops},
+</I>&gt;<i>  	[ISCSI_PARAM_MAXCONNECTIONS] =
+</I>&gt;<i>  	{&quot;MaxConnections&quot;, 1, 1, 65535, &amp;minimum_ops},
+</I>&gt;<i> +	/* iSER draft */
+</I>&gt;<i> +	[ISCSI_PARAM_RDMA_EXTENSIONS] =
+</I>&gt;<i> +	{&quot;RDMAExtensions&quot;, 0, 0, 1, &amp;and_ops},
+</I>&gt;<i> +	[ISCSI_PARAM_TARGET_RDSL] =
+</I>&gt;<i> +	{&quot;TargetRecvDataSegmentLength&quot;, 8192, 512, 16777215, &amp;minimum_ops},
+</I>&gt;<i> +	[ISCSI_PARAM_INITIATOR_RDSL] =
+</I>&gt;<i> +	{&quot;InitiatorRecvDataSegmentLength&quot;, 8192, 512, 16777215, &amp;minimum_ops},
+</I>&gt;<i> +	[ISCSI_PARAM_MAX_OUTST_PDU] =
+</I>&gt;<i> +	{&quot;MaxOutstandingUnexpectedPDUs&quot;, 0, 2, 4294967295U, &amp;min_or_zero_ops},
+</I>&gt;<i>  	[ISCSI_PARAM_MAX] =
+</I>&gt;<i>  	{NULL,},
+</I>&gt;<i>  };
+</I>&gt;<i> diff --git a/usr/iscsi/target.c b/usr/iscsi/target.c
+</I>&gt;<i> index ab0685f..d7c1d57 100644
+</I>&gt;<i> --- a/usr/iscsi/target.c
+</I>&gt;<i> +++ b/usr/iscsi/target.c
+</I>&gt;<i> @@ -283,6 +283,14 @@ int iscsi_target_create(struct target *t)
+</I>&gt;<i>  		[ISCSI_PARAM_OFMARKINT] = {0, 2048},
+</I>&gt;<i>  		[ISCSI_PARAM_IFMARKINT] = {0, 2048},
+</I>&gt;<i>  		[ISCSI_PARAM_MAXCONNECTIONS] = {0, 1},
+</I>&gt;<i> +#ifdef ISCSI_RDMA
+</I>&gt;<i> +		[ISCSI_PARAM_RDMA_EXTENSIONS] = {0, 1},
+</I>&gt;<i> +#else
+</I>&gt;<i> +		[ISCSI_PARAM_RDMA_EXTENSIONS] = {0, 0},
+</I>&gt;<i> +#endif
+</I>&gt;<i> +		[ISCSI_PARAM_TARGET_RDSL] = {0, 262144},
+</I>&gt;<i> +		[ISCSI_PARAM_INITIATOR_RDSL] = {0, 262144},
+</I>&gt;<i> +		[ISCSI_PARAM_MAX_OUTST_PDU] =  {0, 0},  /* not in open-iscsi */
+</I>&gt;<i>  	};
+</I>
+Can we avoid adding another #ifdef?
+
+I really like to remove the existing #ifdef.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001151.html">[Stgt-devel] [PATCH 11/20] iser connection init
+</A></li>
+	<LI>Next message: <A HREF="001155.html">[Stgt-devel] [PATCH 14/20] iser transport mxdsl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1152">[ date ]</a>
+              <a href="thread.html#1152">[ thread ]</a>
+              <a href="subject.html#1152">[ subject ]</a>
+              <a href="author.html#1152">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

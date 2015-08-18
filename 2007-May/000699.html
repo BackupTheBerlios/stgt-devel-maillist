@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%0A%09common%09spc_inquiry%20routine.&In-Reply-To=%3C1179966019.3830.2.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000698.html">
+   <LINK REL="Next"  HREF="000712.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%0A%09common%09spc_inquiry%20routine.&In-Reply-To=%3C1179966019.3830.2.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu May 24 02:20:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000698.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.
+</A></li>
+        <LI>Next message: <A HREF="000712.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#699">[ date ]</a>
+              <a href="thread.html#699">[ thread ]</a>
+              <a href="subject.html#699">[ subject ]</a>
+              <a href="author.html#699">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-05-24 at 08:42 +1000, Mark Harvey wrote:
+&gt;<i> On 5/23/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; On Wed, 2007-05-23 at 13:01 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; &gt; +struct physicalAttributes {
+</I>&gt;<i> &gt; &gt; +       char    scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> &gt; &gt; +       char    scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i> &gt; &gt; +
+</I>&gt;<i> &gt; &gt; +       /* SCSI Inquiry Params */
+</I>&gt;<i> &gt; &gt; +       char    VendorIdent[9];
+</I>&gt;<i> &gt; &gt; +       char    ProductIdent[17];
+</I>&gt;<i> &gt; &gt; +       char    ProductRev[5];
+</I>&gt;<i> &gt; &gt; +       uint16_t        version_desc1;
+</I>&gt;<i> &gt; &gt; +       uint16_t        version_desc2;
+</I>&gt;<i> &gt; &gt; +       uint16_t        version_desc3;
+</I>&gt;<i> &gt; &gt; +       uint16_t        version_desc4;
+</I>&gt;<i> &gt; &gt; +       uint16_t        version_desc5;
+</I>&gt;<i> &gt; &gt; +       uint16_t        version_desc6;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; can we make it uint16_t *version_desc, which point to a dynamically
+</I>&gt;<i> &gt; allocated array with last entry as 0?
+</I>&gt;<i> 
+</I>&gt;<i> Looking back over the SPC-3 Inquiry data ( Sec 6.4.2 ), I should have
+</I>&gt;<i> defined this as
+</I>&gt;<i>                uint16_t       version_desc[8];
+</I>
+
+looks good to me.
+
+&gt;<i> 
+</I>&gt;<i> Thanks for pointing that out...
+</I>&gt;<i> 
+</I>&gt;<i> Mark
+</I>
+thx u for the work.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000698.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.
+</A></li>
+	<LI>Next message: <A HREF="000712.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#699">[ date ]</a>
+              <a href="thread.html#699">[ thread ]</a>
+              <a href="subject.html#699">[ subject ]</a>
+              <a href="author.html#699">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

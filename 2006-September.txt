@@ -1,0 +1,106 @@
+From fujita.tomonori at lab.ntt.co.jp  Sun Sep  3 13:32:59 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 03 Sep 2006 20:32:59 +0900
+Subject: [Stgt-devel] User-space iSCSI target driver
+Message-ID: <200609031133.k83BX0BR006206@r-dd.iij4u.or.jp>
+
+Seems that the user-space iSCSI target driver is ready for people who
+are interested in iSCSI target development. It provides the very basic
+features with reasonable performance (should be comparable with
+IET). As long as the initiators and network work well, the target
+driver should be ok.
+
+svn checkout svn://svn.berlios.de/stgt/trunk
+
+Next steps are fixing error handling code and implementing a handy
+configuration scheme.
+
+
+Tom, I've just started to add some transport code though it still
+needs lots of work.
+
+
+From tom at opengridcomputing.com  Sun Sep  3 18:21:29 2006
+From: tom at opengridcomputing.com (Tom Tucker)
+Date: Sun, 03 Sep 2006 11:21:29 -0500
+Subject: [Stgt-devel] User-space iSCSI target driver
+In-Reply-To: <200609031133.k83BX0BR006206@r-dd.iij4u.or.jp>
+Message-ID: <C1206B39.80DE%tom@opengridcomputing.com>
+
+Tomo:
+
+Fantastic, I'll take a look.
+
+Thanks,
+Tom
+
+
+On 9/3/06 6:32 AM, "FUJITA Tomonori" <fujita.tomonori at lab.ntt.co.jp> wrote:
+
+> Seems that the user-space iSCSI target driver is ready for people who
+> are interested in iSCSI target development. It provides the very basic
+> features with reasonable performance (should be comparable with
+> IET). As long as the initiators and network work well, the target
+> driver should be ok.
+> 
+> svn checkout svn://svn.berlios.de/stgt/trunk
+> 
+> Next steps are fixing error handling code and implementing a handy
+> configuration scheme.
+> 
+> 
+> Tom, I've just started to add some transport code though it still
+> needs lots of work.
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Sep  4 03:41:28 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 4 Sep 2006 10:41:28 +0900 (JST)
+Subject: [Stgt-devel] User-space iSCSI target driver
+In-Reply-To: <200609031133.k83BX0BR006206@r-dd.iij4u.or.jp>
+References: <200609031133.k83BX0BR006206@r-dd.iij4u.or.jp>
+Message-ID: <20060905101922M.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: [Stgt-devel] User-space iSCSI target driver
+Date: Sun, 03 Sep 2006 20:32:59 +0900
+
+> Seems that the user-space iSCSI target driver is ready for people who
+> are interested in iSCSI target development. It provides the very basic
+> features with reasonable performance (should be comparable with
+> IET). As long as the initiators and network work well, the target
+> driver should be ok.
+
+Here's a quick explanation of the user-space driver concept (it is not
+mentioned in the OLS paper).
+
+The majority of tgt drivers live in kernel space and send SCSI
+commands to the user-space daemon through shared memory between kernel
+and user space (we used netlink for this in the past) via in-kernel
+tgt part. The user-space daemon provides SCSI-target common features:
+SCSI protocol processing, logical unit and target device management,
+etc.
+
+In the user-space driver concept, tgt drivers live in user space and
+directly send SCSI commands to the user-space daemon via user-space
+tgt APIs (tgt and user-space drivers are complied to a single
+binary). The drivers still enjoy the common features though there is
+no kernel involvement.
+
+The user-space iSCSI target driver is the first example. I guess that
+SRP and SBP target driver could live in user space too.
+
+
+> svn checkout svn://svn.berlios.de/stgt/trunk
+
+The README.iscsi file in the doc directory should be useful if you try
+the iSCSI target driver.
+
+
+

@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3Ce2e108260802120300w22670002w24bdd82cf831c2f4%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001393.html">
+   <LINK REL="Next"  HREF="001399.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3Ce2e108260802120300w22670002w24bdd82cf831c2f4%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Tue Feb 12 12:00:02 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001393.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001399.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1394">[ date ]</a>
+              <a href="thread.html#1394">[ thread ]</a>
+              <a href="subject.html#1394">[ subject ]</a>
+              <a href="author.html#1394">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Feb 12, 2008 11:06 AM, Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt; wrote:
+&gt;<i> &gt; The results I obtained with STGT over iSER on an SDR network are as
+</I>&gt;<i> &gt; follows (direct I/O with  xdd):
+</I>&gt;<i> &gt; * 7.4 MB/s for reading data in blocks of 512 bytes and 8.9 MB/s for writing.
+</I>&gt;<i> &gt; * 363 MB/s for reading data in blocks of 65536 bytes and 346 MB/s for writing.
+</I>&gt;<i> &gt; * 890 MB/s for reading data in blocks of 10 MB and 900 MB/s for writing.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Please keep in mind that when running a filesystem on top of iSCSI
+</I>&gt;<i> &gt; that all transfers happen in units of 64 KB or less.
+</I>&gt;<i>
+</I>&gt;<i> Can you send more details about your configuration?
+</I>&gt;<i>
+</I>&gt;<i>     * stgt version
+</I>&gt;<i>     * initiator version
+</I>&gt;<i>     * Which distro do you use for the initiator/target?
+</I>&gt;<i>     * Which benchmark do you use? What are the parameters?
+</I>&gt;<i>     * What are the results if you run the same benchmark directly from
+</I>&gt;<i>       the target machine (i.e. no iSCSI &amp; iSER involved)?
+</I>&gt;<i>     * Are you using the default config for the initiator/target?
+</I>&gt;<i>
+</I>&gt;<i> Here's my config:
+</I>&gt;<i>
+</I>&gt;<i>     * target:
+</I>&gt;<i>           o tgt-20071227 (actually, I use the RPM that I uploaded to OpenFabrics, which is almost identical to tgt-20071227)
+</I>&gt;<i>           o SLES 10
+</I>&gt;<i>           o default stgt config
+</I>&gt;<i>     * initiator:
+</I>&gt;<i>           o OFED 1.3 rc4
+</I>&gt;<i>           o SLES 10 sp1
+</I>&gt;<i>           o default open-iscsi config
+</I>
+My config was as follows (same software versions on initiator and target):
+* Ubuntu 7.10 server.
+* Linux kernel 2.6.23.14 + SCST kernel patches (SVN revision 253).
+* OFED 1.2.5.5 userspace components, compiled from the OFED source distribution.
+* tgt-20071227 + TCP_NODELAY patch
+* Ubuntu's open-iscsi (version 2.0.865-1).
+* xdd version xdd65.013007.
+* Benchmark (with e.g. disk=/dev/sde and i in the range 9 .. 30): xdd
+-verbose -processlock -dio -op read -targets 1 $disk -reqsize 1
+-blocksize $((2**i)) -mbytes 2048 -passes 3;
+xdd -verbose -processlock -dio -op write -targets 1 $disk -reqsize 1
+-blocksize $((2**i)) -mbytes 2048 -passes 3
+* Target setup:
+modprobe ib_uverbs
+modprobe rdma_ucm
+/bin/mkdir -p /dev/infiniband
+/bin/mknod /dev/infiniband/uverbs0 c $(cat
+/sys/class/infiniband_verbs/uverbs0/dev | sed 's/:/ /g')
+/bin/mknod /dev/infiniband/rdma_cm c $(cat /sys/class/misc/rdma_cm/dev
+|<i> sed 's/:/ /g')
+</I>tgtd
+tgtadm --lld iscsi --op new --mode target --tid 1 -T
+iqn.2007-05.com.example:storage.disk2.sys1.xyz
+tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /dev/ram0
+tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+* Initiator setup:
+iscsi_target_ip=192.168.102.10
+rm -rf /etc/iscsi/nodes /etc/iscsi/send_targets
+iscsiadm -m discovery -t sendtargets -p ${iscsi_target_ip}
+iscsiadm --mode node --targetname
+iqn.2007-05.com.example:storage.disk2.sys1.xyz \
+  --portal ${iscsi_target_ip}:3260 --op update -n node.transport_name -v iser
+iscsiadm --mode node --targetname
+iqn.2007-05.com.example:storage.disk2.sys1.xyz \
+  --portal ${iscsi_target_ip}:3260 --op update -n
+&quot;node.conn[0].iscsi.HeaderDigest&quot; -v None
+iscsiadm -m node -T iqn.2007-05.com.example:storage.disk2.sys1.xyz -p
+${iscsi_target_ip} --login
+* Results for a local run of the benchmark (!! using buffered I/O
+instead of direct I/O !! because /dev/ram0 does not support direct
+I/O):
+- 354 MB/s for reading data in blocks of 512 bytes and 303 MB/s for writing.
+- 2514 MB/s for reading data in blocks of 65536 bytes and 2582 MB/s for writing.
+- 1400 MB/s for reading data in blocks of 10 MB and 1690 MB/s for writing.
+
+Bart Van Assche.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001393.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001399.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1394">[ date ]</a>
+              <a href="thread.html#1394">[ thread ]</a>
+              <a href="subject.html#1394">[ subject ]</a>
+              <a href="author.html#1394">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

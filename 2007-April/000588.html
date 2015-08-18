@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20FirstBurstLenght%20%3E%20MaxBurstLength%20--%3E%20error&In-Reply-To=%3C462A3EA9.2000605%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000587.html">
+   <LINK REL="Next"  HREF="000570.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20FirstBurstLenght%20%3E%20MaxBurstLength%20--%3E%20error&In-Reply-To=%3C462A3EA9.2000605%40gmail.com%3E"
+       TITLE="[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Apr 21 18:41:13 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000587.html">[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</A></li>
+        <LI>Next message: <A HREF="000570.html">[PATCH] add iSNS support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#588">[ date ]</a>
+              <a href="thread.html#588">[ thread ]</a>
+              <a href="subject.html#588">[ subject ]</a>
+              <a href="author.html#588">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Thanks,
+
+first tests seem to work fine.
+
+Albert
+
+FUJITA Tomonori wrote:
+&gt;<i> From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</I>&gt;<i> Date: Sun, 15 Apr 2007 11:33:27 +0200
+</I>&gt;<i> 
+</I>&gt;&gt;<i> Running the test regression script of open-iscsi on stgt I found an 
+</I>&gt;&gt;<i> error, which I did not encounter with other targets.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> It is test #17 with the following parameters:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> ================== TEST #17 BEGIN ====================
+</I>&gt;&gt;<i> ImmediateData = No
+</I>&gt;&gt;<i> InitialR2T = No
+</I>&gt;&gt;<i> HeaderDigest = None
+</I>&gt;&gt;<i> DataDigest = None
+</I>&gt;&gt;<i> FirstBurstLength = 8192
+</I>&gt;&gt;<i> MaxBurstLength = 4096
+</I>&gt;&gt;<i> MaxRecvDataSegmentLength = 4096
+</I>&gt;&gt;<i> MaxOutstandingR2T = 1
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I get the error &quot;Invalid burst lengths first_burst 8192 max_burst 4096&quot; 
+</I>&gt;&gt;<i> in /var/log/messages and the login breaks of.
+</I>&gt;&gt;<i> According to the RFC 3720 &quot;FirstBurstLength MUST NOT exceed 
+</I>&gt;&gt;<i> MaxBurstLength&quot; (chap 12.14), which means that the target
+</I>&gt;&gt;<i> should answer back with a FirstBurstLenght parameters equal to 
+</I>&gt;&gt;<i> MaxBurstLenght.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I investigated with wireshark and found that this is exactly the 
+</I>&gt;&gt;<i> behaviour of the Wasabi Storagebuilder target,
+</I>&gt;&gt;<i> iscsi-target silently accepts FirstBurstLength &gt; MaxBurstLength, and 
+</I>&gt;&gt;<i> stgt only gives an error.
+</I>&gt;<i> 
+</I>&gt;<i> I've attached a patch. It's not pretty but I don't have a better idea.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> index 2377952..d973409 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> @@ -226,8 +226,10 @@ static void login_security_done(struct i
+</I>&gt;<i>  static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i>  {
+</I>&gt;<i>  	char *key, *value, *data;
+</I>&gt;<i> -	int datasize, idx;
+</I>&gt;<i> +	int datasize, idx, first_burst = 0;
+</I>&gt;<i>  	struct iscsi_login_rsp *rsp = (struct iscsi_login_rsp *)&amp;conn-&gt;rsp.bhs;
+</I>&gt;<i> +	struct param *p = conn-&gt;session_param;
+</I>&gt;<i> +	char buf[32];
+</I>&gt;<i>  
+</I>&gt;<i>  	data = conn-&gt;req.data;
+</I>&gt;<i>  	datasize = conn-&gt;req.datasize;
+</I>&gt;<i> @@ -240,14 +242,12 @@ static void text_scan_login(struct iscsi
+</I>&gt;<i>  		else if (!((idx = param_index_by_name(key, session_keys)) &lt; 0)) {
+</I>&gt;<i>  			int err;
+</I>&gt;<i>  			unsigned int val;
+</I>&gt;<i> -			char buf[32];
+</I>&gt;<i>  
+</I>&gt;<i>  			if (idx == ISCSI_PARAM_MAX_RECV_DLENGTH)
+</I>&gt;<i>  				idx = ISCSI_PARAM_MAX_XMIT_DLENGTH;
+</I>&gt;<i>  
+</I>&gt;<i>  			if (param_str_to_val(session_keys, idx, value, &amp;val) &lt; 0) {
+</I>&gt;<i> -				if (conn-&gt;session_param[idx].state
+</I>&gt;<i> -				    == KEY_STATE_START) {
+</I>&gt;<i> +				if (p[idx].state == KEY_STATE_START) {
+</I>&gt;<i>  					text_key_add_reject(conn, key);
+</I>&gt;<i>  					continue;
+</I>&gt;<i>  				} else {
+</I>&gt;<i> @@ -261,9 +261,14 @@ static void text_scan_login(struct iscsi
+</I>&gt;<i>  			}
+</I>&gt;<i>  
+</I>&gt;<i>  			err = param_check_val(session_keys, idx, &amp;val);
+</I>&gt;<i> -			err = param_set_val(session_keys, conn-&gt;session_param, idx, &amp;val);
+</I>&gt;<i> +			if (idx == ISCSI_PARAM_FIRST_BURST &amp;&amp;
+</I>&gt;<i> +			    p[idx].state == KEY_STATE_START) {
+</I>&gt;<i> +				first_burst = val;
+</I>&gt;<i> +				continue;
+</I>&gt;<i> +			}
+</I>&gt;<i> +			err = param_set_val(session_keys, p, idx, &amp;val);
+</I>&gt;<i>  
+</I>&gt;<i> -			switch (conn-&gt;session_param[idx].state) {
+</I>&gt;<i> +			switch (p[idx].state) {
+</I>&gt;<i>  			case KEY_STATE_START:
+</I>&gt;<i>  				if (idx == ISCSI_PARAM_MAX_XMIT_DLENGTH)
+</I>&gt;<i>  					break;
+</I>&gt;<i> @@ -272,25 +277,35 @@ static void text_scan_login(struct iscsi
+</I>&gt;<i>  				text_key_add(conn, key, buf);
+</I>&gt;<i>  				break;
+</I>&gt;<i>  			case KEY_STATE_REQUEST:
+</I>&gt;<i> -				if (val != conn-&gt;session_param[idx].val) {
+</I>&gt;<i> +				if (val != p[idx].val) {
+</I>&gt;<i>  					rsp-&gt;status_class =
+</I>&gt;<i>  						ISCSI_STATUS_CLS_INITIATOR_ERR;
+</I>&gt;<i>  					rsp-&gt;status_detail =
+</I>&gt;<i>  						ISCSI_LOGIN_STATUS_INIT_ERR;
+</I>&gt;<i>  					conn-&gt;state = STATE_EXIT;
+</I>&gt;<i> -					log_warning(&quot;%s %u %u\n&quot;, key,
+</I>&gt;<i> -					val, conn-&gt;session_param[idx].val);
+</I>&gt;<i> +					eprintf(&quot;invalid response %s %u %u\n&quot;,
+</I>&gt;<i> +						key, val, p[idx].val);
+</I>&gt;<i>  					goto out;
+</I>&gt;<i>  				}
+</I>&gt;<i>  				break;
+</I>&gt;<i>  			case KEY_STATE_DONE:
+</I>&gt;<i>  				break;
+</I>&gt;<i>  			}
+</I>&gt;<i> -			conn-&gt;session_param[idx].state = KEY_STATE_DONE;
+</I>&gt;<i> +			p[idx].state = KEY_STATE_DONE;
+</I>&gt;<i>  		} else
+</I>&gt;<i>  			text_key_add(conn, key, &quot;NotUnderstood&quot;);
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	if (first_burst) {
+</I>&gt;<i> +		idx = ISCSI_PARAM_MAX_BURST;
+</I>&gt;<i> +		if (first_burst &gt; p[idx].val)
+</I>&gt;<i> +			first_burst = p[idx].val;
+</I>&gt;<i> +		idx = ISCSI_PARAM_FIRST_BURST;
+</I>&gt;<i> +		p[idx].state = KEY_STATE_DONE;
+</I>&gt;<i> +		param_set_val(session_keys, p, idx, &amp;first_burst);
+</I>&gt;<i> +		param_val_to_str(session_keys, idx, first_burst, buf);
+</I>&gt;<i> +		text_key_add(conn, &quot;FirstBurstLength&quot;, buf);
+</I>&gt;<i> +	}
+</I>&gt;<i>  out:
+</I>&gt;<i>  	return;
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000587.html">[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</A></li>
+	<LI>Next message: <A HREF="000570.html">[PATCH] add iSNS support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#588">[ date ]</a>
+              <a href="thread.html#588">[ thread ]</a>
+              <a href="subject.html#588">[ subject ]</a>
+              <a href="author.html#588">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

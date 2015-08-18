@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070813013049E.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000950.html">
+   <LINK REL="Next"  HREF="000955.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi fix xmit param</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070813013049E.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi fix xmit param">tomof at acm.org
+       </A><BR>
+    <I>Wed Aug 15 05:11:39 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000950.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+        <LI>Next message: <A HREF="000955.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#953">[ date ]</a>
+              <a href="thread.html#953">[ thread ]</a>
+              <a href="subject.html#953">[ subject ]</a>
+              <a href="author.html#953">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 14 Aug 2007 17:52:06 -0500
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> This might be a hack.  In fixing the defaults earlier, I put the
+</I>&gt;<i> SCSI default for MaxRecvDataSegmentLength in place for the
+</I>&gt;<i> ISCSI_PARAM_MAX_XMIT_DLENGTH.  But really it should be whatever
+</I>&gt;<i> the initiator tells us.
+</I>
+Not sure. Initiators can declarer whatever about MRDSL, the target can
+use a lower value than it. And the target administrator should be able
+to configure it.
+
+That's the current behaivoir (taken from IET).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000950.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+	<LI>Next message: <A HREF="000955.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#953">[ date ]</a>
+              <a href="thread.html#953">[ thread ]</a>
+              <a href="subject.html#953">[ subject ]</a>
+              <a href="author.html#953">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

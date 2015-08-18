@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER patches, third release
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20third%20release&In-Reply-To=%3C20071211135452I.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001202.html">
+   <LINK REL="Next"  HREF="001209.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER patches, third release</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20third%20release&In-Reply-To=%3C20071211135452I.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] iSER patches, third release">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Dec 11 05:54:52 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001202.html">[Stgt-devel] [PATCH 6/6] iser core
+</A></li>
+        <LI>Next message: <A HREF="001209.html">[Stgt-devel] iSER patches, third release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1205">[ date ]</a>
+              <a href="thread.html#1205">[ thread ]</a>
+              <a href="subject.html#1205">[ subject ]</a>
+              <a href="author.html#1205">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 10 Dec 2007 10:03:25 -0500
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> This is the third major release of support for iSCSI Extensions
+</I>&gt;<i> for RDMA (iSER) to the existing TGT user space SCSI target.  It
+</I>&gt;<i> uses OpenFabrics libraries and kernel drivers to act as a SCSI
+</I>&gt;<i> target over RDMA-capable devices.  The code has been tested
+</I>&gt;<i> against the existing Linux iSER initiator over InfiniBand cards,
+</I>&gt;<i> but should be specification compliant and work generally.
+</I>
+Excellent.
+
+
+&gt;<i> 1 iser docs - just doc/
+</I>&gt;<i> 
+</I>&gt;<i> 2 iser task transport data - need private data in struct task,
+</I>&gt;<i>     could merge as is, or let iscsi transport do allocation as
+</I>&gt;<i>     with connection struct.
+</I>&gt;<i> 
+</I>&gt;<i> 3 iser rounding - removed &quot;if (conn-&gt;tp-&gt;rdma)&quot; approach, now uses
+</I>&gt;<i>     &quot;conn-&gt;tp-&gt;data_padding&quot;.  Also deleted some roundup()s that
+</I>&gt;<i>     were unnecessary in both cases.
+</I>&gt;<i> 
+</I>&gt;<i> 4 iser params - new parameters for iSER straight from spec docs.  No
+</I>&gt;<i>     ifdef on ISCSI_RDMA, we let initiator say if it wants RDMA or
+</I>&gt;<i>     not.
+</I>&gt;<i> 
+</I>&gt;<i> 5 iser iscsid changes - five little &quot;if (conn-&gt;tp-&gt;rdma)&quot; changes,
+</I>&gt;<i>     all necessary due to protocol differences and different event
+</I>&gt;<i>     handler
+</I>&gt;<i> 
+</I>&gt;<i> 6 iser core - add iscsi/iscsi_rdma.c and hooks to use it
+</I>
+Except for the second patch, the rest looks ready for the inclusion I
+think. The changes to iscsid.c in the 5th patch looks a bit hacky but
+it's fine with me for now.
+
+
+&gt;<i> I'll look at what causes these performance changes and try out some
+</I>&gt;<i> more recent kernels.  But I wanted to get the patches to people so
+</I>&gt;<i> as not to hold up any other work.  Would love to see some more
+</I>&gt;<i> scientific numbers from people, and help figuring out where the time
+</I>&gt;<i> is going.
+</I>
+Yeah, we can work on the performance issues later on.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001202.html">[Stgt-devel] [PATCH 6/6] iser core
+</A></li>
+	<LI>Next message: <A HREF="001209.html">[Stgt-devel] iSER patches, third release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1205">[ date ]</a>
+              <a href="thread.html#1205">[ thread ]</a>
+              <a href="subject.html#1205">[ subject ]</a>
+              <a href="author.html#1205">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

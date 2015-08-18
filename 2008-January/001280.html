@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801170127w2937b2afg9bef324efa945e43%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001275.html">
+   <LINK REL="Next"  HREF="001281.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801170127w2937b2afg9bef324efa945e43%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Thu Jan 17 10:27:08 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001275.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001281.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1280">[ date ]</a>
+              <a href="thread.html#1280">[ thread ]</a>
+              <a href="subject.html#1280">[ subject ]</a>
+              <a href="author.html#1280">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hello,
+
+I have performed a test to compare the performance of SCST and STGT.
+Apparently the SCST target implementation performed far better than
+the STGT target implementation. This makes me wonder whether this is
+due to the design of SCST or whether STGT's performance can be
+improved to the level of SCST ?
+
+Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+cache -- no disk reads were performed, all reads were from the cache).
+Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+
+                              STGT read             SCST read
+                           performance (MB/s)   performance (MB/s)
+Ethernet (1 Gb/s network)        77                    89
+IPoIB (8 Gb/s network)           82                   229
+SRP (8 Gb/s network)            N/A                   600
+iSER (8 Gb/s network)            80                   N/A
+
+These results show that SCST uses the InfiniBand network very well
+(effectivity of about 88% via SRP), but that the current STGT version
+is unable to transfer data faster than 82 MB/s. Does this mean that
+there is a severe bottleneck  present in the current STGT
+implementation ?
+
+Details about the test equipment:
+ - Ethernet controller: Intel 80003ES2LAN Gigabit Ethernet controller
+(copper) in full duplex mode.
+- InfiniBand controller: Mellanox MT25204 [InfiniHost III Lx HCA].
+According to ib_rdma_bw and ib_rdma_lat, the InfiniBand peak bandwith
+on this system is 675 MB/sec and its latency is 3 microseconds.
+- CPU: one CPU, an Intel Xeon CPU 5130 @ 2.00GHz.
+ - RAM: 2 GB in the initiator, 8 GB in the target. According to
+lmbench, memory read bandwidth is 2960 MB/s and write bandwidth is
+1080 MB/s.
+ - Software: 64-bit Ubuntu 7.10 server edition + OFED 1.2.5.4
+userspace components + SCST revision 242 (January 4, 2008) + TGT
+version 20071227.
+
+Regards,
+
+Bart Van Assche.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001275.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001281.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1280">[ date ]</a>
+              <a href="thread.html#1280">[ thread ]</a>
+              <a href="subject.html#1280">[ subject ]</a>
+              <a href="author.html#1280">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

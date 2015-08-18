@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tgt disk and cd target with Microsoft initiator
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgt%20disk%20and%20cd%20target%20with%20Microsoft%20initiator&In-Reply-To=%3C47396A55.3040001%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001141.html">
+   <LINK REL="Next"  HREF="001147.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tgt disk and cd target with Microsoft initiator</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgt%20disk%20and%20cd%20target%20with%20Microsoft%20initiator&In-Reply-To=%3C47396A55.3040001%40gmail.com%3E"
+       TITLE="[Stgt-devel] tgt disk and cd target with Microsoft initiator">albert.pauw at gmail.com
+       </A><BR>
+    <I>Tue Nov 13 10:11:49 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001141.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+        <LI>Next message: <A HREF="001147.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1142">[ date ]</a>
+              <a href="thread.html#1142">[ thread ]</a>
+              <a href="subject.html#1142">[ subject ]</a>
+              <a href="author.html#1142">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> I have two targets using tgt, a disk target, and a cd target, both are 
+</I>&gt;<i> configured as LUN 1 on their target. The controller takes LUN 0.
+</I>
+&gt;<i> When I log into only one of them everything works, I either see a disk 
+</I>&gt;<i> or a cd depending on which I log into.
+</I>&gt;<i> The only problem is that I am bugged by this pesky controller (LUN 0) 
+</I>&gt;<i> for which there is no Microsoft driver of course, but
+</I>&gt;<i> Windows (XP in my case) wants this driver. So I let it ignore the 
+</I>&gt;<i> problem with no proper driver (the controllers has the yellow question 
+</I>&gt;<i> mark in the device manager).
+</I>&gt;<i> Apart from that it works.
+</I>
+&gt;<i> However, when I log into the disk target first, and then the CD target, 
+</I>&gt;<i> the disk disappears in the hardware manager under Windows,
+</I>&gt;<i> and the CD drive appears. Clicking on My Computer I see the CD coming 
+</I>&gt;<i> and going every second.
+</I>
+&gt;<i> So it looks like the two targets are mixed in some way.
+</I>
+I get the impression it's because both targets have a (for Windows 
+unrecognisable) controller which looks to Windows the same controller.
+
+&gt;<i> Can anyone confirm this behaviour?
+</I>&gt;<i> And is there a simple way to get rid of the controller LUN 0?
+</I>
+Maybe a 'hide' switch? This would make Windows a lot happier without 
+asking for an unknow controller (ie. IET). With a bit of luck the weird 
+behavior with the two targets mentioned above may be fixed as well.
+
+
+&gt;<i> Albert
+</I>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001141.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+	<LI>Next message: <A HREF="001147.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1142">[ date ]</a>
+              <a href="thread.html#1142">[ thread ]</a>
+              <a href="subject.html#1142">[ subject ]</a>
+              <a href="author.html#1142">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

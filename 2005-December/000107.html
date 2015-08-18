@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%0A%09version%20of%20iscsi%20target%3F&In-Reply-To=%3C1133964667.31445.59.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000105.html">
+   <LINK REL="Next"  HREF="000113.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%0A%09version%20of%20iscsi%20target%3F&In-Reply-To=%3C1133964667.31445.59.camel%40localhost.localdomain%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?">mingz at ele.uri.edu
+       </A><BR>
+    <I>Wed Dec  7 15:11:07 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000105.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000113.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#107">[ date ]</a>
+              <a href="thread.html#107">[ thread ]</a>
+              <a href="subject.html#107">[ subject ]</a>
+              <a href="author.html#107">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>my 2 cents
+
+most iscsi hba are still closed sourced, at least they only provide
+source code sdk to customers or oem developers. so it will be hard to
+integrate them unless their own engr do it.
+
+toe is not here, not in scsi domain. toe will be treated as NIC and use
+software iscsi target stack coming with stgt. nic is same thing here.
+
+fc/sas, or maybe old parallel scsi will integrate with stgt just like
+what qla + scst does now. 
+
+i remember Mike mentioned that he is working on a qla+stgt. also lsi
++stgt is claimed.
+
+
+ming
+
+
+
+On Wed, 2005-12-07 at 13:51 +0100, <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">johan at capvert.se</A> wrote:
+&gt;<i>                                         Hi, Mike!
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I, and I suppose a lot of other people, would like know how you look at the
+</I>&gt;<i> HW support on the Fc side? I don&#194;&#180;t know what you mean now, when you talk
+</I>&gt;<i> about HW target support, if you talk iScsi HBA, TOE HBA, NIC, or Fc HBA, or
+</I>&gt;<i> all of them. Since I&#194;&#180;m very much on the Fc side, I&#194;&#180;m especially interested
+</I>&gt;<i> in your developement strategy for Fc. How is your priority list look like?
+</I>&gt;<i> 
+</I>&gt;<i>                Best regards from/Med v&#195;&#164;nliga h&#195;&#164;lsningar fr&#195;&#165;n
+</I>&gt;<i> 
+</I>&gt;<i>                                  Johan Kragsterman
+</I>&gt;<i> 
+</I>&gt;<i>                                <A HREF="http://www.capvert.se">http://www.capvert.se</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i>                                                                                                                       
+</I>&gt;<i>                     Mike Christie                                                                                     
+</I>&gt;<i>                     &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc</A>       Till:   <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>                                                 
+</I>&gt;<i>                     .edu&gt;                   Kopia:  Robert Whitehead &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">WRWHITEHEAD at novell.com</A>&gt;,                        
+</I>&gt;<i>                     S&#195;&#164;nt av:                 <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">iscsitarget-devel at lists.sourceforge.net</A>, stgt                            
+</I>&gt;<i>                     stgt-devel-admin@        &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>&gt;                                            
+</I>&gt;<i>                     berlios.de              &#195;&#132;rende: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of    
+</I>&gt;<i>                                              iscsi target?                                                            
+</I>&gt;<i>                                                                                                                       
+</I>&gt;<i>                     2005-12-07 11:00                                                                                  
+</I>&gt;<i>                                                                                                                       
+</I>&gt;<i>                                                                                                                       
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Ming Zhang wrote:
+</I>&gt;<i> &gt; On Tue, 2005-12-06 at 10:58 -0700, Robert Whitehead wrote:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt; 12/6/2005 10:32 am &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;on Tue, 2005-12-06 at 09:56 -0700, Robert Whitehead wrote:
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;In a couple of the iscsitarget mail threads there is the reference
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;to
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;the new stgt implementation which is hosted on the
+</I>&gt;<i> &gt;&gt;&gt;&gt;<A HREF="http://developer.berlios.de">http://developer.berlios.de</A> web site.  In addition, it also looks
+</I>&gt;<i> &gt;&gt;&gt;&gt;like the lasted source code for the IET project has been moved to
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;an
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;iscsitarget project hosted on the developer.berlios.de site.  In
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;fact
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;doing a cvs browse on this website (sourceforge) doesn't work and
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;in
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;order to see the sourcecode and you have to go to the berlios
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;website to
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;get the latest iscsitarget code.
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;My question is what is the future of the IET project?
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;feature freeze and keep it stable.
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;It appears the stgt is the new direction.  If so what is the
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;motivation
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;for stgt?
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;stgt is a middle layer for different transports. so u can have iscsi,
+</I>&gt;<i> &gt;&gt;&gt;fc, sas,... later under same umbrella.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;ming
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;What is the time frame for having initial release of stgt?
+</I>&gt;<i> &gt;&gt;Is it is a good state that if I download stgt and build it, will it
+</I>&gt;<i> &gt;&gt;function as an iscsi target now?
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;Robert
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; i am not a stgt developer, so i could not tell u the time frame. i think
+</I>&gt;<i> &gt; it still need some work before it becomes as stable as iet.
+</I>&gt;<i> &gt;
+</I>&gt;<i> 
+</I>&gt;<i> Yeah it is very unstable at the moment. We are in the middle if adding
+</I>&gt;<i> HW target support so probably scst or IET alone if you just need iscsi
+</I>&gt;<i> is better. We have also been trying to figure out a way to reuse some of
+</I>&gt;<i> the block layer code for things like barriers/MSG_*, tags, requests and
+</I>&gt;<i> queue limits etc and that is really a experiment at the moment.
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="http://lists.berlios.de/mailman/listinfo/stgt-devel">http://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_idv37&amp;alloc_id865&amp;op&#204;k">http://ads.osdn.com/?ad_idv37&amp;alloc_id865&amp;op&#204;k</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000105.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000113.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#107">[ date ]</a>
+              <a href="thread.html#107">[ thread ]</a>
+              <a href="subject.html#107">[ subject ]</a>
+              <a href="author.html#107">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

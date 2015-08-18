@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch1/2]	Add-new-module-entry-points-for-configuration
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch1/2%5D%0A%09Add-new-module-entry-points-for-configuration&In-Reply-To=%3C4663E483.1060204%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000745.html">
+   <LINK REL="Next"  HREF="000736.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch1/2]	Add-new-module-entry-points-for-configuration</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch1/2%5D%0A%09Add-new-module-entry-points-for-configuration&In-Reply-To=%3C4663E483.1060204%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch1/2]	Add-new-module-entry-points-for-configuration">markh794 at gmail.com
+       </A><BR>
+    <I>Mon Jun  4 12:08:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000745.html">[Stgt-devel] [Patch1/2]	Add-new-module-entry-points-for-configuration
+</A></li>
+        <LI>Next message: <A HREF="000736.html">[Stgt-devel] [Patch 2/2]	Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 3
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#748">[ date ]</a>
+              <a href="thread.html#748">[ thread ]</a>
+              <a href="subject.html#748">[ subject ]</a>
+              <a href="author.html#748">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add new module entry points.
+   &lt;module&gt;_lu_init(struct scsi_lu *lu) - called at setup time.
+   &lt;module&gt;_lu_exit(struct scsi_lu *lu) - called at shutdown time.
+   &lt;module&gt;_lu_config(struct scsi_lu *lu) - Any module unique configuration.
+
+Moved logical unit configuration from target -&gt; &lt;module&gt;
+   Along with above entry point &lt;module&gt;_lu_config(), will allow module
+   specific configuration.
+   No new functionality added yet.
+
+Add a dump_cdb(struct scsi_cmd *cmd) - Called from spc_illegal_op()
+
+Update - All modules use common INQUIRY routine.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000745.html">[Stgt-devel] [Patch1/2]	Add-new-module-entry-points-for-configuration
+</A></li>
+	<LI>Next message: <A HREF="000736.html">[Stgt-devel] [Patch 2/2]	Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 3
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#748">[ date ]</a>
+              <a href="thread.html#748">[ thread ]</a>
+              <a href="subject.html#748">[ subject ]</a>
+              <a href="author.html#748">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] VTL - tgtadm syntax additions (Long)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20-%20tgtadm%20syntax%20additions%20%28Long%29&In-Reply-To=%3C1174916352.3667.12.camel%40dhcp-119.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000477.html">
+   <LINK REL="Next"  HREF="000483.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] VTL - tgtadm syntax additions (Long)</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20-%20tgtadm%20syntax%20additions%20%28Long%29&In-Reply-To=%3C1174916352.3667.12.camel%40dhcp-119.ibrix.com%3E"
+       TITLE="[Stgt-devel] VTL - tgtadm syntax additions (Long)">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Mon Mar 26 15:39:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000477.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+        <LI>Next message: <A HREF="000483.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#479">[ date ]</a>
+              <a href="thread.html#479">[ thread ]</a>
+              <a href="subject.html#479">[ subject ]</a>
+              <a href="author.html#479">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 2007-03-26 at 16:37 +1000, Mark Harvey wrote:
+&gt;<i> On 3/26/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; On Mon, 2007-03-26 at 10:19 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; &gt; As the idea of hijacking the 'backing file' for use as a configuration
+</I>&gt;<i> &gt; &gt; file has not received the most positive resonse, I have put together
+</I>&gt;<i> &gt; &gt; some ideas for adding to the syntax of tgtadm to allow the
+</I>&gt;<i> &gt; &gt; configuration and customization of SSC and SMC devices.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; looks fine to me. then u also need command to load/eject virtual
+</I>&gt;<i> &gt; cartridge? and each cartridge will need some parameters as well?
+</I>&gt;<i> 
+</I>&gt;<i> Good point. To load virtual media into a single SSC device, some way
+</I>&gt;<i> of a user being able to identify the virtual media name will be
+</I>&gt;<i> required (from a command line).
+</I>
+yes, need a barcode, and maybe a WORM media or not, and blah blah u can
+think of. :P
+
+&gt;<i> 
+</I>&gt;<i> The 'load' and unload / eject commands are sent to the tape drive
+</I>&gt;<i> itself. Its more a matter of being able to specify the media ID /
+</I>&gt;<i> barcode. The Load command is an 'open()', while a eject is a 'close()'
+</I>
+yes. we have 2 set, one set from backup app and another from emulation
+the user actions on physical drives.
+
+&gt;<i> 
+</I>&gt;<i> There will be some sort of internal interface between the SMC and SSC
+</I>&gt;<i> so a 'path name' to the virtual media can be passed. e.g. A MOVE
+</I>&gt;<i> MEDIUM command will basically pass the virtual media name (filename)
+</I>&gt;<i> to the SSC Logical unit.
+</I>
+yes, will you emulate ADI as well?
+
+&gt;<i> 
+</I>&gt;<i> My current implementation (non-iSCSI) uses a messageQ. I'll most
+</I>&gt;<i> likely use what every the tgtadm/tgtd uses. Currently I pass &quot;load
+</I>&gt;<i> barcode&quot; to load &quot;stand-alone&quot; media and the SMC device sends a 'lload
+</I>&gt;<i> barcode' command via the messageQ.
+</I>
+sounds ok to me. as long as these commands are defined in a command
+table and documented!
+
+
+&gt;<i> 
+</I>&gt;<i> Regards
+</I>&gt;<i> Mark
+</I>&gt;<i> 
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; I have not attempted to implement any of the syntax, but am posting to
+</I>&gt;<i> &gt; &gt; the list for comments before putting any effort into coding.
+</I>&gt;<i> [snip]
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000477.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+	<LI>Next message: <A HREF="000483.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#479">[ date ]</a>
+              <a href="thread.html#479">[ thread ]</a>
+              <a href="subject.html#479">[ subject ]</a>
+              <a href="author.html#479">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

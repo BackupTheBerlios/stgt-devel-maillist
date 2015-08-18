@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Further problems with the SSC code ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Further%20problems%20with%20the%20SSC%20code%20...&In-Reply-To=%3C46b8a8850807261503mee70dddnfeeb815a23eb09fc%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001892.html">
+   <LINK REL="Next"  HREF="001894.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Further problems with the SSC code ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Further%20problems%20with%20the%20SSC%20code%20...&In-Reply-To=%3C46b8a8850807261503mee70dddnfeeb815a23eb09fc%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Further problems with the SSC code ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Sun Jul 27 00:03:41 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001892.html">[Stgt-devel] Further problems with the SSC code ...
+</A></li>
+        <LI>Next message: <A HREF="001894.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1893">[ date ]</a>
+              <a href="thread.html#1893">[ thread ]</a>
+              <a href="subject.html#1893">[ subject ]</a>
+              <a href="author.html#1893">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, Jul 26, 2008 at 2:52 PM, ronnie sahlberg
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+&gt;<i> Hi,
+</I>&gt;<i>
+</I>&gt;<i> Remember that SSC takes two types of read/write parameters. Both with
+</I>&gt;<i> and without specifying the block no.
+</I>
+Sure, but I can see no code in SSC for handling the BAML and BAM bits
+nor for transitioning between implicit address mode and explicit
+address mode ... this will have to be added.
+
+Thus, of course, we will have to add more state to the ssc_info struct
+that is already kept.
+
+&gt;<i> See the mmc_info in mmc emulation for a way to attach commandset
+</I>&gt;<i> specific data to the lun, and how to use it.
+</I>&gt;<i> mmc uses this to remember what the current_profile is and how to write
+</I>&gt;<i> to a dvd+r.
+</I>&gt;<i> You may need to store the current block# here to track the read/write
+</I>&gt;<i> commands with implicit address modes
+</I>
+OK, I will have a look ...
+
+&gt;<i> As others have said as well, you may also encapsulate each block
+</I>&gt;<i> read/written with a header that specifies
+</I>&gt;<i> the size of the block,   some flags etc.
+</I>&gt;<i> Or, please make bs_rdwr() take a block index instead of an offset   so
+</I>&gt;<i> that it may be easier to add these block headers at a later time.
+</I>
+Well that depends on how that stuff is to be implemented, but sure.
+
+Making bs_rdwr deal with this stuff would seem to be burdening it with
+more than it should need to worry about. Perhaps we should be able to
+give bs_rdwr() a scatter-gather list ...
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001892.html">[Stgt-devel] Further problems with the SSC code ...
+</A></li>
+	<LI>Next message: <A HREF="001894.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1893">[ date ]</a>
+              <a href="thread.html#1893">[ thread ]</a>
+              <a href="subject.html#1893">[ subject ]</a>
+              <a href="author.html#1893">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

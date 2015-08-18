@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C200708181616.l7IGGbYq020675%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000969.html">
+   <LINK REL="Next"  HREF="000956.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi fix xmit param</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C200708181616.l7IGGbYq020675%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi fix xmit param">tomof at acm.org
+       </A><BR>
+    <I>Sat Aug 18 18:16:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000969.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+        <LI>Next message: <A HREF="000956.html">[PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#970">[ date ]</a>
+              <a href="thread.html#970">[ thread ]</a>
+              <a href="subject.html#970">[ subject ]</a>
+              <a href="author.html#970">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] iscsi fix xmit param
+Date: Sat, 18 Aug 2007 11:59:06 -0400
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Sun, 19 Aug 2007 00:14 +0900:
+</I>&gt;<i> &gt; From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> &gt; Subject: Re: [Stgt-devel] [PATCH] iscsi fix xmit param
+</I>&gt;<i> &gt; Date: Sat, 18 Aug 2007 10:52:00 -0400
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Sat, 18 Aug 2007 14:10 +0900:
+</I>&gt;<i> &gt; &gt; &gt; From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> &gt; &gt; &gt; Subject: Re: [Stgt-devel] [PATCH] iscsi fix xmit param
+</I>&gt;<i> &gt; &gt; &gt; Date: Wed, 15 Aug 2007 11:15:59 -0500
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; True.  There are a few cases.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; 1.  ini sends mrdsl &gt; target mxdsl.  Apply minimum, use target max.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 2.  ini sends mrdsl &lt; target mxdsl.  Apply minimum, use ini max.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 3.  ini does not mention mrdsl.  Target should set its mxdsl to the
+</I>&gt;<i> &gt; &gt; &gt; &gt;     standard default (8192), not use its default max.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; This last case was broken before my earlier patch &quot;iscsi param
+</I>&gt;<i> &gt; &gt; &gt; &gt; cleanup&quot;.  Now it is fixed but I changed the target default to 8k.
+</I>&gt;<i> &gt; &gt; &gt; &gt; I want the target to agree to use a larger value if the initiator is
+</I>&gt;<i> &gt; &gt; &gt; &gt; willing, but still get case #3 correct if the initiator does not
+</I>&gt;<i> &gt; &gt; &gt; &gt; specify.
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; Really?
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; I think that if ini does not mention mrdsl and target doesn't use the
+</I>&gt;<i> &gt; &gt; &gt; standard default mxdsl value (a target admin sets non default value),
+</I>&gt;<i> &gt; &gt; &gt; text_check_param() sets xmdsl to the default value.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; It really was broken.  But this is an odd case as open-iscsi at
+</I>&gt;<i> &gt; &gt; least always sends mrdsl, even if it is set to use the default.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; If you roll back to 92d767a711ed82791b171ce7c9b722263076c519 or so,
+</I>&gt;<i> &gt; &gt; just before &quot;iscsi param cleanup&quot; you'll see:
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; iscsi/param.c:   mxdsl = 262144
+</I>&gt;<i> &gt; &gt; iscsi/target.c:  mxdsl = 8192
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; and this code in iscsi/iscsid.c:
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; 	if (p[i].state == KEY_STATE_START &amp;&amp; p[i].val != session_keys[i].def) {
+</I>&gt;<i> &gt; &gt; 		if (conn-&gt;state == STATE_LOGIN) {
+</I>&gt;<i> &gt; &gt; 			if (i == ISCSI_PARAM_MAX_XMIT_DLENGTH) {
+</I>&gt;<i> &gt; &gt; 				if (p[i].val &gt; session_keys[i].def)
+</I>&gt;<i> &gt; &gt; 					p[i].val = session_keys[i].def;
+</I>&gt;<i> &gt; &gt; 				p[i].state = KEY_STATE_DONE;
+</I>&gt;<i> &gt; &gt; 				continue;
+</I>&gt;<i> &gt; &gt; 			}
+</I>&gt;<i> &gt; &gt; 			memset(buf, 0, sizeof(buf));
+</I>&gt;<i> &gt; &gt; 			param_val_to_str(session_keys, i, p[i].val,
+</I>&gt;<i> &gt; &gt; 					 buf);
+</I>&gt;<i> &gt; &gt; 			text_key_add(conn, session_keys[i].name, buf);
+</I>&gt;<i> &gt; &gt; 			p[i].state = KEY_STATE_REQUEST;
+</I>&gt;<i> &gt; &gt; 		}
+</I>&gt;<i> &gt; &gt; 		cnt++;
+</I>&gt;<i> &gt; &gt; 	}
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; (p[] is conn-&gt;session_param, which is initialized from target params
+</I>&gt;<i> &gt; &gt; then modified by negotiation.)
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; If target admin does not change target mxdsl, and initiator does not
+</I>&gt;<i> &gt; &gt; send mrdsl, this code will see 8192 != 262144 and use 8192.  Fine,
+</I>&gt;<i> &gt; &gt; that's the default.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; If target admin changes target mxdsl to 16384 using tgtadm, and
+</I>&gt;<i> &gt; &gt; initiator does not send mrdsl, this code will see 16384 != 262144
+</I>&gt;<i> &gt; &gt; and use 16384 without negotiation.  Bad, should use the default.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; session_keys[i].def doesn't change (it is always the iSCSI default
+</I>&gt;<i> &gt; value).
+</I>&gt;<i> 
+</I>&gt;<i> Understood, I wasn't assuming that.  In fact, I toyed with adding
+</I>&gt;<i> lots of &quot;const&quot; to enforce this, but it causes a big diff for not a
+</I>&gt;<i> lot of benefit.
+</I>
+Yeah, it's too ugly and complicated. Please no cleanups or
+improvement. :) I'm happy as long as it works.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000969.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+	<LI>Next message: <A HREF="000956.html">[PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#970">[ date ]</a>
+              <a href="thread.html#970">[ thread ]</a>
+              <a href="subject.html#970">[ subject ]</a>
+              <a href="author.html#970">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

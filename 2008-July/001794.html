@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Thoughts on vtl filemarks
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20filemarks&In-Reply-To=%3Cc9a3e4540807182319w6a935119s1f878c4dbdbee4f6%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001791.html">
+   <LINK REL="Next"  HREF="001789.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Thoughts on vtl filemarks</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20filemarks&In-Reply-To=%3Cc9a3e4540807182319w6a935119s1f878c4dbdbee4f6%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Thoughts on vtl filemarks">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Sat Jul 19 08:19:20 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001791.html">[Stgt-devel] Thoughts on vtl filemarks
+</A></li>
+        <LI>Next message: <A HREF="001789.html">[Stgt-devel] Fwd:  [RFC] target configuration tool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1794">[ date ]</a>
+              <a href="thread.html#1794">[ thread ]</a>
+              <a href="subject.html#1794">[ subject ]</a>
+              <a href="author.html#1794">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I do think that filemarks should be ahndled differently from how how
+the individual blocks are.
+Since I dont we would want to actually read the file sequentially
+gigabyte after gigabyte to find where the filemark is.
+We would want to be able to just do a fseek() and get there
+immediately  but then we must know where all the filemarks are.
+
+One way this can be done is using a fixed size array of filemarks that
+specify the offset into the file.
+uint64_t filemarks[1024]
+And having filemarks[x] == 0 meaning no more filemarks.
+
+This array could then either be stored in the header of the file or as
+an extended attribute attached to the file.
+This way this metadata is associated and tied to the data by belonging
+to the same file.
+
+
+There are probably SOME types of metadata which would be preferable to
+share code with MMC to store.
+Things like &quot;barcode&quot; and &quot;media serial number&quot; etc.
+For mmc these can not be stored as a header in the file  since this
+would mean that the file is no longer a
+&quot;normal iso image&quot; and these would for mmc need to be stored in either
+an extended attribute or in a separate file.
+
+
+If there is not too much metadata I think it would be attractive to
+use extended attributes since this guarantees that
+the data and metadata are never separated or out of sync.
+Using mulitple files always has the risk that you rename one of the
+files but forget to rename the other, or such .
+They always end up getting out of sync.
+
+
+On Sat, Jul 19, 2008 at 8:00 AM, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+&gt;<i> On Sat, Jul 19, 2008 at 3:52 AM, Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i> Just a few thoughts on the vtl stuff.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Filemarks. As filemarks are usually marked by a gap in the recording signal
+</I>&gt;&gt;<i> on tape it imposes
+</I>&gt;&gt;<i> a problem when using a file as a virtual tape. Since there needs to be some
+</I>&gt;&gt;<i> metadata to be retained
+</I>&gt;&gt;<i> when writing a virtual tape (on a file) I guess the best way is to use a
+</I>&gt;&gt;<i> header containing various
+</I>&gt;&gt;<i> information. Partly it will contain the same stuff as the usual chip build
+</I>&gt;&gt;<i> in eg an LTO tape.
+</I>&gt;&gt;<i> One could think of max size, barcode, tape type, compression on/off, etc.
+</I>&gt;&gt;<i> Another addition to the header could be a table
+</I>&gt;&gt;<i> of filemarks (sorted in increasing order). This table could be done in a
+</I>&gt;&gt;<i> fixed style, ie so many
+</I>&gt;&gt;<i> filemarks but no more, or a variable table. This last possibility is a bit
+</I>&gt;&gt;<i> more flexible, but gives
+</I>&gt;&gt;<i> the extra disadvantage of a possibly increasing table positioned before the
+</I>&gt;&gt;<i> actual data in the file
+</I>&gt;&gt;<i> (which needs to be moved when it increases). Since the size of indexpointer
+</I>&gt;&gt;<i> in a file is of size off_t (long)
+</I>&gt;&gt;<i> and 64 bits (if I am correct) every filemark will add 8 bytes. So the
+</I>&gt;&gt;<i> question will be how many
+</I>&gt;&gt;<i> filemarks do you want on the tape?
+</I>&gt;<i>
+</I>&gt;<i> The other thing that needs to be tracked is the original block size
+</I>&gt;<i> written (for tape drives in variable block mode).
+</I>&gt;<i>
+</I>&gt;<i> The sense code needs to return the number of under/over run bytes in a
+</I>&gt;<i> subsequent read.
+</I>&gt;<i>
+</I>&gt;<i> e.g. NetBackup tape format:
+</I>&gt;<i> BOT == Beginning of Tape
+</I>&gt;<i> FM == Filemark
+</I>&gt;<i> EOD == End of data
+</I>&gt;<i>
+</I>&gt;<i> [BOT][1k media header][FM][x byte block of data][x byte block of
+</I>&gt;<i> data][FM][FM][EOD]
+</I>&gt;<i>
+</I>&gt;<i> When NetBackup loads a tape, it first requests a 'read 64k' data. If
+</I>&gt;<i> it does not receive 1k with appropriate sense code, it assumes the
+</I>&gt;<i> media is NOT a NetBackup written tape and rejects the media.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> BackupExec and Legato NetWorker both use fixed block writes so this is
+</I>&gt;<i> not an issue.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Another point is when writing over a filemark (ie erasing the previous
+</I>&gt;&gt;<i> filemark), how do we
+</I>&gt;&gt;<i> keep track of this in an easy way?
+</I>&gt;<i>
+</I>&gt;<i> As already pointed out, the last write indicates the EOD and any data
+</I>&gt;<i> beyond this point is not readable (for real tape drives anyway)..
+</I>&gt;<i> So all data (and pointers) beyond the current EOD should be invalid.
+</I>&gt;<i>
+</I>&gt;<i> Having an extra metadata file means trying to keep track of which
+</I>&gt;<i> pointers are valid/invalid.
+</I>&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Of course set up correctly, skipping over filemarks would then be a doddle.
+</I>&gt;&gt;<i> Using a special character(s)
+</I>&gt;&gt;<i> to mark a filemark would be easier, but a) it needs to be very special and
+</I>&gt;&gt;<i> never appear in normal data,
+</I>&gt;&gt;<i> b) skipping filemarks would be a full search through the virtual tape,
+</I>&gt;&gt;<i> generating lots of IP traffic on its way.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> To create such a header for an empty tape a small separate program is needed
+</I>&gt;&gt;<i> to &quot;format&quot; the new tape, ie creating a file with the header info.
+</I>&gt;<i>
+</I>&gt;<i> This is the way I have previously handled this. i.e. The 'backing
+</I>&gt;<i> store' is sort of like a double-linked-list of headers.
+</I>&gt;<i>
+</I>&gt;<i> struct blk_header {
+</I>&gt;<i> int blk_type;  /* type of header - BOT, EOD, Filemark etc... */
+</I>&gt;<i> int blk_size;  /* Size of data block */
+</I>&gt;<i> long blk_number /* Keep track of block numbers for position */
+</I>&gt;<i> struct blk_header *blk_prev; /* Pointer to previous block header */
+</I>&gt;<i> struct blk_header *blk_next; /* Pointer to next block header (NULL for EOD) */
+</I>&gt;<i> }
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> So the backing store datafile looks like :
+</I>&gt;<i>
+</I>&gt;<i> [blk_header (BOT)][MAM data][blk_header (block 0)][data][blk_header
+</I>&gt;<i> (block 1)][blk_header (filemark)][blk_header (EOD]
+</I>&gt;<i>
+</I>&gt;<i> i.e.
+</I>&gt;<i>  I've squeezed in the MAM data before the first block of 'real' data.
+</I>&gt;<i>  There is no need to read the data, just the blk_headers when positioning
+</I>&gt;<i>  Identifying the 'blk type' as filemark/setmark/&lt;insert type here/ is simple.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Disadvantages with this is it is only suitable for SSC device - i.e.
+</I>&gt;<i> It would be nice to mount an ISO image with the MMC device. Adding an
+</I>&gt;<i> extra metadata file along with the ISO image would be better for
+</I>&gt;<i> CD/DVDs.
+</I>&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Any thoughts?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Albert
+</I>&gt;&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001791.html">[Stgt-devel] Thoughts on vtl filemarks
+</A></li>
+	<LI>Next message: <A HREF="001789.html">[Stgt-devel] Fwd:  [RFC] target configuration tool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1794">[ date ]</a>
+              <a href="thread.html#1794">[ thread ]</a>
+              <a href="subject.html#1794">[ subject ]</a>
+              <a href="author.html#1794">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] read block limits data offset one off
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20read%20block%20limits%20data%20offset%20one%20off&In-Reply-To=%3C4882CF06.2000503%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001804.html">
+   <LINK REL="Next"  HREF="001807.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] read block limits data offset one off</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20read%20block%20limits%20data%20offset%20one%20off&In-Reply-To=%3C4882CF06.2000503%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] read block limits data offset one off">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sun Jul 20 07:37:10 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001804.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+        <LI>Next message: <A HREF="001807.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1805">[ date ]</a>
+              <a href="thread.html#1805">[ thread ]</a>
+              <a href="subject.html#1805">[ subject ]</a>
+              <a href="author.html#1805">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> On Sat, 19 Jul 2008 19:34:54 +0200
+</I>&gt;<i> Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i> According to SSC-2 Rev 8 the Read Block Limits return data is made up of 
+</I>&gt;&gt;<i> 6 bytes, index 0-5:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Byte 0 contains granularity (bits 0-4)
+</I>&gt;&gt;<i> Byte 1-3 contain  Maximum Block Length Limit (MSB first)
+</I>&gt;&gt;<i> Byte 4-5 contain Minimum Block Length Limit (MSB first)
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Since all bytes are zeroed first, Byte 1 is zero.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I also added a defined value for the granularity, as defined by the
+</I>&gt;&gt;<i> Read Block Limits command, and calculate the blk_len out of it.
+</I>&gt;&gt;<i> Now you only need to change the GRANULARITY parameter.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> So the patch is:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> --- ssc.c    2008-07-19 19:29:58.000000000 +0200
+</I>&gt;&gt;<i> +++ ssc.c.new    2008-07-19 19:30:54.000000000 +0200
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Thanks, few comments.
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i> @@ -35,6 +35,7 @@
+</I>&gt;&gt;<i>  #include &quot;tgtadm_error.h&quot;
+</I>&gt;&gt;<i>  
+</I>&gt;&gt;<i>  #define BLK_SHIFT    9
+</I>&gt;&gt;<i> +#define GRANULARITY    9
+</I>&gt;&gt;<i>  
+</I>&gt;&gt;<i>  
+</I>&gt;&gt;<i>  static int ssc_rw(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;<i> @@ -73,16 +74,16 @@
+</I>&gt;&gt;<i>  {
+</I>&gt;&gt;<i>      uint8_t *data;
+</I>&gt;&gt;<i>      uint8_t buf[256];
+</I>&gt;&gt;<i> -    uint16_t blk_len = 0x200;
+</I>&gt;&gt;<i> +    uint16_t blk_len = 1 &lt;&lt; GRANULARITY;
+</I>&gt;&gt;<i>  
+</I>&gt;&gt;<i>      memset(buf, 0, sizeof(buf));
+</I>&gt;&gt;<i>      data = buf;
+</I>&gt;&gt;<i>  
+</I>&gt;&gt;<i> -    data[0] = 9;
+</I>&gt;&gt;<i> +    data[0] = GRANULARITY;
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> For the future changes, can we add:
+</I>&gt;<i>
+</I>&gt;<i> data[1] = (blk_len &gt;&gt; 16) &amp; 0xff
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i>      data[2] = blk_len &gt;&gt; 8;
+</I>&gt;&gt;<i>      data[3] = blk_len &amp; 0x0ff;
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Let's do:
+</I>&gt;<i>
+</I>&gt;<i> data[2] = (blk_len &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i> data[3] = blk_len &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i> -    data[5] = blk_len &gt;&gt; 8;
+</I>&gt;&gt;<i> -    data[6] = blk_len &amp; 0x0ff;
+</I>&gt;&gt;<i> +    data[4] = blk_len &gt;&gt; 8;
+</I>&gt;&gt;<i> +    data[5] = blk_len &amp; 0x0ff;
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> dito.
+</I>&gt;<i>   
+</I>Yes, it would catch blk_len &gt; 65536 nicely.
+&gt;<i>   
+</I>&gt;&gt;<i>      memcpy(scsi_get_in_buffer(cmd), data, 6);
+</I>&gt;&gt;<i>      eprintf(&quot;In ssc_read_block_limit \n&quot;);
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> We should check the buffer length but it would be better to do that
+</I>&gt;<i> with a different patch.
+</I>&gt;<i>   
+</I>
+Still trying to grasp the code, since my programming skills are very dusty.
+Next time I'll use git for a patch and sign it.
+
+Cheers
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001804.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+	<LI>Next message: <A HREF="001807.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1805">[ date ]</a>
+              <a href="thread.html#1805">[ thread ]</a>
+              <a href="subject.html#1805">[ subject ]</a>
+              <a href="author.html#1805">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

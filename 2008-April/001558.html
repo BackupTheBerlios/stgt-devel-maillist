@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA	iniSER	header
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bofa-general%5D%20Re%3A%20%5BIps%5D%20Calculating%20the%20VA%0A%09iniSER%09header&In-Reply-To=%3C39C75744D164D948A170E9792AF8E7CAF60D50%40exil.voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001557.html">
+   <LINK REL="Next"  HREF="001530.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA	iniSER	header</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bofa-general%5D%20Re%3A%20%5BIps%5D%20Calculating%20the%20VA%0A%09iniSER%09header&In-Reply-To=%3C39C75744D164D948A170E9792AF8E7CAF60D50%40exil.voltaire.com%3E"
+       TITLE="[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA	iniSER	header">erezz at voltaire.com
+       </A><BR>
+    <I>Wed Apr 30 13:54:14 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001557.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in	iSER	header
+</A></li>
+        <LI>Next message: <A HREF="001530.html">[Stgt-devel] Does STGT support Qlogic 24xx devices?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1558">[ date ]</a>
+              <a href="thread.html#1558">[ thread ]</a>
+              <a href="subject.html#1558">[ subject ]</a>
+              <a href="author.html#1558">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> Hi all,
+</I>&gt;<i> 
+</I>&gt;<i> It appears the current Linux iSER initiator does not send the HELLO message when the connection transits to full feature phase. The stgt target also ignores this message (if it were to appear). Both of these implementations use a non-conformant iSER header (they add write_va and read_va fields, which incidentally do not appear to be used). Are these changes documented anywhere in the IB domain, or are these variations needed for another reason?
+</I>&gt;<i> 
+</I>&gt;<i> If these deviations from the RFC are not needed and were to be fixed (along with the offset fix), then these implementations can detect the current mode of operation by examining the size &gt; of the iSER header received. The choice to proceed in the broken way, or to terminate the connection (with big loud error messages) is the implementor's choice. Either way, the issue is detected and corruption avoided.
+</I>&gt;<i> 
+</I>&gt;<i> Thoughts?
+</I>
+Take a look at the iSER for IB annex:
+ 
+<A HREF="http://www.infinibandta.org/members/spec/Annex_iSER.PDF">http://www.infinibandta.org/members/spec/Annex_iSER.PDF</A>
+
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001557.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in	iSER	header
+</A></li>
+	<LI>Next message: <A HREF="001530.html">[Stgt-devel] Does STGT support Qlogic 24xx devices?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1558">[ date ]</a>
+              <a href="thread.html#1558">[ thread ]</a>
+              <a href="subject.html#1558">[ subject ]</a>
+              <a href="author.html#1558">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

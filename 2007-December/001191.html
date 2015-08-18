@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 16/20] iser params
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2016/20%5D%20iser%20params&In-Reply-To=%3C20071207203741.GA26440%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001206.html">
+   <LINK REL="Next"  HREF="001195.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 16/20] iser params</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2016/20%5D%20iser%20params&In-Reply-To=%3C20071207203741.GA26440%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 16/20] iser params">pw at osc.edu
+       </A><BR>
+    <I>Fri Dec  7 21:37:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001206.html">[Stgt-devel] [PATCH] task data leak
+</A></li>
+        <LI>Next message: <A HREF="001195.html">[Stgt-devel] [PATCH] INQUIRY Additional len size incorrectly	calculated
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1191">[ date ]</a>
+              <a href="thread.html#1191">[ thread ]</a>
+              <a href="subject.html#1191">[ subject ]</a>
+              <a href="author.html#1191">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Thu, 15 Nov 2007 11:24 +0900:
+&gt;<i> On Tue, 16 Oct 2007 11:21:24 -0400
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> &gt; diff --git a/usr/iscsi/target.c b/usr/iscsi/target.c
+</I>&gt;<i> &gt; index ab0685f..d7c1d57 100644
+</I>&gt;<i> &gt; --- a/usr/iscsi/target.c
+</I>&gt;<i> &gt; +++ b/usr/iscsi/target.c
+</I>&gt;<i> &gt; @@ -283,6 +283,14 @@ int iscsi_target_create(struct target *t)
+</I>&gt;<i> &gt;  		[ISCSI_PARAM_OFMARKINT] = {0, 2048},
+</I>&gt;<i> &gt;  		[ISCSI_PARAM_IFMARKINT] = {0, 2048},
+</I>&gt;<i> &gt;  		[ISCSI_PARAM_MAXCONNECTIONS] = {0, 1},
+</I>&gt;<i> &gt; +#ifdef ISCSI_RDMA
+</I>&gt;<i> &gt; +		[ISCSI_PARAM_RDMA_EXTENSIONS] = {0, 1},
+</I>&gt;<i> &gt; +#else
+</I>&gt;<i> &gt; +		[ISCSI_PARAM_RDMA_EXTENSIONS] = {0, 0},
+</I>&gt;<i> &gt; +#endif
+</I>&gt;<i> &gt; +		[ISCSI_PARAM_TARGET_RDSL] = {0, 262144},
+</I>&gt;<i> &gt; +		[ISCSI_PARAM_INITIATOR_RDSL] = {0, 262144},
+</I>&gt;<i> &gt; +		[ISCSI_PARAM_MAX_OUTST_PDU] =  {0, 0},  /* not in open-iscsi */
+</I>&gt;<i> &gt;  	};
+</I>&gt;<i> 
+</I>&gt;<i> Can we avoid adding another #ifdef?
+</I>&gt;<i> 
+</I>&gt;<i> I really like to remove the existing #ifdef.
+</I>
+Yes, turns out this ifdef is no longer needed due to the chunk here:
+
+&gt;<i> &gt; diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt;  static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i> &gt;  {
+</I>[..]
+&gt;<i> &gt; @@ -289,6 +289,9 @@ static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i> &gt;  			if (idx == ISCSI_PARAM_MAX_RECV_DLENGTH)
+</I>&gt;<i> &gt;  				idx = ISCSI_PARAM_MAX_XMIT_DLENGTH;
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt; +			if (idx == ISCSI_PARAM_RDMA_EXTENSIONS)
+</I>&gt;<i> &gt; +				is_rdma = 1;
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt;  			if (param_str_to_val(session_keys, idx, value, &amp;val) &lt; 0) {
+</I>&gt;<i> &gt;  				if (conn-&gt;session_param[idx].state
+</I>&gt;<i> &gt;  				    == KEY_STATE_START) {
+</I>&gt;<i> &gt; @@ -335,6 +338,15 @@ static void text_scan_login(struct iscsi_connection *conn)
+</I>&gt;<i> &gt;  			text_key_add(conn, key, &quot;NotUnderstood&quot;);
+</I>&gt;<i> &gt;  	}
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt; +	if (is_rdma) {
+</I>&gt;<i> &gt; +		/* do not try to do digests, not supported in iser */
+</I>&gt;<i> &gt; +		conn-&gt;session_param[ISCSI_PARAM_HDRDGST_EN].val = DIGEST_NONE;
+</I>&gt;<i> &gt; +		conn-&gt;session_param[ISCSI_PARAM_DATADGST_EN].val = DIGEST_NONE;
+</I>&gt;<i> &gt; +	} else {
+</I>&gt;<i> &gt; +		/* do not offer RDMA, initiator must explicitly request */
+</I>&gt;<i> &gt; +		conn-&gt;session_param[ISCSI_PARAM_RDMA_EXTENSIONS].val = 0;
+</I>&gt;<i> &gt; +	}
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt;  out:
+</I>&gt;<i> &gt;  	return;
+</I>&gt;<i> &gt;  }
+</I>
+Now patch is always &quot;= { 0, 1 }&quot;.  But the code in text_scan_login
+ensures that the target will never offer RDMAExtension unless it
+sees the initiator offer it first.  This perhaps isn't exactly
+right, as the spec seems to allow the target to offer it during
+Operational Parameter Negotiation phase.  But doing so would confuse
+initiators that do not recognize the key, so I think it wise to wait
+for the initiator to ask.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001206.html">[Stgt-devel] [PATCH] task data leak
+</A></li>
+	<LI>Next message: <A HREF="001195.html">[Stgt-devel] [PATCH] INQUIRY Additional len size incorrectly	calculated
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1191">[ date ]</a>
+              <a href="thread.html#1191">[ thread ]</a>
+              <a href="subject.html#1191">[ subject ]</a>
+              <a href="author.html#1191">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] fcoe: use new header by default
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fcoe%3A%20use%20new%20header%20by%20default&In-Reply-To=%3C1215721563-12537-2-git-send-email-michaelc%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001760.html">
+   <LINK REL="Next"  HREF="001762.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] fcoe: use new header by default</H1>
+    <B>michaelc at cs.wisc.edu</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fcoe%3A%20use%20new%20header%20by%20default&In-Reply-To=%3C1215721563-12537-2-git-send-email-michaelc%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] fcoe: use new header by default">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Thu Jul 10 22:26:02 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001760.html">[Stgt-devel] fcoe target bug fix and cleanup
+</A></li>
+        <LI>Next message: <A HREF="001762.html">[Stgt-devel] [PATCH 2/2] fcoe: remove older fcoe header code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1761">[ date ]</a>
+              <a href="thread.html#1761">[ thread ]</a>
+              <a href="subject.html#1761">[ subject ]</a>
+              <a href="author.html#1761">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+
+The intel stack which probably most people are going to test with
+uses the new header format. We do not have a way to config old or
+new like is done with scst fcoe target, and I do not really care to
+add much code for that anyways so this just sets the default to the
+new format.
+
+The next patch will remove all the old format code.
+
+Signed-off-by: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+---
+ usr/fcoe/fcoe_if.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usr/fcoe/fcoe_if.c b/usr/fcoe/fcoe_if.c
+index cc61408..68be336 100644
+--- a/usr/fcoe/fcoe_if.c
++++ b/usr/fcoe/fcoe_if.c
+@@ -159,7 +159,7 @@ int fcoe_create_interface(char *ifname)
+ 	}
+ 
+ 	fc = (struct fcoe_softc *)fdev-&gt;drv_priv;
+-	fc-&gt;fcoe_hlen = sizeof(struct fcoe_hdr_old);
++	fc-&gt;fcoe_hlen = sizeof(struct fcoe_hdr);
+ 
+ 	/* todo */
+ 	fdev-&gt;fd_link_status = TRANS_LINK_UP;
+-- 
+1.5.5.1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001760.html">[Stgt-devel] fcoe target bug fix and cleanup
+</A></li>
+	<LI>Next message: <A HREF="001762.html">[Stgt-devel] [PATCH 2/2] fcoe: remove older fcoe header code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1761">[ date ]</a>
+              <a href="thread.html#1761">[ thread ]</a>
+              <a href="subject.html#1761">[ subject ]</a>
+              <a href="author.html#1761">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

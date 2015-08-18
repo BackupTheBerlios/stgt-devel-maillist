@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] track target type
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20track%20target%20type&In-Reply-To=%3C20070225002152.GB9204%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000406.html">
+   <LINK REL="Next"  HREF="000409.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] track target type</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20track%20target%20type&In-Reply-To=%3C20070225002152.GB9204%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] track target type">pw at osc.edu
+       </A><BR>
+    <I>Sun Feb 25 01:21:52 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000406.html">[Stgt-devel] iSCSI target driver works without kernel patches
+</A></li>
+        <LI>Next message: <A HREF="000409.html">[Stgt-devel] [PATCH] pass cdb length
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#408">[ date ]</a>
+              <a href="thread.html#408">[ thread ]</a>
+              <a href="subject.html#408">[ subject ]</a>
+              <a href="author.html#408">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Track target type (block, mmc, etc.).
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+
+ usr/target.c |    1 +
+ usr/target.h |    1 +
+ usr/tgtd.h   |    7 +++++++
+ 3 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/usr/target.c b/usr/target.c
+index c8fc48c..c101b39 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -1253,6 +1253,7 @@ int tgt_target_create(int lld, int tid, char *args, int t_type, int bs_type)
+ 		target-&gt;bdt = tgt_drivers[lld]-&gt;default_bdt;
+ 	}
+ 
++	target-&gt;target_type = t_type;
+ 	target-&gt;target_state = SCSI_TARGET_RUNNING;
+ 	target-&gt;lid = lld;
+ 
+diff --git a/usr/target.h b/usr/target.h
+index 75d6518..aecee7c 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -40,6 +40,7 @@ struct target {
+ 	int lid;
+ 
+ 	enum scsi_target_iotype target_iotype;
++	enum scsi_target_type target_type;
+ 	enum scsi_target_state target_state;
+ 
+ 	struct list_head target_siblings;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 07224ce..eb9dd2e 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -21,6 +21,13 @@ enum scsi_target_iotype {
+ 	SCSI_TARGET_RAWIO,
+ };
+ 
++enum scsi_target_type {
++	SCSI_TARGET_SBC, /* disk */
++	SCSI_TARGET_SSC, /* tape */
++	SCSI_TARGET_MMC, /* cdrom */
++	SCSI_TARGET_OSD, /* object storage device */
++};
++
+ enum scsi_target_state {
+ 	SCSI_TARGET_SUSPENDED = 1,
+ 	SCSI_TARGET_RUNNING,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000406.html">[Stgt-devel] iSCSI target driver works without kernel patches
+</A></li>
+	<LI>Next message: <A HREF="000409.html">[Stgt-devel] [PATCH] pass cdb length
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#408">[ date ]</a>
+              <a href="thread.html#408">[ thread ]</a>
+              <a href="subject.html#408">[ subject ]</a>
+              <a href="author.html#408">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

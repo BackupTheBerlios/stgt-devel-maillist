@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] iser fix initiator dlength
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20iser%20fix%20initiator%20dlength&In-Reply-To=%3Cmailman.17.1331738474.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000934.html">
+   <LINK REL="Next"  HREF="000943.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] iser fix initiator dlength</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20iser%20fix%20initiator%20dlength&In-Reply-To=%3Cmailman.17.1331738474.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] iser fix initiator dlength">pw at osc.edu
+       </A><BR>
+    <I>Sat Aug 11 16:55:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000934.html">[Stgt-devel] RFC: tgt service script
+</A></li>
+        <LI>Next message: <A HREF="000943.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#936">[ date ]</a>
+              <a href="thread.html#936">[ thread ]</a>
+              <a href="subject.html#936">[ subject ]</a>
+              <a href="author.html#936">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Set the iscsi param max_xmit_dlength from the initiator_rdsl param in
+the case of RDMA.  Otherwise the data_rsp_build and r2t_build use the
+wrong size in RDMA mode.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 15c3623..a3fa6af 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -517,6 +517,14 @@ static void login_finish(struct iscsi_connection *conn)
+ 				break;
+ 			}
+ 		}
++		/*
++		 * data_rsp_build and r2t_build use this parameter
++		 * to size packets going to the initiator.  Set it
++		 * here rather than &quot;if rdma&quot; in those functions.
++		 */
++		if (conn-&gt;tp-&gt;rdma)
++			conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val =
++				conn-&gt;session_param[ISCSI_PARAM_INITIATOR_RDSL].val;
+ 		memcpy(conn-&gt;isid, conn-&gt;session-&gt;isid, sizeof(conn-&gt;isid));
+ 		conn-&gt;tsih = conn-&gt;session-&gt;tsih;
+ 
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000934.html">[Stgt-devel] RFC: tgt service script
+</A></li>
+	<LI>Next message: <A HREF="000943.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#936">[ date ]</a>
+              <a href="thread.html#936">[ thread ]</a>
+              <a href="subject.html#936">[ subject ]</a>
+              <a href="author.html#936">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] some simple tgt / iSCSI-SCST performance tests
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20some%20simple%20tgt%20/%20iSCSI-SCST%20performance%20tests&In-Reply-To=%3C4762B0E7.6010207%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001210.html">
+   <LINK REL="Next"  HREF="001212.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] some simple tgt / iSCSI-SCST performance tests</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20some%20simple%20tgt%20/%20iSCSI-SCST%20performance%20tests&In-Reply-To=%3C4762B0E7.6010207%40wpkg.org%3E"
+       TITLE="[Stgt-devel] some simple tgt / iSCSI-SCST performance tests">mangoo at wpkg.org
+       </A><BR>
+    <I>Fri Dec 14 17:35:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001210.html">[Stgt-devel] splashbacks
+</A></li>
+        <LI>Next message: <A HREF="001212.html">[Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1211">[ date ]</a>
+              <a href="thread.html#1211">[ thread ]</a>
+              <a href="subject.html#1211">[ subject ]</a>
+              <a href="author.html#1211">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I made some simple performance tests of tgt and iSCSI-SCST.
+
+
+Reading the array on a target machine to /dev/null gives me ~70 MB/s.
+
+When I read the same array on the initiator with tgt as a target, it 
+gives me ~25 MB/s.
+
+With iSCSI-SCST, I get ~35 MB/s (although I think I maxed out the PCI at 
+this point; on something more modern it could be better).
+
+I dropped caches before each test.
+
+
+Also, CPU load is slightly bigger when tgtd is used as a target, 
+although I didn't do any precise measurements here. With tgt, both CPU 
+usage was more or less settled at the same level; with SCST CPU0 usage 
+jumped up and down by +/- 20%; CPU1 usage for SCST was more or less at 
+the same level.
+It would be nice to know more on the nature of these CPU usage spikes 
+for SCST (and possibly, how it could affect i.e. reading from an 
+encrypted device-mapper volume).
+
+
+tgt-git:
+CPU0: ~30%
+CPU1: ~90%
+
+SCST-r234:
+CPU0: ~30%
+CPU1: ~80%
+
+
+
+Read on the target:
+
+# dd if=/dev/sda of=/dev/null bs=64k count=50000
+50000+0 records in
+50000+0 records out
+3276800000 bytes (3.3 GB) copied, 45.9789 seconds, 71.3 MB/s
+
+
+
+SCST-r234:
+
+# dd if=/dev/sdba of=/dev/null bs=64k count=50000
+50000+0 records in
+50000+0 records out
+3276800000 bytes (3.3 GB) copied, 90.817 seconds, 36.1 MB/s
+
+
+
+tgt-git:
+
+# dd if=/dev/sday of=/dev/null bs=64k count=50000
+50000+0 records in
+50000+0 records out
+3276800000 bytes (3.3 GB) copied, 140.123 seconds, 23.4 MB/s
+
+
+
+tgt-20071014:
+
+# dd if=/dev/sday of=/dev/null bs=64k count=50000
+50000+0 records in
+50000+0 records out
+3276800000 bytes (3.3 GB) copied, 138.754 seconds, 23.6 MB/s
+
+
+
+
+
+BTW, is it possible to do a nullio test with tgt target?
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001210.html">[Stgt-devel] splashbacks
+</A></li>
+	<LI>Next message: <A HREF="001212.html">[Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1211">[ date ]</a>
+              <a href="thread.html#1211">[ thread ]</a>
+              <a href="subject.html#1211">[ subject ]</a>
+              <a href="author.html#1211">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

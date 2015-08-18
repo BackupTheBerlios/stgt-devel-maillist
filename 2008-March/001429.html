@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47CD3E9C.7060404%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001424.html">
+   <LINK REL="Next"  HREF="001431.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47CD3E9C.7060404%40voltaire.com%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">erezz at voltaire.com
+       </A><BR>
+    <I>Tue Mar  4 13:20:44 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001424.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001431.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1429">[ date ]</a>
+              <a href="thread.html#1429">[ thread ]</a>
+              <a href="subject.html#1429">[ subject ]</a>
+              <a href="author.html#1429">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+&gt;<i> Another comment:  there is 10 us between consecutive printfs in this
+</I>&gt;<i> trace.  You're probably not using TSC for GTOD.  It's not a big
+</I>&gt;<i> deal, but be aware that your &quot;with debugging&quot; runs may be
+</I>&gt;<i> significantly slower than without.  Just watch to make sure that the
+</I>&gt;<i> profiling output makes sense.  We hack the kernel in a bad way to
+</I>&gt;<i> get around this on our machines.
+</I>&gt;<i> <A HREF="http://git.osc.edu/?p=linux.git;a=commitdiff;h=e7ff54222523a2ae6816c9ff17ad5a8fa86cd5e1">http://git.osc.edu/?p=linux.git;a=commitdiff;h=e7ff54222523a2ae6816c9ff17ad5a8fa86cd5e1</A>
+</I>&gt;<i>   
+</I>
+What is TSC &amp; GTOD?
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001424.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001431.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1429">[ date ]</a>
+              <a href="thread.html#1429">[ thread ]</a>
+              <a href="subject.html#1429">[ subject ]</a>
+              <a href="author.html#1429">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

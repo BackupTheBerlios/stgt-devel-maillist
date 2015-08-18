@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20Add%20option%20to%20delete%20all%20the%20targets&In-Reply-To=%3C4885C1CD.60700%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001839.html">
+   <LINK REL="Next"  HREF="001840.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/7] Add option to delete all the targets</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20Add%20option%20to%20delete%20all%20the%20targets&In-Reply-To=%3C4885C1CD.60700%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 2/7] Add option to delete all the targets">dorons at voltaire.com
+       </A><BR>
+    <I>Tue Jul 22 13:17:33 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001839.html">[Stgt-devel] [PATCH 1/7] modify Config::General to	Config::General qw(ParseConfig)
+</A></li>
+        <LI>Next message: <A HREF="001840.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1818">[ date ]</a>
+              <a href="thread.html#1818">[ thread ]</a>
+              <a href="subject.html#1818">[ subject ]</a>
+              <a href="author.html#1818">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add -d flag.
+Delete all the targets and backup the current conf file
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ scripts/tgt-admin |   18 ++++++++++++++++++
+ 1 files changed, 18 insertions(+), 0 deletions(-)
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index b013d1d..278e93d 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -27,6 +27,7 @@ tgt-admin [OPTION]...
+ This tool configures tgt targets.
+ 
+   -e, --execute   read $configfile and execute tgtadm commands
++  -d, --delete    delete all the targets
+   -f, --force     don't exit on tgtadm errors
+   -p, --pretend   only print tgtadm options
+   -v, --verbose   increase verbosity (no effect in &quot;pretend&quot; mode)
+@@ -40,12 +41,14 @@ EOF
+ my $param = $ARGV[0];
+ 
+ my $execute = 0;
++my $delete = 0;
+ my $force = 0;
+ my $pretend = 0;
+ my $verbose = 0;
+ my $help = 0;
+ my $result = GetOptions (
+ 	&quot;e|execute&quot; =&gt; \$execute,
++	&quot;d|delete&quot;  =&gt; \$delete,
+ 	&quot;f|force&quot;   =&gt; \$force,
+ 	&quot;p|pretend&quot; =&gt; \$pretend,
+ 	&quot;v|verbose&quot; =&gt; \$verbose,
+@@ -258,6 +261,21 @@ if (($execute == 1) || ($pretend == 1)) {
+ 	&amp;add_targets;
+ 	
+ 	&amp;remove_targets;
++} elsif ($delete == 1) {
++	&delete;
++	%conf = ParseConfig(-ConfigFile =&gt; &quot;$configfile&quot;, -UseApacheInclude =&gt; 1, -IncludeGlob =&gt; 1,);
++	&amp;remove_targets;
+ } else {
+ 	print &quot;No action specified.\n&quot;;
+ }
++
++# Delete all the targets and backup the current conf file
++sub delete {
++	print &quot;deleting targets...\n&quot;;
++	print &quot;a copy of the conf file is on:/etc/tgt/targets.conf.bkp\n&quot;;
++	`mv $configfile /etc/tgt/targets.conf.bkp`;
++	open FILE, &quot;&gt;&quot;, &quot;$configfile&quot; or die $!;
++	print FILE &quot;&lt;target&gt;\n&quot;;
++	print FILE &quot;&lt;/target&gt;\n&quot;;
++	close FILE;
++}
+-- 
+1.5.3.8
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001839.html">[Stgt-devel] [PATCH 1/7] modify Config::General to	Config::General qw(ParseConfig)
+</A></li>
+	<LI>Next message: <A HREF="001840.html">[Stgt-devel] [PATCH 2/7] Add option to delete all the targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1818">[ date ]</a>
+              <a href="thread.html#1818">[ thread ]</a>
+              <a href="subject.html#1818">[ subject ]</a>
+              <a href="author.html#1818">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

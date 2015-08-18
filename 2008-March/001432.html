@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47CEAB3B.80107%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001426.html">
+   <LINK REL="Next"  HREF="001424.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47CEAB3B.80107%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">erezz at Voltaire.COM
+       </A><BR>
+    <I>Wed Mar  5 15:16:27 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001426.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001424.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1432">[ date ]</a>
+              <a href="thread.html#1432">[ thread ]</a>
+              <a href="subject.html#1432">[ subject ]</a>
+              <a href="author.html#1432">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+&gt;&gt;<i> It seems that bs work takes a lot of time. For example: if I run
+</I>&gt;&gt;<i> disktest on the same device directly from the target machine (i.e. tgt
+</I>&gt;&gt;<i> is not involved) in the following way:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> disktest -PT -T100 -h1 -K64 -B256k -ID /dev/sdc -r
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I get ~13000 iops -&gt; each IO takes ~77 us (compared to 130 us only for
+</I>&gt;&gt;<i> bs work with tgt). I'm not familiar with the bs code in tgt, so I'm not
+</I>&gt;&gt;<i> sure what should be done here.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> The problem is that Linux lacks a nice event notification
+</I>&gt;<i> mechanism. The main thread uses epoll to wait on events. I/O threads
+</I>&gt;<i> (pthread) use pipe to notify the main thread of I/O completion. It's
+</I>&gt;<i> not effective at all.
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>
+If I understand correctly, it sounds like a major problem in stgt (that
+also affects other protocols - not only iSCSI). When a SCSI cmd is done,
+it takes time until the iSCSI (or any other protocol) layer is notified,
+correct? Is there a plan or ideas on how to solve that?
+
+BTW - I don't see any connection between the problem that you describe
+and the problem that SCSI executes a single command at a time (host_busy
+&lt;= 1). As I said, I don't think that the problem is sgp_dd (that runs
+with thr=8).
+
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001426.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001424.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1432">[ date ]</a>
+              <a href="thread.html#1432">[ thread ]</a>
+              <a href="subject.html#1432">[ subject ]</a>
+              <a href="author.html#1432">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

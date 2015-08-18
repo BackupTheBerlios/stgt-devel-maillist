@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%5D%20iscsi%3A%20test%20tgtadm%20ret%20values%20in%0A%09tgt-setup-lun&In-Reply-To=%3C47823FF2.9050101%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001272.html">
+   <LINK REL="Next"  HREF="001274.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%5D%20iscsi%3A%20test%20tgtadm%20ret%20values%20in%0A%09tgt-setup-lun&In-Reply-To=%3C47823FF2.9050101%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun">erezz at voltaire.com
+       </A><BR>
+    <I>Mon Jan  7 16:06:26 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001272.html">[Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001274.html">[Stgt-devel] [PATCH 4/4] iscsi: do not create target if it already	exists
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1273">[ date ]</a>
+              <a href="thread.html#1273">[ thread ]</a>
+              <a href="subject.html#1273">[ subject ]</a>
+              <a href="author.html#1273">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>If tgtadm fails, we need to rollback (i.e. delete the
+target).
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ usr/scripts/tgt-setup-lun |   37 +++++++++++++++++++++++++++++++++++++
+ 1 files changed, 37 insertions(+), 0 deletions(-)
+ mode change 100644 =&gt; 100755 usr/scripts/tgt-setup-lun
+
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+old mode 100644
+new mode 100755
+index d63a793..df5418a
+--- a/usr/scripts/tgt-setup-lun
++++ b/usr/scripts/tgt-setup-lun
+@@ -103,6 +103,19 @@ find_vacant_lun()
+ 	return $next_vacant_lun
+ }
+ 
++err_exit()
++{
++	echo &quot;Deleting the new target&quot;
++	tgtadm --lld iscsi --op delete --mode target --tid $tid
++	res=$?
++
++	if [ $res -ne 0 ]; then
++		echo &quot;Error: could not delete a target&quot;
++	fi
++
++	exit 1
++}
++
+ while getopts &quot;d:n:&quot; opt
+ do
+ 	case ${opt} in
+@@ -137,6 +150,12 @@ tid=$?
+ # Create the new target
+ echo &quot;Creating the new target ($tgt_name)&quot;
+ tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++res=$?
++
++if [ $res -ne 0 ]; then
++	echo &quot;Error: could not create a target&quot;
++	exit 1
++fi
+ 
+ find_vacant_lun $tid
+ lun=$?
+@@ -144,6 +163,12 @@ lun=$?
+ # Add a logical unit to the target
+ echo &quot;Adding a logical unit ($dev) to the target&quot;
+ tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++res=$?
++
++if [ $res -ne 0 ]; then
++	echo &quot;Error: could not add a logical unit to the target&quot;
++	err_exit
++fi
+ 
+ # Define which initiators can use this target
+ if test &quot;$initiators&quot; ; then
+@@ -151,9 +176,21 @@ if test &quot;$initiators&quot; ; then
+ 	echo &quot;Accepting connections only from $initiators&quot;
+ 	for initiator in $initiators; do
+ 		tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator
++		res=$?
++
++		if [ $res -ne 0 ]; then
++			echo &quot;Error: could not assign an initiator to the target&quot;
++			err_exit
++		fi
+ 	done
+ else
+ 	# Allow access for everyone
+ 	echo &quot;Accepting connections from every initiator&quot;
+ 	tgtadm --lld iscsi --op bind --mode target --tid $tid -I ALL
++	res=$?
++
++	if [ $res -ne 0 ]; then
++		echo &quot;Error: could not assign initiators to the target&quot;
++		err_exit
++	fi
+ fi
+-- 
+1.5.3.7
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001272.html">[Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001274.html">[Stgt-devel] [PATCH 4/4] iscsi: do not create target if it already	exists
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1273">[ date ]</a>
+              <a href="thread.html#1273">[ thread ]</a>
+              <a href="subject.html#1273">[ subject ]</a>
+              <a href="author.html#1273">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

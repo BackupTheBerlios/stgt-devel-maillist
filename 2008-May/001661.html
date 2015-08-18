@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%20spc%201/1%5D%20RESEND%20Add%20service%20action%20framework&In-Reply-To=%3C20080526212547Z.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001659.html">
+   <LINK REL="Next"  HREF="001669.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%20spc%201/1%5D%20RESEND%20Add%20service%20action%20framework&In-Reply-To=%3C20080526212547Z.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon May 26 14:36:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001659.html">[Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework
+</A></li>
+        <LI>Next message: <A HREF="001669.html">[Stgt-devel] [PATCH 1/2] driver: fix array bounds checking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1661">[ date ]</a>
+              <a href="thread.html#1661">[ thread ]</a>
+              <a href="subject.html#1661">[ subject ]</a>
+              <a href="author.html#1661">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 26 May 2008 15:10:13 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> Find attached a patch that adds a &quot;service action&quot; framework to stgt
+</I>&gt;<i> and as an example
+</I>&gt;<i> adds MaintenanceIn/ReportSupportedOpcodes (0xa3/0x0c).
+</I>&gt;<i> 
+</I>&gt;<i> Patch is also attached in gzip format if gmail decides to mangle the
+</I>&gt;<i> pasted text.
+</I>&gt;<i> 
+</I>&gt;<i> I have reworked the patch and implemented the changes suggested.
+</I>&gt;<i> 
+</I>&gt;<i> regards
+</I>&gt;<i> ronnie sahlberg
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt;From 58bbd3fa1ee8f05ed82071c2939fd48e507797a8 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> Date: Mon, 26 May 2008 14:55:50 +1000
+</I>&gt;<i> Subject: [PATCH 1/1] add infrastructure to handle commands taking
+</I>&gt;<i> service actions
+</I>&gt;<i> 
+</I>&gt;<i> implement Maintenance / ReportAllSupportedOpcodes as an example
+</I>&gt;<i> 
+</I>&gt;<i> Expand device_type_operations to also include a list of possible service
+</I>&gt;<i> actions for this cdb. We need to know how many/what service actions
+</I>&gt;<i> a certain cdb can take in order to be able to report
+</I>&gt;<i> SupportedOpcodes properly. (MaintIn/service action 0x0c)
+</I>&gt;<i> 
+</I>&gt;<i> Implement MaintenanceIn and implement service action 0x0c for this command.
+</I>&gt;<i> the provided infrastructure should make it easier to add other MaintIn
+</I>&gt;<i> service actions, of which there are quite a few.
+</I>&gt;<i> 
+</I>&gt;<i> there are many other opcodes that also take service actions and which
+</I>&gt;<i> could build on this framework:
+</I>&gt;<i> 0xa4 MaintOut
+</I>&gt;<i> 0x7f: variable length cdb
+</I>&gt;<i> 0x5e/0x5f persistent reservarion in/out
+</I>&gt;<i> 0xab
+</I>&gt;<i> 0x9e
+</I>&gt;<i> 0x9f
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/sbc.c  |    2 +-
+</I>&gt;<i>  usr/scc.c  |    2 +-
+</I>&gt;<i>  usr/scsi.c |   10 ++++
+</I>&gt;<i>  usr/smc.c  |    2 +-
+</I>&gt;<i>  usr/spc.c  |  170 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i>  usr/spc.h  |    2 +
+</I>&gt;<i>  usr/tgtd.h |    8 +++
+</I>&gt;<i>  7 files changed, 193 insertions(+), 3 deletions(-)
+</I>
+Looks great, applied.
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001659.html">[Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework
+</A></li>
+	<LI>Next message: <A HREF="001669.html">[Stgt-devel] [PATCH 1/2] driver: fix array bounds checking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1661">[ date ]</a>
+              <a href="thread.html#1661">[ thread ]</a>
+              <a href="subject.html#1661">[ subject ]</a>
+              <a href="author.html#1661">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

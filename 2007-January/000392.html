@@ -1,0 +1,324 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C1169493719.2784.44.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000391.html">
+   <LINK REL="Next"  HREF="000394.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C1169493719.2784.44.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Mon Jan 22 20:21:59 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000391.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000394.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#392">[ date ]</a>
+              <a href="thread.html#392">[ thread ]</a>
+              <a href="subject.html#392">[ subject ]</a>
+              <a href="author.html#392">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 2007-01-22 at 14:08 -0500, Pete Wyckoff wrote:
+
+&lt;snip&gt;
+
+&gt;<i> +
+</I>&gt;<i> +/*
+</I>&gt;<i> + * OSD-specific inquiry.
+</I>&gt;<i> + */
+</I>&gt;<i> +int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+</I>&gt;<i> +                uint8_t *scb, uint8_t *data, int *len)
+</I>
+
+where this osd_inquiry get called?
+
+&gt;<i> +{
+</I>&gt;<i> +	int result = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +
+</I>&gt;<i> +	/* EVPD means need a page code */
+</I>&gt;<i> +	if ((scb[1] &amp; 0x3) == 0 &amp;&amp; scb[2] != 0)
+</I>&gt;<i> +		return result;
+</I>&gt;<i> +
+</I>&gt;<i> +	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+</I>&gt;<i> +
+</I>&gt;<i> +	data[0] = TYPE_OSD;
+</I>&gt;<i> +	if (!dev)
+</I>&gt;<i> +		data[0] = TYPE_NO_LUN;
+</I>&gt;<i> +
+</I>&gt;<i> +	if ((scb[1] &amp; 0x1) == 0) {
+</I>&gt;<i> +		/* evpd == 0, standard inquiry */
+</I>&gt;<i> +		dprintf(&quot;standard inquiry\n&quot;);
+</I>&gt;<i> +		data[2] = 5;  /* modern version */
+</I>&gt;<i> +		data[3] = 0x02;  /* modern response format */
+</I>&gt;<i> +		data[7] = 0x02;  /* support command queueing */
+</I>&gt;<i> +		memset(data + 8, 0x20, 28);
+</I>&gt;<i> +		memcpy(data + 8,
+</I>&gt;<i> +		       VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
+</I>&gt;<i> +		memcpy(data + 16,
+</I>&gt;<i> +		       PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
+</I>&gt;<i> +		memcpy(data + 32,
+</I>&gt;<i> +		       PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
+</I>&gt;<i> +		*len = 36;
+</I>&gt;<i> +		if (dev) {
+</I>&gt;<i> +			data[58] = 0x03;
+</I>&gt;<i> +			data[59] = 0x40;  /* osd */
+</I>&gt;<i> +			data[60] = 0x09;
+</I>&gt;<i> +			data[61] = 0x60;  /* iscsi */
+</I>&gt;<i> +			data[62] = 0x03;
+</I>&gt;<i> +			data[63] = 0x00;  /* spc3 */
+</I>&gt;<i> +			*len = 64;
+</I>&gt;<i> +		}
+</I>&gt;<i> +		data[4] = *len - 5;  /* additional length */
+</I>&gt;<i> +		result = SAM_STAT_GOOD;
+</I>&gt;<i> +	} else {
+</I>&gt;<i> +		/* request particular page code */
+</I>&gt;<i> +		dprintf(&quot;page %x\n&quot;, scb[2]);
+</I>&gt;<i> +		if (!dev)
+</I>&gt;<i> +			return result;
+</I>&gt;<i> +		data[1] = scb[2];
+</I>&gt;<i> +		if (scb[2] == 0x0) {
+</I>&gt;<i> +			/* supported VPD pages */
+</I>&gt;<i> +			data[3] = 3;
+</I>&gt;<i> +			data[4] = 0x0;
+</I>&gt;<i> +			data[5] = 0x80;
+</I>&gt;<i> +			data[6] = 0x83;
+</I>&gt;<i> +			*len = 7;
+</I>&gt;<i> +			result = SAM_STAT_GOOD;
+</I>&gt;<i> +		} else if (scb[2] == 0x80) {
+</I>&gt;<i> +			/* unit serial number &quot;    &quot; */
+</I>&gt;<i> +			data[3] = 4;
+</I>&gt;<i> +			memset(data + 4, 0x20, 4);
+</I>&gt;<i> +			*len = 8;
+</I>&gt;<i> +			result = SAM_STAT_GOOD;
+</I>&gt;<i> +		} else if (scb[2] == 0x83) {
+</I>&gt;<i> +			/* device identification */
+</I>&gt;<i> +			data[3] = SCSI_ID_LEN + 4;
+</I>&gt;<i> +			data[4] = 0x1;
+</I>&gt;<i> +			data[5] = 0x1;
+</I>&gt;<i> +			data[7] = SCSI_ID_LEN;
+</I>&gt;<i> +			if (dev)
+</I>&gt;<i> +				memcpy(data + 8, dev-&gt;scsi_id, SCSI_ID_LEN);
+</I>&gt;<i> +			*len = SCSI_ID_LEN + 8;
+</I>&gt;<i> +			result = SAM_STAT_GOOD;
+</I>&gt;<i> +		}
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	if (result != SAM_STAT_GOOD)
+</I>&gt;<i> +		goto err;
+</I>&gt;<i> +
+</I>&gt;<i> +	*len = min_t(int, *len, scb[4]);
+</I>&gt;<i> +
+</I>&gt;<i> +	return SAM_STAT_GOOD;
+</I>&gt;<i> +
+</I>&gt;<i> +err:
+</I>&gt;<i> +	*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+</I>&gt;<i> +				0x24, 0);
+</I>&gt;<i> +	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +int osd_cmd_perform(uint8_t *cdb, int *len, uint32_t datalen,
+</I>&gt;<i> +                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+</I>&gt;<i> +                    uint64_t *offset, struct tgt_device *dev, int *async,
+</I>&gt;<i> +                    void *key, bkio_submit_t *submit)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int ret = SAM_STAT_GOOD;
+</I>&gt;<i> +	uint8_t *data = NULL;
+</I>&gt;<i> +	uint16_t action;
+</I>&gt;<i> +
+</I>&gt;<i> +	switch (cdb[0]) {
+</I>&gt;<i> +	/* there are other optional non-varlen commands */
+</I>&gt;<i> +	case VARLEN_CDB:
+</I>&gt;<i> +		dprintf(&quot;cdb[0] %x datalen %u\n&quot;, cdb[0], datalen);
+</I>&gt;<i> +		if (cdb[7] != 200-8)
+</I>&gt;<i> +			eprintf(&quot;request size %d wrong, should be 200\n&quot;,
+</I>&gt;<i> +			        cdb[7]+8);
+</I>&gt;<i> +
+</I>&gt;<i> +		action = (cdb[8] &lt;&lt; 8) | cdb[9];
+</I>&gt;<i> +
+</I>&gt;<i> +		switch (action) {
+</I>&gt;<i> +		case OSD_APPEND:
+</I>&gt;<i> +		case OSD_CREATE:
+</I>&gt;<i> +		case OSD_CREATE_AND_WRITE:
+</I>&gt;<i> +		case OSD_CREATE_COLLECTION:
+</I>&gt;<i> +		case OSD_CREATE_PARTITION:
+</I>&gt;<i> +		case OSD_FLUSH:
+</I>&gt;<i> +		case OSD_FLUSH_COLLECTION:
+</I>&gt;<i> +		case OSD_FLUSH_OSD:
+</I>&gt;<i> +		case OSD_FLUSH_PARTITION:
+</I>&gt;<i> +		case OSD_FORMAT_OSD:
+</I>&gt;<i> +		case OSD_GET_ATTRIBUTES:
+</I>&gt;<i> +		case OSD_GET_MEMBER_ATTRIBUTES:
+</I>&gt;<i> +		case OSD_LIST:
+</I>&gt;<i> +		case OSD_LIST_COLLECTION:
+</I>&gt;<i> +		case OSD_PERFORM_SCSI_COMMAND:
+</I>&gt;<i> +		case OSD_PERFORM_TASK_MGMT_FUNC:
+</I>&gt;<i> +		case OSD_QUERY:
+</I>&gt;<i> +		case OSD_READ:
+</I>&gt;<i> +		case OSD_REMOVE:
+</I>&gt;<i> +		case OSD_REMOVE_COLLECTION:
+</I>&gt;<i> +		case OSD_REMOVE_MEMBER_OBJECTS:
+</I>&gt;<i> +		case OSD_REMOVE_PARTITION:
+</I>&gt;<i> +		case OSD_SET_ATTRIBUTES:
+</I>&gt;<i> +		case OSD_SET_KEY:
+</I>&gt;<i> +		case OSD_SET_MASTER_KEY:
+</I>&gt;<i> +		case OSD_SET_MEMBER_ATTRIBUTES:
+</I>&gt;<i> +		case OSD_WRITE:
+</I>&gt;<i> +			ret = submit(dev, cdb, *rw, datalen, uaddr, *offset,
+</I>&gt;<i> +			             async, key);
+</I>&gt;<i> +			if (ret == SAM_STAT_GOOD) {
+</I>&gt;<i> +				*len = datalen;
+</I>&gt;<i> +			} else {
+</I>&gt;<i> +				data = get_zeroed_page();
+</I>&gt;<i> +				*len = sense_data_build(data, 0x70,
+</I>&gt;<i> +				                        ILLEGAL_REQUEST, 0x25,
+</I>&gt;<i> +							0);
+</I>&gt;<i> +			}
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		default:
+</I>&gt;<i> +			eprintf(&quot;unknown service action 0x%04x\n&quot;, action);
+</I>&gt;<i> +		}
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	default:
+</I>&gt;<i> +		eprintf(&quot;unknown command %x %u\n&quot;, cdb[0], datalen);
+</I>&gt;<i> +		*len = 0;
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	if (data)
+</I>&gt;<i> +		*uaddr = (unsigned long) data;
+</I>&gt;<i> +
+</I>&gt;<i> +	return ret;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> diff --git a/usr/scsi.c b/usr/scsi.c
+</I>&gt;<i> index 277924c..d102f5e 100644
+</I>&gt;<i> --- a/usr/scsi.c
+</I>&gt;<i> +++ b/usr/scsi.c
+</I>&gt;<i> @@ -357,6 +357,10 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+</I>&gt;<i>  		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+</I>&gt;<i>  		                           try_map, offset, dev, async, key,
+</I>&gt;<i>  					   submit);
+</I>&gt;<i> +	else if (target_type == SCSI_TARGET_OSD)
+</I>&gt;<i> +		result = osd_cmd_perform(scb, len, datalen, uaddr, rw,
+</I>&gt;<i> +		                         try_map, offset, dev, async, key,
+</I>&gt;<i> +					 submit);
+</I>&gt;<i>  	else
+</I>&gt;<i>  		eprintf(&quot;unknown target type %d\n&quot;, target_type);
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/scsi.h b/usr/scsi.h
+</I>&gt;<i> index 154508d..20aa2a8 100644
+</I>&gt;<i> --- a/usr/scsi.h
+</I>&gt;<i> +++ b/usr/scsi.h
+</I>&gt;<i> @@ -69,6 +69,7 @@
+</I>&gt;<i>  #define MODE_SENSE_10         0x5a
+</I>&gt;<i>  #define PERSISTENT_RESERVE_IN 0x5e
+</I>&gt;<i>  #define PERSISTENT_RESERVE_OUT 0x5f
+</I>&gt;<i> +#define VARLEN_CDB            0x7f
+</I>&gt;<i>  #define REPORT_LUNS           0xa0
+</I>&gt;<i>  #define MOVE_MEDIUM           0xa5
+</I>&gt;<i>  #define EXCHANGE_MEDIUM       0xa6
+</I>&gt;<i> @@ -87,6 +88,35 @@
+</I>&gt;<i>  #define SERVICE_ACTION_IN     0x9e
+</I>&gt;<i>  #define	SAI_READ_CAPACITY_16  0x10
+</I>&gt;<i>  
+</I>&gt;<i> +/* varlen cdb service actions for OSD-2 (before SNIA changes 17 jan 07) */
+</I>&gt;<i> +#define OSD_APPEND			0x8807
+</I>&gt;<i> +#define OSD_CREATE			0x8802
+</I>&gt;<i> +#define OSD_CREATE_AND_WRITE		0x8812
+</I>&gt;<i> +#define OSD_CREATE_COLLECTION		0x8815
+</I>&gt;<i> +#define OSD_CREATE_PARTITION		0x880b
+</I>&gt;<i> +#define OSD_FLUSH			0x8808
+</I>&gt;<i> +#define OSD_FLUSH_COLLECTION		0x881a
+</I>&gt;<i> +#define OSD_FLUSH_OSD			0x881c
+</I>&gt;<i> +#define OSD_FLUSH_PARTITION		0x881b
+</I>&gt;<i> +#define OSD_FORMAT_OSD			0x8801
+</I>&gt;<i> +#define OSD_GET_ATTRIBUTES		0x880e
+</I>&gt;<i> +#define OSD_GET_MEMBER_ATTRIBUTES	0x8822
+</I>&gt;<i> +#define OSD_LIST			0x8803
+</I>&gt;<i> +#define OSD_LIST_COLLECTION		0x8817
+</I>&gt;<i> +#define OSD_PERFORM_SCSI_COMMAND	0x8f7e
+</I>&gt;<i> +#define OSD_PERFORM_TASK_MGMT_FUNC	0x8f7f
+</I>&gt;<i> +#define OSD_QUERY			0x8820
+</I>&gt;<i> +#define OSD_READ			0x8805
+</I>&gt;<i> +#define OSD_REMOVE			0x880a
+</I>&gt;<i> +#define OSD_REMOVE_COLLECTION		0x8816
+</I>&gt;<i> +#define OSD_REMOVE_MEMBER_OBJECTS	0x8821
+</I>&gt;<i> +#define OSD_REMOVE_PARTITION		0x880c
+</I>&gt;<i> +#define OSD_SET_ATTRIBUTES		0x880f
+</I>&gt;<i> +#define OSD_SET_KEY			0x8818
+</I>&gt;<i> +#define OSD_SET_MASTER_KEY		0x8819
+</I>&gt;<i> +#define OSD_SET_MEMBER_ATTRIBUTES	0x8823
+</I>&gt;<i> +#define OSD_WRITE			0x8806
+</I>&gt;<i> +
+</I>&gt;<i>  #define SAM_STAT_GOOD            0x00
+</I>&gt;<i>  #define SAM_STAT_CHECK_CONDITION 0x02
+</I>&gt;<i>  #define SAM_STAT_CONDITION_MET   0x04
+</I>&gt;<i> @@ -127,6 +157,7 @@
+</I>&gt;<i>  #define TYPE_RAID           0x0c
+</I>&gt;<i>  #define TYPE_ENCLOSURE      0x0d
+</I>&gt;<i>  #define TYPE_RBC	    0x0e
+</I>&gt;<i> +#define TYPE_OSD            0x11
+</I>&gt;<i>  #define TYPE_NO_LUN         0x7f
+</I>&gt;<i>  
+</I>&gt;<i>  #define	MSG_SIMPLE_TAG	0x20
+</I>&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;<i> index 262dc9c..3b75da3 100644
+</I>&gt;<i> --- a/usr/tgtd.h
+</I>&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;<i> @@ -125,6 +125,12 @@ int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+</I>&gt;<i>                        unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+</I>&gt;<i>  		      uint64_t *offset, struct tgt_device *dev, int *async,
+</I>&gt;<i>  		      void *key, bkio_submit_t *submit);
+</I>&gt;<i> +int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+</I>&gt;<i> +                uint8_t *scb, uint8_t *data, int *len);
+</I>&gt;<i> +int osd_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+</I>&gt;<i> +                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+</I>&gt;<i> +                    uint64_t *offset, struct tgt_device *dev, int *async,
+</I>&gt;<i> +                    void *key, bkio_submit_t *submit);
+</I>&gt;<i>  
+</I>&gt;<i>  extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+</I>&gt;<i>  			    uint8_t ascode, uint8_t ascodeq);
+</I>-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000391.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000394.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#392">[ date ]</a>
+              <a href="thread.html#392">[ thread ]</a>
+              <a href="subject.html#392">[ subject ]</a>
+              <a href="author.html#392">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,506 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20RFC%20%5BPATCH%5D%20Implement%20PERSISTENT%20RESERVE%20IN/OUT&In-Reply-To=%3Cc9a3e4540808192227m7b5624c0v7848a47fd7bd3540%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002037.html">
+   <LINK REL="Next"  HREF="002039.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20RFC%20%5BPATCH%5D%20Implement%20PERSISTENT%20RESERVE%20IN/OUT&In-Reply-To=%3Cc9a3e4540808192227m7b5624c0v7848a47fd7bd3540%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Wed Aug 20 07:27:07 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002037.html">[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+</A></li>
+        <LI>Next message: <A HREF="002039.html">[Stgt-devel] Rolex, Rado, Patek Philippe,  Omegga, Gucci
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2038">[ date ]</a>
+              <a href="thread.html#2038">[ thread ]</a>
+              <a href="subject.html#2038">[ subject ]</a>
+              <a href="author.html#2038">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mark,
+
+I played a little with persistent reservations a long time ago for a
+different project.
+
+If you download the tarball for ctdb and build it
+<A HREF="http://ctdb.samba.org/packages/redhat/RHEL5/">http://ctdb.samba.org/packages/redhat/RHEL5/</A>
+
+it will build a command called 'scsi_io'
+
+With this command you can issue many different persistent reservation
+calls to a device and it will (mostly) print the data you get back in
+a very nice and easy
+to read format.
+It might be useful.
+
+
+regards
+ronnie sahlberg
+
+
+
+On Wed, Aug 20, 2008 at 3:23 PM, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+&gt;<i> On Wed, Aug 20, 2008 at 3:18 PM, ronnie sahlberg
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i> Hi Mark
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Just one suggestion.
+</I>&gt;&gt;<i> These two commands take service actions, and are thus reported in
+</I>&gt;&gt;<i> &quot;ReportSupportedOperactionCodes&quot; with one entry for each
+</I>&gt;&gt;<i> opcode/service_action combination.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Please have a look at how I implemented service actions by looking at
+</I>&gt;&gt;<i> the maint_in_service_actions example :
+</I>&gt;&gt;<i> sbc.c:          {spc_maint_in, maint_in_service_actions,},
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> If you add a similar structure for your service actions it means that
+</I>&gt;&gt;<i> ReportedSupportedOperationCodes will return correct
+</I>&gt;&gt;<i> data for your PersistentReservation opcode.
+</I>&gt;<i>
+</I>&gt;<i> Many thanks.
+</I>&gt;<i>
+</I>&gt;<i> I'll check it out.
+</I>&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> regards
+</I>&gt;&gt;<i> ronnie sahlberg
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> On Wed, Aug 20, 2008 at 3:01 PM, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i> Apologies for sending as an attachment... gmail and all.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> This is an initial attempt to implement PERSISTENT RESERVE IN and
+</I>&gt;&gt;&gt;<i> PERSISTENT RESERVE OUT.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Currently only READ KEY service action will actually return anything.
+</I>&gt;&gt;&gt;<i> It returns a hard-coded 'ABC1234'.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> This post is a request for comment before I get too far into coding effort.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> # lsscsi -g
+</I>&gt;&gt;&gt;<i> [3:0:0:0]    disk    USB-HS   HTS726060M9AT00  0.01  /dev/sda  /dev/sg0
+</I>&gt;&gt;&gt;<i> [7:0:0:0]    storage IET      Controller       0001  -         /dev/sg1
+</I>&gt;&gt;&gt;<i> [7:0:0:1]    disk    QUANTUM  HD100            0010  /dev/sdb  /dev/sg2
+</I>&gt;&gt;&gt;<i> [7:0:0:2]    tape    QUANTUM  DLT6000          0010  /dev/st0  /dev/sg3
+</I>&gt;&gt;&gt;<i> [7:0:0:3]    tape    QUANTUM  DLT6000          0010  /dev/st1  /dev/sg4
+</I>&gt;&gt;&gt;<i> [7:0:0:4]    tape    QUANTUM  DLT6000          0010  /dev/st2  /dev/sg5
+</I>&gt;&gt;&gt;<i> [7:0:0:5]    mediumx STK      L700             0010  -         /dev/sg6
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> # sg_persist -i /dev/sg3
+</I>&gt;&gt;&gt;&gt;&gt;<i> No service action given; assume Persistent Reservations In command
+</I>&gt;&gt;&gt;&gt;&gt;<i> with Read Keys service action
+</I>&gt;&gt;&gt;<i>  QUANTUM  DLT6000  0010
+</I>&gt;&gt;&gt;<i>  Peripheral device type: tape
+</I>&gt;&gt;&gt;<i>  PR generation=0x0, 4 registered reservation keys follow:
+</I>&gt;&gt;&gt;<i>    0x4142433132333400
+</I>&gt;&gt;&gt;<i>    0x0
+</I>&gt;&gt;&gt;<i>    0x0
+</I>&gt;&gt;&gt;<i>    0x0
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> I'll include in-line for viewing pleasure :)
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> [PATCH 1/2]
+</I>&gt;&gt;&gt;<i> From 11ad9ee209708f51bd2884598d309b1e7079cdce Mon Sep 17 00:00:00 2001
+</I>&gt;&gt;&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;&gt;&gt;<i> Date: Wed, 20 Aug 2008 14:42:27 +1000
+</I>&gt;&gt;&gt;<i> Subject: RFC - Implement PERSISTENT RESERVE IN/OUT
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Implement service action 'READ KEY' which returns
+</I>&gt;&gt;&gt;<i> a hard-coded string 'ABC1234'
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;&gt;&gt;<i> ---
+</I>&gt;&gt;&gt;<i>  usr/scsi.h |    5 ++
+</I>&gt;&gt;&gt;<i>  usr/spc.c  |  231 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;&gt;&gt;<i>  usr/spc.h  |    2 +
+</I>&gt;&gt;&gt;<i>  usr/tgtd.h |   13 ++++
+</I>&gt;&gt;&gt;<i>  4 files changed, 251 insertions(+), 0 deletions(-)
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> diff --git a/usr/scsi.h b/usr/scsi.h
+</I>&gt;&gt;&gt;<i> index 84fadff..a9481a1 100644
+</I>&gt;&gt;&gt;<i> --- a/usr/scsi.h
+</I>&gt;&gt;&gt;<i> +++ b/usr/scsi.h
+</I>&gt;&gt;&gt;<i> @@ -208,6 +208,11 @@
+</I>&gt;&gt;&gt;<i>  #define ASC_POSITION_PAST_BOM                  0x3b0c
+</I>&gt;&gt;&gt;<i>  #define ASC_MEDIUM_REMOVAL_PREVENTED           0x5302
+</I>&gt;&gt;&gt;<i>  #define ASC_BAD_MICROCODE_DETECTED             0x8283
+</I>&gt;&gt;&gt;<i> +#define ASC_INSUFFICENT_RESERVE_RESOURCE       0x5502
+</I>&gt;&gt;&gt;<i> +#define ASC_INSUFFICENT_RESOURCE               0x5503
+</I>&gt;&gt;&gt;<i> +#define ASC_INSUFFICENT_REGISTRAT_RESOURCE     0x5504
+</I>&gt;&gt;&gt;<i> +#define ASC_INSUFFICENT_AC_RESOURCE            0x5505
+</I>&gt;&gt;&gt;<i> +#define ASC_AUX_MEMORY_OUT_OF_SPACE            0x5506
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>  /* Key 6: Unit Attention */
+</I>&gt;&gt;&gt;<i>  #define ASC_NOT_READY_TO_TRANSITION            0x2800
+</I>&gt;&gt;&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;&gt;&gt;<i> index bd2c975..cc088bf 100644
+</I>&gt;&gt;&gt;<i> --- a/usr/spc.c
+</I>&gt;&gt;&gt;<i> +++ b/usr/spc.c
+</I>&gt;&gt;&gt;<i> @@ -880,6 +880,237 @@ void dump_cdb(struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i>        }
+</I>&gt;&gt;&gt;<i>  }
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> +/**
+</I>&gt;&gt;&gt;<i> + * SCSI Persistent Reservation
+</I>&gt;&gt;&gt;<i> + *
+</I>&gt;&gt;&gt;<i> + * Reference: spc4r16 Ch 5.7
+</I>&gt;&gt;&gt;<i> + *
+</I>&gt;&gt;&gt;<i> + * Interesting points:
+</I>&gt;&gt;&gt;<i> + *  - Persistent reservations are not reset by hard reset, lu reset ot I_T loss
+</I>&gt;&gt;&gt;<i> + *  - Optionally, may be retained when power to target is lost
+</I>&gt;&gt;&gt;<i> + */
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +/**
+</I>&gt;&gt;&gt;<i> + * PERSISTENT RESERVE IN - 5Eh
+</I>&gt;&gt;&gt;<i> + * Ref: 6.13
+</I>&gt;&gt;&gt;<i> + *
+</I>&gt;&gt;&gt;<i> + */
+</I>&gt;&gt;&gt;<i> +#define PR_IN_READ_KEYS 0
+</I>&gt;&gt;&gt;<i> +#define PR_IN_READ_RESERVATION 1
+</I>&gt;&gt;&gt;<i> +#define PR_IN_REPORT_CAPABILITIES 2
+</I>&gt;&gt;&gt;<i> +#define PR_IN_READ_FULL_STATUS 3
+</I>&gt;&gt;&gt;<i> +static int spc_pr_read_keys(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       uint8_t *buf;
+</I>&gt;&gt;&gt;<i> +       int len;
+</I>&gt;&gt;&gt;<i> +       int cdb_alloc_len;
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       cdb_alloc_len = ((cmd-&gt;scb[7] &amp; 0xff) &lt;&lt; 8) | (cmd-&gt;scb[8] &amp; 0xff);
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       buf = scsi_get_in_buffer(cmd);
+</I>&gt;&gt;&gt;<i> +       len = sizeof(cmd-&gt;dev-&gt;pr.pr_key);
+</I>&gt;&gt;&gt;<i> +       memset(buf, 0, len + 8);
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;Buf: %p, len: %d, cdb_alloc_len: %d\n&quot;,
+</I>&gt;&gt;&gt;<i> +                        buf, len, cdb_alloc_len);
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       buf[0] = (pr-&gt;PRgeneration &gt;&gt; 24) &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[1] = (pr-&gt;PRgeneration &gt;&gt; 16) &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[2] = (pr-&gt;PRgeneration &gt;&gt;  8) &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[3] = pr-&gt;PRgeneration &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[4] = (len &gt;&gt; 24) &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[5] = (len &gt;&gt; 16) &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[6] = (len &gt;&gt;  8) &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +       buf[7] = len &amp; 0xff;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       strcpy(buf + 8, &quot;ABC1234&quot;);
+</I>&gt;&gt;&gt;<i> +       memcpy(scsi_get_in_buffer(cmd), buf, min(cdb_alloc_len, len + 8));
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       scsi_set_in_resid_by_actual(cmd, len + 8);
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_GOOD;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_read_reservation(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_report_capabilities(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_read_full_status(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +struct service_action pr_in_service_actions[] = {
+</I>&gt;&gt;&gt;<i> +       {PR_IN_READ_KEYS, spc_pr_read_keys},
+</I>&gt;&gt;&gt;<i> +       {PR_IN_READ_RESERVATION, spc_pr_read_reservation},
+</I>&gt;&gt;&gt;<i> +       {PR_IN_REPORT_CAPABILITIES, spc_pr_report_capabilities},
+</I>&gt;&gt;&gt;<i> +       {PR_IN_READ_FULL_STATUS, spc_pr_read_full_status},
+</I>&gt;&gt;&gt;<i> +       {0, NULL}
+</I>&gt;&gt;&gt;<i> +};
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +int persistent_reserve_in(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       uint8_t action;
+</I>&gt;&gt;&gt;<i> +       struct service_action *service_action;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       action = cmd-&gt;scb[1] &amp; 0x1f;
+</I>&gt;&gt;&gt;<i> +       service_action = find_service_action(pr_in_service_actions, action);
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       if (!service_action) {
+</I>&gt;&gt;&gt;<i> +               scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;&gt;&gt;<i> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;&gt;&gt;<i> +                               ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;&gt;&gt;<i> +               return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +       }
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       return service_action-&gt;cmd_perform(host_no, cmd);
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +/**
+</I>&gt;&gt;&gt;<i> + * PERSISTENT RESERVE OUT - 5Fh
+</I>&gt;&gt;&gt;<i> + * Ref: 6.14
+</I>&gt;&gt;&gt;<i> + */
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_REGISTER 0
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_RESERVE 1
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_RELEASE 2
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_CLEAR 3
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_PREEMPT 4
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_PREEMPT_ABORT 5
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_REGISTER_IGNORE 6
+</I>&gt;&gt;&gt;<i> +#define PR_OUT_REGISTER_MOVE 7
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_register(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +       pr-&gt;PRgeneration += 1;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_reserve(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_release(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_clear(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +       pr-&gt;PRgeneration += 1;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_preempt(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +       pr-&gt;PRgeneration += 1;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_preempt_abort(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +       pr-&gt;PRgeneration += 1;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_register_ignore(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +       pr-&gt;PRgeneration += 1;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +static int spc_pr_register_move(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr *pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       dprintf(&quot;**** Called ****\n&quot;);
+</I>&gt;&gt;&gt;<i> +       pr = &amp;cmd-&gt;dev-&gt;pr;
+</I>&gt;&gt;&gt;<i> +       pr-&gt;PRgeneration += 1;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+</I>&gt;&gt;&gt;<i> +       return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +struct service_action pr_out_service_actions[] = {
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_REGISTER, spc_pr_register},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_RESERVE, spc_pr_reserve},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_RELEASE, spc_pr_release},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_CLEAR, spc_pr_clear},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_PREEMPT, spc_pr_preempt},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_PREEMPT_ABORT, spc_pr_preempt_abort},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_REGISTER_IGNORE, spc_pr_register_ignore},
+</I>&gt;&gt;&gt;<i> +       {PR_OUT_REGISTER_MOVE, spc_pr_register_move},
+</I>&gt;&gt;&gt;<i> +       {0, NULL}
+</I>&gt;&gt;&gt;<i> +};
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +int persistent_reserve_out(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i> +{
+</I>&gt;&gt;&gt;<i> +       uint8_t action;
+</I>&gt;&gt;&gt;<i> +       struct service_action *service_action;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       action = cmd-&gt;scb[1] &amp; 0x1f;
+</I>&gt;&gt;&gt;<i> +       service_action = find_service_action(pr_out_service_actions, action);
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       if (!service_action) {
+</I>&gt;&gt;&gt;<i> +               scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;&gt;&gt;<i> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;&gt;&gt;<i> +                               ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;&gt;&gt;<i> +               return SAM_STAT_CHECK_CONDITION;
+</I>&gt;&gt;&gt;<i> +       }
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i> +       return service_action-&gt;cmd_perform(host_no, cmd);
+</I>&gt;&gt;&gt;<i> +}
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+</I>&gt;&gt;&gt;<i>  {
+</I>&gt;&gt;&gt;<i>        dump_cdb(cmd);
+</I>&gt;&gt;&gt;<i> diff --git a/usr/spc.h b/usr/spc.h
+</I>&gt;&gt;&gt;<i> index 8fe3e3c..bdc3c1f 100644
+</I>&gt;&gt;&gt;<i> --- a/usr/spc.h
+</I>&gt;&gt;&gt;<i> +++ b/usr/spc.h
+</I>&gt;&gt;&gt;<i> @@ -9,6 +9,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+</I>&gt;&gt;&gt;<i>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+</I>&gt;&gt;&gt;<i>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+</I>&gt;&gt;&gt;<i>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+</I>&gt;&gt;&gt;<i> +extern int persistent_reserve_in(int host_no, struct scsi_cmd *cmd);
+</I>&gt;&gt;&gt;<i> +extern int persistent_reserve_out(int host_no, struct scsi_cmd *cmd);
+</I>&gt;&gt;&gt;<i>  extern int spc_lu_init(struct scsi_lu *lu);
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>  typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+</I>&gt;&gt;&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;&gt;&gt;<i> index 4febcd3..d2c7135 100644
+</I>&gt;&gt;&gt;<i> --- a/usr/tgtd.h
+</I>&gt;&gt;&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;&gt;&gt;<i> @@ -19,6 +19,11 @@
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>  #define VENDOR_ID      &quot;IET&quot;
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> +/* 8 byte reservation key size */
+</I>&gt;&gt;&gt;<i> +#define PR_KEY_SZ 8
+</I>&gt;&gt;&gt;<i> +/* Number of PR keys we can store at any one time */
+</I>&gt;&gt;&gt;<i> +#define PR_RESERVATION_SZ 4
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i>  #define _TAB1 &quot;    &quot;
+</I>&gt;&gt;&gt;<i>  #define _TAB2 _TAB1 _TAB1
+</I>&gt;&gt;&gt;<i>  #define _TAB3 _TAB1 _TAB1 _TAB1
+</I>&gt;&gt;&gt;<i> @@ -126,6 +131,12 @@ struct mode_pg {
+</I>&gt;&gt;&gt;<i>        uint8_t mode_data[0];   /* Rest of mode page info */
+</I>&gt;&gt;&gt;<i>  };
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> +struct scsi_pr {
+</I>&gt;&gt;&gt;<i> +       /* Persistent Reservation Generation */
+</I>&gt;&gt;&gt;<i> +       uint32_t PRgeneration;
+</I>&gt;&gt;&gt;<i> +       uint8_t pr_key[PR_RESERVATION_SZ][PR_KEY_SZ];
+</I>&gt;&gt;&gt;<i> +};
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i>  struct scsi_lu {
+</I>&gt;&gt;&gt;<i>        int fd;
+</I>&gt;&gt;&gt;<i>        uint64_t addr; /* persistent mapped address */
+</I>&gt;&gt;&gt;<i> @@ -150,6 +161,8 @@ struct scsi_lu {
+</I>&gt;&gt;&gt;<i>        uint8_t mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+</I>&gt;&gt;&gt;<i>        struct mode_pg *mode_pgs[0x3f];
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> +       struct scsi_pr pr;
+</I>&gt;&gt;&gt;<i> +
+</I>&gt;&gt;&gt;<i>        struct lu_phy_attr attrs;
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>        /* A pointer for each modules private use.
+</I>&gt;&gt;&gt;<i> --
+</I>&gt;&gt;&gt;<i> 1.5.6
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> [PATCH 2/2]
+</I>&gt;&gt;&gt;<i> From 68c454d2d7f1b64f9dbce9410e5c2c8500d6ceb3 Mon Sep 17 00:00:00 2001
+</I>&gt;&gt;&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;&gt;&gt;<i> Date: Wed, 20 Aug 2008 14:45:30 +1000
+</I>&gt;&gt;&gt;<i> Subject: Add persistent reserve in/out to ssc module
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;&gt;&gt;<i> ---
+</I>&gt;&gt;&gt;<i>  usr/ssc.c |    4 ++--
+</I>&gt;&gt;&gt;<i>  1 files changed, 2 insertions(+), 2 deletions(-)
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> diff --git a/usr/ssc.c b/usr/ssc.c
+</I>&gt;&gt;&gt;<i> index 2630a6a..6dbdc0b 100644
+</I>&gt;&gt;&gt;<i> --- a/usr/ssc.c
+</I>&gt;&gt;&gt;<i> +++ b/usr/ssc.c
+</I>&gt;&gt;&gt;<i> @@ -251,8 +251,8 @@ static struct device_type_template ssc_template = {
+</I>&gt;&gt;&gt;<i>                {spc_illegal_op,},
+</I>&gt;&gt;&gt;<i>                {spc_illegal_op,},
+</I>&gt;&gt;&gt;<i>                {spc_illegal_op,},
+</I>&gt;&gt;&gt;<i> -               {spc_illegal_op,},
+</I>&gt;&gt;&gt;<i> -               {spc_illegal_op,},
+</I>&gt;&gt;&gt;<i> +               {persistent_reserve_in,},
+</I>&gt;&gt;&gt;<i> +               {persistent_reserve_out,},
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>                [0x60 ... 0x7f] = {spc_illegal_op,},
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> --
+</I>&gt;&gt;&gt;<i> 1.5.6
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002037.html">[Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+</A></li>
+	<LI>Next message: <A HREF="002039.html">[Stgt-devel] Rolex, Rado, Patek Philippe,  Omegga, Gucci
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2038">[ date ]</a>
+              <a href="thread.html#2038">[ thread ]</a>
+              <a href="subject.html#2038">[ subject ]</a>
+              <a href="author.html#2038">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

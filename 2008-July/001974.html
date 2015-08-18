@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3Cf29db9a80807292040w22d206f2w7365fe3c9320febf%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001972.html">
+   <LINK REL="Next"  HREF="001976.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3Cf29db9a80807292040w22d206f2w7365fe3c9320febf%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jul 30 05:40:46 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001972.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+        <LI>Next message: <A HREF="001976.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1974">[ date ]</a>
+              <a href="thread.html#1974">[ thread ]</a>
+              <a href="subject.html#1974">[ subject ]</a>
+              <a href="author.html#1974">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, Jul 30, 2008 at 1:28 PM, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+&gt;<i> My concern is with
+</I>&gt;<i>
+</I>&gt;<i> tgt_device_path_update()
+</I>&gt;<i> {
+</I>&gt;<i>    if(lu-&gt;path) {
+</I>&gt;<i>        ....
+</I>&gt;<i>        lu-&gt;bst-&gt;bs_close(lu);
+</I>&gt;<i>        ....
+</I>&gt;<i>    }
+</I>&gt;<i> }
+</I>&gt;<i>
+</I>&gt;<i> bs_close()
+</I>&gt;<i> {
+</I>&gt;<i>    ....
+</I>&gt;<i>    bs_thread_close();
+</I>&gt;<i>    ....
+</I>&gt;<i> }
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> What will occur if there are multiple LU attached to this target and
+</I>&gt;<i> one LU is activately being read/written to while another LU has its
+</I>&gt;<i> backing file path updated ?
+</I>&gt;<i>
+</I>&gt;<i> I assume - multithreaded code is new experence for me - that we will
+</I>&gt;<i> result in a core dump as the backing store threads have been torn
+</I>&gt;<i> down.
+</I>&gt;<i>
+</I>&gt;<i> Cheers
+</I>&gt;<i> Mark
+</I>
+Sorry - forgot to add. If this is the case, Richards patch will not
+fix the over-all problem.
+
+The dtd_load_unload() only opens/closes the backing file. It does not
+attempt to initialize the threads.
+
+
+I feel the correct fix for this is:
+
+To add  bs_init()/bs_exit() ?? hook to initialize/shutdown the threads.
+And the bs_open()/bs_close() to open/close the backing store file.
+
+The bs_init() should be called at setup time and bs_open()/bs_close()
+when media loaded or unloaded.
+
+I'll attempt to put something in code this afternoon and post a POC patch.
+
+Cheers
+Mark
+&gt;<i>
+</I>&gt;<i> On Wed, Jul 30, 2008 at 12:52 PM, FUJITA Tomonori
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;&gt;<i> On Wed, 30 Jul 2008 12:45:05 +1000
+</I>&gt;&gt;<i> &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> OK, I've reproduced the core dump as well.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> All my testing involved running the scripts/tgt-core-setup script.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> This script (incorrectly) adds a backing file - so I never experienced
+</I>&gt;&gt;&gt;<i> this core dump. When configured to startup with a backing file - loads
+</I>&gt;&gt;&gt;<i> and unloads work without error.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Setting up the device without an initial backing file results in the
+</I>&gt;&gt;&gt;<i> core dump once a write is attempted.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Should I apply Richard's patch (Make changes so that VTL stuff works
+</I>&gt;&gt;<i> properly)? Or we need cleanups before applying it?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Sorry, I have not had a chance to reproduce it and read the patch yet.
+</I>&gt;&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001972.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+	<LI>Next message: <A HREF="001976.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1974">[ date ]</a>
+              <a href="thread.html#1974">[ thread ]</a>
+              <a href="subject.html#1974">[ subject ]</a>
+              <a href="author.html#1974">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

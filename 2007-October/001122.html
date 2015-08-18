@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 03/20] iser transport buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2003/20%5D%20iser%20transport%20buf&In-Reply-To=%3C20071027185623.GA30411%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001116.html">
+   <LINK REL="Next"  HREF="001123.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 03/20] iser transport buf</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2003/20%5D%20iser%20transport%20buf&In-Reply-To=%3C20071027185623.GA30411%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 03/20] iser transport buf">pw at osc.edu
+       </A><BR>
+    <I>Sat Oct 27 20:56:23 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001116.html">[Stgt-devel] [PATCH 03/20] iser transport buf
+</A></li>
+        <LI>Next message: <A HREF="001123.html">[Stgt-devel] [PATCH 1/2] ibmvio unreachable code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1122">[ date ]</a>
+              <a href="thread.html#1122">[ thread ]</a>
+              <a href="subject.html#1122">[ subject ]</a>
+              <a href="author.html#1122">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Sat, 27 Oct 2007 23:56 +0900:
+&gt;<i> On Tue, 16 Oct 2007 11:18:57 -0400
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; For RDMA, it is often nice to use data from a pool of pre-registered
+</I>&gt;<i> &gt; buffers.  To do this, the transport allocates memory for a response and
+</I>&gt;<i> &gt; passes it down to the devices to fill.  Some operations, though,
+</I>&gt;<i> &gt; allocate their own buffers and return that new memory instead.  These
+</I>&gt;<i> &gt; are usually small and the allocation is just done for convenience to
+</I>&gt;<i> &gt; avoid length bounds checking.  Copy the data into the provided transport
+</I>&gt;<i> &gt; buffer instead.
+</I>&gt;<i> 
+</I>&gt;<i> Do you really need pre-registered buffers for INQUERY, non I/O
+</I>&gt;<i> commands?
+</I>
+To send the data, it must be in a registered buffer.  We preregister
+some for this purpose.  The other way is to dynamically register
+the buffer, then deregister it after tha data has been transferred.
+This adds lots of overhead, especially in the small IO case (like
+inquiry), and code complexity.
+
+Currently iscsi_alloc_task() uses malloc() to get a buffer big
+enough for the incoming command and any data that will be returned
+such as the inquiry result.  The approach in RDMA is to make sure
+that the allocation comes from the preregistered area.  TCP just
+uses malloc() as before.
+
+IO operations like in bs_sync will copy data into the cmd-&gt;uaddr
+(same as iscsi's task-&gt;data).  Some inquiry-like routines allocate a
+page-size buffer themselves with valloc() to avoid lots of little
+bounds checks, and return this instead of using the provided
+cmd-&gt;uaddr.  But this avoids our preregistered buffer space.
+
+So the new approach in these inquiry-like routines is to continue to
+valloc() a page to hold the generated data and fill it, but then
+invoke a new helper &quot;spc_return_buf()&quot; that copies data from the
+valloc()-ed area into cmd-&gt;uaddr.
+
+&gt;<i> Using pre-registerd buffers might make the code simpler than handling
+</I>&gt;<i> both pre-registerd and normal buffers, but we already need to handle
+</I>&gt;<i> something like that for mmapped I/Os.
+</I>
+Only bs_mmap handles cmd-&gt;mmaped.  It appears to be not for use with
+iscsi.
+
+The modifications to inquiry only happen if cmd-&gt;uaddr is non-NULL.
+
+&gt;<i> &gt; Also fixes some leaks of these extra buffers in error paths, and cleans
+</I>&gt;<i> &gt; up unreachable code in ibmvio inquiry.
+</I>&gt;<i> 
+</I>&gt;<i> Can you send a separate patch to do that?
+</I>
+Split up into two prior patches.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001116.html">[Stgt-devel] [PATCH 03/20] iser transport buf
+</A></li>
+	<LI>Next message: <A HREF="001123.html">[Stgt-devel] [PATCH 1/2] ibmvio unreachable code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1122">[ date ]</a>
+              <a href="thread.html#1122">[ thread ]</a>
+              <a href="subject.html#1122">[ subject ]</a>
+              <a href="author.html#1122">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

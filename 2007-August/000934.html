@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] RFC: tgt service script
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20RFC%3A%20tgt%20service%20script&In-Reply-To=%3Cd6944c490708100934h74c6e6xe0781cc31e1935cd%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000933.html">
+   <LINK REL="Next"  HREF="000936.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] RFC: tgt service script</H1>
+    <B>Dan Bar Dov</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20RFC%3A%20tgt%20service%20script&In-Reply-To=%3Cd6944c490708100934h74c6e6xe0781cc31e1935cd%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] RFC: tgt service script">bardov at gmail.com
+       </A><BR>
+    <I>Fri Aug 10 18:34:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000933.html">[PATCH] iser more rdma bufs
+</A></li>
+        <LI>Next message: <A HREF="000936.html">[PATCH] iser fix initiator dlength
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#934">[ date ]</a>
+              <a href="thread.html#934">[ thread ]</a>
+              <a href="subject.html#934">[ subject ]</a>
+              <a href="author.html#934">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Attached is a fedora service script that starts tgt daemon and iscsi-tgt
+targets.
+
+The configuration is saved is /etc/iscsi_tgt.conf which looks like that:
+# -*-Shell-script-*-
+# DEBUG=yes
+
+# flags to pass to tgtd
+TGTDARGS=
+
+# list of targets to configure (symbolic names)
+TARGETS=&quot;FIRST&quot;
+
+# for each target, setup values specific for that target
+FIRST_name=&quot;iqn.2001-04.com.example:1&quot;
+# target id (tid)
+FIRST_id=1
+# list of devices for the named target. Order of devices
+# determines LUN (first being #1)
+FIRST_lus=&quot;/dev/sda2&quot;
+# list of access permissions
+FIRST_acl=&quot;ALL&quot;
+
+On my setup (FC6, kernel 2.6.22.1) this script works
+
+Dan
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070810/a26a0b6d/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070810/a26a0b6d/attachment.html</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: iscsi_tgt.conf
+Type: application/octet-stream
+Size: 380 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070810/a26a0b6d/attachment.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070810/a26a0b6d/attachment.obj</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: iscsi_tgt
+Type: application/octet-stream
+Size: 1862 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070810/a26a0b6d/attachment-0001.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070810/a26a0b6d/attachment-0001.obj</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000933.html">[PATCH] iser more rdma bufs
+</A></li>
+	<LI>Next message: <A HREF="000936.html">[PATCH] iser fix initiator dlength
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#934">[ date ]</a>
+              <a href="thread.html#934">[ thread ]</a>
+              <a href="subject.html#934">[ subject ]</a>
+              <a href="author.html#934">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

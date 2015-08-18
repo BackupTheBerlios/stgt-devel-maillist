@@ -1,0 +1,337 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] allow other target types than iscsi in	tgt-admin
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20allow%20other%20target%20types%20than%20iscsi%20in%0A%09tgt-admin&In-Reply-To=%3C488DCEB7.1080804%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001919.html">
+   <LINK REL="Next"  HREF="001943.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] allow other target types than iscsi in	tgt-admin</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20allow%20other%20target%20types%20than%20iscsi%20in%0A%09tgt-admin&In-Reply-To=%3C488DCEB7.1080804%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [PATCH] allow other target types than iscsi in	tgt-admin">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Jul 28 15:50:47 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001919.html">[Stgt-devel] [PATCH] make config file not needed for	most	operations it tgt-admin
+</A></li>
+        <LI>Next message: <A HREF="001943.html">[Stgt-devel] [PATCH] allow other target types than iscsi	in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1928">[ date ]</a>
+              <a href="thread.html#1928">[ thread ]</a>
+              <a href="subject.html#1928">[ subject ]</a>
+              <a href="author.html#1928">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>tgtadm allows other target types than iscsi (i.e., fcoe or ibmvstgt).
+
+tgt-admin (or whatever it will be called in the future, so that it doesn't confuse with tgtadm) should support other target types (&quot;driver&quot;), too.
+
+With this patch, we can configure a per-target driver, or, we can use a default value for all targets (used by all targets; unless overridden).
+When there is no driver definition, tgt-admin defaults to &quot;iscsi&quot;.
+
+
+Example configuration:
+
+
+# defaults for all targets
+default-driver iscsi
+
+&lt;target iqn.2006-08.com.example:blah.fcoe&gt;
+# will use fcoe
+driver fcoe
+...
+&lt;/target&gt;
+
+&lt;target iqn.2007-11.com.example:blah.iscsi&gt;
+# will default to iscsi
+...
+&lt;/target&gt;
+
+
+Also, I added a simple &quot;check&quot; subroutine which checks some simple errors in the config file (missing values etc.).
+
+
+Patch follows:
+
+Signed-off-by: Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt;
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index 7461a2f..e2c299a 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -66,7 +66,7 @@ if (($help == 1) || ($param eq undef)) {
+ 
+ # Show all the targets and exit
+ if ($show == 1) {
+-	execute(&quot;tgtadm --lld iscsi --op show --mode target&quot;);
++	execute(&quot;tgtadm --op show --mode target&quot;);
+ 	exit;
+ }
+ 
+@@ -83,7 +83,7 @@ sub process_targets {
+ 		die(&quot;You must be root to run this program.\n&quot;);
+ 	}
+ 
+-	my @show_target = `tgtadm --lld iscsi --op show --mode target`;
++	my @show_target = `tgtadm --op show --mode target`;
+ 	my $tid;
+ 	my $targetname;
+ 
+@@ -127,17 +127,38 @@ sub parse_configs {
+ }
+ 
+ # Add targets, if they are not configured already
++my $default_driver;
+ my $target;
+ my $option;
+ my $value;
+ 
+ sub add_targets {
++
++	foreach my $k (sort keys %conf) {
++
++		if ( $k eq &quot;default-driver&quot; ) {
++			if ( not length ref($conf{$k}) ) {
++				$default_driver = $conf{$k};
++			} else {
++				print &quot;Multiple default-driver definitions are not allowed!\n&quot;;
++				print &quot;Check your config file for errors.\n&quot;;
++				exit 1;
++			}
++		}
++	}
++
++	# If $default_driver is empty, default to iscsi
++	if ( not defined $default_driver ) {
++		execute(&quot;# default-driver not defined, defaulting to iscsi.\n&quot;);
++		$default_driver = &quot;iscsi&quot;;
++	}
++
+ 	foreach my $k (sort keys %conf) {
+ 		if ( $k eq &quot;target&quot; ) {
+ 			foreach my $k2 (sort keys %{$conf{$k}}) {
+ 				$target = $k2;
+ 				my $allowall = 1;
+-				if ( $tgtadm_output{$k2} eq undef ) {
++				if ( not defined $tgtadm_output{$k2} ) {
+ 					# We have to find available tid
+ 					$next_tid = $next_tid + 1;
+ 				}
+@@ -147,12 +168,33 @@ sub add_targets {
+ 					execute(&quot;tgtadm --op update --mode target --tid=$next_tid -n state -v offline&quot;);
+ 					execute(&quot;tgtadm --mode target --op delete --tid=$next_tid&quot;);
+ 				}
++
++				# Before we add a target, we need to know its type
++				my $driver;
++				foreach my $k3 (sort keys %{$conf{$k}{$k2}}) {
++					$option = $k3;
++					$value = $conf{$k}{$k2}{$k3};
++					&amp;check($value);
++					if ( $option eq &quot;driver&quot; ) {
++						if (ref($value) eq &quot;ARRAY&quot;) {
++						print &quot;Multiple driver definitions not allowed!\n&quot;;
++						print &quot;Check your config file for errors (target: $target).\n&quot;;
++						exit 1;
++						}
++					$driver = $value;
++					}
++				}
++				
++				if ( not defined $driver ) {
++					$driver = $default_driver;
++				}
+ 				execute(&quot;# Adding target: $target&quot;);
+-				execute(&quot;tgtadm --lld iscsi --op new --mode target --tid $next_tid -T $target&quot;);
++				execute(&quot;tgtadm --lld $driver --op new --mode target --tid $next_tid -T $target&quot;);
+ 				foreach my $k3 (sort keys %{$conf{$k}{$k2}}) {
+ 					$option = $k3;
+ 					$value = $conf{$k}{$k2}{$k3};
+-					&amp;process_options;
++					&amp;check($value);
++					&amp;process_options($driver);
+ 					# If there was no option called &quot;initiator-address&quot;, it means
+ 					# we want to allow ALL initiators for this target
+ 					if ( $option eq &quot;initiator-address&quot; ) {
+@@ -161,7 +203,7 @@ sub add_targets {
+ 				}
+ 
+ 				if ( $allowall == 1 ) {
+-					execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I ALL&quot;);
++					execute(&quot;tgtadm --lld $driver --op bind --mode target --tid $next_tid -I ALL&quot;);
+ 				}
+ 				execute();
+ 			}
+@@ -171,6 +213,7 @@ sub add_targets {
+ 
+ # Process options from the config file
+ sub process_options {
++	my $driver = $_[0];
+ 	if ( $option eq &quot;backing-store&quot; ) {
+         # if we have one command, force it to be an array anyway
+ 		unless (ref($value) eq 'ARRAY') {
+@@ -178,10 +221,11 @@ sub process_options {
+ 		}
+ 		my @value_arr = @$value;
+ 		my $i = 1;
++
+ 		foreach my $backing_store (@value_arr) {
+ 			# Check if device exists
+ 			if ( -e $backing_store) {
+-				execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
++				execute(&quot;tgtadm --lld $driver --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
+ 				$i += 1;
+ 			}
+ 			else {
+@@ -217,8 +261,8 @@ sub process_options {
+ 			$prod_rev =~ s/\s+$//;
+ 			$scsi_serial =~ s/\s+$//;
+ 
+-			execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun 1 -b $direct_store&quot;);
+-			execute(&quot;tgtadm --lld iscsi --op update --mode logicalunit --tid  $next_tid --lun 1 --params vendor_id=\&quot;$vendor_id\&quot;,product_id=\&quot;$prod_id\&quot;,product_rev=\&quot;$prod_rev\&quot;,scsi_sn=\&quot;$scsi_serial\&quot;&quot;);
++			execute(&quot;tgtadm --lld $driver --op new --mode logicalunit --tid $next_tid --lun 1 -b $direct_store&quot;);
++			execute(&quot;tgtadm --lld $driver --op update --mode logicalunit --tid  $next_tid --lun 1 --params vendor_id=\&quot;$vendor_id\&quot;,product_id=\&quot;$prod_id\&quot;,product_rev=\&quot;$prod_rev\&quot;,scsi_sn=\&quot;$scsi_serial\&quot;&quot;);
+ 			$i += 1;
+ 		}
+ 	}
+@@ -231,9 +275,10 @@ sub process_options {
+ 		my @value_arr = @$value;
+ 		foreach my $incominguser (@value_arr) {
+ 			my @userpass = split(/ /, $incominguser);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+-			execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0]&quot;);
++			&amp;check($userpass[1]);
++			execute(&quot;tgtadm --lld $driver --mode account --op delete --user=$userpass[0]&quot;);
++			execute(&quot;tgtadm --lld $driver --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
++			execute(&quot;tgtadm --lld $driver --mode account --op bind --tid=$next_tid --user=$userpass[0]&quot;);
+ 		}
+ 	}
+ 
+@@ -244,9 +289,10 @@ sub process_options {
+ 		}
+ 		execute(&quot;# Warning: only one outgoinguser is allowed. Will only use the first one.&quot;);
+ 		my @userpass = split(/ /, @$value[0]);
+-		execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+-		execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+-		execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
++		&amp;check($userpass[1]);
++		execute(&quot;tgtadm --lld $driver --mode account --op delete --user=$userpass[0]&quot;);
++		execute(&quot;tgtadm --lld $driver --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
++		execute(&quot;tgtadm --lld $driver --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
+ 	}
+ 
+ 	if ( $option eq &quot;initiator-address&quot; ) {
+@@ -256,7 +302,7 @@ sub process_options {
+ 		}
+ 		my @value_arr = @$value;
+ 		foreach my $initiator_address (@value_arr) {
+-			execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $initiator_address&quot;);
++			execute(&quot;tgtadm --lld $driver --op bind --mode target --tid $next_tid -I $initiator_address&quot;);
+ 		}
+ 	}
+ }
+@@ -272,20 +318,22 @@ sub remove_targets {
+ 		my $dontremove = 0;
+ 		my $k2;
+ 		foreach my $k (sort keys %conf) {
+-			foreach $k2 (sort keys %{$conf{$k}}) {
+-				if ( $k2 eq $existing_target ) {
+-					$dontremove = 1;
++			if ( $k eq &quot;target&quot; ) {
++				foreach $k2 (sort keys %{$conf{$k}}) {
++					if ( $k2 eq $existing_target ) {
++						$dontremove = 1;
++					}
+ 				}
+-			}
+ 
+-			if ( $dontremove == 0 ) {
+-				# Right now, it is not possible to remove a target if any initiators
+-				# are connected to it. We'll do our best - offline the target first
+-				# (so it won't accept any new connections), and remove.
+-				# Note that remove will only work if no initiator is connected.
+-				execute(&quot;# Removing target: $existing_target&quot;);
+-				execute(&quot;tgtadm --op update --mode target --tid=$tgtadm_output_tid{$existing_target} -n state -v offline&quot;);
+-				execute(&quot;tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$existing_target}&quot;);
++				if ( $dontremove == 0 ) {
++					# Right now, it is not possible to remove a target if any initiators
++					# are connected to it. We'll do our best - offline the target first
++					# (so it won't accept any new connections), and remove.
++					# Note that remove will only work if no initiator is connected.
++					execute(&quot;# Removing target: $existing_target&quot;);
++					execute(&quot;tgtadm --op update --mode target --tid=$tgtadm_output_tid{$existing_target} -n state -v offline&quot;);
++					execute(&quot;tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$existing_target}&quot;);
++				}
+ 			}
+ 		}
+ 	}
+@@ -355,6 +403,16 @@ sub dump_config {
+ 	}
+ }
+ 
++# Some checks
++sub check {
++	if ( not defined $_[0] or not length $_[0] ) {
++		print &quot;\nOption $option has a missing value!\n&quot;;
++		print &quot;Check your config file for errors (target: $target)\n&quot;;
++		exit 1;
++	}
++}
++
++
+ # Execute or just print (or both) everything we start or would start
+ sub execute {
+ 	if ($pretend == 0) {
+@@ -404,7 +462,7 @@ sub delete {
+ 		die(&quot;You must be root to run this program.\n&quot;);
+ 	}
+ 
+-	my @show_target = `tgtadm --lld iscsi --op show --mode target`;
++	my @show_target = `tgtadm --op show --mode target`;
+ 	my @tids=();
+ 
+ 	# Find all the active targets' tids
+
+
+
+-- 
+Tomasz Chmielewski 
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001919.html">[Stgt-devel] [PATCH] make config file not needed for	most	operations it tgt-admin
+</A></li>
+	<LI>Next message: <A HREF="001943.html">[Stgt-devel] [PATCH] allow other target types than iscsi	in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1928">[ date ]</a>
+              <a href="thread.html#1928">[ thread ]</a>
+              <a href="subject.html#1928">[ subject ]</a>
+              <a href="author.html#1928">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER - one too many rubber duckies in the mempool
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20-%20one%20too%20many%20rubber%20duckies%20in%20the%20mempool&In-Reply-To=%3C20071218164651.GA15299%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001217.html">
+   <LINK REL="Next"  HREF="001219.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER - one too many rubber duckies in the mempool</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20-%20one%20too%20many%20rubber%20duckies%20in%20the%20mempool&In-Reply-To=%3C20071218164651.GA15299%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER - one too many rubber duckies in the mempool">pw at osc.edu
+       </A><BR>
+    <I>Tue Dec 18 17:46:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001217.html">[Stgt-devel] iSER - one too many rubber duckies in the mempool
+</A></li>
+        <LI>Next message: <A HREF="001219.html">[Stgt-devel] diverge
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1221">[ date ]</a>
+              <a href="thread.html#1221">[ thread ]</a>
+              <a href="subject.html#1221">[ subject ]</a>
+              <a href="author.html#1221">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Tue, 18 Dec 2007 05:48 -0500:
+&gt;<i> with &gt;=2 iSER clients I'm hitting these quite a lot:
+</I>&gt;<i>   tgtd: iscsi_rdma_malloc(1619) free list empty
+</I>&gt;<i>   tgtd: iscsi_rdma_alloc_data_buf(1647) free list empty
+</I>&gt;<i>      (the fn name depends on the tgtd version)
+</I>&gt;<i> after which the initiator node is pretty much toast :-/
+</I>&gt;<i> 
+</I>&gt;<i> the code for this is in iscsi/iscsi_rdma.c --&gt;
+</I>&gt;<i> 
+</I>&gt;<i>   static void *iscsi_rdma_alloc_data_buf(struct iscsi_connection *conn, size_t sz)
+</I>&gt;<i>   {       
+</I>&gt;<i>   ...
+</I>&gt;<i>           if (list_empty(&amp;dev-&gt;mempool_free)) {
+</I>&gt;<i>                   /* XXX: take slow path: allocate and register */
+</I>&gt;<i>                   eprintf(&quot;free list empty\n&quot;);
+</I>&gt;<i>                   exit(1);
+</I>&gt;<i>           }
+</I>&gt;<i>   ...
+</I>&gt;<i> 
+</I>&gt;<i> which looks like an OO(rdma)M fallback that's just unimplemented at
+</I>&gt;<i> the moment?
+</I>&gt;<i> 
+</I>&gt;<i> as a workaround I boosted:
+</I>&gt;<i>   static int mempool_num = 192;
+</I>&gt;<i> to 1920 which let 2 clients survive, but not the 15 or 100 that I'd
+</I>&gt;<i> ideally like.
+</I>&gt;<i> 
+</I>&gt;<i> is dynamically adding more entries to the mempool the solution, or a
+</I>&gt;<i> separate list of non-mempool rdma bufs, or just telling the initiator to
+</I>&gt;<i> backoff for a while?
+</I>
+The core of the problem is that we should be flow controlling client
+requests, but aren't.  Look for the parameter max_cmdsn in iscsid.c
+and you'll see that it is always set to exp_cmdsn (the current
+number) + a constant MAX_QUEUE_CMD, 128.  What should happen is
+those places should ask the transport how much room they have
+available for the biggest command the client might send.
+
+This is theoretically a problem for TCP too, in that each working
+command allocates a new buffer, although the failure mode in that
+case is that malloc() of the task data buffers would fail and close
+the connection to the initiator.
+
+Maybe we should get rid of the exit(1) in iSER and just return
+-ENOMEM so it is the same as TCP.  Connection will drop but maybe
+not kill initiator as unpleasantly.
+
+For iSER it is more severe because we use pre-pinned data buffers to
+get good performance, and the limits on the amount of pinned memory
+can be tighter, needing physical.
+
+(If you are doing small transfers, a better mempool allocater that
+could divide chunks may help, but doesn't fix the general problem.)
+
+You could hack around it in iser by taking the slow path and
+allocating as the XXX comment suggests, but you would soon hit the
+memory allocation limit.  Each connection could have 128 * 512k
+commands in flight.  That's gobs.  You can play with
+RDMA_TRANSFER_SIZE and mempool_size to shrink this somewhat and see
+how things work; that is not a negotiated parameter, but bigger is
+likely to be faster.  And yeah, cranking up the mempool_num will pin
+more memory shared across all initiators.
+
+A different but related problem is MAX_WQE.  It is 1800 to
+accommodate current linux iser behavior.  That governs the number of
+potential work entries on a QP, and is rather large.  Not sure when
+a NIC would run out of QPs.  It also needs some smaller but not
+insignificant pinned memory for each of these.  We could negotiate
+using the MaxOutstandingUnexpectedPDUs parameter, but linux iser
+does not support that.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001217.html">[Stgt-devel] iSER - one too many rubber duckies in the mempool
+</A></li>
+	<LI>Next message: <A HREF="001219.html">[Stgt-devel] diverge
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1221">[ date ]</a>
+              <a href="thread.html#1221">[ thread ]</a>
+              <a href="subject.html#1221">[ subject ]</a>
+              <a href="author.html#1221">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

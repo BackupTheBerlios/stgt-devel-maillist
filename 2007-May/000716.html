@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/1] SMC module support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20SMC%20module%20support&In-Reply-To=%3Cf29db9a80705252132k2c0faf22u63abf99c45b969c5%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000709.html">
+   <LINK REL="Next"  HREF="000717.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/1] SMC module support</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20SMC%20module%20support&In-Reply-To=%3Cf29db9a80705252132k2c0faf22u63abf99c45b969c5%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/1] SMC module support">markh794 at gmail.com
+       </A><BR>
+    <I>Sat May 26 06:32:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000709.html">[Stgt-devel] [Scst-devel] Ang: Re: Ang: [Iscsitarget-devel] Have a look at storageos.com
+</A></li>
+        <LI>Next message: <A HREF="000717.html">[Stgt-devel] [Patch 1/1] SMC module support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#716">[ date ]</a>
+              <a href="thread.html#716">[ thread ]</a>
+              <a href="subject.html#716">[ subject ]</a>
+              <a href="author.html#716">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>This patch is to be applied on top of the 8 patch set sent in earlier.
+
+It adds support for an SMC module.
+
+The module only supports the SMC unique READ ELEMENT STATUS and MOVE
+MEDIUM op codes to date.
+
+This should complete the SCSI op codes for MANDATORY implemenation
+(Except SEND DIAGNOSTIC).
+
+
+There is a script (tgt-core-test) located in the 'scripts' directory
+as an example of setting up the robot.
+
+To do:
+ - Signal the DATA TRANSFER device when media is loaded.
+
+I have perform minimum testing using 'mtx', sg3_utils package &amp;
+NetBackup 'robtest' robot test utility.
+
+
+I can generate a new patch based from tomo's git head if it makes it
+easier for anybody to apply / test.
+
+Cheers
+Mark
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: mmc.diff
+Type: text/x-patch
+Size: 37937 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070526/82610699/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070526/82610699/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000709.html">[Stgt-devel] [Scst-devel] Ang: Re: Ang: [Iscsitarget-devel] Have a look at storageos.com
+</A></li>
+	<LI>Next message: <A HREF="000717.html">[Stgt-devel] [Patch 1/1] SMC module support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#716">[ date ]</a>
+              <a href="thread.html#716">[ thread ]</a>
+              <a href="subject.html#716">[ subject ]</a>
+              <a href="author.html#716">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

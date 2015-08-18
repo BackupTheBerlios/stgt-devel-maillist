@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071014111731D.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001076.html">
+   <LINK REL="Next"  HREF="001063.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071014111731D.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] iSER">tomof at acm.org
+       </A><BR>
+    <I>Sun Oct 14 04:15:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001076.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001063.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1077">[ date ]</a>
+              <a href="thread.html#1077">[ thread ]</a>
+              <a href="subject.html#1077">[ subject ]</a>
+              <a href="author.html#1077">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 12 Oct 2007 12:34:58 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Fri, 12 Oct 2007 10:48 +0900:
+</I>&gt;<i> &gt; Can you please submit an updated patchset to the mailing list?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; It's easier to review and comment on it. And there might be other
+</I>&gt;<i> &gt; people who are interested in them.
+</I>&gt;<i> 
+</I>&gt;<i> Will do.
+</I>
+Thanks.
+
+
+&gt;<i> &gt; There is one logic change. The original iscsi_scsi_cmd_execute()
+</I>&gt;<i> &gt; always calls:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+</I>&gt;<i> &gt; {
+</I>&gt;<i> &gt; 	struct iscsi_connection *conn = task-&gt;conn;
+</I>&gt;<i> &gt; 	struct iscsi_cmd *req = (struct iscsi_cmd *) &amp;task-&gt;req;
+</I>&gt;<i> &gt; 	uint8_t rw = req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE;
+</I>&gt;<i> &gt; 	int err = 0;
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 	if (rw &amp;&amp; task-&gt;r2t_count) {
+</I>&gt;<i> &gt; 		if (!task-&gt;unsol_count)
+</I>&gt;<i> &gt; 			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+</I>&gt;<i> &gt; 		goto no_queuing;
+</I>&gt;<i> &gt; 	}
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 	task-&gt;offset = 0;  /* for use as transmit pointer for data-ins */
+</I>&gt;<i> &gt; 	err = iscsi_target_cmd_queue(task);
+</I>&gt;<i> &gt; no_queuing:
+</I>&gt;<i> &gt; 	tgt_event_modify(conn-&gt;fd, EPOLLIN|EPOLLOUT);
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 	return err;
+</I>&gt;<i> &gt; }
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Do you think that we need this? I guess that we don't need it but it's
+</I>&gt;<i> &gt; a safer option.
+</I>&gt;<i> 
+</I>&gt;<i> Hrm.  We've decided to execute the task.  But maybe all the data
+</I>&gt;<i> hasn't arrived yet.  If unsolicited data has all shown up, and we
+</I>&gt;<i> still need to generate more R2Ts, put task on tx_clist and turn
+</I>&gt;<i> on EPOLLOUT.  That's pretty straightforward.
+</I>&gt;<i> 
+</I>&gt;<i> But if all the write data is in, and we queue the task to run, there
+</I>&gt;<i> is no way it will be ready to transmit again.  Until target calls
+</I>&gt;<i> iscsi_scsi_cmd_done(), which it always does, both for sync and async
+</I>&gt;<i> backing stores.
+</I>&gt;<i> 
+</I>&gt;<i> So the only way we could need this extra EPOLLOUT line is if there
+</I>&gt;<i> were a bug elsewhere, in my opinion.  For a sync target, it will
+</I>&gt;<i> just duplicate the call at the end of cmd_done().  For an async
+</I>&gt;<i> target, it will force a trip through iscsi_task_tx_start() that
+</I>&gt;<i> will turn it off as soon as it sees that tx_clist is empty.
+</I>
+Yeah, I think so.
+
+
+&gt;<i> I tried it with and without.  Didn't seem to matter.  Extra call
+</I>&gt;<i> is very fast, sub-microsecond.  You can do a clean revert or take
+</I>&gt;<i> the patch when I send it---your call.
+</I>
+I did a clean revert just because the original code have been tested
+for a long time in my lab.
+
+As you said, I think that we don't need to set EPOLLIN|EPOLLOUT there
+so I'm happy to change it later on (after lots of testings).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001076.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001063.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1077">[ date ]</a>
+              <a href="thread.html#1077">[ thread ]</a>
+              <a href="subject.html#1077">[ subject ]</a>
+              <a href="author.html#1077">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

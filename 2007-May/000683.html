@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common spc_inquiry	routine.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%20common%20spc_inquiry%0A%09routine.&In-Reply-To=%3Cf29db9a80705222001g1e17804fma320dfa62a0538a3%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000720.html">
+   <LINK REL="Next"  HREF="000696.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common spc_inquiry	routine.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%20common%20spc_inquiry%0A%09routine.&In-Reply-To=%3Cf29db9a80705222001g1e17804fma320dfa62a0538a3%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common spc_inquiry	routine.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed May 23 05:01:35 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000720.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+        <LI>Next message: <A HREF="000696.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#683">[ date ]</a>
+              <a href="thread.html#683">[ thread ]</a>
+              <a href="subject.html#683">[ subject ]</a>
+              <a href="author.html#683">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Ability to define if a device can handle removable media
+
+Moved scsi_sn, scsi_id and d_sense (now sense_format) into a common
+struct with other INQUIRY related data.
+
+Moved / split up tgtadm.h into two sections. As the tgtadm error codes
+are required by other modules, I've moved the error code into
+tgtadm_error.h so I don't have to include the whole tgtadm.h in with
+each SCSI target module.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 2x8.diff
+Type: text/x-patch
+Size: 19227 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/1f536370/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/1f536370/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000720.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+	<LI>Next message: <A HREF="000696.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#683">[ date ]</a>
+              <a href="thread.html#683">[ thread ]</a>
+              <a href="subject.html#683">[ subject ]</a>
+              <a href="author.html#683">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,443 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch] support different type in one target.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%5D%20support%20different%20type%20in%20one%20target.&In-Reply-To=%3C20070329133548.74c19163%40hugang-laptop%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000488.html">
+   <LINK REL="Next"  HREF="000490.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch] support different type in one target.</H1>
+    <B>Hu Gang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%5D%20support%20different%20type%20in%20one%20target.&In-Reply-To=%3C20070329133548.74c19163%40hugang-laptop%3E"
+       TITLE="[Stgt-devel] [patch] support different type in one target.">hugang at soulinfo.com
+       </A><BR>
+    <I>Thu Mar 29 07:35:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000488.html">[Stgt-devel] CRC32C not working
+</A></li>
+        <LI>Next message: <A HREF="000490.html">[Stgt-devel] modularization target types.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#489">[ date ]</a>
+              <a href="thread.html#489">[ thread ]</a>
+              <a href="subject.html#489">[ subject ]</a>
+              <a href="author.html#489">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>support different type in one target.
+
+all of the logical units at same target must same type. this patch extend current tgt to support different type in one target.
+ 
+./tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.amiens.sys1.xyz
+./tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 0 -b /p/ref/ubuntu-7.04-beta-alternate-i386.iso --target-type cd
+./tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /tmp/100M --target-type disk
+./tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+./tgtadm --lld iscsi --op show --mode target
+
+Signed-off-by: hu gang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hugang at soulinfo.com</A>&gt;
+---
+
+ usr/bs_aio.c |    2 +-
+ usr/mgmt.c   |    5 ++--
+ usr/mmc.c    |    2 +-
+ usr/osd.c    |    2 +-
+ usr/sbc.c    |    2 +-
+ usr/scsi.c   |    2 +-
+ usr/spc.c    |    4 ++-
+ usr/spt.c    |    2 +-
+ usr/target.c |   68 ++++++++++++++++++++++++++++++----------------------------
+ usr/target.h |    5 ----
+ usr/tgtd.h   |   38 ++++++++++++++++++++------------
+ 11 files changed, 68 insertions(+), 64 deletions(-)
+
+diff --git a/usr/bs_aio.c b/usr/bs_aio.c
+index c10be4b..733265f 100644
+--- a/usr/bs_aio.c
++++ b/usr/bs_aio.c
+@@ -77,7 +77,7 @@ retry:
+ 
+ 	ret = io_getevents(info-&gt;ctx, 1, MAX_AIO_REQS, info-&gt;events, NULL);
+ 	nr = ret;
+-	dprintf(&quot;%d&quot;, ret);
++	dprintf(&quot;%d,%d\n&quot;, ret, errno);
+ 	if (nr &gt; 0) {
+ 	rewrite:
+ 		ret = write(info-&gt;done_fd[1], &amp;nr, sizeof(nr));
+diff --git a/usr/mgmt.c b/usr/mgmt.c
+index ce73425..aa135ee 100644
+--- a/usr/mgmt.c
++++ b/usr/mgmt.c
+@@ -77,8 +77,7 @@ static int target_mgmt(int lld_no, struc
+ 
+ 	switch (req-&gt;op) {
+ 	case OP_NEW:
+-		err = tgt_target_create(lld_no, req-&gt;tid, mtask-&gt;buf,
+-					req-&gt;target_type);
++		err = tgt_target_create(lld_no, req-&gt;tid, mtask-&gt;buf);
+ 		break;
+ 	case OP_DELETE:
+ 		err = tgt_target_destroy(req-&gt;tid);
+@@ -169,7 +168,7 @@ static int device_mgmt(int lld_no, struc
+ 
+ 	switch (req-&gt;op) {
+ 	case OP_NEW:
+-		err = tgt_device_create(req-&gt;tid, req-&gt;lun, params);
++		err = tgt_device_create(req-&gt;tid, req-&gt;lun, req-&gt;target_type, params);
+ 		break;
+ 	case OP_DELETE:
+ 		err = tgt_device_destroy(req-&gt;tid, req-&gt;lun);
+diff --git a/usr/mmc.c b/usr/mmc.c
+index 6c6acfb..4eab50b 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -35,7 +35,7 @@ static int mmc_rw(int host_no, struct sc
+ 	int ret;
+ 
+ 	cmd-&gt;offset = (scsi_rw_offset(cmd-&gt;scb) &lt;&lt; MMC_BLK_SHIFT);
+-	ret = cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
++	ret = cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
+ 	if (ret) {
+ 		cmd-&gt;offset = 0;
+ 		cmd-&gt;len = 0;
+diff --git a/usr/osd.c b/usr/osd.c
+index 26cc511..da3853b 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -130,7 +130,7 @@ static int osd_varlen_cdb(int host_no, s
+ 	}
+ 
+ /* 	return SAM_STAT_GOOD; */
+-	return cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
++	return cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
+ }
+ 
+ static void device_osd_init(struct scsi_lu *lu)
+diff --git a/usr/sbc.c b/usr/sbc.c
+index f4f625f..edcd6e8 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -53,7 +53,7 @@ static int sbc_rw(int host_no, struct sc
+ 	}
+ 
+ 	cmd-&gt;offset = (scsi_rw_offset(cmd-&gt;scb) &lt;&lt; BLK_SHIFT);
+-	ret = cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
++	ret = cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
+ 	if (ret) {
+ 		key = HARDWARE_ERROR;
+ 		asc = 0;
+diff --git a/usr/scsi.c b/usr/scsi.c
+index dbc1474..d616cf4 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -119,5 +119,5 @@ uint64_t scsi_rw_offset(uint8_t *scb)
+ int scsi_cmd_perform(int host_no, struct scsi_cmd *cmd)
+ {
+ 	unsigned char op = cmd-&gt;scb[0];
+-	return cmd-&gt;c_target-&gt;dev_type_template.ops[op].cmd_perform(host_no, cmd);
++	return cmd-&gt;dev-&gt;dev_type_template.ops[op].cmd_perform(host_no, cmd);
+ }
+diff --git a/usr/spc.c b/usr/spc.c
+index ef8b62d..f5c7c86 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -39,8 +39,8 @@ int spc_inquiry(int host_no, struct scsi
+ 	int len, ret = SAM_STAT_CHECK_CONDITION;
+ 	uint8_t *data;
+ 	uint8_t *scb = cmd-&gt;scb;
+-	unsigned char device_type = cmd-&gt;c_target-&gt;dev_type_template.type;
+-	char *product_id = cmd-&gt;c_target-&gt;dev_type_template.pid;
++	unsigned char device_type = cmd-&gt;dev-&gt;dev_type_template.type;
++	char *product_id = cmd-&gt;dev-&gt;dev_type_template.pid;
+ 	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+ 
+ 	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+diff --git a/usr/spt.c b/usr/spt.c
+index ffcda5e..3d6b97d 100644
+--- a/usr/spt.c
++++ b/usr/spt.c
+@@ -67,7 +67,7 @@ static int spt_cmd_perform(int host_no, 
+ 	struct device_type_operations *ops;
+ 
+ 	if (!cmd-&gt;dev) {
+-		ops = cmd-&gt;c_target-&gt;dev_type_template.ops;
++		ops = cmd-&gt;dev-&gt;dev_type_template.ops;
+ 		return ops[cmd-&gt;scb[0]].cmd_perform(host_no, cmd);
+ 	}
+ 
+diff --git a/usr/target.c b/usr/target.c
+index f48839e..b49b143 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -166,7 +166,7 @@ static int tgt_device_path_update(struct
+ 	if (!path)
+ 		return TGTADM_NOMEM;
+ 
+-	err = target-&gt;bst-&gt;bs_open(lu, path, &amp;dev_fd, &amp;size);
++	err = lu-&gt;bst-&gt;bs_open(lu, path, &amp;dev_fd, &amp;size);
+ 	if (err) {
+ 		free(path);
+ 		return TGTADM_INVALID_REQUEST;
+@@ -198,12 +198,13 @@ __device_lookup(int tid, uint64_t lun, s
+ 	return lu;
+ }
+ 
+-int tgt_device_create(int tid, uint64_t lun, char *args)
++int tgt_device_create(int tid, uint64_t lun, uint32_t t_type, char *args)
+ {
+ 	char *p;
+ 	int err;
+ 	struct target *target;
+ 	struct scsi_lu *lu, *pos;
++    struct backingstore_template *bst;
+ 
+ 	dprintf(&quot;%d %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+ 
+@@ -225,9 +226,34 @@ int tgt_device_create(int tid, uint64_t 
+ 		return TGTADM_INVALID_REQUEST;
+ 	p++;
+ 
+-	lu = zalloc(sizeof(*lu) + target-&gt;bst-&gt;bs_datasize);
++    /* FIXME */
++	if (t_type == TYPE_SPT)
++		bst = &amp;sg_bst;
++	else
++		bst = tgt_drivers[target-&gt;lid]-&gt;default_bst;
++
++	lu = zalloc(sizeof(*lu) + bst-&gt;bs_datasize);
+ 	if (!lu)
+ 		return TGTADM_NOMEM;
++    lu-&gt;bst = bst;
++
++	switch (t_type) {
++	case TYPE_DISK:
++		lu-&gt;dev_type_template = sbc_template;
++		break;
++	case TYPE_ROM:
++		lu-&gt;dev_type_template = mmc_template;
++		break;
++	case TYPE_OSD:
++		lu-&gt;dev_type_template = osd_template;
++		break;
++	case TYPE_SPT:
++		lu-&gt;dev_type_template = spt_template;
++		break;
++	default:
++		free(lu);
++		return TGTADM_INVALID_REQUEST;
++	}
+ 
+ 	err = tgt_device_path_update(target, lu, p);
+ 	if (err) {
+@@ -243,8 +269,8 @@ int tgt_device_create(int tid, uint64_t 
+ 
+ 	tgt_cmd_queue_init(&amp;lu-&gt;cmd_queue);
+ 
+-	if (target-&gt;dev_type_template.device_init)
+-		target-&gt;dev_type_template.device_init(lu);
++	if (lu-&gt;dev_type_template.device_init)
++		lu-&gt;dev_type_template.device_init(lu);
+ 
+ 	list_for_each_entry(pos, &amp;target-&gt;device_list, device_siblings) {
+ 		if (lu-&gt;lun &lt; pos-&gt;lun)
+@@ -275,7 +301,7 @@ int tgt_device_destroy(int tid, uint64_t
+ 	free(lu-&gt;path);
+ 	list_del(&amp;lu-&gt;device_siblings);
+ 
+-	target-&gt;bst-&gt;bs_close(lu);
++	lu-&gt;bst-&gt;bs_close(lu);
+ 	free(lu);
+ 	return 0;
+ }
+@@ -509,7 +535,7 @@ static void __cmd_done(struct target *ta
+ 		if (cmd-&gt;dev-&gt;addr)
+ 			do_munmap = 0;
+ 	}
+-	err = target-&gt;bst-&gt;bs_cmd_done(do_munmap,
++	err = cmd-&gt;dev-&gt;bst-&gt;bs_cmd_done(do_munmap,
+ 				       !cmd-&gt;mmapped,
+ 				       cmd-&gt;uaddr, cmd-&gt;len);
+ 
+@@ -1073,7 +1099,7 @@ int tgt_target_show_all(char *buf, int r
+ 			 _TAB2 &quot;Status: %s\n&quot;,
+ 			 target-&gt;tid,
+ 			 target-&gt;name,
+-			 target-&gt;dev_type_template.name,
++			 /*target-&gt;dev_type_template.name*/&quot;&quot;,
+ 			 tgt_drivers[target-&gt;lid]-&gt;name,
+ 			 target_state_name(target-&gt;target_state));
+ 
+@@ -1140,7 +1166,7 @@ char *tgt_targetname(int tid)
+ 
+ #define DEFAULT_NR_ACCOUNT 16
+ 
+-int tgt_target_create(int lld, int tid, char *args, int t_type)
++int tgt_target_create(int lld, int tid, char *args)
+ {
+ 	int i;
+ 	struct target *target, *pos;
+@@ -1174,24 +1200,6 @@ int tgt_target_create(int lld, int tid, 
+ 	if (!target)
+ 		return TGTADM_NOMEM;
+ 
+-	switch (t_type) {
+-	case TYPE_DISK:
+-		target-&gt;dev_type_template = sbc_template;
+-		break;
+-	case TYPE_ROM:
+-		target-&gt;dev_type_template = mmc_template;
+-		break;
+-	case TYPE_OSD:
+-		target-&gt;dev_type_template = osd_template;
+-		break;
+-	case TYPE_SPT:
+-		target-&gt;dev_type_template = spt_template;
+-		break;
+-	default:
+-		free(target);
+-		return TGTADM_INVALID_REQUEST;
+-	}
+-
+ 	target-&gt;name = strdup(targetname);
+ 	if (!target-&gt;name) {
+ 		free(target);
+@@ -1212,12 +1220,6 @@ int tgt_target_create(int lld, int tid, 
+ 
+ 	INIT_LIST_HEAD(&amp;target-&gt;device_list);
+ 
+-	/* FIXME */
+-	if (t_type == TYPE_SPT)
+-		target-&gt;bst = &amp;sg_bst;
+-	else
+-		target-&gt;bst = tgt_drivers[lld]-&gt;default_bst;
+-
+ 	target-&gt;target_state = SCSI_TARGET_RUNNING;
+ 	target-&gt;lid = lld;
+ 
+diff --git a/usr/target.h b/usr/target.h
+index fe2e21e..847e4ac 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -44,14 +44,9 @@ struct target {
+ 
+ 	struct tgt_cmd_queue cmd_queue;
+ 
+-	struct backingstore_template *bst;
+-
+ 	struct list_head acl_list;
+ 
+ 	struct tgt_account account;
+-
+-	/* we don't use a pointer because a lld could change this. */
+-	struct device_type_template dev_type_template;
+ };
+ 
+ struct it_nexus {
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 7eecc0a..de7d889 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -34,6 +34,23 @@ struct tgt_cmd_queue {
+ 	struct list_head queue;
+ };
+ 
++struct scsi_lu;
++struct scsi_cmd;
++
++struct device_type_operations {
++	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
++};
++
++struct device_type_template {
++	unsigned char type;
++	char *name;
++	char *pid;
++
++	void (*device_init)(struct scsi_lu *dev);
++
++	struct device_type_operations ops[256];
++};
++
+ struct scsi_lu {
+ 	int fd;
+ 	uint64_t addr; /* persistent mapped address */
+@@ -54,6 +71,10 @@ struct scsi_lu {
+ 
+ 	/* TODO: needs a structure for lots of device parameters */
+ 	uint8_t d_sense;
++
++    struct device_type_template dev_type_template;
++    struct backingstore_template *bst;
++    void *private;
+ };
+ 
+ struct scsi_cmd {
+@@ -102,32 +123,19 @@ static inline int kreq_init(void)	\
+ }
+ #endif
+ 
+-struct device_type_operations {
+-	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
+-};
+-
+-struct device_type_template {
+-	unsigned char type;
+-	char *name;
+-	char *pid;
+-
+-	void (*device_init)(struct scsi_lu *dev);
+-
+-	struct device_type_operations ops[256];
+-};
+ 
+ extern int kspace_send_tsk_mgmt_res(uint64_t nid, uint64_t mid, int result);
+ extern int kspace_send_cmd_res(uint64_t nid, int result, struct scsi_cmd *);
+ 
+ extern int ipc_init(void);
+-extern int tgt_device_create(int tid, uint64_t lun, char *args);
++extern int tgt_device_create(int tid, uint64_t lun, uint32_t type, char *args);
+ extern int tgt_device_destroy(int tid, uint64_t lun);
+ extern int tgt_device_update(int tid, uint64_t dev_id, char *name);
+ extern int device_reserve(uint64_t nid, uint64_t lun, uint64_t reserve_id);
+ extern int device_release(uint64_t nid, uint64_t lun, uint64_t reserve_id, int force);
+ extern int device_reserved(uint64_t nid, uint64_t lun, uint64_t reserve_id);
+ 
+-extern int tgt_target_create(int lld, int tid, char *args, int t_type);
++extern int tgt_target_create(int lld, int tid, char *args);
+ extern int tgt_target_destroy(int tid);
+ extern int tgt_target_bind(int tid, int host_no, int lld);
+ extern char *tgt_targetname(int tid);
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000488.html">[Stgt-devel] CRC32C not working
+</A></li>
+	<LI>Next message: <A HREF="000490.html">[Stgt-devel] modularization target types.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#489">[ date ]</a>
+              <a href="thread.html#489">[ thread ]</a>
+              <a href="subject.html#489">[ subject ]</a>
+              <a href="author.html#489">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

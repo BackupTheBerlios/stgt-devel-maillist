@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to	clear a list that is already empty
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20list.h%3A%20prevent%20a%20SEGV%20if%20we%20try%20to%0A%09clear%20a%20list%20that%20is%20already%20empty&In-Reply-To=%3Cc9a3e4540807090006k273d8d9ag6cb0d020e723a5e9%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001747.html">
+   <LINK REL="Next"  HREF="001743.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to	clear a list that is already empty</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20list.h%3A%20prevent%20a%20SEGV%20if%20we%20try%20to%0A%09clear%20a%20list%20that%20is%20already%20empty&In-Reply-To=%3Cc9a3e4540807090006k273d8d9ag6cb0d020e723a5e9%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to	clear a list that is already empty">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Wed Jul  9 09:06:46 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001747.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+</A></li>
+        <LI>Next message: <A HREF="001743.html">[PATCH] Make sure that -&gt;prev and -&gt;next are non-NULL before we call __list_del() and dereference them.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1754">[ date ]</a>
+              <a href="thread.html#1754">[ thread ]</a>
+              <a href="subject.html#1754">[ subject ]</a>
+              <a href="author.html#1754">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Ok.
+
+I easily reproduced it with three hosts.
+
+One target:
+One host runs tgtd and exports a LUN.
+Attach GDB to tgtd.
+
+
+Two initiators:
+The two other hosts run iscsi initiator to log into the target.
+I ran a small : while true; do dd if=... of=/dev/null bs=512 count=1;
+date; done   on each one of them to see that they were doing i/o
+continously.
+
+
+On one of the initiators, disable all the respose traffic coming back
+from the target
+iptables -I INPUT -s &lt;target IP&gt; -p tcp --sport 3260 -j DROP
+
+The output from the while/dd loop on that initiator would immediately hang.
+After a while tgtd would SEGV.
+
+
+
+ronnie
+
+
+On Wed, Jul 9, 2008 at 3:32 PM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Mon, 7 Jul 2008 11:12:08 +1000
+</I>&gt;<i> &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;&gt;<i> Please apply.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I have reproduced the SEGV that was reported when I/O has failed/been aborted.
+</I>&gt;&gt;<i> This pathc prevents the SEGV from occuring in this situation.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> It does however not address the root cause why tgtd tries to clear a
+</I>&gt;&gt;<i> list that is already (and it should know is already?) empty.
+</I>&gt;<i>
+</I>&gt;<i> It might be easy to debug tgtd with this workaround patch but after
+</I>&gt;<i> all we need to fix the root problem. It's likely that this workaround
+</I>&gt;<i> will hurt us in the future.
+</I>&gt;<i>
+</I>&gt;<i> I think that there might be bugs in Task Management Message
+</I>&gt;<i> handling. I try to reproduce the problem after I get the detailed
+</I>&gt;<i> information of Tomasz's configuration.
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001747.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+</A></li>
+	<LI>Next message: <A HREF="001743.html">[PATCH] Make sure that -&gt;prev and -&gt;next are non-NULL before we call __list_del() and dereference them.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1754">[ date ]</a>
+              <a href="thread.html#1754">[ thread ]</a>
+              <a href="subject.html#1754">[ subject ]</a>
+              <a href="author.html#1754">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

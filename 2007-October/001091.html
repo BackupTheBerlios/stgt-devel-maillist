@@ -1,0 +1,1868 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 18/20] iser core
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2018/20%5D%20iser%20core&In-Reply-To=%3C1bf0a2c95f1f14897186ad57628c0c159229adc1.1192554396.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001090.html">
+   <LINK REL="Next"  HREF="001089.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 18/20] iser core</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2018/20%5D%20iser%20core&In-Reply-To=%3C1bf0a2c95f1f14897186ad57628c0c159229adc1.1192554396.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 18/20] iser core">pw at osc.edu
+       </A><BR>
+    <I>Tue Oct 16 17:21:25 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001090.html">[Stgt-devel] [PATCH 16/20] iser params
+</A></li>
+        <LI>Next message: <A HREF="001089.html">[Stgt-devel] [PATCH 19/20] iser flush before disconn
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1091">[ date ]</a>
+              <a href="thread.html#1091">[ thread ]</a>
+              <a href="subject.html#1091">[ subject ]</a>
+              <a href="author.html#1091">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Core iSCSI RDMA support.  Adds the iscsi_rdma.c file that implements the
+RDMA transport.  Enabled only if ISCSI_RDMA is defined during the build,
+in which case RDMA libraries and headers must be present on the system.
+
+The iscsi TX handler redirects R2T and DATA_IN packets to new transport
+functions for RDMA mode.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/Makefile           |    5 +
+ usr/iscsi/iscsi_rdma.c | 1688 ++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/iscsi/iscsid.c     |   25 +
+ usr/iscsi/transport.c  |    3 +
+ usr/iscsi/transport.h  |    3 +
+ 5 files changed, 1724 insertions(+), 0 deletions(-)
+ create mode 100644 usr/iscsi/iscsi_rdma.c
+
+diff --git a/usr/Makefile b/usr/Makefile
+index addf5be..745eaba 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -38,6 +38,11 @@ TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o \
+ 		isns.o libcrc32c.o)
+ TGTD_OBJS += bs_sync.o
+ LIBS += -lcrypto -lpthread
++ifneq ($(ISCSI_RDMA),)
++CFLAGS += -DISCSI_RDMA
++TGTD_OBJS += iscsi/iscsi_rdma.o
++LIBS += -libverbs -lrdmacm
++endif
+ endif
+ 
+ ifneq ($(FCP),)
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+new file mode 100644
+index 0000000..9e6bac6
+--- /dev/null
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -0,0 +1,1688 @@
++/*
++ * iSCSI extensions for RDMA (iSER) data path
++ *
++ * Copyright (C) 2007 Dennis Dalessandro (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dennis at osc.edu</A>)
++ * Copyright (C) 2007 Ananth Devulapalli (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ananth at osc.edu</A>)
++ * Copyright (C) 2007 Pete Wyckoff (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>)
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;errno.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;assert.h&gt;
++#include &lt;netdb.h&gt;
++#include &lt;sys/epoll.h&gt;
++#include &lt;infiniband/verbs.h&gt;
++#include &lt;rdma/rdma_cma.h&gt;
++
++#include &quot;util.h&quot;
++#include &quot;iscsid.h&quot;
++
++#if defined(HAVE_VALGRIND) &amp;&amp; !defined(NDEBUG)
++#include &lt;valgrind/memcheck.h&gt;
++#else
++#define VALGRIND_MAKE_MEM_DEFINED(addr, len)
++#endif
++
++/*
++ * The IB-extended version from the kernel.  Stags and VAs are in
++ * big-endian format.
++ */
++struct iser_hdr {
++	uint8_t   flags;
++	uint8_t   rsvd[3];
++	uint32_t  write_stag; /* write rkey */
++	uint64_t  write_va;
++	uint32_t  read_stag;  /* read rkey */
++	uint64_t  read_va;
++} __attribute__((packed));
++
++#define ISER_WSV	(0x08)
++#define ISER_RSV	(0x04)
++#define ISCSI_CTRL	(0x10)
++#define ISER_HELLO	(0x20)
++#define ISER_HELLORPLY	(0x30)
++
++struct conn_info;
++
++/*
++ * Posted receives for control messages.  All must start with the conn
++ * pointer, which will be followed up from a work request during a flush,
++ * when it is not known what type to expect.
++ */
++struct recvlist {
++	struct conn_info *conn;
++	struct ibv_sge sge;
++	void *buf;
++	struct ibv_recv_wr wr;
++	unsigned long bytes_recvd;
++};
++
++/*
++ * Posted sends for control messages.
++ */
++struct sendlist {
++	struct conn_info *conn;
++	struct ibv_sge sge;
++	void *buf;
++	struct ibv_send_wr wr;
++	struct list_head list;
++};
++
++/*
++ * RDMA read and write operations.
++ */
++struct rdmalist {
++	struct conn_info *conn;
++	struct ibv_sge sge;
++	struct ibv_send_wr wr;
++	struct list_head list;
++	struct iscsi_task *task;  /* to get iser_task for remote stag and va */
++};
++
++/*
++ * Each SCSI command may have its own RDMA parameters.  These appear on
++ * the connection then later are assigned to the particular task to be
++ * used when the target responds.
++ */
++struct iser_task {
++	/* read and write from the initiator's point of view */
++	uint32_t rem_read_stag, rem_write_stag;
++	uint64_t rem_read_va, rem_write_va;
++};
++
++struct iser_device;
++
++/*
++ * Parallels iscsi_connection.  Adds more fields for iser.
++ */
++struct conn_info {
++	struct ibv_qp *qp_hndl;
++	struct rdma_cm_id *cma_id;
++	struct iscsi_connection *iscsi_conn;
++	struct iser_device *dev;
++	struct sockaddr_storage peer_addr;  /* initiator address */
++	struct sockaddr_storage self_addr;  /* target address */
++	unsigned int ssize, rsize, max_outst_pdu;
++	unsigned int readb, writeb;
++
++	/* read and write from the initiator's point of view */
++	uint32_t rem_read_stag, rem_write_stag;
++	uint64_t rem_read_va, rem_write_va;
++
++	enum {
++	    LOGIN_PHASE_START,      /* keep 1 send spot and 1 recv posted */
++	    LOGIN_PHASE_LAST_SEND,  /* need 1 more send before ff */
++	    LOGIN_PHASE_FF,         /* full feature */
++	} login_phase;
++
++	void *srbuf;    /* registered space for non-rdma send and recv */
++	void *listbuf;  /* space for the send, recv, rdma list elements */
++	struct ibv_mr *srmr;   /* mr for registered srbuf */
++
++	/* lists of free send, rdma slots */
++	struct list_head sendl, rdmal;
++
++	/* no recvl: just always immediately repost */
++	/* but count so we can drain CQ on close */
++	int recvl_posted;
++
++	/* login phase resources, freed at full-feature */
++	void *srbuf_login;
++	void *listbuf_login;
++	struct ibv_mr *srmr_login;
++	struct list_head sendl_login, recvl_login;
++
++	/* points to the current recvlist, sendlist items for each conn */
++	struct recvlist *rcv_comm_event;
++	struct sendlist *send_comm_event;
++
++	/* to chain this connection onto the list of those ready to tx */
++	struct list_head conn_tx_ready;
++
++	/* list of all iser conns */
++	struct list_head iser_conn_list;
++
++	/* to consume posted receives after disconnect */
++	int draining;
++
++	/* when free has been called, waits until all posted msgs complete */
++	int freed;
++};
++
++/*
++ * Pre-registered memory.  Buffers are allocated by iscsi from us, handed
++ * to device to fill, then iser can send them directly without registration.
++ * Also for write path.
++ */
++struct mempool {
++	struct list_head list;
++	void *buf;
++};
++
++/*
++ * Shared variables for a particular device.  The conn[] array will
++ * have to be broken out when multiple device support is added, maybe with
++ * a pointer into this &quot;device&quot; struct.
++ */
++struct iser_device {
++	struct list_head list;
++	struct ibv_context *ibv_hndl;
++	struct ibv_pd *pd;
++	struct ibv_cq *cq;
++	struct ibv_comp_channel *cq_channel;
++
++	/* mempool registered buffer, list area, handle */
++	void *mempool_regbuf;
++	void *mempool_listbuf;
++	struct ibv_mr *mempool_mr;
++
++	/* free and allocated mempool entries */
++	struct list_head mempool_free, mempool_alloc;
++};
++
++/* global, across all devices */
++static struct rdma_event_channel *rdma_evt_channel;
++static struct rdma_cm_id *cma_listen_id;
++static struct list_head conn_tx_ready;  /* conns with tasks ready to tx */
++
++/* accepted at RDMA layer, but not yet established */
++static struct list_head temp_conn;
++
++/* all devices */
++static struct list_head iser_dev_list;
++
++/* all iser connections */
++static struct list_head iser_conn_list;
++
++/* if any task needs an rdma read or write slot to proceed */
++static int waiting_rdma_slot;
++
++/* progress available, used with tgt_counter_event */
++static int num_tx_ready;
++static int num_rx_ready;
++
++#define uint64_from_ptr(p) (uint64_t)(uintptr_t)(p)
++#define ptr_from_int64(p) (void *)(unsigned long)(p)
++
++#define ISCSI_LISTEN_PORT 3260
++
++/*
++ * Crazy hard-coded linux iser settings need 128 * 8 slots + slop, plus
++ * room for our rdmas and send requests.
++ */
++#define MAX_WQE 1800
++
++/*
++ * Number of outstanding RDMAs per command; should instead wait for previous
++ * RDMAs to complete before starting new ones.
++ *
++ * The RDMA size is completely up to the target.  Parameters IRDSL and TRDSL
++ * only apply to control-type PDUs.  We allocate only so many rdma slots
++ * per connection, but many tasks might be in progress on the connection.
++ * Internal flow control stops tasks when there are no slots.
++ *
++ * RDMA size tradeoffs:
++ *    big RDMA operations are more efficient
++ *    small RDMA operations better for fairness with many clients
++ *    small RDMA operations allow better pipelining
++ *    eventually target devices may not want to have to malloc and return
++ *        entire buffer to transport in one go
++ */
++#define RDMA_PER_CONN 20
++#define RDMA_TRANSFER_SIZE (512 * 1024)
++
++/*
++ * Number of allocatable buffers, each of this size.  Headers are added
++ * so that iscsi alloctations fit.  Do at least 128 for linux iser.
++ */
++#define MEMPOOL_NUM (192)
++#define MEMPOOL_SIZE roundup(512 * 1024 + \
++			     sizeof(struct iscsi_task) + \
++			     sizeof(struct iser_hdr) + \
++			     sizeof(struct iscsi_hdr) + \
++			     sizeof(struct iscsi_ecdb_ahdr) + \
++			     sizeof(struct iscsi_rlength_ahdr), 4096)
++
++static void iser_cqe_handler(int fd, int events, void *data);
++static void iser_rx_progress(int *counter, void *data);
++static void iser_rdma_read_completion(struct rdmalist *rdma);
++static void iscsi_rdma_conn_free(struct iscsi_connection *conn);
++static int iscsi_rdma_show(struct iscsi_connection *iscsi_conn, char *buf,
++			   int rest);
++static void iscsi_rdma_event_modify(struct iscsi_connection *conn, int events);
++
++/*
++ * Called when ready for full feature, builds resources.
++ */
++static int iser_init_comm(struct conn_info *conn)
++{
++	unsigned int i;
++	int ret = -1;
++	unsigned long size;
++	uint8_t *srbuf, *listbuf;
++	struct sendlist *sendl;
++	struct recvlist *recvl;
++	struct rdmalist *rdmal;
++	struct ibv_recv_wr *bad_wr;
++	int rdma_per_conn = RDMA_PER_CONN;
++
++	dprintf(&quot;sizing %u/%u outst %u\n&quot;, conn-&gt;ssize, conn-&gt;rsize,
++		conn-&gt;max_outst_pdu);
++
++	size = (conn-&gt;rsize + conn-&gt;ssize) * conn-&gt;max_outst_pdu;
++	conn-&gt;srbuf = malloc(size);
++	if (!conn-&gt;srbuf) {
++		eprintf(&quot;malloc srbuf %lu\n&quot;, size);
++		goto out;
++	}
++
++	conn-&gt;srmr = ibv_reg_mr(conn-&gt;dev-&gt;pd, conn-&gt;srbuf, size,
++				IBV_ACCESS_LOCAL_WRITE);
++	if (!conn-&gt;srmr) {
++		eprintf(&quot;register srbuf\n&quot;);
++		goto out;
++	}
++
++	INIT_LIST_HEAD(&amp;conn-&gt;sendl);
++	INIT_LIST_HEAD(&amp;conn-&gt;rdmal);
++
++	size = conn-&gt;max_outst_pdu * sizeof(struct sendlist) +
++	       conn-&gt;max_outst_pdu * sizeof(struct recvlist) +
++	       conn-&gt;max_outst_pdu * rdma_per_conn * sizeof(struct rdmalist);
++	conn-&gt;listbuf = malloc(size);
++	if (!conn-&gt;listbuf) {
++		eprintf(&quot;malloc listbuf %lu\n&quot;, size);
++		goto out;
++	}
++	memset(conn-&gt;listbuf, 0, size);
++
++	srbuf = conn-&gt;srbuf;
++	listbuf = conn-&gt;listbuf;
++	for (i = 0; i &lt; conn-&gt;max_outst_pdu; i++) {
++		sendl = (void *) listbuf;
++		listbuf += sizeof(*sendl);
++		sendl-&gt;buf = srbuf;
++		srbuf += conn-&gt;ssize;
++		sendl-&gt;conn = conn;
++
++		sendl-&gt;sge.addr = uint64_from_ptr(sendl-&gt;buf);
++		sendl-&gt;sge.length = conn-&gt;ssize;
++		sendl-&gt;sge.lkey = conn-&gt;srmr-&gt;lkey;
++
++		sendl-&gt;wr.wr_id = uint64_from_ptr(sendl);
++		sendl-&gt;wr.sg_list = &amp;sendl-&gt;sge;
++		sendl-&gt;wr.num_sge = 1;
++		sendl-&gt;wr.opcode = IBV_WR_SEND;
++		sendl-&gt;wr.send_flags = IBV_SEND_SIGNALED;
++		list_add_tail(&amp;sendl-&gt;list, &amp;conn-&gt;sendl);
++	}
++
++	for (i = 0; i &lt; conn-&gt;max_outst_pdu; i++) {
++		recvl = (void *) listbuf;
++		listbuf += sizeof(*recvl);
++		recvl-&gt;buf = srbuf;
++		srbuf += conn-&gt;rsize;
++		recvl-&gt;conn = conn;
++
++		recvl-&gt;sge.addr = uint64_from_ptr(recvl-&gt;buf);
++		recvl-&gt;sge.length = conn-&gt;rsize;
++		recvl-&gt;sge.lkey = conn-&gt;srmr-&gt;lkey;
++
++		recvl-&gt;wr.wr_id = uint64_from_ptr(recvl);
++		recvl-&gt;wr.sg_list = &amp;recvl-&gt;sge;
++		recvl-&gt;wr.num_sge = 1;
++
++		ret = ibv_post_recv(conn-&gt;qp_hndl, &amp;recvl-&gt;wr, &amp;bad_wr);
++		if (ret) {
++			eprintf(&quot;ibv_post_recv (%d/%d): %m\n&quot;, i,
++				conn-&gt;max_outst_pdu);
++			exit(1);
++		}
++		++conn-&gt;recvl_posted;
++	}
++
++	for (i = 0; i &lt; conn-&gt;max_outst_pdu * rdma_per_conn; i++) {
++		rdmal = (void *) listbuf;
++		listbuf += sizeof(*rdmal);
++		rdmal-&gt;conn = conn;
++		rdmal-&gt;sge.lkey = conn-&gt;dev-&gt;mempool_mr-&gt;lkey;
++
++		rdmal-&gt;wr.wr_id = uint64_from_ptr(rdmal);
++		rdmal-&gt;wr.sg_list = &amp;rdmal-&gt;sge;
++		rdmal-&gt;wr.num_sge = 1;
++		rdmal-&gt;wr.send_flags = IBV_SEND_SIGNALED;
++		list_add_tail(&amp;rdmal-&gt;list, &amp;conn-&gt;rdmal);
++	}
++
++	ret = 0;
++
++out:
++	return ret;
++}
++
++/*
++ * Called at accept time, builds resources just for login phase.
++ */
++static int iser_init_comm_login(struct conn_info *conn)
++{
++	unsigned int i;
++	int ret = -1;
++	unsigned long size;
++	uint8_t *srbuf, *listbuf;
++	struct sendlist *sendl;
++	struct recvlist *recvl;
++	struct ibv_recv_wr *bad_wr;
++
++	dprintf(&quot;sizing %u/%u outst %u\n&quot;, conn-&gt;ssize, conn-&gt;rsize,
++		conn-&gt;max_outst_pdu);
++
++	size = (conn-&gt;rsize + conn-&gt;ssize) * conn-&gt;max_outst_pdu;
++	conn-&gt;srbuf_login = malloc(size);
++	if (!conn-&gt;srbuf_login) {
++		eprintf(&quot;malloc srbuf %lu\n&quot;, size);
++		goto out;
++	}
++
++	conn-&gt;srmr_login = ibv_reg_mr(conn-&gt;dev-&gt;pd, conn-&gt;srbuf_login, size,
++				      IBV_ACCESS_LOCAL_WRITE);
++	if (!conn-&gt;srmr_login) {
++		eprintf(&quot;ibv_reg_mr srbuf failed\n&quot;);
++		goto out;
++	}
++
++	INIT_LIST_HEAD(&amp;conn-&gt;sendl_login);
++	INIT_LIST_HEAD(&amp;conn-&gt;recvl_login);
++
++	size = conn-&gt;max_outst_pdu * sizeof(struct sendlist) +
++	       conn-&gt;max_outst_pdu * sizeof(struct recvlist);
++	conn-&gt;listbuf_login = malloc(size);
++	if (!conn-&gt;listbuf_login) {
++		eprintf(&quot;malloc listbuf %lu\n&quot;, size);
++		goto out;
++	}
++	memset(conn-&gt;listbuf_login, 0, size);
++
++	srbuf = conn-&gt;srbuf_login;
++	listbuf = conn-&gt;listbuf_login;
++	for (i = 0; i &lt; conn-&gt;max_outst_pdu; i++) {
++		sendl = (void *) listbuf;
++		listbuf += sizeof(*sendl);
++		sendl-&gt;buf = srbuf;
++		srbuf += conn-&gt;ssize;
++		sendl-&gt;conn = conn;
++
++		sendl-&gt;sge.addr = uint64_from_ptr(sendl-&gt;buf);
++		sendl-&gt;sge.length = conn-&gt;ssize;
++		sendl-&gt;sge.lkey = conn-&gt;srmr_login-&gt;lkey;
++
++		sendl-&gt;wr.wr_id = uint64_from_ptr(sendl);
++		sendl-&gt;wr.sg_list = &amp;sendl-&gt;sge;
++		sendl-&gt;wr.num_sge = 1;
++		sendl-&gt;wr.opcode = IBV_WR_SEND;
++		sendl-&gt;wr.send_flags = IBV_SEND_SIGNALED;
++		list_add_tail(&amp;sendl-&gt;list, &amp;conn-&gt;sendl_login);
++	}
++
++	for (i = 0; i &lt; conn-&gt;max_outst_pdu; i++) {
++		recvl = (void *) listbuf;
++		listbuf += sizeof(*recvl);
++		recvl-&gt;buf = srbuf;
++		srbuf += conn-&gt;rsize;
++		recvl-&gt;conn = conn;
++
++		recvl-&gt;sge.addr = uint64_from_ptr(recvl-&gt;buf);
++		recvl-&gt;sge.length = conn-&gt;rsize;
++		recvl-&gt;sge.lkey = conn-&gt;srmr_login-&gt;lkey;
++
++		recvl-&gt;wr.wr_id = uint64_from_ptr(recvl);
++		recvl-&gt;wr.sg_list = &amp;recvl-&gt;sge;
++		recvl-&gt;wr.num_sge = 1;
++		recvl-&gt;wr.next = NULL;
++
++		ret = ibv_post_recv(conn-&gt;qp_hndl, &amp;recvl-&gt;wr, &amp;bad_wr);
++		if (ret) {
++			eprintf(&quot;ibv_post_recv: %m\n&quot;);
++			goto out;
++		}
++	}
++
++	ret = 0;
++
++out:
++	return ret;
++}
++
++/*
++ * On connection shutdown.
++ */
++static void iser_free_comm(struct conn_info *ci)
++{
++	int ret;
++
++	dprintf(&quot;freeing conn %p\n&quot;, ci);
++
++	/* release mr and free the lists */
++	dprintf(&quot;dereg mr %p\n&quot;, ci-&gt;srmr);
++	ret = ibv_dereg_mr(ci-&gt;srmr);
++	if (ret)
++		eprintf(&quot;ibv_dereg_mr\n&quot;);
++	free(ci-&gt;srbuf);
++	free(ci-&gt;listbuf);
++}
++
++/*
++ * When ready for full-feature mode, free login-phase resources.
++ */
++static void iser_free_comm_login(struct conn_info *ci)
++{
++	int ret;
++
++	if (ci-&gt;srbuf_login == NULL)
++		return;
++
++	dprintf(&quot;freeing, login phase %d\n&quot;, ci-&gt;login_phase);
++
++	/* release mr and free the lists */
++	ret = ibv_dereg_mr(ci-&gt;srmr_login);
++	if (ret)
++		eprintf(&quot;ibv_dereg_mr\n&quot;);
++	free(ci-&gt;srbuf_login);
++	free(ci-&gt;listbuf_login);
++	ci-&gt;srbuf_login = NULL;  /* remember freed */
++}
++
++/*
++ * One pool of registered memory per device (per PD that is).
++ */
++static int iser_init_mempool(struct iser_device *dev)
++{
++	struct mempool *mp;
++	uint8_t *regbuf, *listbuf;
++	int i;
++
++	regbuf = malloc(MEMPOOL_NUM * MEMPOOL_SIZE);
++	if (!regbuf) {
++		eprintf(&quot;malloc regbuf %zu\n&quot;, MEMPOOL_NUM * MEMPOOL_SIZE);
++		return -ENOMEM;
++	}
++
++	listbuf = malloc(MEMPOOL_NUM * sizeof(*mp));
++	if (!listbuf) {
++		eprintf(&quot;malloc listbuf %zu\n&quot;, MEMPOOL_NUM * sizeof(*mp));
++		free(regbuf);
++		return -ENOMEM;
++	}
++
++	dev-&gt;mempool_mr = ibv_reg_mr(dev-&gt;pd, regbuf,
++				     MEMPOOL_NUM * MEMPOOL_SIZE,
++				     IBV_ACCESS_LOCAL_WRITE);
++	if (!dev-&gt;mempool_mr) {
++		eprintf(&quot;register regbuf\n&quot;);
++		free(regbuf);
++		free(listbuf);
++		return -1;
++	}
++
++	dev-&gt;mempool_regbuf = regbuf;
++	dev-&gt;mempool_listbuf = listbuf;
++	INIT_LIST_HEAD(&amp;dev-&gt;mempool_free);
++	INIT_LIST_HEAD(&amp;dev-&gt;mempool_alloc);
++
++	for (i = 0; i &lt; MEMPOOL_NUM; i++) {
++		mp = (void *) listbuf;
++		listbuf += sizeof(*mp);
++		mp-&gt;buf = regbuf;
++		regbuf += MEMPOOL_SIZE;
++		list_add_tail(&amp;mp-&gt;list, &amp;dev-&gt;mempool_free);
++	}
++
++	return 0;
++}
++
++/*
++ * First time a new connection is received on an RDMA device, record
++ * it and build a PD and static memory.
++ */
++static int iser_device_init(struct iser_device *dev)
++{
++	struct ibv_device_attr device_attr;
++	int cqe_num;
++	int ret = -1;
++
++	dprintf(&quot;dev %p\n&quot;, dev);
++	dev-&gt;pd = ibv_alloc_pd(dev-&gt;ibv_hndl);
++	if (dev-&gt;pd == NULL) {
++		eprintf(&quot;ibv_alloc_pd failed\n&quot;);
++		goto out;
++	}
++
++	ret = iser_init_mempool(dev);
++	if (ret) {
++		eprintf(&quot;iser_init_mempool failed\n&quot;);
++		goto out;
++	}
++
++	ret = ibv_query_device(dev-&gt;ibv_hndl, &amp;device_attr);
++	if (ret &lt; 0) {
++		eprintf(&quot;ibv_query_device: %m\n&quot;);
++		goto out;
++	}
++	cqe_num = device_attr.max_cqe;
++	dprintf(&quot;max %d CQEs\n&quot;, cqe_num);
++
++	ret = -1;
++	dev-&gt;cq_channel = ibv_create_comp_channel(dev-&gt;ibv_hndl);
++	if (dev-&gt;cq_channel == NULL) {
++		eprintf(&quot;ibv_create_comp_channel failed: %m\n&quot;);
++		goto out;
++	}
++
++	dev-&gt;cq = ibv_create_cq(dev-&gt;ibv_hndl, cqe_num, NULL,
++				dev-&gt;cq_channel, 0);
++	if (dev-&gt;cq == NULL) {
++		eprintf(&quot;ibv_create_cq failed: %m\n&quot;);
++		goto out;
++	}
++
++	ret = ibv_req_notify_cq(dev-&gt;cq, 0);
++	if (ret) {
++		eprintf(&quot;ibv_req_notify failed: %s\n&quot;, strerror(ret));
++		goto out;
++	}
++
++	ret = tgt_event_add(dev-&gt;cq_channel-&gt;fd, EPOLLIN, iser_cqe_handler,
++			    dev);
++	if (ret) {
++		eprintf(&quot;tgt_event_add failed: %m\n&quot;);
++		goto out;
++
++	}
++
++	list_add(&amp;dev-&gt;list, &amp;iser_dev_list);
++
++out:
++	return ret;
++}
++
++static void iser_accept_connection(struct rdma_cm_event *event)
++{
++	int ret, found;
++	struct ibv_qp_init_attr qp_init_attr;
++	struct iscsi_connection *conn;
++	struct conn_info *ci;
++	struct iser_device *dev;
++	unsigned int hdrsz;
++	struct rdma_conn_param conn_param = {
++		.responder_resources = 1,
++		.initiator_depth = 1,
++		.retry_count = 5,
++	};
++
++	dprintf(&quot;entry\n&quot;);
++
++	/* find device */
++	found = 0;
++	list_for_each_entry(dev, &amp;iser_dev_list, list) {
++		if (dev-&gt;ibv_hndl == event-&gt;id-&gt;verbs) {
++			found = 1;
++			break;
++		}
++	}
++	if (!found) {
++		dev = malloc(sizeof(*dev));
++		if (dev == NULL) {
++			eprintf(&quot;unable to allocate dev\n&quot;);
++			goto reject;
++		}
++		dev-&gt;ibv_hndl = event-&gt;id-&gt;verbs;
++		ret = iser_device_init(dev);
++		if (ret) {
++			free(dev);
++			goto reject;
++		}
++	}
++
++	/* build a new connection structure */
++	conn = conn_alloc(sizeof(*ci));
++	if (!conn) {
++		eprintf(&quot;unable to allocate conn\n&quot;);
++		goto reject;
++	}
++	ci = conn-&gt;trans_data;
++	ci-&gt;iscsi_conn = conn;
++	ci-&gt;iscsi_conn-&gt;tp = &amp;iscsi_iser;
++	conn_read_pdu(ci-&gt;iscsi_conn);
++	ci-&gt;cma_id = event-&gt;id;
++	ci-&gt;dev = dev;
++	ci-&gt;login_phase = LOGIN_PHASE_START;
++	INIT_LIST_HEAD(&amp;ci-&gt;conn_tx_ready);
++	list_add(&amp;ci-&gt;iser_conn_list, &amp;temp_conn);
++	/* initiator sits at dst, we are src */
++	memcpy(&amp;ci-&gt;peer_addr, &amp;event-&gt;id-&gt;route.addr.dst_addr,
++	       sizeof(ci-&gt;peer_addr));
++	memcpy(&amp;ci-&gt;self_addr, &amp;event-&gt;id-&gt;route.addr.src_addr,
++	       sizeof(ci-&gt;self_addr));
++#ifndef NDEBUG
++	{
++		char str[256];
++
++		iscsi_rdma_show(conn, str, sizeof(str));
++		str[sizeof(str)-1] = 0;
++		dprintf(&quot;new conn %p from %s\n&quot;, ci, str);
++	}
++#endif
++
++	/* create qp next */
++	memset(&amp;qp_init_attr, 0, sizeof(qp_init_attr));
++	/* wire both send and recv to the same CQ */
++	qp_init_attr.send_cq =  dev-&gt;cq;
++	qp_init_attr.recv_cq  = dev-&gt;cq;
++	qp_init_attr.cap.max_send_wr = MAX_WQE;
++	qp_init_attr.cap.max_recv_wr = MAX_WQE;
++	qp_init_attr.cap.max_send_sge = 1;  /* scatter/gather entries */
++	qp_init_attr.cap.max_recv_sge = 1;
++	qp_init_attr.qp_type = IBV_QPT_RC;
++	/* only generate completion queue entries if requested */
++	qp_init_attr.sq_sig_all = 0;
++
++	ret = rdma_create_qp(ci-&gt;cma_id, dev-&gt;pd, &amp;qp_init_attr);
++	if (ret) {
++		eprintf(&quot;create qp failed\n&quot;);
++		conn_put(ci-&gt;iscsi_conn);
++		goto reject;
++	}
++	ci-&gt;qp_hndl = ci-&gt;cma_id-&gt;qp;
++	VALGRIND_MAKE_MEM_DEFINED(ci-&gt;qp_hndl, sizeof(*ci-&gt;qp_hndl));
++
++	ci-&gt;rcv_comm_event = NULL;
++	ci-&gt;send_comm_event = NULL;
++	ci-&gt;readb = 0;
++	ci-&gt;writeb = 0;
++
++	/*
++	 * Post buffers for the login phase, only.
++	 */
++	hdrsz = sizeof(struct iser_hdr) +
++		sizeof(struct iscsi_hdr) +
++		sizeof(struct iscsi_ecdb_ahdr) +
++		sizeof(struct iscsi_rlength_ahdr);
++	ci-&gt;ssize = hdrsz + 8192;
++	ci-&gt;rsize = hdrsz + 8192;
++	ci-&gt;max_outst_pdu = 1;
++	ret = iser_init_comm_login(ci);
++	if (ret) {
++		iser_free_comm_login(ci);
++		conn_put(ci-&gt;iscsi_conn);
++		goto reject;
++	}
++
++	/* now we can actually accept the connection */
++	ret = rdma_accept(ci-&gt;cma_id, &amp;conn_param);
++	if (ret) {
++		eprintf(&quot;rdma_accept failed\n&quot;);
++		iser_free_comm_login(ci);
++		conn_put(ci-&gt;iscsi_conn);
++		goto reject;
++	}
++
++	return;
++
++reject:
++	ret = rdma_reject(event-&gt;id, NULL, 0);
++	if (ret)
++		eprintf(&quot;rdma_reject failed: %s\n&quot;, strerror(-ret));
++}
++
++/*
++ * Finish putting the connection together, now that the other side
++ * has ACKed our acceptance.  Moves it from the temp_conn to the
++ * iser_conn_list.
++ *
++ * Release the temporary conn_info and glue it into iscsi_conn.
++ */
++static void iser_conn_established(struct rdma_cm_event *event)
++{
++	int found = 0;
++	struct conn_info *ci;
++
++	/* find it in connection list */
++	list_for_each_entry(ci, &amp;temp_conn, iser_conn_list) {
++		if (ci-&gt;cma_id == event-&gt;id) {
++			found = 1;
++			break;
++		}
++	}
++	if (!found) {
++		eprintf(&quot;cma id %p not found\n&quot;, event-&gt;id);
++		return;
++	}
++	dprintf(&quot;established conn %p\n&quot;, ci);
++	list_del(&amp;ci-&gt;iser_conn_list);
++	list_add(&amp;ci-&gt;iser_conn_list, &amp;iser_conn_list);
++}
++
++static void iser_disconnect(struct rdma_cm_event *ev)
++{
++	struct conn_info *ci;
++
++	/*
++	 * If not found, initiator disconnected first, so tell iscsi about
++	 * it; else iscsi already did the conn_close.
++	 */
++	dprintf(&quot;initiator disconn, QP %d\n&quot;, ev-&gt;id-&gt;qp-&gt;qp_num);
++	list_for_each_entry(ci, &amp;iser_conn_list, iser_conn_list) {
++		if (ci-&gt;qp_hndl-&gt;qp_num == ev-&gt;id-&gt;qp-&gt;qp_num) {
++			ci-&gt;iscsi_conn-&gt;state = STATE_CLOSE;
++			conn_close(ci-&gt;iscsi_conn);
++			break;
++		}
++	}
++}
++
++/*
++ * Handle RDMA connection events.
++ */
++static void iser_handle_rdmacm(int fd __attribute__((unused)),
++			       int events __attribute__((unused)),
++			       void *data __attribute__((unused)))
++{
++	int ret;
++	struct rdma_cm_event *event;
++	struct rdma_cm_id *destroy_cm_id = NULL;
++
++	dprintf(&quot;entry\n&quot;);
++	ret = rdma_get_cm_event(rdma_evt_channel, &amp;event);
++	if (ret) {
++		eprintf(&quot;rdma_get_cm_event failed\n&quot;);
++		return;
++	}
++
++	VALGRIND_MAKE_MEM_DEFINED(event, sizeof(*event));
++	switch (event-&gt;event) {
++	case RDMA_CM_EVENT_CONNECT_REQUEST:
++		iser_accept_connection(event);
++		break;
++	case RDMA_CM_EVENT_ESTABLISHED:
++		iser_conn_established(event);
++		break;
++	case RDMA_CM_EVENT_DISCONNECTED:
++		iser_disconnect(event);
++		destroy_cm_id = event-&gt;id;
++		break;
++	default:
++		eprintf(&quot;unknown event %d\n&quot;, event-&gt;event);
++		break;
++	}
++
++	ret = rdma_ack_cm_event(event);
++	if (ret) {
++		eprintf(&quot;ack cm event failed\n&quot;);
++		return;
++	}
++
++	if (destroy_cm_id) {
++		ret = rdma_destroy_id(destroy_cm_id);
++		if (ret)
++			eprintf(&quot;rdma_destroy_id failed\n&quot;);
++	}
++}
++
++/*
++ * Deal with just one work completion.
++ */
++static void handle_wc(struct ibv_wc *wc)
++{
++	int ret;
++	struct recvlist *recvl;
++	struct sendlist *sendl;
++	struct rdmalist *rdmal;
++	struct conn_info *ci;
++	struct ibv_recv_wr *bad_wr;
++
++	switch (wc-&gt;opcode) {
++	case IBV_WC_SEND:
++		dprintf(&quot;outgoing rsp complete\n&quot;);
++		sendl = ptr_from_int64(wc-&gt;wr_id);
++		ci = sendl-&gt;conn;
++		if (ci-&gt;login_phase == LOGIN_PHASE_START) {
++		    list_add(&amp;sendl-&gt;list, &amp;ci-&gt;sendl_login);
++		} else if (ci-&gt;login_phase == LOGIN_PHASE_LAST_SEND) {
++			/* release login resources */
++			dprintf(&quot;last login send completed, release, to ff\n&quot;);
++			iser_free_comm_login(ci);
++			ci-&gt;login_phase = LOGIN_PHASE_FF;
++			break;
++		} else {
++		    list_add(&amp;sendl-&gt;list, &amp;ci-&gt;sendl);
++		}
++		break;
++
++	case IBV_WC_RECV:
++		dprintf(&quot;incoming cmd, len %d\n&quot;, wc-&gt;byte_len);
++		recvl = ptr_from_int64(wc-&gt;wr_id);
++		ci = recvl-&gt;conn;
++		--ci-&gt;recvl_posted;
++		if (ci-&gt;iscsi_conn-&gt;state == STATE_CLOSE)
++			goto close_err;
++
++		recvl-&gt;bytes_recvd = wc-&gt;byte_len;
++		VALGRIND_MAKE_MEM_DEFINED(recvl-&gt;buf, recvl-&gt;bytes_recvd);
++
++		/*
++		 * Global pointer to the working receive on this connection
++		 * for reads from iscsid.c.
++		 */
++		ci-&gt;rcv_comm_event = recvl;
++		iscsi_rx_handler(ci-&gt;iscsi_conn);
++		ci-&gt;rcv_comm_event = NULL;
++
++		if (ci-&gt;login_phase == LOGIN_PHASE_LAST_SEND) {
++			/* do not repost, just one more send then reinit */
++			dprintf(&quot;transitioning to full-feature, no repost\n&quot;);
++			break;
++		}
++
++		dprintf(&quot;incoming cmd proc done, repost\n&quot;);
++		ret = ibv_post_recv(ci-&gt;qp_hndl, &amp;recvl-&gt;wr, &amp;bad_wr);
++		if (ret) {
++			eprintf(&quot;ibv_post_recv failed\n&quot;);
++			exit(1);
++		}
++		++ci-&gt;recvl_posted;
++		break;
++
++	case IBV_WC_RDMA_WRITE:
++		dprintf(&quot;RDMA write done\n&quot;);
++		rdmal = ptr_from_int64(wc-&gt;wr_id);
++		ci = rdmal-&gt;conn;
++		if (ci-&gt;iscsi_conn-&gt;state == STATE_CLOSE)
++			goto close_err;
++
++		iscsi_rdma_event_modify(ci-&gt;iscsi_conn, EPOLLIN | EPOLLOUT);
++		list_add(&amp;rdmal-&gt;list, &amp;ci-&gt;rdmal);
++		if (waiting_rdma_slot) {
++			waiting_rdma_slot = 0;
++			num_tx_ready = 1;
++		}
++		break;
++
++	case IBV_WC_RDMA_READ:
++		dprintf(&quot;RDMA read done, len %d\n&quot;, wc-&gt;byte_len);
++		rdmal = ptr_from_int64(wc-&gt;wr_id);
++		ci = rdmal-&gt;conn;
++		if (ci-&gt;iscsi_conn-&gt;state == STATE_CLOSE)
++			goto close_err;
++
++		assert(rdmal-&gt;sge.length == wc-&gt;byte_len);
++		iser_rdma_read_completion(rdmal);
++		list_add(&amp;rdmal-&gt;list, &amp;ci-&gt;rdmal);
++		if (waiting_rdma_slot) {
++			waiting_rdma_slot = 0;
++			num_tx_ready = 1;
++		}
++		break;
++
++	default:
++		eprintf(&quot;unexpected opcode %d\n&quot;, wc-&gt;opcode);
++		exit(1);
++	}
++
++	return;
++
++close_err:
++	eprintf(&quot;conn state set to closed .. IMPLEMENT ME\n&quot;);
++	exit(1);
++}
++
++/*
++ * Called directly from main event loop when a CQ notification is
++ * available.
++ */
++static void iser_cqe_handler(int fd __attribute__((unused)),
++			     int events __attribute__((unused)),
++			     void *data)
++{
++	int ret;
++	void *cq_context;
++	struct iser_device *dev = data;
++
++	ret = ibv_get_cq_event(dev-&gt;cq_channel, &amp;dev-&gt;cq, &amp;cq_context);
++	if (ret != 0) {
++		eprintf(&quot;notification, but no CQ event\n&quot;);
++		exit(1);
++	}
++
++	ibv_ack_cq_events(dev-&gt;cq, 1);
++
++	ret = ibv_req_notify_cq(dev-&gt;cq, 0);
++	if (ret) {
++		eprintf(&quot;ibv_req_notify_cq: %s\n&quot;, strerror(ret));
++		exit(1);
++	}
++
++	iser_rx_progress(NULL, dev);
++}
++
++/*
++ * Called from tgtd when num_tx_ready (counter) non-zero.  Walks the
++ * list of active connections and tries to push tx on each, until nothing
++ * is ready anymore.  No progress limit here.
++ */
++static void iser_tx_progress(int *counter __attribute__((unused)),
++			     void *data __attribute__((unused)))
++{
++	int reloop, ret;
++	struct conn_info *ci, *cin;
++	struct iscsi_connection *conn;
++
++	dprintf(&quot;entry\n&quot;);
++	num_tx_ready = 0;
++
++	do {
++		reloop = 0;
++		list_for_each_entry_safe(ci, cin, &amp;conn_tx_ready,
++					 conn_tx_ready) {
++			conn = ci-&gt;iscsi_conn;
++			if (conn-&gt;state == STATE_CLOSE) {
++				dprintf(&quot;ignoring tx for closed conn\n&quot;);
++			} else {
++				dprintf(&quot;trying tx\n&quot;);
++				ret = iscsi_tx_handler(conn);
++				if (conn-&gt;state == STATE_CLOSE) {
++					conn_close(conn);
++					dprintf(&quot;connection %p closed\n&quot;, ci);
++				} else {
++					if (ret == 0) {
++						reloop = 1;
++					} else {
++						/* but leave on tx ready list */
++						waiting_rdma_slot = 1;
++					}
++				}
++			}
++		}
++	} while (reloop);
++}
++
++/*
++ * Could read as many entries as possible without blocking, but
++ * that just fills up a list of tasks.  Instead pop out of here
++ * so that tx progress, like issuing rdma reads and writes, can
++ * happen periodically.
++ */
++#define MAX_RX_PROGRESS 8
++static void iser_rx_progress_one(struct iser_device *dev)
++{
++	int ret, numwc = 0;
++	struct ibv_wc wc;
++	struct conn_info *ci;
++	struct recvlist *recvl;
++
++	for (;;) {
++		ret = ibv_poll_cq(dev-&gt;cq, 1, &amp;wc);
++		if (ret &lt; 0) {
++			eprintf(&quot;ibv_poll_cq %d\n&quot;, ret);
++			break;
++		} else if (ret == 0) {
++			break;
++		}
++
++		VALGRIND_MAKE_MEM_DEFINED(&amp;wc, sizeof(wc));
++		if (wc.status != IBV_WC_SUCCESS) {
++			if (wc.status == IBV_WC_WR_FLUSH_ERR) {
++				recvl = ptr_from_int64(wc.wr_id);
++				ci = recvl-&gt;conn;
++				if (ci-&gt;draining) {
++					--ci-&gt;recvl_posted;
++					if (ci-&gt;freed &amp;&amp; ci-&gt;recvl_posted == 0)
++						iscsi_rdma_conn_free(
++							ci-&gt;iscsi_conn);
++					continue;
++				}
++			}
++			eprintf(&quot;bad WC status %d for wr_id 0x%llx\n&quot;,
++				wc.status, (unsigned long long) wc.wr_id);
++			exit(1);
++		}
++
++		handle_wc(&amp;wc);
++		if (++numwc == MAX_RX_PROGRESS) {
++			num_rx_ready = 1;
++			break;
++		}
++	}
++}
++
++/*
++ * Only one progress counter, must look across all devs.
++ */
++static void iser_rx_progress(int *counter __attribute__((unused)), void *data)
++{
++	struct iser_device *dev;
++
++	dprintf(&quot;entry\n&quot;);
++	num_rx_ready = 0;
++	if (data == NULL) {
++		list_for_each_entry(dev, &amp;iser_dev_list, list)
++			iser_rx_progress_one(dev);
++	} else {
++		dev = data;
++		iser_rx_progress_one(dev);
++	}
++}
++
++/*
++ * Init entire iscsi transport.  Begin listening for connections.
++ */
++static int iscsi_rdma_init(void)
++{
++	int ret;
++	struct sockaddr_in sock_addr;
++	short int port = ISCSI_LISTEN_PORT;
++
++	rdma_evt_channel = rdma_create_event_channel();
++
++	if (!rdma_evt_channel) {
++		eprintf(&quot;cannot initialize RDMA; load kernel modules?\n&quot;);
++		return -1;
++	}
++
++	ret = rdma_create_id(rdma_evt_channel, &amp;cma_listen_id, NULL,
++			     RDMA_PS_TCP);
++	if (ret) {
++		eprintf(&quot;rdma_create_id: %s\n&quot;, strerror(ret));
++		return -1;
++	}
++
++	memset(&amp;sock_addr, 0, sizeof(sock_addr));
++	sock_addr.sin_family = AF_INET;
++	sock_addr.sin_port = htons(port);
++	sock_addr.sin_addr.s_addr = INADDR_ANY;
++	ret = rdma_bind_addr(cma_listen_id, (struct sockaddr *) &amp;sock_addr);
++	if (ret) {
++		if (ret == -1)
++			eprintf(&quot;rdma_bind_addr -1: %m\n&quot;);
++		else
++			eprintf(&quot;rdma_bind_addr: %s\n&quot;, strerror(-ret));
++		return -1;
++	}
++
++	/* 0 == maximum backlog */
++	ret = rdma_listen(cma_listen_id, 0);
++	if (ret) {
++		if (ret == -1)
++			eprintf(&quot;rdma_listen -1: %m\n&quot;);
++		else
++			eprintf(&quot;rdma_listen: %s\n&quot;, strerror(-ret));
++		return -1;
++	}
++
++	dprintf(&quot;listening for iser connections on port %d\n&quot;, port);
++	ret = tgt_event_add(cma_listen_id-&gt;channel-&gt;fd, EPOLLIN,
++			    iser_handle_rdmacm, NULL);
++	if (ret)
++		return ret;
++
++	INIT_LIST_HEAD(&amp;conn_tx_ready);
++	INIT_LIST_HEAD(&amp;iser_dev_list);
++	INIT_LIST_HEAD(&amp;iser_conn_list);
++	INIT_LIST_HEAD(&amp;temp_conn);
++	num_tx_ready = 0;
++	num_rx_ready = 0;
++	ret = tgt_counter_event_add(&amp;num_tx_ready, iser_tx_progress, NULL);
++	ret = tgt_counter_event_add(&amp;num_rx_ready, iser_rx_progress, NULL);
++	return ret;
++}
++
++/*
++ * Allocate resources for this new connection.  Called after login, when
++ * final negotiated transfer parameters are known.
++ */
++static int iscsi_rdma_conn_init(struct iscsi_connection *conn)
++{
++	int ret = -1;
++	struct conn_info *ci = conn-&gt;trans_data;
++	unsigned int irdsl, trdsl, outst_pdu, hdrsz;
++
++	dprintf(&quot;entry\n&quot;);
++
++	/*
++	 * Build full feature connection structures, but leave around the
++	 * login ones until the final send finishes.
++	 */
++	ci-&gt;login_phase = LOGIN_PHASE_LAST_SEND;  /* one more send, then done */
++	irdsl = conn-&gt;session_param[ISCSI_PARAM_INITIATOR_RDSL].val;
++	trdsl = conn-&gt;session_param[ISCSI_PARAM_TARGET_RDSL].val;
++	outst_pdu = conn-&gt;session_param[ISCSI_PARAM_MAX_OUTST_PDU].val;
++
++	/* hack, ib/ulp/iser does not have this param, but reading the code
++	 * shows
++	 *    ISCSI_XMIT_CMDS_MAX=128
++	 *    ISER_INFLIGHT_DATAOUTS=8
++	 *    ISER_MAX_RX_MISC_PDUS=4
++	 *    ISER_MAX_TX_MISC_PDUS=6
++	 * and their formula for max tx dtos outstanding
++	 *    = cmds_max * (1 + dataouts) + rx_misc + tx_misc
++	 */
++	if (outst_pdu == 0)
++		outst_pdu = 128 * (1 + 8) + 6 + 4;
++
++	/* RDSLs do not include headers. */
++	hdrsz = sizeof(struct iser_hdr) +
++		sizeof(struct iscsi_hdr) +
++		sizeof(struct iscsi_ecdb_ahdr) +
++		sizeof(struct iscsi_rlength_ahdr);
++
++	ci-&gt;ssize = hdrsz + irdsl;
++	ci-&gt;rsize = hdrsz + trdsl;
++	ci-&gt;max_outst_pdu = outst_pdu;
++	ret = iser_init_comm(ci);
++	if (ret) {
++		eprintf(&quot;iser_init_comm failed\n&quot;);
++		goto out;
++	}
++
++	/*
++	 * How much data to grab in an RDMA operation, read or write.
++	 */
++	conn-&gt;data_inout_max_size = RDMA_TRANSFER_SIZE;
++
++out:
++	return ret;
++}
++
++/*
++ * Copy the remote va and stag that were temporarily saved in conn_info.
++ */
++static void iscsi_iser_task_init(struct iscsi_task *task)
++{
++	struct conn_info *ci = task-&gt;conn-&gt;trans_data;
++	struct iser_task *itask = task-&gt;trans_data;
++
++	itask-&gt;rem_read_stag = ci-&gt;rem_read_stag;
++	itask-&gt;rem_read_va = ci-&gt;rem_read_va;
++	itask-&gt;rem_write_stag = ci-&gt;rem_write_stag;
++	itask-&gt;rem_write_va = ci-&gt;rem_write_va;
++}
++
++static int iser_parse_hdr(struct conn_info *ci, struct recvlist *recvl)
++{
++	int ret = -1;
++	struct iser_hdr *hdr = recvl-&gt;buf;
++
++	switch (hdr-&gt;flags &amp; 0xF0) {
++	case ISCSI_CTRL:
++		dprintf(&quot;control type PDU\n&quot;);
++		if (hdr-&gt;flags &amp; ISER_RSV) {
++			ci-&gt;rem_read_stag = be32_to_cpu(hdr-&gt;read_stag);
++			ci-&gt;rem_read_va = be64_to_cpu(hdr-&gt;read_va);
++			dprintf(&quot;rstag %x va %llx\n&quot;,
++				ci-&gt;rem_read_stag,
++				(unsigned long long) ci-&gt;rem_read_va);
++		}
++		if (hdr-&gt;flags &amp; ISER_WSV) {
++			ci-&gt;rem_write_stag = be32_to_cpu(hdr-&gt;write_stag);
++			ci-&gt;rem_write_va = be64_to_cpu(hdr-&gt;write_va);
++			dprintf(&quot;wstag %x va %llx\n&quot;,
++				ci-&gt;rem_write_stag,
++				(unsigned long long) ci-&gt;rem_write_va);
++		}
++		ret = 0;
++		break;
++	case ISER_HELLO:
++		dprintf(&quot;iSER Hello message??\n&quot;);
++		break;
++	default:
++		eprintf(&quot;malformed iser hdr, flags 0x%02x\n&quot;, hdr-&gt;flags);
++		break;
++	}
++
++	ci-&gt;readb = sizeof(*hdr);
++	return ret;
++}
++
++static size_t iscsi_iser_read(struct iscsi_connection *iscsi_conn, void *buf,
++			      size_t nbytes)
++{
++	int ret;
++	struct conn_info *ci = iscsi_conn-&gt;trans_data;
++	struct recvlist *recvl;
++
++	dprintf(&quot;buf %p nbytes %zu\n&quot;, buf, nbytes);
++	recvl = ci-&gt;rcv_comm_event;
++	assert(recvl != NULL);
++
++	if (ci-&gt;readb == 0) {
++		if (recvl-&gt;bytes_recvd &lt; sizeof(struct iser_hdr))
++			return 0;
++
++		ret = iser_parse_hdr(ci, recvl);
++		if (ret != 0)
++			return 0;
++	}
++
++	if (ci-&gt;readb + nbytes &gt; recvl-&gt;bytes_recvd) {
++		if (ci-&gt;readb &gt; recvl-&gt;bytes_recvd)
++			nbytes = recvl-&gt;bytes_recvd;
++		else
++			nbytes = recvl-&gt;bytes_recvd - ci-&gt;readb;
++	}
++
++	/* always copy headers into iscsi task structure */
++	memcpy(buf, (char *) recvl-&gt;buf + ci-&gt;readb, nbytes);
++	ci-&gt;readb += nbytes;
++
++	if (ci-&gt;readb == recvl-&gt;bytes_recvd)
++		ci-&gt;readb = 0;
++
++	return nbytes;
++}
++
++static size_t iscsi_iser_write_begin(struct iscsi_connection *iscsi_conn,
++				     void *buf, size_t nbytes)
++{
++	struct conn_info *ci = iscsi_conn-&gt;trans_data;
++	struct sendlist *sendl;
++
++	if (ci-&gt;send_comm_event == NULL) {
++		/* find one, first time here */
++		struct list_head *ci_sendl = &amp;ci-&gt;sendl;
++
++		if (ci-&gt;login_phase != LOGIN_PHASE_FF)
++			ci_sendl = &amp;ci-&gt;sendl_login;
++
++		if (list_empty(ci_sendl)) {
++			/* bug, max outst pdu should constrain this */
++			eprintf(&quot;no free send slot\n&quot;);
++			exit(1);
++		}
++		sendl = list_entry(ci_sendl-&gt;next, typeof(*sendl), list);
++		list_del(&amp;sendl-&gt;list);
++		ci-&gt;send_comm_event = sendl;
++		dprintf(&quot;new sendl %p len %zu\n&quot;, sendl, nbytes);
++	} else {
++		sendl = ci-&gt;send_comm_event;
++		dprintf(&quot;reuse sendl %p len %u + %zu\n&quot;, sendl, ci-&gt;writeb,
++			nbytes);
++	}
++
++	if (ci-&gt;writeb + nbytes &gt; ci-&gt;ssize) {
++		eprintf(&quot;send buf overflow %d + %zd &gt; %u\n&quot;, ci-&gt;writeb,
++			nbytes, ci-&gt;ssize);
++		exit(1);
++	}
++
++	if (ci-&gt;writeb == 0) {
++		/* insert iser hdr */
++		struct iser_hdr *hdr = sendl-&gt;buf;
++
++		memset(hdr, 0, sizeof(*hdr));
++		hdr-&gt;flags = ISCSI_CTRL;
++		ci-&gt;writeb = sizeof(*hdr);
++	}
++
++	memcpy((char *) sendl-&gt;buf + ci-&gt;writeb, buf, nbytes);
++	ci-&gt;writeb += nbytes;
++	return nbytes;
++}
++
++static void iscsi_iser_write_end(struct iscsi_connection *iscsi_conn)
++{
++	int ret;
++	struct ibv_send_wr *bad_wr;
++	struct conn_info *ci = iscsi_conn-&gt;trans_data;
++	struct sendlist *sendl;
++
++	sendl = ci-&gt;send_comm_event;  /* set from _write_begin above */
++	dprintf(&quot;sendl %p len %d\n&quot;, sendl, ci-&gt;writeb);
++
++	sendl-&gt;sge.length = ci-&gt;writeb;
++
++	ret = ibv_post_send(ci-&gt;qp_hndl, &amp;sendl-&gt;wr, &amp;bad_wr);
++	if (ret) {
++		/* bug, should have sized max_outst_pdu properly */
++		eprintf(&quot;ibv_post_send ret %d\n&quot;, ret);
++		exit(1);
++	}
++
++	ci-&gt;writeb = 0;  /* reset count */
++	ci-&gt;send_comm_event = NULL;
++
++	/* wake up the progress engine to do the done */
++	dprintf(&quot;inc progress to finish cmd\n&quot;);
++	num_tx_ready = 1;
++}
++
++/*
++ * Expected opcodes are: IBV_WR_RDMA_WRITE, IBV_WR_RDMA_READ.
++ */
++static int iser_post_rdma_wr(struct conn_info *ci, struct iscsi_task *task,
++			     void *buf, ssize_t size, int op,
++			     uint64_t remote_va, uint32_t remote_rkey)
++{
++	int ret;
++	struct rdmalist *rdmal;
++	struct ibv_send_wr *bad_wr;
++
++	if (list_empty(&amp;ci-&gt;rdmal)) {
++		eprintf(&quot;no slot\n&quot;);
++		return -1;
++	}
++	rdmal = list_entry(ci-&gt;rdmal.next, typeof(*rdmal), list);
++	list_del(&amp;rdmal-&gt;list);
++
++	rdmal-&gt;task = task;
++	rdmal-&gt;sge.addr = uint64_from_ptr(buf);
++	rdmal-&gt;sge.length = size;
++
++	rdmal-&gt;wr.opcode = op;
++	rdmal-&gt;wr.wr.rdma.remote_addr = remote_va;
++	rdmal-&gt;wr.wr.rdma.rkey = remote_rkey;
++
++	ret = ibv_post_send(ci-&gt;qp_hndl, &amp;rdmal-&gt;wr, &amp;bad_wr);
++	if (ret)
++		eprintf(&quot;ibv_post_send ret %d\n&quot;, ret);
++
++	return ret;
++}
++
++/*
++ * Convert the iscsi r2t request to an RDMA read and post it.
++ */
++static int iscsi_rdma_rdma_read(struct iscsi_connection *conn)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++	struct iscsi_task *task = conn-&gt;tx_task;
++	struct iser_task *itask = task-&gt;trans_data;
++	struct iscsi_r2t_rsp *r2t = (struct iscsi_r2t_rsp *) &amp;conn-&gt;rsp.bhs;
++	uint8_t *buf;
++	uint32_t len;
++	int ret;
++
++	buf = (uint8_t *) task-&gt;data + task-&gt;offset;
++	len = be32_to_cpu(r2t-&gt;data_length);
++
++	dprintf(&quot;len %u stag %x va %llx\n&quot;,
++		len, itask-&gt;rem_write_stag,
++		(unsigned long long) itask-&gt;rem_write_va);
++
++	ret = iser_post_rdma_wr(ci, task, buf, len, IBV_WR_RDMA_READ,
++				itask-&gt;rem_write_va, itask-&gt;rem_write_stag);
++	if (ret &lt; 0)
++		return ret;
++
++	/*
++	 * Initiator registers the entire buffer, but gives us a VA that
++	 * is advanced by immediate + unsolicited data amounts.  Advance
++	 * rem_va as we read, knowing that the target always grabs segments
++	 * in order.
++	 */
++	itask-&gt;rem_write_va += len;
++
++	return 0;
++}
++
++/*
++ * Convert the iscsi data-in response to an RDMA write and send it.
++ */
++static int iscsi_rdma_rdma_write(struct iscsi_connection *conn)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++	struct iscsi_task *task = conn-&gt;tx_task;
++	struct iser_task *itask = task-&gt;trans_data;
++	struct iscsi_pdu *rsp = &amp;conn-&gt;rsp;
++	struct iscsi_data_rsp *datain = (struct iscsi_data_rsp *) &amp;rsp-&gt;bhs;
++	uint32_t offset;
++	int ret;
++
++	offset = be32_to_cpu(datain-&gt;offset);
++
++	dprintf(&quot;offset %d len %d stag %x va %llx\n&quot;, offset, rsp-&gt;datasize,
++		itask-&gt;rem_read_stag, (unsigned long long) itask-&gt;rem_read_va);
++
++	ret = iser_post_rdma_wr(ci, task, rsp-&gt;data, rsp-&gt;datasize,
++				IBV_WR_RDMA_WRITE, itask-&gt;rem_read_va + offset,
++				itask-&gt;rem_read_stag);
++	if (ret &lt; 0)
++		return ret;
++
++	/*
++	 * iscsi thinks we are txing, but really we're waiting for this
++	 * rdma to finish before sending the completion.  Then we'll stick
++	 * ourselves back on the list.
++	 */
++	if (task-&gt;offset == task-&gt;len) {
++		iscsi_rdma_event_modify(ci-&gt;iscsi_conn, EPOLLIN);
++	} else {
++		/* poke ourselves to do the next rdma */
++		num_tx_ready = 1;
++	}
++
++	return ret;
++}
++
++/*
++ * Called from CQ processing.  Hands completed write data to iscsi.
++ */
++static void iser_rdma_read_completion(struct rdmalist *rdmal)
++{
++	struct conn_info *ci = rdmal-&gt;conn;
++	struct iscsi_connection *conn = ci-&gt;iscsi_conn;
++	struct iscsi_task *task;
++
++	/* task is no longer conn-&gt;tx_task, look it up */
++	list_for_each_entry(task, &amp;conn-&gt;session-&gt;cmd_list, c_hlist) {
++		if (task == rdmal-&gt;task)
++			goto found;
++	}
++	eprintf(&quot;no task\n&quot;);
++	return;
++
++found:
++	/* equivalent of iscsi_data_out_rx_start + _done */
++	conn-&gt;rx_buffer = ptr_from_int64(rdmal-&gt;sge.addr);
++	conn-&gt;rx_size = rdmal-&gt;sge.length;
++	task-&gt;offset += rdmal-&gt;sge.length;
++	task-&gt;r2t_count -= rdmal-&gt;sge.length;
++	VALGRIND_MAKE_MEM_DEFINED(conn-&gt;rx_buffer, conn-&gt;rx_size);
++
++	dprintf(&quot;itt %x len %u arrived, r2t_count %d\n&quot;, (uint32_t) task-&gt;tag,
++		rdmal-&gt;sge.length, task-&gt;r2t_count);
++
++	/*
++	 * We soliticed this data, so hdr-&gt;ttt is what we asked for.  Bypass
++	 * data_out_rx_done and just run the task.  If more r2t are needed,
++	 * this will generate them.
++	 */
++	iscsi_scsi_cmd_execute(task);
++
++	conn-&gt;rx_task = NULL;
++	conn_read_pdu(conn);
++}
++
++/*
++ * Close connection.  There is no device close function.  This is called
++ * from iscsi.
++ */
++static void iscsi_rdma_conn_close(struct iscsi_connection *conn)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++	int ret;
++
++	ret = rdma_disconnect(ci-&gt;cma_id);
++	if (ret)
++		eprintf(&quot;rdma_disconnect: %s\n&quot;, strerror(-ret));
++	dprintf(&quot;did rdma_disconnect\n&quot;);
++	list_del(&amp;ci-&gt;conn_tx_ready);
++	list_del(&amp;ci-&gt;iser_conn_list);
++	ci-&gt;draining = 1;
++}
++
++/*
++ * Called when the connection is freed, from iscsi, but won't do anything until
++ * all posted WRs have gone away.  So also called again from RX progress when
++ * it notices this happens.
++ */
++static void iscsi_rdma_conn_free(struct iscsi_connection *conn)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++	int ret;
++
++	dprintf(&quot;conn %p recvl %d\n&quot;, ci, ci-&gt;recvl_posted);
++	ci-&gt;freed = 1;
++
++	/* wait until all WRs flushed */
++	if (ci-&gt;recvl_posted != 0)
++		return;
++
++	iser_free_comm_login(ci);
++	if (ci-&gt;login_phase == LOGIN_PHASE_FF)
++		iser_free_comm(ci);
++
++	/* finally destory QP */
++	ret = ibv_destroy_qp(ci-&gt;qp_hndl);
++	if (ret)
++		eprintf(&quot;ibv_destroy_qp: %s\n&quot;, strerror(-ret));
++}
++
++static int iscsi_rdma_show(struct iscsi_connection *iscsi_conn, char *buf,
++			   int rest)
++{
++	int ret;
++	char host[NI_MAXHOST];
++	struct conn_info *ci = iscsi_conn-&gt;trans_data;
++
++	ret = getnameinfo((struct sockaddr *) &amp;ci-&gt;peer_addr,
++			  sizeof(ci-&gt;peer_addr), host, sizeof(host), NULL, 0,
++			  NI_NUMERICHOST);
++	if (ret) {
++		eprintf(&quot;getnameinfo: %m\n&quot;);
++		return 0;
++	}
++	return snprintf(buf, rest, &quot;RDMA IP Address: %s&quot;, host);
++}
++
++static void iscsi_rdma_event_modify(struct iscsi_connection *conn, int events)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++
++	if (events &amp; EPOLLOUT) {
++		/* with multiple commands queued, may already be on list */
++		if (list_empty(&amp;ci-&gt;conn_tx_ready)) {
++			dprintf(&quot;tx ready adding %p\n&quot;, ci);
++			list_add(&amp;ci-&gt;conn_tx_ready, &amp;conn_tx_ready);
++		}
++		num_tx_ready = 1;
++	} else {
++		dprintf(&quot;tx ready removing %p\n&quot;, ci);
++		list_del_init(&amp;ci-&gt;conn_tx_ready);
++	}
++}
++
++static void *iscsi_rdma_malloc(struct iscsi_connection *iscsi_conn, size_t sz)
++{
++	struct mempool *mem;
++	struct conn_info *ci = iscsi_conn-&gt;trans_data;
++	struct iser_device *dev = ci-&gt;dev;
++
++	if (list_empty(&amp;dev-&gt;mempool_free)) {
++		/* XXX: take slow path: allocate and register */
++		eprintf(&quot;free list empty\n&quot;);
++		exit(1);
++	}
++
++	if (sz &gt; MEMPOOL_SIZE) {
++		eprintf(&quot;size %zu too big\n&quot;, sz);
++		exit(1);
++	}
++
++	mem = list_entry(dev-&gt;mempool_free.next, typeof(*mem), list);
++	list_del(&amp;mem-&gt;list);
++	list_add(&amp;mem-&gt;list, &amp;dev-&gt;mempool_alloc);
++	dprintf(&quot;malloc %p sz %zu\n&quot;, mem-&gt;buf, sz);
++	return mem-&gt;buf;
++}
++
++static void iscsi_rdma_free(struct iscsi_connection *iscsi_conn, void *buf)
++{
++	int found = 0;
++	struct mempool *mem;
++	struct conn_info *ci = iscsi_conn-&gt;trans_data;
++	struct iser_device *dev = ci-&gt;dev;
++
++	list_for_each_entry(mem, &amp;dev-&gt;mempool_alloc, list) {
++		if (mem-&gt;buf == buf) {
++			found = 1;
++			break;
++		}
++	}
++	dprintf(&quot;free %p\n&quot;, mem-&gt;buf);
++	if (!found) {
++		eprintf(&quot;couldn't locate buf %p\n&quot;, buf);
++		exit(1);
++	}
++	list_del(&amp;mem-&gt;list);
++	list_add(&amp;mem-&gt;list, &amp;dev-&gt;mempool_free);
++}
++
++static int iscsi_rdma_getsockname(struct iscsi_connection *conn,
++				  struct sockaddr *sa, socklen_t *len)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++
++	if (*len &gt; sizeof(ci-&gt;self_addr))
++		*len = sizeof(ci-&gt;self_addr);
++	memcpy(sa, &amp;ci-&gt;self_addr, *len);
++	return 0;
++}
++
++static int iscsi_rdma_getpeername(struct iscsi_connection *conn,
++				  struct sockaddr *sa, socklen_t *len)
++{
++	struct conn_info *ci = conn-&gt;trans_data;
++
++	if (*len &gt; sizeof(ci-&gt;peer_addr))
++		*len = sizeof(ci-&gt;peer_addr);
++	memcpy(sa, &amp;ci-&gt;peer_addr, *len);
++	return 0;
++}
++
++struct iscsi_transport iscsi_iser = {
++	.name			= &quot;iser&quot;,
++	.rdma			= 1,
++	.task_trans_len		= sizeof(struct iser_task),
++	.ep_init		= iscsi_rdma_init,
++	.ep_conn_init		= iscsi_rdma_conn_init,
++	.ep_task_init		= iscsi_iser_task_init,
++	.ep_read		= iscsi_iser_read,
++	.ep_write_begin		= iscsi_iser_write_begin,
++	.ep_write_end		= iscsi_iser_write_end,
++	.ep_rdma_read		= iscsi_rdma_rdma_read,
++	.ep_rdma_write		= iscsi_rdma_rdma_write,
++	.ep_conn_close		= iscsi_rdma_conn_close,
++	.ep_conn_free		= iscsi_rdma_conn_free,
++	.ep_show		= iscsi_rdma_show,
++	.ep_event_modify	= iscsi_rdma_event_modify,
++	.ep_malloc		= iscsi_rdma_malloc,
++	.ep_free		= iscsi_rdma_free,
++	.ep_getsockname		= iscsi_rdma_getsockname,
++	.ep_getpeername		= iscsi_rdma_getpeername,
++};
++
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 805b296..7f882fa 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -2003,6 +2003,29 @@ int iscsi_tx_handler(struct iscsi_connection *conn)
+ 			goto out;
+ 	}
+ 
++	/*
++	 * For rdma, grab the data-in or r2t packet and covert to
++	 * an RDMA operation.
++	 */
++	if (conn-&gt;tp-&gt;rdma &amp;&amp; conn-&gt;state == STATE_SCSI) {
++		switch (conn-&gt;rsp.bhs.opcode) {
++		case ISCSI_OP_R2T:
++			ret = conn-&gt;tp-&gt;ep_rdma_read(conn);
++			if (ret &lt; 0)  /* wait for free slot */
++				goto out;
++			goto finish;
++
++		case ISCSI_OP_SCSI_DATA_IN:
++			ret = conn-&gt;tp-&gt;ep_rdma_write(conn);
++			if (ret &lt; 0)
++				goto out;
++			goto finish;
++
++		default:
++			break;
++		}
++	}
++
+ again:
+ 	switch (conn-&gt;tx_iostate) {
+ 	case IOSTATE_TX_BHS:
+@@ -2095,6 +2118,8 @@ again:
+ 	}
+ 
+ 	conn-&gt;tp-&gt;ep_write_end(conn);
++
++finish:
+ 	cmnd_finish(conn);
+ 
+ 	switch (conn-&gt;state) {
+diff --git a/usr/iscsi/transport.c b/usr/iscsi/transport.c
+index ba232ed..e17b554 100644
+--- a/usr/iscsi/transport.c
++++ b/usr/iscsi/transport.c
+@@ -29,6 +29,9 @@
+ 
+ struct iscsi_transport *iscsi_transports[] = {
+ 	&amp;iscsi_tcp,
++#ifdef ISCSI_RDMA
++	&amp;iscsi_iser,
++#endif
+ 	NULL,
+ };
+ 
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index f35d9d7..db5beb0 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -19,6 +19,8 @@ struct iscsi_transport {
+ 	size_t (*ep_write_begin) (struct iscsi_connection *conn, void *buf,
+ 				  size_t nbytes);
+ 	void (*ep_write_end) (struct iscsi_connection *conn);
++	int (*ep_rdma_read) (struct iscsi_connection *conn);
++	int (*ep_rdma_write) (struct iscsi_connection *conn);
+ 	void (*ep_conn_close) (struct iscsi_connection *conn);
+ 	void (*ep_conn_free) (struct iscsi_connection *conn);
+ 	int (*ep_show) (struct iscsi_connection *conn, char *buf, int rest);
+@@ -32,5 +34,6 @@ struct iscsi_transport {
+ };
+ 
+ extern struct iscsi_transport iscsi_tcp;
++extern struct iscsi_transport iscsi_iser;
+ 
+ #endif
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001090.html">[Stgt-devel] [PATCH 16/20] iser params
+</A></li>
+	<LI>Next message: <A HREF="001089.html">[Stgt-devel] [PATCH 19/20] iser flush before disconn
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1091">[ date ]</a>
+              <a href="thread.html#1091">[ thread ]</a>
+              <a href="subject.html#1091">[ subject ]</a>
+              <a href="author.html#1091">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

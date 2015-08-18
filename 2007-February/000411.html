@@ -1,0 +1,252 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] return sense data
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20return%20sense%20data&In-Reply-To=%3C20070225002435.GE9204%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000410.html">
+   <LINK REL="Next"  HREF="000413.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] return sense data</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20return%20sense%20data&In-Reply-To=%3C20070225002435.GE9204%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] return sense data">pw at osc.edu
+       </A><BR>
+    <I>Sun Feb 25 01:24:35 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000410.html">[Stgt-devel] [PATCH] iscsi: parse AHS header for extended CDB
+</A></li>
+        <LI>Next message: <A HREF="000413.html">[Stgt-devel] [PATCH v2] return sense data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#411">[ date ]</a>
+              <a href="thread.html#411">[ thread ]</a>
+              <a href="subject.html#411">[ subject ]</a>
+              <a href="author.html#411">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>It is legal to return both data and sense data.  Modify iscsi to do this.
+Let target and scsi generate sense information to return through the task.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+
+ usr/driver.h       |    2 +-
+ usr/iscsi/iscsid.c |   24 +++++++++++++++++++++---
+ usr/iscsi/iscsid.h |    3 +++
+ usr/target.c       |   20 +++++++++++---------
+ usr/target.h       |    2 ++
+ usr/tgtif.c        |    3 ++-
+ 6 files changed, 40 insertions(+), 14 deletions(-)
+
+diff --git a/usr/driver.h b/usr/driver.h
+index 764c53a..0d9fc02 100644
+--- a/usr/driver.h
++++ b/usr/driver.h
+@@ -18,7 +18,7 @@ struct tgt_driver {
+ 	int (*scsi_inquiry)(struct tgt_device *, int, uint8_t *, uint8_t *,
+ 			    uint8_t *, int *);
+ 	int (*cmd_end_notify)(uint64_t nid, int len, int result, int rw, uint64_t addr,
+-			      uint64_t tag);
++			      uint64_t tag, uint8_t *sense, uint8_t senselen);
+ 	int (*mgmt_end_notify)(uint64_t nid, uint64_t mid, int result);
+ 
+ 	struct backedio_template *default_bdt;
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index eefa8b1..8862523 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -753,6 +753,22 @@ static int iscsi_cmd_rsp_build(struct iscsi_task *task)
+ 	rsp-&gt;exp_cmdsn = cpu_to_be32(conn-&gt;session-&gt;exp_cmd_sn);
+ 	rsp-&gt;max_cmdsn = cpu_to_be32(conn-&gt;session-&gt;exp_cmd_sn + MAX_QUEUE_CMD);
+ 
++	dprintf(&quot;len %d senselen %d\n&quot;, task-&gt;len, task-&gt;senselen);
++
++	/* Tack on sense to response cdb. */
++	if (task-&gt;senselen) {
++		uint16_t len = task-&gt;senselen;
++		if (len &gt; sizeof(conn-&gt;sense_buffer)-2)
++			len = sizeof(conn-&gt;sense_buffer) - 2;
++		memcpy(&amp;conn-&gt;sense_buffer[2], task-&gt;sense, len);
++		conn-&gt;sense_buffer[0] = (len &amp; 0xff00) &gt;&gt; 8;
++		conn-&gt;sense_buffer[1] = (len &amp; 0x00ff);
++		dprintf(&quot;len+2 %d\n&quot;, len+2);
++		hton24(rsp-&gt;dlength, len+2);
++		conn-&gt;rsp.data = conn-&gt;sense_buffer;
++		conn-&gt;rsp.datasize = len+2;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -877,13 +893,13 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ }
+ 
+ int iscsi_scsi_cmd_done(uint64_t nid, int len, int result, int rw, uint64_t addr,
+-			uint64_t tag)
++			uint64_t tag, uint8_t *sense, uint8_t senselen)
+ {
+ 	struct iscsi_session *session;
+ 	struct iscsi_task *task;
+ 
+-	dprintf(&quot;%&quot; PRIu64 &quot; %d %d %d %&quot; PRIx64 &quot; %&quot; PRIx64 &quot;\n&quot;, nid,
+-		len, result, rw, addr, tag);
++	dprintf(&quot;%&quot; PRIu64 &quot; %d %d %d %&quot; PRIx64 &quot; %&quot; PRIx64 &quot; senselen %d\n&quot;,
++	        nid, len, result, rw, addr, tag, senselen);
+ 	session = session_lookup(nid);
+ 	if (!session)
+ 		return -EINVAL;
+@@ -913,6 +929,8 @@ found:
+ 	task-&gt;result = result;
+ 	task-&gt;len = len;
+ 	task-&gt;rw = rw;
++	task-&gt;sense = sense;
++	task-&gt;senselen = senselen;
+ 
+ 	list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+ 	tgt_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index c4b23d9..bc6ec39 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -103,6 +103,8 @@ struct iscsi_task {
+ 	int result;
+ 	int len;
+ 	int rw;
++	uint8_t *sense;
++	uint8_t senselen;
+ 
+ 	int offset;
+ 	int data_sn;
+@@ -146,6 +148,7 @@ struct iscsi_connection {
+ 	struct iscsi_pdu req;
+ 	void *req_buffer;
+ 	struct iscsi_pdu rsp;
++	uint8_t sense_buffer[252];  /* architectural limit */
+ 	void *rsp_buffer;
+ 	unsigned char *rx_buffer;
+ 	unsigned char *tx_buffer;
+diff --git a/usr/target.c b/usr/target.c
+index 6cb69ce..51b5106 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -463,13 +463,15 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 
+ 		cmd_post_perform(q, cmd);
+ 
+-		dprintf(&quot;%&quot; PRIx64 &quot; %x %&quot; PRIx64 &quot; %&quot; PRIu64 &quot; %u %d %d\n&quot;,
+-			tag, scb[0], cmd-&gt;uaddr, cmd-&gt;offset, cmd-&gt;len, result, cmd-&gt;async);
++		dprintf(&quot;%&quot; PRIx64 &quot; %x %lx %&quot; PRIu64 &quot; %d %d %d senselen %d\n&quot;,
++			tag, scb[0], cmd-&gt;uaddr, cmd-&gt;offset, cmd-&gt;len, result,
++			cmd-&gt;async, cmd-&gt;senselen);
+ 
+ 		set_cmd_processed(cmd);
+ 		if (!cmd-&gt;async)
+ 			tgt_drivers[target-&gt;lid]-&gt;cmd_end_notify(nid, cmd-&gt;len, result,
+-								 cmd-&gt;rw, cmd-&gt;uaddr, tag);
++								 cmd-&gt;rw, cmd-&gt;uaddr, tag,
++								 cmd-&gt;sense, cmd-&gt;senselen);
+ 	} else {
+ 		set_cmd_queued(cmd);
+ 		dprintf(&quot;blocked %&quot; PRIx64 &quot; %x %&quot; PRIu64 &quot; %d\n&quot;,
+@@ -490,7 +492,7 @@ void target_cmd_io_done(void *key, int result)
+ 	tgt_drivers[cmd-&gt;c_target-&gt;lid]-&gt;cmd_end_notify(cmd-&gt;cmd_nexus_id,
+ 							cmd-&gt;len, result,
+ 							cmd-&gt;rw, cmd-&gt;uaddr,
+-							cmd-&gt;tag);
++							cmd-&gt;tag, NULL, 0);
+ 	return;
+ }
+ 
+@@ -498,7 +500,6 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ {
+ 	struct scsi_cmd *cmd, *tmp;
+ 	int enabled, result;
+-	int (* notify_fn)(uint64_t, int, int, int, uint64_t, uint64_t);
+ 
+ 	list_for_each_entry_safe(cmd, tmp, &amp;q-&gt;queue, qlist) {
+ 		enabled = cmd_enabled(q, cmd);
+@@ -515,9 +516,10 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ 			cmd_post_perform(q, cmd);
+ 			set_cmd_processed(cmd);
+ 			if (!cmd-&gt;async) {
+-				notify_fn = tgt_drivers[cmd-&gt;c_target-&gt;lid]-&gt;cmd_end_notify;
+-				notify_fn(cmd-&gt;cmd_nexus_id, cmd-&gt;len, result, cmd-&gt;rw,
+-					  cmd-&gt;uaddr, cmd-&gt;tag);
++				tgt_drivers[cmd-&gt;c_target-&gt;lid]-&gt;cmd_end_notify(
++					cmd-&gt;cmd_nexus_id, cmd-&gt;len, result,
++					cmd-&gt;rw, cmd-&gt;uaddr, cmd-&gt;tag,
++					cmd-&gt;sense, cmd-&gt;senselen);
+ 			}
+ 		} else
+ 			break;
+@@ -613,7 +615,7 @@ static int abort_cmd(struct target* target, struct mgmt_req *mreq,
+ 	} else {
+ 		__cmd_done(target, cmd);
+ 		tgt_drivers[cmd-&gt;c_target-&gt;lid]-&gt;cmd_end_notify(cmd-&gt;cmd_nexus_id, 0,
+-								TASK_ABORTED, 0, 0, cmd-&gt;tag);
++								TASK_ABORTED, 0, 0, cmd-&gt;tag, NULL, 0);
+ 	}
+ 	return err;
+ }
+diff --git a/usr/target.h b/usr/target.h
+index e90b094..37da8c5 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -98,6 +98,8 @@ struct scsi_cmd {
+ 	uint8_t rw;
+ 	int async;
+ 	struct mgmt_req *mreq;
++	uint8_t *sense;    /* output values from target */
++	uint8_t senselen;
+ };
+ 
+ enum {
+diff --git a/usr/tgtif.c b/usr/tgtif.c
+index 4c22863..b87a5ac 100644
+--- a/usr/tgtif.c
++++ b/usr/tgtif.c
+@@ -101,7 +101,8 @@ int kspace_send_tsk_mgmt_res(uint64_t nid, uint64_t mid, int result)
+ }
+ 
+ int kspace_send_cmd_res(uint64_t nid, int len, int result,
+-			int rw, uint64_t addr, uint64_t tag)
++			int rw, uint64_t addr, uint64_t tag,
++			uint8_t *sense, uint8_t senselen)
+ {
+ 	struct tgt_event ev;
+ 
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000410.html">[Stgt-devel] [PATCH] iscsi: parse AHS header for extended CDB
+</A></li>
+	<LI>Next message: <A HREF="000413.html">[Stgt-devel] [PATCH v2] return sense data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#411">[ date ]</a>
+              <a href="thread.html#411">[ thread ]</a>
+              <a href="subject.html#411">[ subject ]</a>
+              <a href="author.html#411">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

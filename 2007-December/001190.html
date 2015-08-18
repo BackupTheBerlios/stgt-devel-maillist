@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] task data leak
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20task%20data%20leak&In-Reply-To=%3C20071207202353.GA26422%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001189.html">
+   <LINK REL="Next"  HREF="001192.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] task data leak</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20task%20data%20leak&In-Reply-To=%3C20071207202353.GA26422%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] task data leak">pw at osc.edu
+       </A><BR>
+    <I>Fri Dec  7 21:23:53 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001189.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+        <LI>Next message: <A HREF="001192.html">[Stgt-devel] [PATCH] task data leak
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1190">[ date ]</a>
+              <a href="thread.html#1190">[ thread ]</a>
+              <a href="subject.html#1190">[ subject ]</a>
+              <a href="author.html#1190">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>iscsi_scsi_cmd_rx_start always allocates a buffer of 4096 to accommodate
+assumptions in spc, sbc, etc.  Even when a SCSI command asks for data
+length of zero, task-&gt;data is allocated to 4096.  However this is never
+assigned as in or out buf on scmd.  Thus never freed.
+
+This works around that by freeing an orphaned task-&gt;data.  Again, though,
+the better solution is to fix up all the little functions like inquiry
+that cause this situation in the first place.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 1e0172a..ab1999d 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1024,6 +1024,17 @@ void iscsi_free_task(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 
++	/*
++	 * Catch case when data_len is zero but pushed up to 4096
++	 * to work around spc allocation assumption, but then later
++	 * determined to be DATA_NONE and not used as either in or
++	 * out buffer.
++	 */
++	if (task-&gt;data &amp;&amp;
++	    task-&gt;data != scsi_get_in_buffer(&amp;task-&gt;scmd) &amp;&amp;
++	    task-&gt;data != scsi_get_out_buffer(&amp;task-&gt;scmd))
++		conn-&gt;tp-&gt;free_data_buf(conn, task-&gt;data);
++
+ 	conn-&gt;tp-&gt;free_data_buf(conn, scsi_get_in_buffer(&amp;task-&gt;scmd));
+ 	conn-&gt;tp-&gt;free_data_buf(conn, scsi_get_out_buffer(&amp;task-&gt;scmd));
+ 
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001189.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+	<LI>Next message: <A HREF="001192.html">[Stgt-devel] [PATCH] task data leak
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1190">[ date ]</a>
+              <a href="thread.html#1190">[ thread ]</a>
+              <a href="subject.html#1190">[ subject ]</a>
+              <a href="author.html#1190">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

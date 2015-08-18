@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C1126445959.5422.2.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000060.html">
+   <LINK REL="Next"  HREF="000063.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C1126445959.5422.2.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver">mingz at ele.uri.edu
+       </A><BR>
+    <I>Sun Sep 11 15:39:18 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000060.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+        <LI>Next message: <A HREF="000063.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#62">[ date ]</a>
+              <a href="thread.html#62">[ thread ]</a>
+              <a href="subject.html#62">[ subject ]</a>
+              <a href="author.html#62">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 2005-09-11 at 20:54 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</I>&gt;<i> Date: Fri, 09 Sep 2005 14:01:31 -0400
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; I also think about rename IET something generic like istgt or isstgt
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; (iSCSI software target). After all, the code will be really very from
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; the original IET code. Any suggestions?
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; istgt is better. is(csi) + tgt
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I'm not sure because we'll support multiple iSCSI target drivers.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; there are mpt, qla. maybe we use IETTGT to indicate it is originated
+</I>&gt;<i> &gt; from iet?
+</I>&gt;<i> 
+</I>&gt;<i> This implementation is a new project. It is a fork of IET. I think
+</I>&gt;<i> that calling two different implementations a same name causes
+</I>&gt;<i> unnecessary confusion (e.g. sfnet and open-iscsi).
+</I>
+my understanding is when tgt get matured, IET will be merged here soon.
+iet always wants to have a better layer split and now tgt comes. so iet
+of course will follow this path. i do not think we need to maintain 2
+open source iscsi software target code. 
+
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; We already registered IET in T10 as a vendor id. so it is a
+</I>&gt;<i> &gt; formal name.
+</I>&gt;<i> 
+</I>&gt;<i> The new project can get it easily if necessary.
+</I>
+yes, of course. but the reality is once this one gets matured, i do not
+think there are still many people use IET. :P
+
+Ming
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000060.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+	<LI>Next message: <A HREF="000063.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#62">[ date ]</a>
+              <a href="thread.html#62">[ thread ]</a>
+              <a href="subject.html#62">[ subject ]</a>
+              <a href="author.html#62">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

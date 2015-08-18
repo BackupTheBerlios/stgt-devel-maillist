@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iscsi target works, minor fixes
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C20061103004548.GA25149%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000345.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iscsi target works, minor fixes</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C20061103004548.GA25149%40osc.edu%3E"
+       TITLE="[Stgt-devel] iscsi target works, minor fixes">pw at osc.edu
+       </A><BR>
+    <I>Fri Nov  3 01:45:48 CET 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000345.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#344">[ date ]</a>
+              <a href="thread.html#344">[ thread ]</a>
+              <a href="subject.html#344">[ subject ]</a>
+              <a href="author.html#344">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I've been playing with the user-space iscsi target, looking at the
+latest stgt SVN and linux-2.6-target git today.  One little fix I
+need in the userspace code is this:
+
+Index: trunk/usr/bd_aio.c
+===================================================================
+--- trunk/usr/bd_aio.c	(revision 609)
++++ trunk/usr/bd_aio.c	(working copy)
+@@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+ 
+ 	for (i = 0; i &lt; nr; i++) {
+ 		iocb = bai-&gt;events[i].obj;
+-		dprintf(&quot;%p\n&quot;, iocb-&gt;data);
+-		target_cmd_io_done(iocb-&gt;data, 0);
++		dprintf(&quot;%p\n&quot;, bai-&gt;events[i].data);
++		target_cmd_io_done(bai-&gt;events[i].data, 0);
+ 	}
+ }
+ 
+While I don't understand exactly what's going on, this data pointer
+from struct io_event is the correct struct cmd *, and without the
+patch, tgtd segfaults trying to access fields in the (bogus) cmd
+from iocb-&gt;data.
+
+It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+was the wrong one to apply?  There was one minor reject that was
+easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+linux-2.6-target.git + aiopoll + other minor patches.
+
+You may want this, but it doesn't change any behavior:
+
+diff --git a/drivers/scsi/scsi_tgt_lib.c b/drivers/scsi/scsi_tgt_lib.c
+index e01f458..6e92b97 100644
+--- a/drivers/scsi/scsi_tgt_lib.c
++++ b/drivers/scsi/scsi_tgt_lib.c
+@@ -108,7 +108,6 @@ struct scsi_cmnd *scsi_host_get_command(
+ 
+ 	rq-&gt;special = cmd;
+ 	rq-&gt;cmd_type = REQ_TYPE_SPECIAL;
+-	rq-&gt;cmd_flags |= REQ_TYPE_BLOCK_PC;
+ 	rq-&gt;end_io_data = tcmd;
+ 
+ 	bio_list_init(&amp;tcmd-&gt;xfer_list);
+
+
+What goes in cmd_flags are bit fields like REQ_SOFTBARRIER.  You're
+not supposed to try to put another REQ_TYPE in there.  You do want
+SPECIAL, not BLOCK_PC, since you are allocating your own struct
+scsi_cmnd and putting it into rq-&gt;special.
+
+Basic mkfs and dd seem to work just fine.  Thanks for the code.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000345.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#344">[ date ]</a>
+              <a href="thread.html#344">[ thread ]</a>
+              <a href="subject.html#344">[ subject ]</a>
+              <a href="author.html#344">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

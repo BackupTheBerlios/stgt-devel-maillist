@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] fcoe: fix frame/cmd leak.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fcoe%3A%20fix%20frame/cmd%20leak.&In-Reply-To=%3C1216801490-9337-2-git-send-email-michaelc%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001832.html">
+   <LINK REL="Next"  HREF="001834.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] fcoe: fix frame/cmd leak.</H1>
+    <B>michaelc at cs.wisc.edu</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fcoe%3A%20fix%20frame/cmd%20leak.&In-Reply-To=%3C1216801490-9337-2-git-send-email-michaelc%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] fcoe: fix frame/cmd leak.">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Wed Jul 23 10:24:49 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001832.html">[Stgt-devel] RFC: fcoe bug fixes
+</A></li>
+        <LI>Next message: <A HREF="001834.html">[Stgt-devel] [Open-FCoE] [PATCH 1/2] fcoe: fix frame/cmd leak.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1833">[ date ]</a>
+              <a href="thread.html#1833">[ thread ]</a>
+              <a href="subject.html#1833">[ subject ]</a>
+              <a href="author.html#1833">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+
+We never call fc_frame_free in the xmit path so we leak frames.
+We also never then call the fr_destructor so the scst completion
+function is never called and target_cmd_done is never called which
+leaves stale commands in the target.
+
+Signed-off-by: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+---
+ usr/fcoe/fcoe_dev.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/usr/fcoe/fcoe_dev.c b/usr/fcoe/fcoe_dev.c
+index 0027e79..2d0149c 100644
+--- a/usr/fcoe/fcoe_dev.c
++++ b/usr/fcoe/fcoe_dev.c
+@@ -88,6 +88,8 @@ static void fcoe_recv_flogi(struct fcoe_softc *fc, struct fc_frame *fp,
+ static void fcoe_frame_free(struct fc_frame *fp)
+ {
+ 	dprintf(&quot;%p\n&quot;, fp-&gt;fr_free_priv);
++	if (fp-&gt;fr_destructor)
++		fp-&gt;fr_destructor(fp-&gt;fr_arg);
+ 	free(fp-&gt;fr_free_priv);
+ }
+ 
+@@ -200,6 +202,7 @@ int fcoe_xmit(struct fcdev *fdev, struct fc_frame *fp)
+ 	ret = write(fdev-&gt;fd, eh, total);
+ 	if (ret &lt;= 0)
+ 		eprintf(&quot;%d %d %d\n&quot;, fdev-&gt;fd, total, ret);
++	fc_frame_free(fp);
+ 	return 0;
+ }
+ 
+-- 
+1.5.5.1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001832.html">[Stgt-devel] RFC: fcoe bug fixes
+</A></li>
+	<LI>Next message: <A HREF="001834.html">[Stgt-devel] [Open-FCoE] [PATCH 1/2] fcoe: fix frame/cmd leak.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1833">[ date ]</a>
+              <a href="thread.html#1833">[ thread ]</a>
+              <a href="subject.html#1833">[ subject ]</a>
+              <a href="author.html#1833">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

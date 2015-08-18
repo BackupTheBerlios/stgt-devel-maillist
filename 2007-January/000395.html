@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070123161917.GB2885%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000394.html">
+   <LINK REL="Next"  HREF="000396.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070123161917.GB2885%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">pw at osc.edu
+       </A><BR>
+    <I>Tue Jan 23 17:19:17 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000394.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000396.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#395">[ date ]</a>
+              <a href="thread.html#395">[ thread ]</a>
+              <a href="subject.html#395">[ subject ]</a>
+              <a href="author.html#395">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A> wrote on Mon, 22 Jan 2007 14:35 -0500:
+&gt;<i> not a good idea. suggest to keep in a way like IET code, for each target
+</I>&gt;<i> type, call its foo_cmd_perform(), and make some common spc function as
+</I>&gt;<i> helper functions.
+</I>
+I think you're saying that I should duplicate the switch() logic for
+the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+type-specific functions.  This would reduce scsi_cmd_perform() into
+just a check on the target type, with no handling of SPC commands,
+e.g. INQUIRY.
+
+I'm not opposed to doing that, just don't have a good reason to do
+so.  As the OSD work progresses this may become clear to me (PERFORM
+SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000394.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000396.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#395">[ date ]</a>
+              <a href="thread.html#395">[ thread ]</a>
+              <a href="subject.html#395">[ subject ]</a>
+              <a href="author.html#395">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

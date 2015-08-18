@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070305095002I.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000420.html">
+   <LINK REL="Next"  HREF="000422.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070305095002I.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Mar  5 01:50:02 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000420.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000422.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#421">[ date ]</a>
+              <a href="thread.html#421">[ thread ]</a>
+              <a href="subject.html#421">[ subject ]</a>
+              <a href="author.html#421">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+Date: Sun, 4 Mar 2007 16:58:00 -0500
+
+&gt;<i> &gt; Pete, I found that you don't put a license in osd.c. GPL2 or GPL2 or
+</I>&gt;<i> &gt; any later version? Let me know. I'll update and merge it.
+</I>&gt;<i> 
+</I>&gt;<i> Great!  Thanks for doing all this.  It will take me some time for me
+</I>&gt;<i> to catch up and see how things are integrated now.
+</I>&gt;<i> 
+</I>&gt;<i> Please add license GPL2 exact.  I forgot.
+</I>
+Done.
+
+You can do something like that:
+
+tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.tulip.sys1.xyz  --target-type osd
+tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 0 -b /dev/sdb
+tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+
+tulip:/home/fujita# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.tulip.sys1.xyz
+    System information:
+        Type: osd
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            SCSI ID: deadbeaf1:0
+            SCSI SN:
+            Size: 279G
+            Backing store: /dev/sdb
+    Account information:
+    ACL information:
+        ALL
+
+
+It doesn't work at all. Currently, it only shows that we will support
+osd someday. ;)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000420.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000422.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#421">[ date ]</a>
+              <a href="thread.html#421">[ thread ]</a>
+              <a href="subject.html#421">[ subject ]</a>
+              <a href="author.html#421">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

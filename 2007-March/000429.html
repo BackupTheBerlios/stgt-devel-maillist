@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Segmentation fault on target update operation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Segmentation%20fault%20on%20target%20update%20operation&In-Reply-To=%3C20070308212111.GA32735%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000428.html">
+   <LINK REL="Next"  HREF="000430.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Segmentation fault on target update operation</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Segmentation%20fault%20on%20target%20update%20operation&In-Reply-To=%3C20070308212111.GA32735%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] Segmentation fault on target update operation">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Thu Mar  8 22:21:11 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000428.html">[Stgt-devel] Fix build problem for IBMVIO
+</A></li>
+        <LI>Next message: <A HREF="000430.html">[Stgt-devel] Segmentation fault on target update operation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>In a case where the target driver doesn't have a target_update() method
+defined tgtadm will segfault with a command-line like:
+
+ # tgtadm --lld ibmvio --mode target --op update --tid=1 --name=invalid \
+    --value=3
+
+The name will not match &quot;state&quot; in mgmt.c:target_mgmt(...) for
+OP_UPDATE and because there is no target_update() function for the
+driver -EINVAL (-22) is returned to tgtadm.c:ipc_mgmt_rsp(...) and
+stored in rsp.err where it then attempts:
+
+  eprintf(&quot;%s\n&quot;, tgtadm_emsg[rsp.err]);
+
+This cause a segfault in strlen().  So we could catch a value of -EINVAL
+and use one of the existing strings in tgtadm_emsg or add a new one.
+Not sure which is best suited for the job, &quot;invalid request&quot; or &quot;unknown
+parameter&quot; would seem to fit for this case, but maybe not everything
+you'd get -EINVAL for.
+
+Regards,
+Robert Jennings
+
+--- usr.orig/tgtadm.c   2007-03-08 15:09:45.000000000 -0600
++++ usr/tgtadm.c        2007-03-08 15:11:27.000000000 -0600
+@@ -202,6 +202,8 @@
+ 		}
+
+ 		if (rsp.err != TGTADM_SUCCESS) {
++			if (rsp.err == -EINVAL)
++				rsp.err = 15; /* &quot;invalid request&quot; */
+ 				eprintf(&quot;%s\n&quot;, tgtadm_emsg[rsp.err]);
+ 				return EINVAL;
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000428.html">[Stgt-devel] Fix build problem for IBMVIO
+</A></li>
+	<LI>Next message: <A HREF="000430.html">[Stgt-devel] Segmentation fault on target update operation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

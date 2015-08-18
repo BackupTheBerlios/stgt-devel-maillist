@@ -1,0 +1,950 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/2%5D%20Re-format%20/%20resubmit%20patch.&In-Reply-To=%3C20070531122244N.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000723.html">
+   <LINK REL="Next"  HREF="000728.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/2%5D%20Re-format%20/%20resubmit%20patch.&In-Reply-To=%3C20070531122244N.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu May 31 05:22:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000723.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+</A></li>
+        <LI>Next message: <A HREF="000728.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#727">[ date ]</a>
+              <a href="thread.html#727">[ thread ]</a>
+              <a href="subject.html#727">[ subject ]</a>
+              <a href="author.html#727">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+Date: Thu, 31 May 2007 12:27:23 +1000
+
+&gt;<i> From eaa5ed94a6ce59ab2025ecfb11fc0b3a400fce14 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh at laptop.</A>(none)&gt;
+</I>&gt;<i> Date: Thu, 31 May 2007 06:31:57 +1000
+</I>&gt;<i> Subject: [PATCH] Add new module entry points for configuration.
+</I>
+You don't need a period in a subject.
+
+
+&gt;<i> Add new module entry points.
+</I>&gt;<i>   &lt;module&gt;_lu_init(struct scsi_lu *lu) - called at setup time.
+</I>&gt;<i>   &lt;module&gt;_lu_exit(struct scsi_lu *lu) - called at shutdown time.
+</I>&gt;<i>   &lt;module&gt;_lu_config(struct scsi_lu *lu) - Any module unique configuration.
+</I>&gt;<i> 
+</I>&gt;<i> Moved logical unit configuration from target -&gt; &lt;module&gt;
+</I>&gt;<i>   Along with above entry point &lt;module&gt;_lu_config(), will allow module
+</I>&gt;<i>   specific configuration.
+</I>&gt;<i>   No new functionality added yet.
+</I>&gt;<i> 
+</I>&gt;<i> Add a dump_cdb(struct scsi_cmd *cmd) - Called from spc_illegal_op()
+</I>&gt;<i> 
+</I>&gt;<i> Update - All modules use common INQUIRY routine.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh at laptop.</A>(none)&gt;
+</I>
+Please a proper address. setting GIT_AUTHOR_NAME and GIT_AUTHOR_EMAIL
+would work for you.
+
+BTW, I'll put your email address to the git tree so please use the
+proper address instead of something like 'markh794 at gmail dot com'
+for Copyright.
+
+
+&gt;<i> diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> index e9cc479..5c6c3d2 100644
+</I>&gt;<i> --- a/usr/mmc.c
+</I>&gt;<i> +++ b/usr/mmc.c
+</I>&gt;<i> @@ -121,11 +121,32 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return SAM_STAT_GOOD;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	if (spc_lu_init(lu))
+</I>&gt;<i> +		return -ENOMEM;
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;VIRTUAL-CDROM&quot;, 16);
+</I>&gt;<i> +	lu-&gt;attributes-&gt;sense_format = 1;
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[0] = 0x02A0; /* MMC3, no version claimed */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[1] = 0x0960; /* iSCSI */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[2] = 0x0300; /* SPC-3 */
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int mmc_lu_exit(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  struct device_type_template mmc_template = {
+</I>&gt;<i> -	.type	= TYPE_ROM,
+</I>&gt;<i> -	.name	= &quot;cdrom/dvd&quot;,
+</I>&gt;<i> -	.pid	= &quot;VIRTUAL-CDROM&quot;,
+</I>&gt;<i> -	.ops	= {
+</I>&gt;<i> +	.type = TYPE_ROM,
+</I>&gt;<i> +	.name = &quot;cdrom/dvd&quot;,
+</I>&gt;<i> +	.lu_init = mmc_lu_init,
+</I>&gt;<i> +	.lu_exit = mmc_lu_exit,
+</I>&gt;<i> +	.lu_config = spc_lu_config,
+</I>&gt;<i> +	.ops = {
+</I>&gt;<i>  		{spc_test_unit,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i> diff --git a/usr/osd.c b/usr/osd.c
+</I>&gt;<i> index 46bf0a0..1889d5e 100644
+</I>&gt;<i> --- a/usr/osd.c
+</I>&gt;<i> +++ b/usr/osd.c
+</I>&gt;<i> @@ -20,6 +20,7 @@
+</I>&gt;<i>   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+</I>&gt;<i>   * 02110-1301 USA
+</I>&gt;<i>   */
+</I>&gt;<i> +#include &lt;errno.h&gt;
+</I>&gt;<i>  #include &lt;inttypes.h&gt;
+</I>&gt;<i>  #include &lt;stdio.h&gt;
+</I>&gt;<i>  #include &lt;stdlib.h&gt;
+</I>&gt;<i> @@ -33,101 +34,6 @@
+</I>&gt;<i>  #include &quot;scsi.h&quot;
+</I>&gt;<i>  #include &quot;spc.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i> -#define PRODUCT_ID	&quot;OSD&quot;
+</I>&gt;<i> -#define PRODUCT_REV	&quot;0&quot;
+</I>&gt;<i> -
+</I>&gt;<i> -static int osd_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> -{
+</I>&gt;<i> -	uint8_t *data, *scb = cmd-&gt;scb;
+</I>&gt;<i> -	int len, ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> -	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
+</I>&gt;<i> -
+</I>&gt;<i> -	/* EVPD means need a page code */
+</I>&gt;<i> -	if ((scb[1] &amp; 0x3) == 0 &amp;&amp; scb[2] != 0)
+</I>&gt;<i> -		goto sense;
+</I>&gt;<i> -
+</I>&gt;<i> -	data = valloc(pagesize);
+</I>&gt;<i> -	if (!data) {
+</I>&gt;<i> -		key = HARDWARE_ERROR;
+</I>&gt;<i> -		asc = 0;
+</I>&gt;<i> -		goto sense;
+</I>&gt;<i> -	}
+</I>&gt;<i> -	memset(data, 0, pagesize);
+</I>&gt;<i> -
+</I>&gt;<i> -	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+</I>&gt;<i> -
+</I>&gt;<i> -	data[0] = TYPE_OSD;
+</I>&gt;<i> -	if (!cmd-&gt;dev)
+</I>&gt;<i> -		data[0] = TYPE_NO_LUN;
+</I>&gt;<i> -
+</I>&gt;<i> -	if ((scb[1] &amp; 0x1) == 0) {
+</I>&gt;<i> -		data[2] = 5;  /* modern version */
+</I>&gt;<i> -		data[3] = 0x02;  /* modern response format */
+</I>&gt;<i> -		data[7] = 0x02;  /* support command queueing */
+</I>&gt;<i> -		memset(data + 8, 0x20, 28);
+</I>&gt;<i> -		memcpy(data + 8,
+</I>&gt;<i> -		       VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
+</I>&gt;<i> -		memcpy(data + 16,
+</I>&gt;<i> -		       PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
+</I>&gt;<i> -		memcpy(data + 32,
+</I>&gt;<i> -		       PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
+</I>&gt;<i> -		len = 36;
+</I>&gt;<i> -		if (cmd-&gt;dev) {
+</I>&gt;<i> -			data[58] = 0x03;
+</I>&gt;<i> -			data[59] = 0x40;  /* osd */
+</I>&gt;<i> -			data[60] = 0x09;
+</I>&gt;<i> -			data[61] = 0x60;  /* iscsi */
+</I>&gt;<i> -			data[62] = 0x03;
+</I>&gt;<i> -			data[63] = 0x00;  /* spc3 */
+</I>&gt;<i> -			len = 64;
+</I>&gt;<i> -		}
+</I>&gt;<i> -		data[4] = len - 5;  /* additional length */
+</I>&gt;<i> -		ret = SAM_STAT_GOOD;
+</I>&gt;<i> -	} else {
+</I>&gt;<i> -		if (!cmd-&gt;dev)
+</I>&gt;<i> -			goto sense;
+</I>&gt;<i> -
+</I>&gt;<i> -		data[1] = scb[2];
+</I>&gt;<i> -		if (scb[2] == 0x0) {
+</I>&gt;<i> -			/* supported VPD pages */
+</I>&gt;<i> -			data[3] = 3;
+</I>&gt;<i> -			data[4] = 0x0;
+</I>&gt;<i> -			data[5] = 0x80;
+</I>&gt;<i> -			data[6] = 0x83;
+</I>&gt;<i> -			len = 7;
+</I>&gt;<i> -			ret = SAM_STAT_GOOD;
+</I>&gt;<i> -		} else if (scb[2] == 0x80) {
+</I>&gt;<i> -			/* unit serial number &quot;    &quot; */
+</I>&gt;<i> -			data[3] = 4;
+</I>&gt;<i> -			memset(data + 4, 0x20, 4);
+</I>&gt;<i> -			len = 8;
+</I>&gt;<i> -			ret = SAM_STAT_GOOD;
+</I>&gt;<i> -		} else if (scb[2] == 0x83) {
+</I>&gt;<i> -			/* device identification */
+</I>&gt;<i> -			data[3] = SCSI_ID_LEN + 4;
+</I>&gt;<i> -			data[4] = 0x1;
+</I>&gt;<i> -			data[5] = 0x1;
+</I>&gt;<i> -			data[7] = SCSI_ID_LEN;
+</I>&gt;<i> -			if (cmd-&gt;dev)
+</I>&gt;<i> -				memcpy(data + 8, cmd-&gt;dev-&gt;scsi_id, SCSI_ID_LEN);
+</I>&gt;<i> -			len = SCSI_ID_LEN + 8;
+</I>&gt;<i> -			ret = SAM_STAT_GOOD;
+</I>&gt;<i> -		}
+</I>&gt;<i> -	}
+</I>&gt;<i> -
+</I>&gt;<i> -	if (ret != SAM_STAT_GOOD)
+</I>&gt;<i> -		goto sense;
+</I>&gt;<i> -
+</I>&gt;<i> -	cmd-&gt;len = min_t(int, len, scb[4]);
+</I>&gt;<i> -	cmd-&gt;uaddr = (unsigned long) data;
+</I>&gt;<i> -
+</I>&gt;<i> -	return SAM_STAT_GOOD;
+</I>&gt;<i> -sense:
+</I>&gt;<i> -	sense_data_build(cmd, key, asc, 0);
+</I>&gt;<i> -	cmd-&gt;len = 0;
+</I>&gt;<i> -	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> -}
+</I>&gt;<i> -
+</I>&gt;<i>  static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i>  	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
+</I>&gt;<i> @@ -145,22 +51,37 @@ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -static void device_osd_init(struct scsi_lu *lu)
+</I>&gt;<i> +static int osd_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	if (spc_lu_init(lu))
+</I>&gt;<i> +		return -ENOMEM;
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;OSD&quot;, 16);
+</I>&gt;<i> +	lu-&gt;attributes-&gt;sense_format = 1;
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[0] = 0x0340; /* OSD */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[1] = 0x0960; /* iSCSI */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[2] = 0x0300; /* SPC-3 */
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int osd_lu_exit(struct scsi_lu *lu)
+</I>&gt;<i>  {
+</I>&gt;<i> -	lu-&gt;d_sense = 1;
+</I>&gt;<i> +	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  struct device_type_template osd_template = {
+</I>&gt;<i> -	.type		= TYPE_OSD,
+</I>&gt;<i> -	.name		= &quot;osd&quot;,
+</I>&gt;<i> -	.device_init	= device_osd_init,
+</I>&gt;<i> -	.ops		= {
+</I>
+You can use tabs here. So let them alone.
+
+
+&gt;<i> +	.type = TYPE_OSD,
+</I>&gt;<i> +	.name = &quot;osd&quot;,
+</I>&gt;<i> +	.lu_init = osd_lu_init,
+</I>&gt;<i> +	.lu_exit = osd_lu_exit,
+</I>&gt;<i> +	.ops = {
+</I>&gt;<i>  		[0x00 ... 0x0f] = {spc_illegal_op},
+</I>&gt;<i>  
+</I>&gt;<i>  		/* 0x10 */
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i> -		{osd_inquiry,},
+</I>&gt;<i> +		{spc_inquiry,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i> diff --git a/usr/parser.h b/usr/parser.h
+</I>&gt;<i> index 1ff6016..bf210bf 100644
+</I>&gt;<i> --- a/usr/parser.h
+</I>&gt;<i> +++ b/usr/parser.h
+</I>&gt;<i> @@ -17,7 +17,7 @@ struct match_token {
+</I>&gt;<i>  typedef struct match_token match_table_t[];
+</I>&gt;<i>  
+</I>&gt;<i>  /* Maximum number of arguments that match_token will find in a pattern */
+</I>&gt;<i> -enum {MAX_OPT_ARGS = 3};
+</I>&gt;<i> +enum {MAX_OPT_ARGS = 17};
+</I>&gt;<i>  
+</I>&gt;<i>  /* Describe the location within a string of a substring */
+</I>&gt;<i>  typedef struct {
+</I>&gt;<i> diff --git a/usr/sbc.c b/usr/sbc.c
+</I>&gt;<i> index a22d3b0..111f2a7 100644
+</I>&gt;<i> --- a/usr/sbc.c
+</I>&gt;<i> +++ b/usr/sbc.c
+</I>&gt;<i> @@ -337,11 +337,31 @@ sense:
+</I>&gt;<i>  	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int sbc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	if (spc_lu_init(lu))
+</I>&gt;<i> +		return -ENOMEM;
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;VIRTUAL-DISK&quot;, 16);
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[0] = 0x04C0; /* SBC-3 no version claimed */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[1] = 0x0960; /* iSCSI */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc[2] = 0x0300; /* SPC-3 */
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int sbc_lu_exit(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  struct device_type_template sbc_template = {
+</I>&gt;<i> -	.type	= TYPE_DISK,
+</I>&gt;<i> -	.name	= &quot;disk&quot;,
+</I>&gt;<i> -	.pid	= &quot;VIRTUAL-DISK&quot;,
+</I>&gt;<i> -	.ops	= {
+</I>&gt;<i> +	.type = TYPE_DISK,
+</I>&gt;<i> +	.name = &quot;disk&quot;,
+</I>&gt;<i> +	.lu_init = sbc_lu_init,
+</I>&gt;<i> +	.lu_exit = sbc_lu_exit,
+</I>&gt;<i> +	.lu_config = spc_lu_config,
+</I>&gt;<i> +	.ops = {
+</I>&gt;<i>  		{spc_test_unit,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i> diff --git a/usr/scsi.c b/usr/scsi.c
+</I>&gt;<i> index 1a6929f..728dfe9 100644
+</I>&gt;<i> --- a/usr/scsi.c
+</I>&gt;<i> +++ b/usr/scsi.c
+</I>&gt;<i> @@ -40,7 +40,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>  void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint8_t asc, uint8_t asq)
+</I>&gt;<i>  {
+</I>&gt;<i> -	if (cmd-&gt;dev &amp;&amp; cmd-&gt;dev-&gt;d_sense) {
+</I>&gt;<i> +	if (cmd-&gt;dev &amp;&amp; cmd-&gt;dev-&gt;attributes-&gt;sense_format) {
+</I>&gt;<i>  		/* descriptor format */
+</I>&gt;<i>  
+</I>&gt;<i>  		cmd-&gt;sense_buffer[0] = 0x72;  /* current, not deferred */
+</I>&gt;<i> @@ -121,3 +121,4 @@ int scsi_cmd_perform(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	unsigned char op = cmd-&gt;scb[0];
+</I>&gt;<i>  	return cmd-&gt;c_target-&gt;dev_type_template.ops[op].cmd_perform(host_no, cmd);
+</I>&gt;<i>  }
+</I>&gt;<i> +
+</I>&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> index b922a45..ab633a4 100644
+</I>&gt;<i> --- a/usr/spc.c
+</I>&gt;<i> +++ b/usr/spc.c
+</I>&gt;<i> @@ -19,6 +19,7 @@
+</I>&gt;<i>   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+</I>&gt;<i>   * 02110-1301 USA
+</I>&gt;<i>   */
+</I>&gt;<i> +#include &lt;errno.h&gt;
+</I>&gt;<i>  #include &lt;stdio.h&gt;
+</I>&gt;<i>  #include &lt;stdlib.h&gt;
+</I>&gt;<i>  #include &lt;string.h&gt;
+</I>&gt;<i> @@ -27,12 +28,15 @@
+</I>&gt;<i>  #include &quot;list.h&quot;
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i> +#include &quot;parser.h&quot;
+</I>&gt;<i>  #include &quot;target.h&quot;
+</I>&gt;<i>  #include &quot;driver.h&quot;
+</I>&gt;<i> +#include &quot;tgtadm_error.h&quot;
+</I>&gt;<i>  #include &quot;scsi.h&quot;
+</I>&gt;<i>  #include &quot;spc.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i>  #define PRODUCT_REV	&quot;0&quot;
+</I>&gt;<i> +#define BLK_SHIFT	9
+</I>&gt;<i>  
+</I>&gt;<i>  int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i> @@ -40,7 +44,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	uint8_t *data;
+</I>&gt;<i>  	uint8_t *scb = cmd-&gt;scb;
+</I>&gt;<i>  	unsigned char device_type = cmd-&gt;c_target-&gt;dev_type_template.type;
+</I>&gt;<i> -	char *product_id = cmd-&gt;c_target-&gt;dev_type_template.pid;
+</I>&gt;<i> +	struct physicalAttributes * attributes = cmd-&gt;dev-&gt;attributes;
+</I>&gt;<i>  	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+</I>&gt;<i>  
+</I>&gt;<i>  	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+</I>&gt;<i> @@ -57,22 +61,21 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+</I>&gt;<i>  
+</I>&gt;<i>  	if (!(scb[1] &amp; 0x3)) {
+</I>&gt;<i> +		int i;
+</I>&gt;<i>  		data[0] = device_type;
+</I>&gt;<i> -		data[2] = 4;
+</I>&gt;<i> +		data[1] = (attributes-&gt;isRemovable) ? 0x80 : 0;
+</I>&gt;<i> +		data[2] = 5;	/* SPC-3 */
+</I>&gt;<i>  		data[3] = 0x42;
+</I>&gt;<i> -		data[4] = 59;
+</I>&gt;<i>  		data[7] = 0x02;
+</I>&gt;<i>  		memset(data + 8, 0x20, 28);
+</I>&gt;<i> -		strncpy((char *)data + 8, VENDOR_ID, 8);
+</I>&gt;<i> -		strncpy((char *)data + 16, product_id, 16);
+</I>&gt;<i> -		strncpy((char *)data + 32, PRODUCT_REV, 4);
+</I>&gt;<i> -		data[58] = 0x03;
+</I>&gt;<i> -		data[59] = 0x20;
+</I>&gt;<i> -		data[60] = 0x09;
+</I>&gt;<i> -		data[61] = 0x60;
+</I>&gt;<i> -		data[62] = 0x03;
+</I>&gt;<i> -		data[63] = 0x00;
+</I>&gt;<i> -		len = 64;
+</I>&gt;<i> +		strncpy((char *)data + 8, attributes-&gt;VendorIdent, 8);
+</I>&gt;<i> +		strncpy((char *)data + 16, attributes-&gt;ProductIdent, 16);
+</I>&gt;<i> +		strncpy((char *)data + 32, attributes-&gt;ProductRev, 4);
+</I>&gt;<i> +		for (i=0, len=58; i &lt; VERSION_DESCRIPTOR_LEN; i++, len += 2) {
+</I>&gt;<i> +			data[len] = (attributes-&gt;version_desc[i] &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i> +			data[len+1] = attributes-&gt;version_desc[i] &amp; 0xff;
+</I>&gt;<i> +		}
+</I>&gt;<i> +		data[4] = len - 5;	/* Additional Length */
+</I>&gt;<i>  		ret = SAM_STAT_GOOD;
+</I>&gt;<i>  	} else if (scb[1] &amp; 0x2) {
+</I>&gt;<i>  		/* CmdDt bit is set */
+</I>&gt;<i> @@ -101,13 +104,13 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  			len = 4 + SCSI_SN_LEN;
+</I>&gt;<i>  			ret = SAM_STAT_GOOD;
+</I>&gt;<i>  
+</I>&gt;<i> -			if (cmd-&gt;dev &amp;&amp; strlen(cmd-&gt;dev-&gt;scsi_sn)) {
+</I>&gt;<i> +			if (cmd-&gt;dev &amp;&amp; strlen(cmd-&gt;dev-&gt;attributes-&gt;scsi_sn)) {
+</I>&gt;<i>  				uint8_t *p;
+</I>&gt;<i>  				char *q;
+</I>&gt;<i>  
+</I>&gt;<i>  				p = data + 4 + tmp - 1;
+</I>&gt;<i> -				q = cmd-&gt;dev-&gt;scsi_sn + SCSI_SN_LEN - 1;
+</I>&gt;<i> -
+</I>&gt;<i> +				q = cmd-&gt;dev-&gt;attributes-&gt;scsi_sn +
+</I>&gt;<i> +								SCSI_SN_LEN - 1;
+</I>&gt;<i>  				for (; tmp &gt; 0; tmp--, q)
+</I>&gt;<i>  					*(p--) = *(q--);
+</I>&gt;<i>  			}
+</I>&gt;<i> @@ -120,7 +123,8 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  			data[5] = 0x1;
+</I>&gt;<i>  			data[7] = tmp;
+</I>&gt;<i>  			if (cmd-&gt;dev)
+</I>&gt;<i> -				strncpy((char *) data + 8, cmd-&gt;dev-&gt;scsi_id,
+</I>&gt;<i> +				strncpy((char *) data + 8,
+</I>&gt;<i> +					cmd-&gt;dev-&gt;attributes-&gt;scsi_id,
+</I>&gt;<i>  				        SCSI_ID_LEN);
+</I>&gt;<i>  			len = tmp + 8;
+</I>&gt;<i>  			ret = SAM_STAT_GOOD;
+</I>&gt;<i> @@ -238,9 +242,98 @@ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return SAM_STAT_GOOD;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +void dump_cdb(struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +	uint8_t * cdb = cmd-&gt;scb;
+</I>&gt;<i> +
+</I>&gt;<i> +	switch(cmd-&gt;scb_len) {
+</I>&gt;<i> +	case 6:
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 10:
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x&quot;,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
+</I>&gt;<i> +			cdb[6], cdb[7], cdb[8], cdb[9]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 12:
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x %02x %02x&quot;,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
+</I>&gt;<i> +			cdb[6], cdb[7], cdb[8], cdb[9], cdb[10], cdb[11]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 16:
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x %02x %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x&quot;,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
+</I>&gt;<i> +			cdb[6], cdb[7], cdb[8], cdb[9], cdb[10], cdb[11],
+</I>&gt;<i> +			cdb[12], cdb[13], cdb[14], cdb[15]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	}
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i> +	dump_cdb(cmd);
+</I>&gt;<i>  	cmd-&gt;len = 0;
+</I>&gt;<i>  	sense_data_build(cmd, ILLEGAL_REQUEST, 0x20, 0);
+</I>&gt;<i>  	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  }
+</I>&gt;<i> +
+</I>&gt;<i> +enum {
+</I>&gt;<i> +	Opt_scsiid, Opt_scsisn, Opt_err,
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +static match_table_t tokens = {
+</I>&gt;<i> +	{Opt_scsiid, &quot;scsi_id=%s&quot;},
+</I>&gt;<i> +	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
+</I>&gt;<i> +	{Opt_err, NULL},
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +int spc_lu_config(struct scsi_lu *lu, char * params) {
+</I>&gt;<i> +	int err = 0;
+</I>&gt;<i> +	char *p;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (! strncmp(&quot;targetOps&quot;, params, 9))
+</I>&gt;<i> +		params = params + 10;
+</I>
+Should be:
+
++	if (!strncmp(&quot;targetOps&quot;, params, 9))
+
+
+&gt;<i> +	while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+</I>&gt;<i> +		substring_t args[MAX_OPT_ARGS];
+</I>&gt;<i> +		int token;
+</I>&gt;<i> +		if (!*p)
+</I>&gt;<i> +			continue;
+</I>&gt;<i> +		dprintf(&quot;*p : %s\n&quot;, p);
+</I>&gt;<i> +		token = match_token(p, tokens, args);
+</I>&gt;<i> +		switch (token) {
+</I>&gt;<i> +		case Opt_scsiid:
+</I>&gt;<i> +			match_strncpy(lu-&gt;attributes-&gt;scsi_id, &amp;args[0],
+</I>&gt;<i> +				      sizeof(lu-&gt;attributes-&gt;scsi_id) - 1);
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_scsisn:
+</I>&gt;<i> +			match_strncpy(lu-&gt;attributes-&gt;scsi_sn, &amp;args[0],
+</I>&gt;<i> +				      sizeof(lu-&gt;attributes-&gt;scsi_sn) - 1);
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		default:
+</I>&gt;<i> +			err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> +		}
+</I>&gt;<i> +	}
+</I>&gt;<i> +	return err;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +int spc_lu_init(struct scsi_lu * lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	lu-&gt;attributes = zalloc(sizeof(struct physicalAttributes));
+</I>&gt;<i> +	if(! lu-&gt;attributes)
+</I>&gt;<i> +		return -ENOMEM;
+</I>
+ditto.
+
+
+&gt;<i> +	memcpy(lu-&gt;attributes-&gt;VendorIdent, VENDOR_ID, 8);
+</I>&gt;<i> +	memcpy(lu-&gt;attributes-&gt;ProductRev, &quot;0001&quot;, 4);
+</I>&gt;<i> +	lu-&gt;attributes-&gt;isRemovable = 0;
+</I>&gt;<i> +	lu-&gt;attributes-&gt;sense_format = 0;
+</I>&gt;<i> +	lu-&gt;attributes-&gt;onLine = 0;
+</I>&gt;<i> +	lu-&gt;attributes-&gt;reset = 1;
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> diff --git a/usr/spc.h b/usr/spc.h
+</I>&gt;<i> index f81e74c..1036b70 100644
+</I>&gt;<i> --- a/usr/spc.h
+</I>&gt;<i> +++ b/usr/spc.h
+</I>&gt;<i> @@ -7,5 +7,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> +extern int spc_lu_init(struct scsi_lu *lu);
+</I>&gt;<i> +extern int spc_lu_config(struct scsi_lu *lu, char * params);
+</I>&gt;<i> +extern void dump_cdb(struct scsi_cmd *cmd);
+</I>&gt;<i>  
+</I>&gt;<i>  #endif
+</I>&gt;<i> diff --git a/usr/target.c b/usr/target.c
+</I>&gt;<i> index 23f450f..8eb0cd7 100644
+</I>&gt;<i> --- a/usr/target.c
+</I>&gt;<i> +++ b/usr/target.c
+</I>&gt;<i> @@ -29,7 +29,6 @@
+</I>&gt;<i>  #include &lt;sys/socket.h&gt;
+</I>&gt;<i>  
+</I>&gt;<i>  #include &quot;list.h&quot;
+</I>&gt;<i> -#include &quot;parser.h&quot;
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i>  #include &quot;driver.h&quot;
+</I>&gt;<i> @@ -247,13 +246,19 @@ int tgt_device_create(int tid, uint64_t lun, char *args)
+</I>&gt;<i>  	lu-&gt;lun = lun;
+</I>&gt;<i>  	lu-&gt;lu_state = SCSI_LU_RUNNING;
+</I>&gt;<i>  
+</I>&gt;<i> -	snprintf(lu-&gt;scsi_id, sizeof(lu-&gt;scsi_id),
+</I>&gt;<i> -		 &quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
+</I>&gt;<i> -
+</I>&gt;<i>  	tgt_cmd_queue_init(&amp;lu-&gt;cmd_queue);
+</I>&gt;<i>  
+</I>&gt;<i> -	if (target-&gt;dev_type_template.device_init)
+</I>&gt;<i> -		target-&gt;dev_type_template.device_init(lu);
+</I>&gt;<i> +	if (target-&gt;dev_type_template.lu_init)
+</I>&gt;<i> +		err = target-&gt;dev_type_template.lu_init(lu);
+</I>&gt;<i> +
+</I>&gt;<i> +	if(! err) {
+</I>
+ditto.
+
+
+&gt;<i> +		snprintf(lu-&gt;attributes-&gt;scsi_id,
+</I>&gt;<i> +			sizeof(lu-&gt;attributes-&gt;scsi_id),
+</I>&gt;<i> +			&quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
+</I>&gt;<i> +		snprintf(lu-&gt;attributes-&gt;scsi_sn,
+</I>&gt;<i> +			sizeof(lu-&gt;attributes-&gt;scsi_sn),
+</I>&gt;<i> +			&quot;beaf%d%&quot; PRIu64, tid, lun);
+</I>&gt;<i> +	}
+</I>&gt;<i>  
+</I>&gt;<i>  	list_for_each_entry(pos, &amp;target-&gt;device_list, device_siblings) {
+</I>&gt;<i>  		if (lu-&gt;lun &lt; pos-&gt;lun)
+</I>&gt;<i> @@ -262,13 +267,14 @@ int tgt_device_create(int tid, uint64_t lun, char *args)
+</I>&gt;<i>  	list_add_tail(&amp;lu-&gt;device_siblings, &amp;pos-&gt;device_siblings);
+</I>&gt;<i>  
+</I>&gt;<i>  	dprintf(&quot;Add a logical unit %&quot; PRIu64 &quot; to the target %d\n&quot;, lun, tid);
+</I>&gt;<i> -	return 0;
+</I>&gt;<i> +	return err;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  int tgt_device_destroy(int tid, uint64_t lun)
+</I>&gt;<i>  {
+</I>&gt;<i>  	struct target *target;
+</I>&gt;<i>  	struct scsi_lu *lu;
+</I>&gt;<i> +	int	err;
+</I>
+Should be:
+
+&gt;<i> +	int err;
+</I>
+
+
+&gt;<i>  	dprintf(&quot;%u %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -281,12 +287,14 @@ int tgt_device_destroy(int tid, uint64_t lun)
+</I>&gt;<i>  	if (!list_empty(&amp;lu-&gt;cmd_queue.queue) || lu-&gt;cmd_queue.active_cmd)
+</I>&gt;<i>  		return TGTADM_LUN_ACTIVE;
+</I>&gt;<i>  
+</I>&gt;<i> +	err = target-&gt;dev_type_template.lu_exit(lu);
+</I>&gt;<i> +
+</I>&gt;<i>  	free(lu-&gt;path);
+</I>&gt;<i>  	list_del(&amp;lu-&gt;device_siblings);
+</I>&gt;<i>  
+</I>&gt;<i>  	target-&gt;bst-&gt;bs_close(lu);
+</I>&gt;<i>  	free(lu);
+</I>&gt;<i> -	return 0;
+</I>&gt;<i> +	return err;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  int device_reserve(struct scsi_cmd *cmd)
+</I>&gt;<i> @@ -339,20 +347,9 @@ int device_reserved(struct scsi_cmd *cmd)
+</I>&gt;<i>  	return -EBUSY;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -enum {
+</I>&gt;<i> -	Opt_scsiid, Opt_scsisn, Opt_err,
+</I>&gt;<i> -};
+</I>&gt;<i> -
+</I>&gt;<i> -static match_table_t tokens = {
+</I>&gt;<i> -	{Opt_scsiid, &quot;scsi_id=%s&quot;},
+</I>&gt;<i> -	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
+</I>&gt;<i> -	{Opt_err, NULL},
+</I>&gt;<i> -};
+</I>&gt;<i> -
+</I>&gt;<i>  int tgt_device_update(int tid, uint64_t dev_id, char *params)
+</I>&gt;<i>  {
+</I>&gt;<i> -	int err = 0;
+</I>&gt;<i> -	char *p;
+</I>&gt;<i> +	int err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i>  	struct target *target;
+</I>&gt;<i>  	struct scsi_lu *lu;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -366,26 +363,8 @@ int tgt_device_update(int tid, uint64_t dev_id, char *params)
+</I>&gt;<i>  		return TGTADM_NO_LUN;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> -	while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+</I>&gt;<i> -		substring_t args[MAX_OPT_ARGS];
+</I>&gt;<i> -		int token;
+</I>&gt;<i> -		if (!*p)
+</I>&gt;<i> -			continue;
+</I>&gt;<i> -		token = match_token(p, tokens, args);
+</I>&gt;<i> -
+</I>&gt;<i> -		switch (token) {
+</I>&gt;<i> -		case Opt_scsiid:
+</I>&gt;<i> -			match_strncpy(lu-&gt;scsi_id, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;scsi_id) - 1);
+</I>&gt;<i> -			break;
+</I>&gt;<i> -		case Opt_scsisn:
+</I>&gt;<i> -			match_strncpy(lu-&gt;scsi_sn, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;scsi_sn) - 1);
+</I>&gt;<i> -			break;
+</I>&gt;<i> -		default:
+</I>&gt;<i> -			err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> -		}
+</I>&gt;<i> -	}
+</I>&gt;<i> +	if (target-&gt;dev_type_template.lu_config)
+</I>&gt;<i> +		err = target-&gt;dev_type_template.lu_config(lu, params);
+</I>&gt;<i>  
+</I>&gt;<i>  	return err;
+</I>&gt;<i>  }
+</I>&gt;<i> @@ -474,8 +453,8 @@ int target_cmd_queue(int tid, struct scsi_cmd *cmd)
+</I>&gt;<i>  		cmd_post_perform(q, cmd);
+</I>&gt;<i>  
+</I>&gt;<i>  		dprintf(&quot;%&quot; PRIx64 &quot; %x %&quot; PRIx64 &quot; %&quot; PRIu64 &quot; %u %d %d\n&quot;,
+</I>&gt;<i> -			cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;uaddr, cmd-&gt;offset, cmd-&gt;len,
+</I>&gt;<i> -			result, cmd-&gt;async);
+</I>&gt;<i> +			cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;uaddr, cmd-&gt;offset,
+</I>&gt;<i> +			cmd-&gt;len, result, cmd-&gt;async);
+</I>&gt;<i>  
+</I>&gt;<i>  		set_cmd_processed(cmd);
+</I>&gt;<i>  		if (!cmd-&gt;async)
+</I>&gt;<i> @@ -483,7 +462,8 @@ int target_cmd_queue(int tid, struct scsi_cmd *cmd)
+</I>&gt;<i>  	} else {
+</I>&gt;<i>  		set_cmd_queued(cmd);
+</I>&gt;<i>  		dprintf(&quot;blocked %&quot; PRIx64 &quot; %x %&quot; PRIu64 &quot; %d\n&quot;,
+</I>&gt;<i> -			cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;dev ? cmd-&gt;dev-&gt;lun : UINT64_MAX,
+</I>&gt;<i> +			cmd-&gt;tag, cmd-&gt;scb[0],
+</I>&gt;<i> +			cmd-&gt;dev ? cmd-&gt;dev-&gt;lun : UINT64_MAX,
+</I>&gt;<i>  			q-&gt;active_cmd);
+</I>&gt;<i>  
+</I>&gt;<i>  		list_add_tail(&amp;cmd-&gt;qlist, &amp;q-&gt;queue);
+</I>&gt;<i> @@ -1148,8 +1128,8 @@ int tgt_target_show_all(char *buf, int rest)
+</I>&gt;<i>  				 _TAB3 &quot;Size: %s\n&quot;
+</I>&gt;<i>  				 _TAB3 &quot;Backing store: %s\n&quot;,
+</I>&gt;<i>  				 lu-&gt;lun,
+</I>&gt;<i> -				 lu-&gt;scsi_id,
+</I>&gt;<i> -				 lu-&gt;scsi_sn,
+</I>&gt;<i> +				 lu-&gt;attributes-&gt;scsi_id,
+</I>&gt;<i> +				 lu-&gt;attributes-&gt;scsi_sn,
+</I>&gt;<i>  				 print_disksize(lu-&gt;size),
+</I>&gt;<i>  				 lu-&gt;path);
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/tgtadm.c b/usr/tgtadm.c
+</I>&gt;<i> index e55a785..3d551cc 100644
+</I>&gt;<i> --- a/usr/tgtadm.c
+</I>&gt;<i> +++ b/usr/tgtadm.c
+</I>&gt;<i> @@ -103,6 +103,7 @@ struct option const long_options[] = {
+</I>&gt;<i>  	{&quot;initiator-address&quot;, required_argument, NULL, 'I'},
+</I>&gt;<i>  	{&quot;user&quot;, required_argument, NULL, 'u'},
+</I>&gt;<i>  	{&quot;password&quot;, required_argument, NULL, 'p'},
+</I>&gt;<i> +	{&quot;params&quot;, required_argument, NULL, 'P'},
+</I>&gt;<i>  
+</I>&gt;<i>  	{&quot;bus&quot;, required_argument, NULL, 'B'},
+</I>&gt;<i>  	{&quot;target-type&quot;, required_argument, NULL, 'Y'},
+</I>&gt;<i> @@ -110,7 +111,7 @@ struct option const long_options[] = {
+</I>&gt;<i>  	{NULL, 0, NULL, 0},
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> -static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:B:Y:O&quot;;
+</I>&gt;<i> +static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:P:B:Y:O&quot;;
+</I>&gt;<i>  
+</I>&gt;<i>  static void usage(int status)
+</I>&gt;<i>  {
+</I>&gt;<i> @@ -355,7 +356,7 @@ int main(int argc, char **argv)
+</I>&gt;<i>  	int op, total, tid, rest, mode, t_type, ac_dir;
+</I>&gt;<i>  	uint32_t cid, hostno;
+</I>&gt;<i>  	uint64_t sid, lun;
+</I>&gt;<i> -	char *name, *value, *path, *targetname, *params, *address;
+</I>&gt;<i> +	char *name, *value, *path, *targetname, *params, *address, *targetOps;
+</I>&gt;<i>  	char *user, *password;
+</I>&gt;<i>  	char buf[BUFSIZE + sizeof(struct tgtadm_req)];
+</I>&gt;<i>  	struct tgtadm_req *req;
+</I>&gt;<i> @@ -365,7 +366,7 @@ int main(int argc, char **argv)
+</I>&gt;<i>  	t_type = TYPE_DISK;
+</I>&gt;<i>  	ac_dir = ACCOUNT_TYPE_INCOMING;
+</I>&gt;<i>  	rest = BUFSIZE;
+</I>&gt;<i> -	name = value = path = targetname = address = NULL;
+</I>&gt;<i> +	name = value = path = targetname = address = targetOps = NULL;
+</I>&gt;<i>  	user = password = NULL;
+</I>&gt;<i>  
+</I>&gt;<i>  	memset(buf, 0, sizeof(buf));
+</I>&gt;<i> @@ -396,6 +397,9 @@ int main(int argc, char **argv)
+</I>&gt;<i>  		case 'l':
+</I>&gt;<i>  			lun = strtoull(optarg, NULL, 10);
+</I>&gt;<i>  			break;
+</I>&gt;<i> +		case 'P':
+</I>&gt;<i> +			targetOps = optarg;
+</I>&gt;<i> +			break;
+</I>&gt;<i>  		case 'n':
+</I>&gt;<i>  			name = optarg;
+</I>&gt;<i>  			break;
+</I>&gt;<i> @@ -570,6 +574,10 @@ int main(int argc, char **argv)
+</I>&gt;<i>  	if (password)
+</I>&gt;<i>  		shprintf(total, params, rest, &quot;%spassword=%s&quot;,
+</I>&gt;<i>  			 rest == BUFSIZE ? &quot;&quot; : &quot;,&quot;, password);
+</I>&gt;<i> +	// Trailing ',' makes parsing params in modules easier..
+</I>&gt;<i> +	if (targetOps)
+</I>&gt;<i> +		shprintf(total, params, rest, &quot;%stargetOps %s,&quot;,
+</I>&gt;<i> +			 rest == BUFSIZE ? &quot;&quot; : &quot;,&quot;, targetOps);
+</I>&gt;<i>  
+</I>&gt;<i>  	req-&gt;len = sizeof(*req) + total;
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/tgtadm.h b/usr/tgtadm.h
+</I>&gt;<i> index fb83753..d53cb40 100644
+</I>&gt;<i> --- a/usr/tgtadm.h
+</I>&gt;<i> +++ b/usr/tgtadm.h
+</I>&gt;<i> @@ -4,31 +4,7 @@
+</I>&gt;<i>  #define TGT_IPC_NAMESPACE	&quot;TGT_IPC_ABSTRACT_NAMESPACE&quot;
+</I>&gt;<i>  #define TGT_LLD_NAME_LEN	64
+</I>&gt;<i>  
+</I>&gt;<i> -enum tgtadm_errno {
+</I>&gt;<i> -	TGTADM_SUCCESS,
+</I>&gt;<i> -	TGTADM_UNKNOWN_ERR,
+</I>&gt;<i> -	TGTADM_NOMEM,
+</I>&gt;<i> -	TGTADM_NO_DRIVER,
+</I>&gt;<i> -	TGTADM_NO_TARGET,
+</I>&gt;<i> -
+</I>&gt;<i> -	TGTADM_NO_LUN,
+</I>&gt;<i> -	TGTADM_NO_SESSION,
+</I>&gt;<i> -	TGTADM_NO_CONNECTION,
+</I>&gt;<i> -	TGTADM_TARGET_EXIST,
+</I>&gt;<i> -	TGTADM_LUN_EXIST,
+</I>&gt;<i> -
+</I>&gt;<i> -	TGTADM_ACL_EXIST,
+</I>&gt;<i> -	TGTADM_USER_EXIST,
+</I>&gt;<i> -	TGTADM_NO_USER,
+</I>&gt;<i> -	TGTADM_TOO_MANY_USER,
+</I>&gt;<i> -	TGTADM_INVALID_REQUEST,
+</I>&gt;<i> -
+</I>&gt;<i> -	TGTADM_OUTACCOUNT_EXIST,
+</I>&gt;<i> -	TGTADM_TARGET_ACTIVE,
+</I>&gt;<i> -	TGTADM_LUN_ACTIVE,
+</I>&gt;<i> -	TGTADM_UNSUPPORTED_OPERATION,
+</I>&gt;<i> -	TGTADM_UNKNOWN_PARAM,
+</I>&gt;<i> -};
+</I>&gt;<i> +#include &quot;tgtadm_error.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i>  enum tgtadm_op {
+</I>&gt;<i>  	OP_NEW,
+</I>&gt;<i> diff --git a/usr/tgtadm_error.h b/usr/tgtadm_error.h
+</I>&gt;<i> new file mode 100644
+</I>&gt;<i> index 0000000..319a4ad
+</I>&gt;<i> --- /dev/null
+</I>&gt;<i> +++ b/usr/tgtadm_error.h
+</I>&gt;<i> @@ -0,0 +1,30 @@
+</I>&gt;<i> +#ifndef TGTADM_ERROR_H
+</I>&gt;<i> +#define TGTADM_ERROR_H
+</I>&gt;<i> +
+</I>&gt;<i> +enum tgtadm_errno {
+</I>&gt;<i> +	TGTADM_SUCCESS,
+</I>&gt;<i> +	TGTADM_UNKNOWN_ERR,
+</I>&gt;<i> +	TGTADM_NOMEM,
+</I>&gt;<i> +	TGTADM_NO_DRIVER,
+</I>&gt;<i> +	TGTADM_NO_TARGET,
+</I>&gt;<i> +
+</I>&gt;<i> +	TGTADM_NO_LUN,
+</I>&gt;<i> +	TGTADM_NO_SESSION,
+</I>&gt;<i> +	TGTADM_NO_CONNECTION,
+</I>&gt;<i> +	TGTADM_TARGET_EXIST,
+</I>&gt;<i> +	TGTADM_LUN_EXIST,
+</I>&gt;<i> +
+</I>&gt;<i> +	TGTADM_ACL_EXIST,
+</I>&gt;<i> +	TGTADM_USER_EXIST,
+</I>&gt;<i> +	TGTADM_NO_USER,
+</I>&gt;<i> +	TGTADM_TOO_MANY_USER,
+</I>&gt;<i> +	TGTADM_INVALID_REQUEST,
+</I>&gt;<i> +
+</I>&gt;<i> +	TGTADM_OUTACCOUNT_EXIST,
+</I>&gt;<i> +	TGTADM_TARGET_ACTIVE,
+</I>&gt;<i> +	TGTADM_LUN_ACTIVE,
+</I>&gt;<i> +	TGTADM_UNSUPPORTED_OPERATION,
+</I>&gt;<i> +	TGTADM_UNKNOWN_PARAM,
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +#endif
+</I>&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;<i> index 06e0dd9..8cda864 100644
+</I>&gt;<i> --- a/usr/tgtd.h
+</I>&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;<i> @@ -5,6 +5,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>  #define SCSI_ID_LEN	24
+</I>&gt;<i>  #define SCSI_SN_LEN	8
+</I>&gt;<i> +#define VERSION_DESCRIPTOR_LEN 8
+</I>&gt;<i>  
+</I>&gt;<i>  #define VENDOR_ID	&quot;IET&quot;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -29,13 +30,27 @@ struct tgt_cmd_queue {
+</I>&gt;<i>  	struct list_head queue;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> +struct physicalAttributes {
+</I>&gt;<i> +	char	scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> +	char	scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i> +
+</I>&gt;<i> +	/* SCSI Inquiry Params */
+</I>&gt;<i> +	char	VendorIdent[9];
+</I>&gt;<i> +	char	ProductIdent[17];
+</I>&gt;<i> +	char	ProductRev[5];
+</I>&gt;<i> +	uint16_t	version_desc[VERSION_DESCRIPTOR_LEN];
+</I>&gt;<i> +
+</I>&gt;<i> +	char	isRemovable;	/* Removable media */
+</I>&gt;<i> +	char	onLine;
+</I>&gt;<i> +	char	reset;		/* Power-on or reset */
+</I>&gt;<i> +	char	sense_format;	/* sense data format */
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i>  struct scsi_lu {
+</I>&gt;<i>  	int fd;
+</I>&gt;<i>  	uint64_t addr; /* persistent mapped address */
+</I>&gt;<i>  	uint64_t size;
+</I>&gt;<i>  	uint64_t lun;
+</I>&gt;<i> -	char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> -	char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i>  	char *path;
+</I>&gt;<i>  
+</I>&gt;<i>  	/* the list of devices belonging to a target */
+</I>&gt;<i> @@ -48,7 +63,7 @@ struct scsi_lu {
+</I>&gt;<i>  	uint64_t reserve_id;
+</I>&gt;<i>  
+</I>&gt;<i>  	/* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i> -	uint8_t d_sense;
+</I>&gt;<i> +	struct physicalAttributes * attributes;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i>  struct scsi_cmd {
+</I>&gt;<i> @@ -121,7 +136,9 @@ struct device_type_template {
+</I>&gt;<i>  	char *name;
+</I>&gt;<i>  	char *pid;
+</I>&gt;<i>  
+</I>&gt;<i> -	void (*device_init)(struct scsi_lu *dev);
+</I>&gt;<i> +	int (*lu_init)(struct scsi_lu *lu);
+</I>&gt;<i> +	int (*lu_exit)(struct scsi_lu *lu);
+</I>&gt;<i> +	int (*lu_config)(struct scsi_lu *lu, char *arg);
+</I>&gt;<i>  
+</I>&gt;<i>  	struct device_type_operations ops[256];
+</I>&gt;<i>  };
+</I>&gt;<i> -- 
+</I>&gt;<i> 1.5.1.3
+</I>&gt;<i> 
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000723.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+</A></li>
+	<LI>Next message: <A HREF="000728.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#727">[ date ]</a>
+              <a href="thread.html#727">[ thread ]</a>
+              <a href="subject.html#727">[ subject ]</a>
+              <a href="author.html#727">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iscsi target works, minor fixes
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C200611031428.kA3ESuQk025138%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000344.html">
+   <LINK REL="Next"  HREF="000349.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iscsi target works, minor fixes</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C200611031428.kA3ESuQk025138%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] iscsi target works, minor fixes">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Nov  3 15:28:55 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000344.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+        <LI>Next message: <A HREF="000349.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#345">[ date ]</a>
+              <a href="thread.html#345">[ thread ]</a>
+              <a href="subject.html#345">[ subject ]</a>
+              <a href="author.html#345">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: [Stgt-devel] iscsi target works, minor fixes
+Date: Thu, 2 Nov 2006 19:45:48 -0500
+
+&gt;<i> I've been playing with the user-space iscsi target, looking at the
+</I>&gt;<i> latest stgt SVN and linux-2.6-target git today.  One little fix I
+</I>&gt;<i> need in the userspace code is this:
+</I>&gt;<i> 
+</I>&gt;<i> Index: trunk/usr/bd_aio.c
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- trunk/usr/bd_aio.c	(revision 609)
+</I>&gt;<i> +++ trunk/usr/bd_aio.c	(working copy)
+</I>&gt;<i> @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+</I>&gt;<i>  
+</I>&gt;<i>  	for (i = 0; i &lt; nr; i++) {
+</I>&gt;<i>  		iocb = bai-&gt;events[i].obj;
+</I>&gt;<i> -		dprintf(&quot;%p\n&quot;, iocb-&gt;data);
+</I>&gt;<i> -		target_cmd_io_done(iocb-&gt;data, 0);
+</I>&gt;<i> +		dprintf(&quot;%p\n&quot;, bai-&gt;events[i].data);
+</I>&gt;<i> +		target_cmd_io_done(bai-&gt;events[i].data, 0);
+</I>&gt;<i>  	}
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> While I don't understand exactly what's going on, this data pointer
+</I>&gt;<i> from struct io_event is the correct struct cmd *, and without the
+</I>&gt;<i> patch, tgtd segfaults trying to access fields in the (bogus) cmd
+</I>&gt;<i> from iocb-&gt;data.
+</I>
+It works with 2.6.18 for me. The kernel aio code sets io_event-&gt;obj to
+iocb. We set iocb-&gt;data to cmd.
+
+I've not tested aiopoll patch with the current git tree. I'll do after
+sending this mail. But we must replace the aiopoll patch with
+something as soon as possible.
+
+By the way, does the kernel crash when you kill the tgtd daemon (it's
+due to the aiopoll problem)?
+
+If so, try to remove the logical units before killing the daemon.
+
+First, you can see the current configuration:
+
+lily:/home/fujita/tgt# ./usr/tgtadm --lld iscsi --op show
+tid 1: lld iscsi: iqn.2001-04.com.example:storage.disk2.amiens.sys1.xyz
+        lun 0: path /dev/hdc1
+
+Second, remove the lu:
+
+lily:/home/fujita/tgt# ./usr/tgtadm --lld iscsi --op delete --tid 1 --lun 0
+
+Then, see the configuration again:
+
+lily:/home/fujita/tgt# ./usr/tgtadm --lld iscsi --op show
+tid 1: lld iscsi: iqn.2001-04.com.example:storage.disk2.amiens.sys1.xyz
+
+The lu has gone. Hopefully, you can kill the daemon safely.
+
+
+&gt;<i> It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+</I>&gt;<i> was the wrong one to apply?  There was one minor reject that was
+</I>&gt;<i> easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+</I>&gt;<i> linux-2.6-target.git + aiopoll + other minor patches.
+</I>
+I see. I'll update the patch later.
+
+
+&gt;<i> You may want this, but it doesn't change any behavior:
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/drivers/scsi/scsi_tgt_lib.c b/drivers/scsi/scsi_tgt_lib.c
+</I>&gt;<i> index e01f458..6e92b97 100644
+</I>&gt;<i> --- a/drivers/scsi/scsi_tgt_lib.c
+</I>&gt;<i> +++ b/drivers/scsi/scsi_tgt_lib.c
+</I>&gt;<i> @@ -108,7 +108,6 @@ struct scsi_cmnd *scsi_host_get_command(
+</I>&gt;<i>  
+</I>&gt;<i>  	rq-&gt;special = cmd;
+</I>&gt;<i>  	rq-&gt;cmd_type = REQ_TYPE_SPECIAL;
+</I>&gt;<i> -	rq-&gt;cmd_flags |= REQ_TYPE_BLOCK_PC;
+</I>&gt;<i>  	rq-&gt;end_io_data = tcmd;
+</I>&gt;<i>  
+</I>&gt;<i>  	bio_list_init(&amp;tcmd-&gt;xfer_list);
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> What goes in cmd_flags are bit fields like REQ_SOFTBARRIER.  You're
+</I>&gt;<i> not supposed to try to put another REQ_TYPE in there.  You do want
+</I>&gt;<i> SPECIAL, not BLOCK_PC, since you are allocating your own struct
+</I>&gt;<i> scsi_cmnd and putting it into rq-&gt;special.
+</I>
+Thanks. You are right. Seems that REQ_TYPE_BLOCK_PC blongs to
+cmd_type. I just merged the fix in -mm kernel without seeing the
+details.
+
+Anyway, we can remove the cmd_type and cmd_flags parts. They are
+useless now. The old version needs them but now we don't, I think.
+
+
+&gt;<i> Basic mkfs and dd seem to work just fine.  Thanks for the code.
+</I>
+Nice. Thanks for testings. I think that the basic operations are ok,
+but there are still many things to polish.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000344.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+	<LI>Next message: <A HREF="000349.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#345">[ date ]</a>
+              <a href="thread.html#345">[ thread ]</a>
+              <a href="subject.html#345">[ subject ]</a>
+              <a href="author.html#345">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

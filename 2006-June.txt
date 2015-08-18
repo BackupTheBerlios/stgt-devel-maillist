@@ -1,0 +1,156 @@
+From oliver.rehmann at atosorigin.com  Thu Jun 15 19:10:10 2006
+From: oliver.rehmann at atosorigin.com (Rehmann Oliver)
+Date: Thu, 15 Jun 2006 19:10:10 +0200
+Subject: [Stgt-devel] (Still) STGT compile error on FC5 Kernel 2.6.16
+Message-ID: <588EBCAA757D5F4484EC6017EC5126CCC94253@chzhx001.ch.int.atosorigin.com>
+
+Hello
+
+I just tried to compile STGT to check wether the nasty compile bug is still
+there or not. It seems it is :-)
+The compiler bails out complaining about some kernel header files included
+in userspace ...
+This error exists since I can remember of STGT.
+
+Can this be fixed please ? And don't tell me that I have to use a newer
+kernel 2.6.17 for this *smile*
+I was already told so when I reported this at 2.6.15; so it must be
+something general.
+
+*** Compiler Output from BUILD 487 ***
+
+make -C istgt
+make[1]: Entering directory `/user1/software/STGT/trunk/istgt'
+make -C usr
+make[2]: Entering directory `/user1/software/STGT/trunk/istgt/usr'
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o istgt.o istgt.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o conn.o conn.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o param.o param.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o iscsid.o iscsid.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o session.o session.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o target.o target.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o chap.o chap.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -I../../include
+-I../../usr   -c -o ctldev.o ctldev.c
+cc -shared -o istgt.so istgt.o conn.o param.o iscsid.o session.o target.o
+chap.o ctldev.o
+make[2]: Leaving directory `/user1/software/STGT/trunk/istgt/usr'
+make -C /lib/modules/2.6.16-1.2133_FC5/build
+SUBDIRS=/user1/software/STGT/trunk/istgt/kernel modules
+make[2]: Entering directory `/usr/src/kernels/2.6.16-1.2133_FC5-i686'
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/iscsi.o
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/nthread.o
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/config.o
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/digest.o
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/conn.o
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/session.o
+  CC [M]  /user1/software/STGT/trunk/istgt/kernel/param.o
+  LD [M]  /user1/software/STGT/trunk/istgt/kernel/istgt.o
+  Building modules, stage 2.
+  MODPOST
+*** Warning: "tgt_cmd_create"
+[/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined!
+*** Warning: "tgt_msg_send"
+[/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined!
+*** Warning: "tgt_target_template_unregister"
+[/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined!
+*** Warning: "tgt_session_destroy"
+[/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined!
+*** Warning: "tgt_target_template_register"
+[/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined!
+*** Warning: "tgt_session_create"
+[/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined!
+  CC      /user1/software/STGT/trunk/istgt/kernel/istgt.mod.o
+  LD [M]  /user1/software/STGT/trunk/istgt/kernel/istgt.ko
+make[2]: Leaving directory `/usr/src/kernels/2.6.16-1.2133_FC5-i686'
+make[1]: Leaving directory `/user1/software/STGT/trunk/istgt'
+make -C usr
+make[1]: Entering directory `/user1/software/STGT/trunk/usr'
+cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -DNETLINK_TGT=20
+-c -o tgtd.o tgtd.c
+cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -DNETLINK_TGT=20
+-c -o netlink.o netlink.c
+cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -DNETLINK_TGT=20
+-c -o ipc.o ipc.c
+cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -DNETLINK_TGT=20
+-c -o dl.o dl.c
+cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -DNETLINK_TGT=20
+-c -o mgmt.o mgmt.c
+cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+-I/lib/modules/2.6.16-1.2133_FC5/build/include -I../include -DNETLINK_TGT=20
+-c -o target.o target.c
+In file included from
+/lib/modules/2.6.16-1.2133_FC5/build/include/linux/fs.h:9,
+                 from target.c:24:
+/lib/modules/2.6.16-1.2133_FC5/build/include/linux/config.h:8:2: error:
+#error including kernel header in userspace; use the glibc headers instead!
+make[1]: *** [target.o] Error 1
+make[1]: Leaving directory `/user1/software/STGT/trunk/usr'
+make: *** [all] Error 2
+
+
+Regards,
+
+Oliver Rehmann
+Manager IT
+Atos Origin Telecom Schweiz AG
+Binzmuehlestr. 95
+8050 Zurich
+Switzerland
+Phone +41 44 308 9515
+Fax +41 44 308 9599
+oliver.rehmann at atosorigin.com
+www.atosorigin.com <www.atosorigin.com> 
+
+This e-mail and the documents attached are confidential and intended solely
+for the addressee; it may also be privileged. If you receive this e-mail
+in error, please notify the sender immediately and destroy it.
+As its integrity cannot be secured on the Internet, the Atos Origin group
+liability cannot be triggered for the message content. Although the
+sender endeavours to maintain a computer virus-free network, the sender does
+not
+warrant that this transmission is virus-free and will not be liable for
+any damages resulting from any virus transmitted.
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20060615/32a89515/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Jun 23 14:24:09 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 23 Jun 2006 21:24:09 +0900
+Subject: [Stgt-devel] rearrange the subversion directory layout
+Message-ID: <200606231224.k5NCOANX025293@r-dd.iij4u.or.jp>
+
+Because of historical reasons, tgt user-space code lives in:
+
+svn://svn.berlios.de/stgt/branches/
+
+That often created confusion. So we rearranged the subversion
+directory layout. Now, as you expect, the user-space code lives in:
+
+svn://svn.berlios.de/stgt/trunk
+
+

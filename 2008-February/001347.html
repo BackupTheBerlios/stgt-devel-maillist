@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%09Linux%20kernel&In-Reply-To=%3C1202228507.4096.11.camel%40dhcp-117.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001346.html">
+   <LINK REL="Next"  HREF="001348.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%09Linux%20kernel&In-Reply-To=%3C1202228507.4096.11.camel%40dhcp-117.ibrix.com%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Tue Feb  5 17:21:47 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001346.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+        <LI>Next message: <A HREF="001348.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1347">[ date ]</a>
+              <a href="thread.html#1347">[ thread ]</a>
+              <a href="subject.html#1347">[ subject ]</a>
+              <a href="author.html#1347">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 2008-02-05 at 17:07 +0100, Tomasz Chmielewski wrote:
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; On Tue, 05 Feb 2008 08:14:01 +0100
+</I>&gt;<i> &gt; Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; James Bottomley schrieb:
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; These are both features being independently worked on, are they not?
+</I>&gt;<i> &gt;&gt;&gt; Even if they weren't, the combination of the size of SCST in kernel plus
+</I>&gt;<i> &gt;&gt;&gt; the problem of having to find a migration path for the current STGT
+</I>&gt;<i> &gt;&gt;&gt; users still looks to me to involve the greater amount of work.
+</I>&gt;<i> &gt;&gt; I don't want to be mean, but does anyone actually use STGT in
+</I>&gt;<i> &gt;&gt; production? Seriously?
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; In the latest development version of STGT, it's only possible to stop
+</I>&gt;<i> &gt;&gt; the tgtd target daemon using KILL / 9 signal - which also means all
+</I>&gt;<i> &gt;&gt; iSCSI initiator connections are corrupted when tgtd target daemon is
+</I>&gt;<i> &gt;&gt; started again (kernel upgrade, target daemon upgrade, server reboot etc.).
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I don't know what &quot;iSCSI initiator connections are corrupted&quot;
+</I>&gt;<i> &gt; mean. But if you reboot a server, how can an iSCSI target
+</I>&gt;<i> &gt; implementation keep iSCSI tcp connections?
+</I>&gt;<i> 
+</I>&gt;<i> The problem with tgtd is that you can't start it (configured) in an
+</I>&gt;<i> &quot;atomic&quot; way.
+</I>&gt;<i> Usually, one will start tgtd and it's configuration in a script (I 
+</I>&gt;<i> replaced some parameters with &quot;...&quot; to make it shorter and more readable):
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> tgtd
+</I>&gt;<i> tgtadm --op new ...
+</I>&gt;<i> tgtadm --lld iscsi --op new ...
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> However, this won't work - tgtd goes immediately in the background as it 
+</I>&gt;<i> is still starting, and the first tgtadm commands will fail:
+</I>
+this should be a easy fix. start tgtd, get port setup ready in forked
+process, then signal its parent that ready to quit. or set port ready in
+parent, fork and pass to daemon.
+
+
+&gt;<i> 
+</I>&gt;<i> # bash -x tgtd-start
+</I>&gt;<i> + tgtd
+</I>&gt;<i> + tgtadm --op new --mode target ...
+</I>&gt;<i> tgtadm: can't connect to the tgt daemon, Connection refused
+</I>&gt;<i> tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+</I>&gt;<i> not connected
+</I>&gt;<i> + tgtadm --lld iscsi --op new --mode account ...
+</I>&gt;<i> tgtadm: can't connect to the tgt daemon, Connection refused
+</I>&gt;<i> tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+</I>&gt;<i> not connected
+</I>&gt;<i> + tgtadm --lld iscsi --op bind --mode account --tid 1 ...
+</I>&gt;<i> tgtadm: can't find the target
+</I>&gt;<i> + tgtadm --op new --mode logicalunit --tid 1 --lun 1 ...
+</I>&gt;<i> tgtadm: can't find the target
+</I>&gt;<i> + tgtadm --op bind --mode target --tid 1 -I ALL
+</I>&gt;<i> tgtadm: can't find the target
+</I>&gt;<i> + tgtadm --op new --mode target --tid 2 ...
+</I>&gt;<i> + tgtadm --op new --mode logicalunit --tid 2 --lun 1 ...
+</I>&gt;<i> + tgtadm --op bind --mode target --tid 2 -I ALL
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> OK, if tgtd takes longer to start, perhaps it's a good idea to sleep a 
+</I>&gt;<i> second right after tgtd?
+</I>&gt;<i> 
+</I>&gt;<i> tgtd
+</I>&gt;<i> sleep 1
+</I>&gt;<i> tgtadm --op new ...
+</I>&gt;<i> tgtadm --lld iscsi --op new ...
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> No, it is not a good idea - if tgtd listens on port 3260 *and* is 
+</I>&gt;<i> unconfigured yet,  any reconnecting initiator will fail, like below:
+</I>
+this is another easy fix. tgtd started with unconfigured status and then
+a tgtadm can configure it and turn it into ready status.
+
+
+those are really minor usability issue. ( i know it is painful for user,
+i agree)
+
+
+the major problem here is to discuss in architectural wise, which one is
+better... linux kernel should have one implementation that is good from
+foundation...
+
+
+
+
+
+&gt;<i> 
+</I>&gt;<i> end_request: I/O error, dev sdb, sector 7045192
+</I>&gt;<i> Buffer I/O error on device sdb, logical block 880649
+</I>&gt;<i> lost page write due to I/O error on sdb
+</I>&gt;<i> Aborting journal on device sdb.
+</I>&gt;<i> ext3_abort called.
+</I>&gt;<i> EXT3-fs error (device sdb): ext3_journal_start_sb: Detected aborted journal
+</I>&gt;<i> Remounting filesystem read-only
+</I>&gt;<i> end_request: I/O error, dev sdb, sector 7045880
+</I>&gt;<i> Buffer I/O error on device sdb, logical block 880735
+</I>&gt;<i> lost page write due to I/O error on sdb
+</I>&gt;<i> end_request: I/O error, dev sdb, sector 6728
+</I>&gt;<i> Buffer I/O error on device sdb, logical block 841
+</I>&gt;<i> lost page write due to I/O error on sdb
+</I>&gt;<i> end_request: I/O error, dev sdb, sector 7045192
+</I>&gt;<i> Buffer I/O error on device sdb, logical block 880649
+</I>&gt;<i> lost page write due to I/O error on sdb
+</I>&gt;<i> end_request: I/O error, dev sdb, sector 7045880
+</I>&gt;<i> Buffer I/O error on device sdb, logical block 880735
+</I>&gt;<i> lost page write due to I/O error on sdb
+</I>&gt;<i> __journal_remove_journal_head: freeing b_frozen_data
+</I>&gt;<i> __journal_remove_journal_head: freeing b_frozen_data
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Ouch.
+</I>&gt;<i> 
+</I>&gt;<i> So the only way to start/restart tgtd reliably is to do hacks which are 
+</I>&gt;<i> needed with yet another iSCSI kernel implementation (IET): use iptables.
+</I>&gt;<i> 
+</I>&gt;<i> iptables &lt;block iSCSI traffic&gt;
+</I>&gt;<i> tgtd
+</I>&gt;<i> sleep 1
+</I>&gt;<i> tgtadm --op new ...
+</I>&gt;<i> tgtadm --lld iscsi --op new ...
+</I>&gt;<i> iptables &lt;unblock iSCSI traffic&gt;
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> A bit ugly, isn't it?
+</I>&gt;<i> Having to tinker with a firewall in order to start a daemon is by no 
+</I>&gt;<i> means a sign of a well-tested and mature project.
+</I>&gt;<i> 
+</I>&gt;<i> That's why I asked how many people use stgt in a production environment 
+</I>&gt;<i> - James was worried about a potential migration path for current users.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> -- 
+</I>&gt;<i> Tomasz Chmielewski
+</I>&gt;<i> <A HREF="http://wpkg.org">http://wpkg.org</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> -------------------------------------------------------------------------
+</I>&gt;<i> This SF.net email is sponsored by: Microsoft
+</I>&gt;<i> Defy all challenges. Microsoft(R) Visual Studio 2008.
+</I>&gt;<i> <A HREF="http://clk.atdmt.com/MRT/go/vse0120000070mrt/direct/01/">http://clk.atdmt.com/MRT/go/vse0120000070mrt/direct/01/</A>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Scst-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Scst-devel at lists.sourceforge.net</A>
+</I>&gt;<i> <A HREF="https://lists.sourceforge.net/lists/listinfo/scst-devel">https://lists.sourceforge.net/lists/listinfo/scst-devel</A>
+</I>-- 
+Ming Zhang
+
+
+@#$%^ purging memory... (*!%
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+<A HREF="http://www.linkedin.com/in/blackmagic02881">http://www.linkedin.com/in/blackmagic02881</A>
+--------------------------------------------
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001346.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+	<LI>Next message: <A HREF="001348.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1347">[ date ]</a>
+              <a href="thread.html#1347">[ thread ]</a>
+              <a href="subject.html#1347">[ subject ]</a>
+              <a href="author.html#1347">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

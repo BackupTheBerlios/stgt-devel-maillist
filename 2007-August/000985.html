@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Makefile auto dependencies
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Makefile%20auto%20dependencies&In-Reply-To=%3C20070827045946C.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000983.html">
+   <LINK REL="Next"  HREF="000984.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Makefile auto dependencies</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Makefile%20auto%20dependencies&In-Reply-To=%3C20070827045946C.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] Makefile auto dependencies">tomof at acm.org
+       </A><BR>
+    <I>Wed Aug 29 00:10:21 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000983.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+        <LI>Next message: <A HREF="000984.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#985">[ date ]</a>
+              <a href="thread.html#985">[ thread ]</a>
+              <a href="subject.html#985">[ subject ]</a>
+              <a href="author.html#985">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 28 Aug 2007 21:57:42 +0300 (IDT)
+Alexander Nezhinsky &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A>&gt; wrote:
+
+&gt;<i> On 8/27/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; Hmm, I stil can't apply the patch cleanly.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Anyway, I applied it by hand this time.
+</I>&gt;<i> 
+</I>&gt;<i> Tomo,
+</I>&gt;<i> 
+</I>&gt;<i> I don't know what was the reason, maybe some diffs against the
+</I>&gt;<i> iser version creeped in.
+</I>&gt;<i> 
+</I>&gt;<i> Anyway, you forgot to remove a plus sign before the %.o rule, so the
+</I>&gt;<i> dependencies are not really gererated. Hope this time it works,
+</I>&gt;<i> i tested it against a freshly cloned repository.
+</I>&gt;<i> 
+</I>&gt;<i> This patch fixes this typo (+%.o: %.c) and also breaks the lines
+</I>&gt;<i> longer than 80 chars into shorter ones.
+</I>
+This patch is malformed again.
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at arbre</A>:~/git/tgt$ patch -p1 &lt; /home/fujita/Mail/iscsi/stgt/1986
+patching file usr/Makefile
+patch: **** malformed patch at line 82: $(INCLUDES)
+
+
+I just reverted the previous commit. I can't apply a patch by hand. So
+someone who know a proper way to send a patch must resend the patches.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000983.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+	<LI>Next message: <A HREF="000984.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#985">[ date ]</a>
+              <a href="thread.html#985">[ thread ]</a>
+              <a href="subject.html#985">[ subject ]</a>
+              <a href="author.html#985">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

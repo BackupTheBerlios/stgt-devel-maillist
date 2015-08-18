@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Sense buffer for tape drive
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Sense%20buffer%20for%20tape%20drive&In-Reply-To=%3Cf29db9a80802261452u5a6b877enabd5003cbc30629f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001414.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Sense buffer for tape drive</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Sense%20buffer%20for%20tape%20drive&In-Reply-To=%3Cf29db9a80802261452u5a6b877enabd5003cbc30629f%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Sense buffer for tape drive">markh794 at gmail.com
+       </A><BR>
+    <I>Tue Feb 26 23:52:53 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001414.html">[Stgt-devel] Sense buffer for tape drive
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1415">[ date ]</a>
+              <a href="thread.html#1415">[ thread ]</a>
+              <a href="subject.html#1415">[ subject ]</a>
+              <a href="author.html#1415">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>You are looking at this from the wrong angle.
+
+You are the SSC device (well your code is). So you decide when to
+return CHECK CONDITION with either EOD, EOM, ILI + sense code + ASC +
+ASCQ.
+
+i.e. When you attempt to read past the 'filemark' that you recorded -
+you return the CHECK CONDITION.
+
+p.s. The code I have is totally unworkable at the moment. So
+referencing my work will not assist in this question until I have
+something that will actually 'work' even it it's only the READ_6
+command...
+
+Cheers
+Mark
+
+On Wed, Feb 27, 2008 at 2:54 AM, aftab azmi &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">max_aftab at yahoo.com</A>&gt; wrote:
+&gt;<i>  am working on vtl for stgt. i was writing the code for READ(6) where i got stuck...
+</I>&gt;<i>   After reading the data how to check that whether we have hit filemark, EOD or EOM..
+</I>&gt;<i>   Do we have to make a structure for blocks to be wriiten on tape which will contain fields for filemark, EOD or EOM so when we write a filemark we can set that field....
+</I>&gt;<i>   can any one help me clear this dout???
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>       Unlimited freedom, unlimited storage. Get it now, on <A HREF="http://help.yahoo.com/l/in/yahoo/mail/yahoomail/tools/tools-08.html/">http://help.yahoo.com/l/in/yahoo/mail/yahoomail/tools/tools-08.html/</A>
+</I>&gt;<i>
+</I>&gt;<i>  _______________________________________________
+</I>&gt;<i>  Stgt-devel mailing list
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001414.html">[Stgt-devel] Sense buffer for tape drive
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1415">[ date ]</a>
+              <a href="thread.html#1415">[ thread ]</a>
+              <a href="subject.html#1415">[ subject ]</a>
+              <a href="author.html#1415">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

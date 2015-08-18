@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Dealing with virtual tapes when they are moved out of	a drive ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Dealing%20with%20virtual%20tapes%20when%20they%20are%20moved%20out%20of%0A%09a%20drive%20...&In-Reply-To=%3C46b8a8850808171151y79b481ajde1a2d02deb03885%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002024.html">
+   <LINK REL="Next"  HREF="002026.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Dealing with virtual tapes when they are moved out of	a drive ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Dealing%20with%20virtual%20tapes%20when%20they%20are%20moved%20out%20of%0A%09a%20drive%20...&In-Reply-To=%3C46b8a8850808171151y79b481ajde1a2d02deb03885%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Dealing with virtual tapes when they are moved out of	a drive ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Sun Aug 17 20:51:00 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002024.html">[Stgt-devel] Testing ... 123
+</A></li>
+        <LI>Next message: <A HREF="002026.html">[Stgt-devel] SSC Changes that allow BakBone NetVault to work ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2025">[ date ]</a>
+              <a href="thread.html#2025">[ thread ]</a>
+              <a href="subject.html#2025">[ subject ]</a>
+              <a href="author.html#2025">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+It strikes me that one might want to deal with virtual tapes when they
+are moved out of a virtual tape drive and back to a slot.
+
+This might take the form of a script that the sys admin provides that
+does something special with the tape or whatever.
+
+Here is one possible approach to doing that (I have not fully
+implemented it, I only throw this out as a possibility):
+
+--- smc.c       2008-08-15 16:12:26.000000000 -0700
++++ smc.c.dispose-tape  2008-08-17 11:47:33.000000000 -0700
+@@ -457,9 +457,21 @@
+                        asc = ASC_MECHANICAL_POSITIONING_ERROR;
+                        goto sense;
+                }
+-       } else
++       } else {
+                set_slot_full(dest_slot, src, NULL);
+
++               /*
++                * Now, if the source slot was a data transfer element
++                * execute any unload script provided ...
++                */
++               if (src_slot-&gt;element_type == ELEMENT_DATA_TRANSFER) {
++
++                       /*
++                        * execve etc ...
++                        */
++               }
++       }
++
+        set_slot_empty(src_slot);
+
+        scsi_set_in_resid_by_actual(cmd, 0);
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002024.html">[Stgt-devel] Testing ... 123
+</A></li>
+	<LI>Next message: <A HREF="002026.html">[Stgt-devel] SSC Changes that allow BakBone NetVault to work ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2025">[ date ]</a>
+              <a href="thread.html#2025">[ thread ]</a>
+              <a href="subject.html#2025">[ subject ]</a>
+              <a href="author.html#2025">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

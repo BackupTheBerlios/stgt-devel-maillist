@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%0A%201/2%5D%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3C46651AB2.4090307%40suse.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000752.html">
+   <LINK REL="Next"  HREF="000756.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5</H1>
+    <B>Hannes Reinecke</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%0A%201/2%5D%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3C46651AB2.4090307%40suse.de%3E"
+       TITLE="[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5">hare at suse.de
+       </A><BR>
+    <I>Tue Jun  5 10:11:30 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000752.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+        <LI>Next message: <A HREF="000756.html">[Stgt-devel]	[Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#753">[ date ]</a>
+              <a href="thread.html#753">[ thread ]</a>
+              <a href="subject.html#753">[ subject ]</a>
+              <a href="author.html#753">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Mark,
+
+nice patches so far.
+But as we now have the ability to configure the LUN dynamically, why
+can't we move the 'type' definition down from the target to the LUN, too?
+
+It still strikes me as odd that the _target_ has a type; strictly
+speaking it's the _LUN_ which has a specific type, not the target.
+So I'd prefer to move the type definition into the LUN.
+
+I actually have a patch here; I see that I can reformat it on top of
+your two patches.
+
+Cheers,
+
+Hannes
+-- 
+Dr. Hannes Reinecke		      zSeries &amp; Storage
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>			      +49 911 74053 688
+SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N&#252;rnberg
+GF: Markus Rex, HRB 16746 (AG N&#252;rnberg)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000752.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+	<LI>Next message: <A HREF="000756.html">[Stgt-devel]	[Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#753">[ date ]</a>
+              <a href="thread.html#753">[ thread ]</a>
+              <a href="subject.html#753">[ subject ]</a>
+              <a href="author.html#753">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

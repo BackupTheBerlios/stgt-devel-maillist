@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER patches, second release
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070906201028.GC14234%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001030.html">
+   <LINK REL="Next"  HREF="001033.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER patches, second release</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070906201028.GC14234%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER patches, second release">pw at osc.edu
+       </A><BR>
+    <I>Thu Sep  6 22:10:28 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001030.html">[Stgt-devel] iSER patches, second release
+</A></li>
+        <LI>Next message: <A HREF="001033.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1031">[ date ]</a>
+              <a href="thread.html#1031">[ thread ]</a>
+              <a href="subject.html#1031">[ subject ]</a>
+              <a href="author.html#1031">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A> wrote on Thu, 06 Sep 2007 15:22 +0300:
+&gt;<i> I have a few questions regarding the code. I'll post them in different mails.
+</I>
+Thanks for looking this over.
+
+&gt;<i> In handle_wc() in case of IBV_WC_RECV, iscsi_rx_handler() gets called and
+</I>&gt;<i> the received pdu is passed as an implicit parameter, through
+</I>&gt;<i> ci-&gt;rcv_comm_event.
+</I>&gt;<i> Only then it gets reposted.
+</I>&gt;<i> 
+</I>&gt;<i> First, the parameter passing method somewhat bothers me because it seems
+</I>&gt;<i> that on a SMP system two RECV completions may arrive through different
+</I>&gt;<i> CPUs and then we end up with garbage in ci-&gt;rcv_comm_event.
+</I>&gt;<i> Do I miss anything on this? Are all completions handled by the same CPU?
+</I>&gt;<i> Is there an implicit guard somewhere?
+</I>
+Yes, it bothers me a bit too.  There is some mismatch in how iscsi
+wants to read bytes when it needs them:  48 first, then look for AHS
+and possible read those, then maybe some immediate data.  Three
+separate read(fd, ...) for one control PDU.  On the other hand, RDMA
+gets all the data in one go.  So we compromise by feeding the bytes
+into iscsi via memcpy for each of its small do_recv operations.
+
+It would be possible to have a separate RX state machine just for
+RDMA, but we didn't want to diverge the code so much.  I think this
+way works, although Robin points out that there are bugs somewhere.
+
+The iscsi code is not multi-threaded.  So only one handle_wc() will
+ever be in progress.  And iscsi_rx_handler() always consumes the
+bhs, ahs, and data completely.  See the &quot;goto again&quot; in there.  We don't
+have to worry about partially consumed control PDU for different
+tasks.  This would all break if we went multithreaded in the iscsi
+core itself.  I'm not sure anyone needs multithreading at that
+level---we already do support it at the backing store level, which
+is where it probably makes most sense.
+
+&gt;<i> Second, it looks like iscsi_rx_handler() will eventually copy the pdu data.
+</I>&gt;<i> Even if set to a small value, if the traffic consists only of such small writes
+</I>&gt;<i> it will be copied entirely.
+</I>
+Yes, up to TRDSL will be fully copied.  That's 8 kB now in linux
+iser, but you could imagine wanting it bigger for better small
+transfer performance.  If you enable unsolicited data, up to that
+amount will be copied.  Ick.
+
+&gt;<i> Third, reposting is postponed until iscsi handles the rx event.
+</I>
+Not so bothered about that.  We post receives to accommodate max
+outstanding requests on the client.  It's hardcoded now, but should
+be fixed (in the initiator) to be negotiated.  The receive slot
+will not be reused until the initiator sees the response.
+
+&gt;<i> I'd suggest:
+</I>&gt;<i> a. to add the rx descriptor to a list and have  iscsi_rx_handler() to feed upon
+</I>&gt;<i> this list which may be guarded if necessary
+</I>&gt;<i> b. to repost a different rx buffer - so it gets reposted as soon as possible -
+</I>&gt;<i> and meanwhile...
+</I>&gt;<i> c. not to copy the current one - but instead use it by reference all
+</I>&gt;<i> the way down
+</I>&gt;<i> the target, just as you do with the rdma buffers.
+</I>&gt;<i> 
+</I>&gt;<i> This may increase the number of resources to allocate but this may improve
+</I>&gt;<i> the performance, at least in some cases.
+</I>
+You may end up paying more overhead for the management, though.
+Agreed saving the 8 kB memcpy (or maybe larger) may be a good idea,
+but there is some complexity with keeping the data in the original
+recvl buffer.  See how iscsi_scsi_cmd_rx_start() allocates the task
+and ahs and data all in one go.  This can be modified, but I want to
+avoid lots of &quot;if (rdma)&quot; cases.  And remember that TCP doesn't have
+message boundaries, so things need to work when you get the 48-byte
+BHS first then go back and read the rest, perhaps in multiple
+1500-byte read statements across separate poll() iterations.
+
+If you get interested in writing a slim queueing layer between TCP
+or RDMA receive processing, and iscsi rx processing, I'll certainly
+help and try to get it integrated.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001030.html">[Stgt-devel] iSER patches, second release
+</A></li>
+	<LI>Next message: <A HREF="001033.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1031">[ date ]</a>
+              <a href="thread.html#1031">[ thread ]</a>
+              <a href="subject.html#1031">[ subject ]</a>
+              <a href="author.html#1031">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

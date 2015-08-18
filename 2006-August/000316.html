@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C20060807072550R.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000315.html">
+   <LINK REL="Next"  HREF="000312.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C20060807072550R.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] User-mode iSER">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Aug  7 00:25:50 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000315.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000312.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#316">[ date ]</a>
+              <a href="thread.html#316">[ thread ]</a>
+              <a href="subject.html#316">[ subject ]</a>
+              <a href="author.html#316">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Alexander Nezhinsky&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] User-mode iSER
+Date: Sun, 6 Aug 2006 20:41:16 +0300
+
+&gt;<i> But anyway, I meant primarily the modes of operation that are not
+</I>&gt;<i> file-system related.
+</I>&gt;<i> For example, with etx3 sync'ing the journal is clearly  the kind of
+</I>&gt;<i> &quot;application-related&quot; operation that needs an explicit flush/barrier.
+</I>&gt;<i> My question was mainly related to the cases when no such need occurs
+</I>&gt;<i> naturally.
+</I>&gt;<i> What if the user works with the raw unpartitioned device -- does he still
+</I>&gt;<i> get a guarantee of correct operation under failures? And if it is done
+</I>&gt;<i> through sg driver (not through the block device subsystem)?
+</I>&gt;<i> Do you imply that if the devices are reported as write-back (plus capable of
+</I>&gt;<i> performing flushes etc) then the problem is solved even if the cache is
+</I>&gt;<i> de-facto volatile?
+</I>
+As I said in the first mail, modern applications can enjoy writeback
+cache. If your applications are not modern, that is, does not know a
+proper way to use writeback cache, just configure your disc drive to
+use write-through.
+
+
+By the way, please don't use html mails. I will not reply next time.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000315.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000312.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#316">[ date ]</a>
+              <a href="thread.html#316">[ thread ]</a>
+              <a href="subject.html#316">[ subject ]</a>
+              <a href="author.html#316">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

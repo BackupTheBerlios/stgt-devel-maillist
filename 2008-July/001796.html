@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Fix online/offline status during backing store	change.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Fix%20online/offline%20status%20during%20backing%0A%20store%09change.&In-Reply-To=%3C20080720004342J.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001785.html">
+   <LINK REL="Next"  HREF="001786.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Fix online/offline status during backing store	change.</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Fix%20online/offline%20status%20during%20backing%0A%20store%09change.&In-Reply-To=%3C20080720004342J.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] Fix online/offline status during backing store	change.">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Jul 19 17:43:40 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001785.html">[Stgt-devel] [PATCH] Fix online/offline status during backing store	change.
+</A></li>
+        <LI>Next message: <A HREF="001786.html">[Stgt-devel] [PATCH] Coding style update
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1796">[ date ]</a>
+              <a href="thread.html#1796">[ thread ]</a>
+              <a href="subject.html#1796">[ subject ]</a>
+              <a href="author.html#1796">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 18 Jul 2008 18:10:01 +1000
+Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+
+&gt;<i> &gt;From 5009444e0ca0dfaa85f72f1de391682f63cc93cb Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Date: Fri, 18 Jul 2008 17:50:28 +1000
+</I>&gt;<i> Subject: device_path_update: Set status to Offline before closing backing store.
+</I>&gt;<i> 
+</I>&gt;<i> Toggle offline status before closing backing file.
+</I>
+Thanks, applied.
+
+
+&gt;<i> Potential race ?? if other commands arrive and attempt to use backing file
+</I>&gt;<i> after it has been closed.
+</I>
+Yeah, I think that I've not fixed this yet. We need to check out a
+logical unit before queuing a command to it (and return an appropriate
+response if the device is offline).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001785.html">[Stgt-devel] [PATCH] Fix online/offline status during backing store	change.
+</A></li>
+	<LI>Next message: <A HREF="001786.html">[Stgt-devel] [PATCH] Coding style update
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1796">[ date ]</a>
+              <a href="thread.html#1796">[ thread ]</a>
+              <a href="subject.html#1796">[ subject ]</a>
+              <a href="author.html#1796">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Initial patch to add Tape and Library support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Initial%20patch%20to%20add%20Tape%20and%20Library%20support&In-Reply-To=%3Cf29db9a80703221409g1a8eb99byf0543a6762fa9468%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000467.html">
+   <LINK REL="Next"  HREF="000471.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Initial patch to add Tape and Library support</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Initial%20patch%20to%20add%20Tape%20and%20Library%20support&In-Reply-To=%3Cf29db9a80703221409g1a8eb99byf0543a6762fa9468%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Initial patch to add Tape and Library support">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Mar 22 22:09:31 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000467.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+        <LI>Next message: <A HREF="000471.html">[Stgt-devel] tgtadm syntax additions (long)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#468">[ date ]</a>
+              <a href="thread.html#468">[ thread ]</a>
+              <a href="subject.html#468">[ subject ]</a>
+              <a href="author.html#468">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 3/23/07, Douglas Gilbert &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dougg at torque.net</A>&gt; wrote:
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] Initial patch to add Tape and Library support
+</I>&gt;<i> &gt; Date: Thu, 22 Mar 2007 13:37:57 +1100
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;&gt; Sorry for the 'attachment' but it seems a little too big to include in-line.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; I can chop it up if requested.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; Note: Most (read all except Inquiry) commands are not supported yet.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; diff -urN -x TAGS -x .svn reference/doc/README.vtl vtl/doc/README.vtl
+</I>&gt;<i> &gt; --- reference/doc/README.vtl  1970-01-01 10:00:00.000000000 +1000
+</I>&gt;<i> &gt; +++ vtl/doc/README.vtl        2007-03-22 10:57:24.000000000 +1100
+</I>&gt;<i> &gt; @@ -0,0 +1,35 @@
+</I>&gt;<i> &gt; +Initial support for SCSI Streaming and SCSI Medium Changer devices.
+</I>&gt;<i> &gt; +markh794 at gmail dot com
+</I>&gt;<i> &gt; +mark_harvey at symantec dot com
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +To set up a changer and tape device..
+</I>&gt;<i> &gt; +./usr/tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2007-03:marks-vtl_smc:`hostname` --target-type changer
+</I>&gt;<i> &gt; +./usr/tgtadm --lld iscsi --op new --mode target --tid 2 -T iqn.2007-03:marks-vtl_ssc:`hostname` --target-type tape
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +I'm hijacking the 'backing device' for use as the configuration file.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; This isn't a good idea. tgt doesn't use any configuration files (or
+</I>&gt;<i> &gt; database). Everything should be configured via tgtadm. We leave
+</I>&gt;<i> &gt; storing configurations to other projects like Openfiler.
+</I>&gt;<i>
+</I>&gt;<i> Do the current stgt kernel based transport drivers come
+</I>&gt;<i> up in an &quot;off the bus state&quot;? If they are visible to
+</I>&gt;<i> the transport before tgtd and tgtadm have got their acts
+</I>&gt;<i> together then you have a problem.
+</I>&gt;<i>
+</I>&gt;<i> I noticed a problem with a MPT SAS HBA. Its firmware settings
+</I>&gt;<i> make it a SAS target and (perhaps prior to any mpt* drivers
+</I>&gt;<i> being loaded) SAS SMP inititiators in that SAS domain will
+</I>&gt;<i> be prompted to re-run discovery during which the firmware
+</I>&gt;<i> identifiers itself as a SSP target. Then an INQUIRY gets sent
+</I>&gt;<i> as _all_ SCSI targets should respond to that, even if there
+</I>&gt;<i> are no logical units.
+</I>&gt;<i>
+</I>&gt;<i> Doug Gilbert
+</I>
+I noticed a sense key of &quot;Inquiry Data has changed&quot; ASC/ASCQ of 3f/03
+which I have always assumed would be used for this type of scenario.
+
+It's always been on my 'list of things to test'. Just to see if the
+Linux SCSI upper layers would actually re-issue an Inquiry and
+re-configure to the updated settings.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000467.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+	<LI>Next message: <A HREF="000471.html">[Stgt-devel] tgtadm syntax additions (long)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#468">[ date ]</a>
+              <a href="thread.html#468">[ thread ]</a>
+              <a href="subject.html#468">[ subject ]</a>
+              <a href="author.html#468">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

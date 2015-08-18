@@ -1,0 +1,403 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Proof of Concept -&gt; Separate thread init/tear-down from backing store open/close.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Proof%20of%20Concept%20-%3E%20Separate%20thread%0A%20init/tear-down%20from%20backing%20store%20open/close.&In-Reply-To=%3C48901BD9.7050104%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001973.html">
+   <LINK REL="Next"  HREF="001982.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Proof of Concept -&gt; Separate thread init/tear-down from backing store open/close.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Proof%20of%20Concept%20-%3E%20Separate%20thread%0A%20init/tear-down%20from%20backing%20store%20open/close.&In-Reply-To=%3C48901BD9.7050104%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Proof of Concept -&gt; Separate thread init/tear-down from backing store open/close.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jul 30 09:44:25 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001973.html">[Stgt-devel] iser target installation
+</A></li>
+        <LI>Next message: <A HREF="001982.html">[Stgt-devel] [PATCH] Proof of Concept -&gt; Separate thread init/tear-down from backing store open/close.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1977">[ date ]</a>
+              <a href="thread.html#1977">[ thread ]</a>
+              <a href="subject.html#1977">[ subject ]</a>
+              <a href="author.html#1977">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Patch also included as an attachment - just in case.
+
+&gt;<i>From 715e434fff633ff8f346d181aeae3f27c9564553 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Wed, 30 Jul 2008 17:27:28 +1000
+Subject: Separate thread init/tear-down from backing store open/close.
+
+Fix segfault when lu created without a backing store.
+ - Devices defined as 'removable' are able to be configured without a backing
+   store defined.
+ - thread init via bs_init() which is called for all logical units
+ - thread tear-down via bs_exit() which is called for all logical units.
+ - bs_open() limited to opening backing store path (called when required).
+ - bs_close() limited to closing backing store fd (called when required).
+
+Note: bs_aio and bs_mmap compile-tested only.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/bs_aio.c  |   25 +++++++++++++++++--------
+ usr/bs_mmap.c |   22 ++++++++++++----------
+ usr/bs_rdwr.c |   25 ++++++++++++++-----------
+ usr/bs_ssc.c  |   25 +++++++++++++------------
+ usr/target.c  |   15 ++++++++++++---
+ usr/tgtd.h    |    2 ++
+ 6 files changed, 70 insertions(+), 44 deletions(-)
+
+diff --git a/usr/bs_aio.c b/usr/bs_aio.c
+index b953bdf..0d6a640 100644
+--- a/usr/bs_aio.c
++++ b/usr/bs_aio.c
+@@ -112,18 +112,22 @@ get_events:
+ 
+ static int bs_aio_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+ {
+-	int ret, afd;
+-	struct bs_aio_info *info =
+-		(struct bs_aio_info *) ((char *)lu + sizeof(*lu));
+-
+ 	*fd = backed_file_open(path, O_RDWR|O_LARGEFILE|O_DIRECT, size);
+ 	if (*fd &lt; 0)
+ 		return *fd;
++	return 0;
++}
++
++static int bs_aio_init(struct scsi_lu *lu)
++{
++	int ret, afd;
++	struct bs_aio_info *info =
++		(struct bs_aio_info *) ((char *)lu + sizeof(*lu));
+ 
+ 	ret = io_setup(MAX_AIO_REQS, &amp;info-&gt;ctx);
+ 	if (ret) {
+ 		eprintf(&quot;fail to create aio_queue, %m\n&quot;);
+-		goto close_dev_fd;
++		return -1;
+ 	}
+ 
+ 	afd = eventfd(0);
+@@ -145,23 +149,26 @@ static int bs_aio_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+ 	info-&gt;afd = afd;
+ 
+ 	return 0;
++
+ close_eventfd:
+ 	close(afd);
+ close_ctx:
+ 	io_destroy(info-&gt;ctx);
+-close_dev_fd:
+-	close(*fd);
+ 	return -1;
+ }
+ 
+ static void bs_aio_close(struct scsi_lu *lu)
+ {
++	close(lu-&gt;fd);
++}
++
++static void bs_aio_exit(struct scsi_lu *lu)
++{
+ 	struct bs_aio_info *info =
+ 		(struct bs_aio_info *) ((char *)lu + sizeof(*lu));
+ 
+ 	close(info-&gt;afd);
+ 	io_destroy(info-&gt;ctx);
+-	close(lu-&gt;fd);
+ }
+ 
+ static int bs_aio_cmd_submit(struct scsi_cmd *cmd)
+@@ -226,6 +233,8 @@ static int bs_aio_cmd_done(struct scsi_cmd *cmd)
+ static struct backingstore_template aio_bst = {
+ 	.bs_name		= &quot;aio&quot;,
+ 	.bs_datasize		= sizeof(struct bs_aio_info),
++	.bs_init		= bs_aio_init,
++	.bs_exit		= bs_aio_exit,
+ 	.bs_open		= bs_aio_open,
+ 	.bs_close		= bs_aio_close,
+ 	.bs_cmd_submit		= bs_aio_cmd_submit,
+diff --git a/usr/bs_mmap.c b/usr/bs_mmap.c
+index d9bfe46..fff19d3 100644
+--- a/usr/bs_mmap.c
++++ b/usr/bs_mmap.c
+@@ -81,28 +81,28 @@ static void bs_mmap_request(struct scsi_cmd *cmd)
+ 
+ static int bs_mmap_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+ {
+-	int ret;
+-	struct bs_thread_info *info = BS_THREAD_I(lu);
+-
+ 	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
+ 	if (*fd &lt; 0)
+ 		return *fd;
+ 
+-	ret = bs_thread_open(info, bs_mmap_request);
+-	if (ret) {
+-		close(*fd);
+-		return -1;
+-	}
+-
+ 	return 0;
+ }
+ 
+ static void bs_mmap_close(struct scsi_lu *lu)
+ {
++	close(lu-&gt;fd);
++}
++
++static int bs_mmap_init(struct scsi_lu *lu)
++{
+ 	struct bs_thread_info *info = BS_THREAD_I(lu);
++	return bs_thread_open(info, bs_mmap_request);
++}
+ 
++static void bs_mmap_exit(struct scsi_lu *lu)
++{
++	struct bs_thread_info *info = BS_THREAD_I(lu);
+ 	bs_thread_close(info);
+-	close(lu-&gt;fd);
+ }
+ 
+ #define pgcnt(size, offset)	((((size) + ((offset) &amp; (pagesize - 1))) + (pagesize - 1)) &gt;&gt; pageshift)
+@@ -173,6 +173,8 @@ static int bs_mmap_cmd_done(struct scsi_cmd *cmd)
+ static struct backingstore_template mmap_bst = {
+ 	.bs_name		= &quot;mmap&quot;,
+ 	.bs_datasize		= sizeof(struct bs_thread_info),
++	.bs_init		= bs_mmap_init,
++	.bs_exit		= bs_mmap_exit,
+ 	.bs_open		= bs_mmap_open,
+ 	.bs_close		= bs_mmap_close,
+ 	.bs_cmd_submit		= bs_mmap_cmd_submit,
+diff --git a/usr/bs_rdwr.c b/usr/bs_rdwr.c
+index d3ce452..e2ece4a 100644
+--- a/usr/bs_rdwr.c
++++ b/usr/bs_rdwr.c
+@@ -131,29 +131,30 @@ static void bs_rdwr_request(struct scsi_cmd *cmd)
+ 
+ static int bs_rdwr_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+ {
+-	int ret;
+-	struct bs_thread_info *info = BS_THREAD_I(lu);
+-
+ 	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
+ 	if (*fd &lt; 0)
+ 		return *fd;
+ 
+-	ret = bs_thread_open(info, bs_rdwr_request);
+-	if (ret) {
+-		close(*fd);
+-		return -1;
+-	}
+-
+ 	return 0;
+ }
+ 
+ static void bs_rdwr_close(struct scsi_lu *lu)
+ {
++	close(lu-&gt;fd);
++}
++
++static int bs_rdwr_init(struct scsi_lu *lu)
++{
+ 	struct bs_thread_info *info = BS_THREAD_I(lu);
+ 
+-	bs_thread_close(info);
++	return bs_thread_open(info, bs_rdwr_request);
++}
+ 
+-	close(lu-&gt;fd);
++static void bs_rdwr_exit(struct scsi_lu *lu)
++{
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++
++	bs_thread_close(info);
+ }
+ 
+ static int bs_rdwr_cmd_done(struct scsi_cmd *cmd)
+@@ -166,6 +167,8 @@ static struct backingstore_template rdwr_bst = {
+ 	.bs_datasize		= sizeof(struct bs_thread_info),
+ 	.bs_open		= bs_rdwr_open,
+ 	.bs_close		= bs_rdwr_close,
++	.bs_init		= bs_rdwr_init,
++	.bs_exit		= bs_rdwr_exit,
+ 	.bs_cmd_submit		= bs_thread_cmd_submit,
+ 	.bs_cmd_done		= bs_rdwr_cmd_done,
+ };
+diff --git a/usr/bs_ssc.c b/usr/bs_ssc.c
+index c1aa91e..dcc3e30 100644
+--- a/usr/bs_ssc.c
++++ b/usr/bs_ssc.c
+@@ -19,7 +19,7 @@
+ #define LONG_BIT            2
+ #define BT_BIT              1
+ 
+-static void rdwr_request(struct scsi_cmd *cmd)
++static void ssc_rdwr_request(struct scsi_cmd *cmd)
+ {
+ 	int ret, fd = cmd-&gt;dev-&gt;fd, code;
+ 	uint32_t length, i, transfer_length, residue;
+@@ -184,11 +184,8 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 			cmd, cmd-&gt;scb[0], ret, length, cmd-&gt;offset);
+ }
+ 
+-
+ static int bs_ssc_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+ {
+-	int ret;
+-	struct bs_thread_info *info = BS_THREAD_I(lu);
+ 	uint64_t curr_pos;
+ 
+ 	eprintf(&quot;In bs_ssc_open\n&quot;);
+@@ -200,22 +197,24 @@ static int bs_ssc_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+ 	curr_pos = lseek(*fd, 0, SEEK_CUR);
+ 	eprintf(&quot;File %s File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, path, curr_pos);
+ 
+-	ret = bs_thread_open(info, rdwr_request);
+-	if (ret) {
+-		close(*fd);
+-		return -1;
+-	}
+-
+ 	return 0;
+ }
+ 
+ static void bs_ssc_close(struct scsi_lu *lu)
+ {
++	close(lu-&gt;fd);
++}
++
++static int bs_ssc_init(struct scsi_lu *lu)
++{
+ 	struct bs_thread_info *info = BS_THREAD_I(lu);
++	return bs_thread_open(info, ssc_rdwr_request);
++}
+ 
++static void bs_ssc_exit(struct scsi_lu *lu)
++{
++	struct bs_thread_info *info = BS_THREAD_I(lu);
+ 	bs_thread_close(info);
+-
+-	close(lu-&gt;fd);
+ }
+ 
+ static int bs_ssc_cmd_done(struct scsi_cmd *cmd)
+@@ -226,6 +225,8 @@ static int bs_ssc_cmd_done(struct scsi_cmd *cmd)
+ static struct backingstore_template ssc_bst = {
+ 	.bs_name		= &quot;ssc&quot;,
+ 	.bs_datasize		= sizeof(struct bs_thread_info),
++	.bs_init		= bs_ssc_init,
++	.bs_exit		= bs_ssc_exit,
+ 	.bs_open		= bs_ssc_open,
+ 	.bs_close		= bs_ssc_close,
+ 	.bs_cmd_submit		= bs_thread_cmd_submit,
+diff --git a/usr/target.c b/usr/target.c
+index 7abaa54..53eba81 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -488,6 +488,9 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 			goto free_lu;
+ 	}
+ 
++	if (lu-&gt;bst-&gt;bs_init)
++		lu-&gt;bst-&gt;bs_init(lu);
++
+ 	if (backing &amp;&amp; !path &amp;&amp; !lu-&gt;attrs.removable) {
+ 		ret = TGTADM_INVALID_REQUEST;
+ 		goto free_lu;
+@@ -574,6 +577,9 @@ int tgt_device_destroy(int tid, uint64_t lun, int force)
+ 		lu-&gt;bst-&gt;bs_close(lu);
+ 	}
+ 
++	if (lu-&gt;bst-&gt;bs_exit)
++		lu-&gt;bst-&gt;bs_exit(lu);
++
+ 	list_for_each_entry(itn, &amp;target-&gt;it_nexus_list, nexus_siblings) {
+ 		list_for_each_entry_safe(itn_lu, next, &amp;itn-&gt;it_nexus_lu_info_list,
+ 					 lu_info_siblings) {
+@@ -633,7 +639,7 @@ int dtd_load_unload(int tid, uint64_t lun, int load, char *file)
+ 		return TGTADM_INVALID_REQUEST;
+ 
+ 	if (lu-&gt;path) {
+-		close(lu-&gt;fd);
++		lu-&gt;bst-&gt;bs_close(lu);
+ 		free(lu-&gt;path);
+ 		lu-&gt;path = NULL;
+ 	}
+@@ -646,9 +652,12 @@ int dtd_load_unload(int tid, uint64_t lun, int load, char *file)
+ 		lu-&gt;path = strdup(file);
+ 		if (!lu-&gt;path)
+ 			return TGTADM_NOMEM;
+-		lu-&gt;fd = backed_file_open(file, O_RDWR|O_LARGEFILE, &amp;lu-&gt;size);
+-		if (lu-&gt;fd &lt; 0)
++		lu-&gt;bst-&gt;bs_open(lu, file, &amp;lu-&gt;fd, &amp;lu-&gt;size);
++		if (lu-&gt;fd &lt; 0) {
++			free(lu-&gt;path);
++			lu-&gt;path = NULL;
+ 			return TGTADM_UNSUPPORTED_OPERATION;
++		}
+ 		lu-&gt;dev_type_template.lu_online(lu);
+ 	}
+ 	return err;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 341b8e2..4febcd3 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -111,6 +111,8 @@ struct backingstore_template {
+ 	int bs_datasize;
+ 	int (*bs_open)(struct scsi_lu *dev, char *path, int *fd, uint64_t *size);
+ 	void (*bs_close)(struct scsi_lu *dev);
++	int (*bs_init)(struct scsi_lu *dev);
++	void (*bs_exit)(struct scsi_lu *dev);
+ 	int (*bs_cmd_submit)(struct scsi_cmd *cmd);
+ 	int (*bs_cmd_done)(struct scsi_cmd *cmd);
+ 
+-- 
+1.5.4.3
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0001-Seperate-thread-init-tear-down-from-backing-store-op.patch
+Type: text/x-diff
+Size: 9017 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080730/72ab1300/attachment.patch">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080730/72ab1300/attachment.patch</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001973.html">[Stgt-devel] iser target installation
+</A></li>
+	<LI>Next message: <A HREF="001982.html">[Stgt-devel] [PATCH] Proof of Concept -&gt; Separate thread init/tear-down from backing store open/close.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1977">[ date ]</a>
+              <a href="thread.html#1977">[ thread ]</a>
+              <a href="subject.html#1977">[ subject ]</a>
+              <a href="author.html#1977">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

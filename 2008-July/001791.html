@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Thoughts on vtl filemarks
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20filemarks&In-Reply-To=%3Cf29db9a80807181500l55987058jf5a3b37eed378966%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001788.html">
+   <LINK REL="Next"  HREF="001794.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Thoughts on vtl filemarks</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20filemarks&In-Reply-To=%3Cf29db9a80807181500l55987058jf5a3b37eed378966%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Thoughts on vtl filemarks">markh794 at gmail.com
+       </A><BR>
+    <I>Sat Jul 19 00:00:10 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001788.html">[Stgt-devel] Thoughts on vtl filemarks
+</A></li>
+        <LI>Next message: <A HREF="001794.html">[Stgt-devel] Thoughts on vtl filemarks
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1791">[ date ]</a>
+              <a href="thread.html#1791">[ thread ]</a>
+              <a href="subject.html#1791">[ subject ]</a>
+              <a href="author.html#1791">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, Jul 19, 2008 at 3:52 AM, Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+&gt;<i> Just a few thoughts on the vtl stuff.
+</I>&gt;<i>
+</I>&gt;<i> Filemarks. As filemarks are usually marked by a gap in the recording signal
+</I>&gt;<i> on tape it imposes
+</I>&gt;<i> a problem when using a file as a virtual tape. Since there needs to be some
+</I>&gt;<i> metadata to be retained
+</I>&gt;<i> when writing a virtual tape (on a file) I guess the best way is to use a
+</I>&gt;<i> header containing various
+</I>&gt;<i> information. Partly it will contain the same stuff as the usual chip build
+</I>&gt;<i> in eg an LTO tape.
+</I>&gt;<i> One could think of max size, barcode, tape type, compression on/off, etc.
+</I>&gt;<i> Another addition to the header could be a table
+</I>&gt;<i> of filemarks (sorted in increasing order). This table could be done in a
+</I>&gt;<i> fixed style, ie so many
+</I>&gt;<i> filemarks but no more, or a variable table. This last possibility is a bit
+</I>&gt;<i> more flexible, but gives
+</I>&gt;<i> the extra disadvantage of a possibly increasing table positioned before the
+</I>&gt;<i> actual data in the file
+</I>&gt;<i> (which needs to be moved when it increases). Since the size of indexpointer
+</I>&gt;<i> in a file is of size off_t (long)
+</I>&gt;<i> and 64 bits (if I am correct) every filemark will add 8 bytes. So the
+</I>&gt;<i> question will be how many
+</I>&gt;<i> filemarks do you want on the tape?
+</I>
+The other thing that needs to be tracked is the original block size
+written (for tape drives in variable block mode).
+
+The sense code needs to return the number of under/over run bytes in a
+subsequent read.
+
+e.g. NetBackup tape format:
+BOT == Beginning of Tape
+FM == Filemark
+EOD == End of data
+
+[BOT][1k media header][FM][x byte block of data][x byte block of
+data][FM][FM][EOD]
+
+When NetBackup loads a tape, it first requests a 'read 64k' data. If
+it does not receive 1k with appropriate sense code, it assumes the
+media is NOT a NetBackup written tape and rejects the media.
+
+
+BackupExec and Legato NetWorker both use fixed block writes so this is
+not an issue.
+
+
+&gt;<i>
+</I>&gt;<i> Another point is when writing over a filemark (ie erasing the previous
+</I>&gt;<i> filemark), how do we
+</I>&gt;<i> keep track of this in an easy way?
+</I>
+As already pointed out, the last write indicates the EOD and any data
+beyond this point is not readable (for real tape drives anyway)..
+So all data (and pointers) beyond the current EOD should be invalid.
+
+Having an extra metadata file means trying to keep track of which
+pointers are valid/invalid.
+
+&gt;<i>
+</I>&gt;<i> Of course set up correctly, skipping over filemarks would then be a doddle.
+</I>&gt;<i> Using a special character(s)
+</I>&gt;<i> to mark a filemark would be easier, but a) it needs to be very special and
+</I>&gt;<i> never appear in normal data,
+</I>&gt;<i> b) skipping filemarks would be a full search through the virtual tape,
+</I>&gt;<i> generating lots of IP traffic on its way.
+</I>&gt;<i>
+</I>&gt;<i> To create such a header for an empty tape a small separate program is needed
+</I>&gt;<i> to &quot;format&quot; the new tape, ie creating a file with the header info.
+</I>
+This is the way I have previously handled this. i.e. The 'backing
+store' is sort of like a double-linked-list of headers.
+
+struct blk_header {
+int blk_type;  /* type of header - BOT, EOD, Filemark etc... */
+int blk_size;  /* Size of data block */
+long blk_number /* Keep track of block numbers for position */
+struct blk_header *blk_prev; /* Pointer to previous block header */
+struct blk_header *blk_next; /* Pointer to next block header (NULL for EOD) */
+}
+
+
+So the backing store datafile looks like :
+
+[blk_header (BOT)][MAM data][blk_header (block 0)][data][blk_header
+(block 1)][blk_header (filemark)][blk_header (EOD]
+
+i.e.
+ I've squeezed in the MAM data before the first block of 'real' data.
+ There is no need to read the data, just the blk_headers when positioning
+ Identifying the 'blk type' as filemark/setmark/&lt;insert type here/ is simple.
+
+
+Disadvantages with this is it is only suitable for SSC device - i.e.
+It would be nice to mount an ISO image with the MMC device. Adding an
+extra metadata file along with the ISO image would be better for
+CD/DVDs.
+
+&gt;<i>
+</I>&gt;<i> Any thoughts?
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Albert
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001788.html">[Stgt-devel] Thoughts on vtl filemarks
+</A></li>
+	<LI>Next message: <A HREF="001794.html">[Stgt-devel] Thoughts on vtl filemarks
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1791">[ date ]</a>
+              <a href="thread.html#1791">[ thread ]</a>
+              <a href="subject.html#1791">[ subject ]</a>
+              <a href="author.html#1791">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

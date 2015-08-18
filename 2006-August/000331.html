@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] uSpace Transport Patch
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C20060822234235P.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000328.html">
+   <LINK REL="Next"  HREF="000332.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] uSpace Transport Patch</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C20060822234235P.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] uSpace Transport Patch">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Aug 22 16:42:35 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000328.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+        <LI>Next message: <A HREF="000332.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#331">[ date ]</a>
+              <a href="thread.html#331">[ thread ]</a>
+              <a href="subject.html#331">[ subject ]</a>
+              <a href="author.html#331">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+Subject: Re: [Stgt-devel] uSpace Transport Patch
+Date: Tue, 22 Aug 2006 07:39:53 -0500
+
+&gt;<i> On Tue, 2006-08-22 at 08:11 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] uSpace Transport Patch
+</I>&gt;<i> &gt; Date: Mon, 21 Aug 2006 16:29:40 -0500
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; Tomo:
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Enclosed is a patch that allows you to plug in multiple transports. It
+</I>&gt;<i> &gt; &gt; has a few benefits over the last approach:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Thanks.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; 1. The TCP side can remain exactly the same. i.e. user-mode connection
+</I>&gt;<i> &gt; &gt; management and login send/recv.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; 2. The stgtd implementation still uses pollfd to receive I/O events. The
+</I>&gt;<i> &gt; &gt;    iser side will provide an fd that can be polled.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I have built and run this patch with the current code and connected with
+</I>&gt;<i> &gt; &gt; a iscsi initiator over TCP. I did encounter problems, however, trying to
+</I>&gt;<i> &gt; &gt; do disk i/o.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; The write path code is broken. I will fix it if the kernel-mode
+</I>&gt;<i> &gt; approach would likely be accepted into mainline.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; The user-space mode code should work better. As I said in the previous
+</I>&gt;<i> &gt; mail, I can do mkfs, extract linux kernel tar, etc with the open-iscsi
+</I>&gt;<i> &gt; default configuration.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; This is not done, it is a proof-of-concept/design proposal. The netlink
+</I>&gt;<i> &gt; &gt; stuff will obviously change as I flesh out the iSER side. Please let me
+</I>&gt;<i> &gt; &gt; know what you think, I'd like your opinion before I get to far down this
+</I>&gt;<i> &gt; &gt; road.
+</I>&gt;<i> 
+</I>&gt;<i> &gt; I see. I will read this soon. Can you post iSER part code too?
+</I>&gt;<i> 
+</I>&gt;<i> Yes, I'm working on that now, I just didn't want to get too far down a
+</I>&gt;<i> road that lead somewhere we didn't want to go. Basically, the iSER code
+</I>&gt;<i> is implemented in the kernel. The user-mode interface is a file
+</I>&gt;<i> descriptor (used for polling), and a either a) set of methods
+</I>&gt;<i> implemented via read/write for listening for, accepting and
+</I>&gt;<i> send/receiving, or b) using the netlink interface. I'm leaning towards
+</I>&gt;<i> the former actually.
+</I>
+The previous patch uses the latter approach (similar to open-iscsi),
+right? So, could you explain the formaer approach a bit further?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000328.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+	<LI>Next message: <A HREF="000332.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#331">[ date ]</a>
+              <a href="thread.html#331">[ thread ]</a>
+              <a href="subject.html#331">[ subject ]</a>
+              <a href="author.html#331">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

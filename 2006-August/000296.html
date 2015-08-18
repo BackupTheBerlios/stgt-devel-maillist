@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] project status
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20project%20status&In-Reply-To=%3C20060803101918D.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000286.html">
+   <LINK REL="Next"  HREF="000301.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] project status</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20project%20status&In-Reply-To=%3C20060803101918D.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] project status">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Aug  3 03:19:18 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000286.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000301.html">[Stgt-devel] project status
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#296">[ date ]</a>
+              <a href="thread.html#296">[ thread ]</a>
+              <a href="subject.html#296">[ subject ]</a>
+              <a href="author.html#296">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I tried to write up the current project status.
+
+First, let me make a statement:
+
+Please let us know if you know hosting for open source projects,
+providing git service. We like to move everything (kernel and
+user-space code) from the current subversion tree.
+
+By the way, I've uploaded OLS tgt paper and slides.
+
+<A HREF="http://stgt.berlios.de/">http://stgt.berlios.de/</A>
+
+
+Here's the summary:
+-----
+
+- tgt core
+
+-- kernel-space
+
+It turned out that we used netlink wrongly so we replaced netlink. We
+need bi-directional, high-speed interface between user and kernel
+space. Currently, there isn't such interface in mainline. So we use
+mapped ring buffer between kernel and user spaces by using own
+character device (I need to replace the very old way to create a
+character device). If we find something better, we will replace the
+current code (netdev guys seems to bring something promising for
+network AIO).
+
+One issue to solve soon is a reference counting issue. The current
+design allows you remove the kernel modules any time and it leads to
+SCSI command (and other stuff) leak.
+
+
+-- user-space
+
+The user-space code still has junk mainly because we've redesigned tgt
+several times. I've been working on it, but it's not finished.
+
+The most urgent issue is that we need to shut down each target entity
+cleanly (it is related with the above reference counting issue).
+
+Another important issue is a configuration scheme. We expect that each
+target driver has own configuration scheme and uses our management
+tool, tgtadm. We need to work on this.
+
+Fun work to adding new features includes supporting metadata disk
+formats such as snapshot (CoW), SCSI bridge (like FC-iSCSI), SCSI
+device emulations like Virtual Tape Library, etc. I don't have time to
+implement SCSI device emulations in the near future (we don't
+implement the SCSI protocol completely yet) but supporting metadata
+disk formats is not difficult (and the snapshot feature is very
+useful).
+
+
+- target drivers
+
+-- ibmvio
+
+It works, though there are some issues, like OOM handling and a better
+configuration scheme.
+
+If the following Xen SCSI driver will be accepted, we have three SRP
+drivers in mainline, Infiniband, IBM pSeries, Xen. So I think that
+something like scsi_transport_srp would be nice.
+
+
+-- Xen
+
+I've submitted an updated version of the Xen SCSI front/back drivers
+that works like ibmvio (that is, both use the SRP protocol and kinda
+virtual HBA concept).
+
+<A HREF="http://lists.xensource.com/archives/html/xen-devel/2006-08/msg00096.html">http://lists.xensource.com/archives/html/xen-devel/2006-08/msg00096.html</A>
+
+I've not got any responses from Xen Cambridge camp so far, so I'm not
+sure whether it will go into Xen tree.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000286.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000301.html">[Stgt-devel] project status
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#296">[ date ]</a>
+              <a href="thread.html#296">[ thread ]</a>
+              <a href="subject.html#296">[ subject ]</a>
+              <a href="author.html#296">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

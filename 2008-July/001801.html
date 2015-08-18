@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] ssc.c set default to removable media
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20ssc.c%20set%20default%20to%20removable%20media&In-Reply-To=%3C48822F62.6000104%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001809.html">
+   <LINK REL="Next"  HREF="001803.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] ssc.c set default to removable media</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20ssc.c%20set%20default%20to%20removable%20media&In-Reply-To=%3C48822F62.6000104%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] ssc.c set default to removable media">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Jul 19 20:16:02 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001809.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+        <LI>Next message: <A HREF="001803.html">[Stgt-devel] [PATCH] ssc.c set default to removable media
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1801">[ date ]</a>
+              <a href="thread.html#1801">[ thread ]</a>
+              <a href="subject.html#1801">[ subject ]</a>
+              <a href="author.html#1801">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>--- ssc.c    2008-07-19 19:29:58.000000000 +0200
++++ ssc.c.new    2008-07-19 20:13:29.000000000 +0200
+@@ -102,6 +102,7 @@
+     lu-&gt;attrs.version_desc[0] = 0x0200; /* SSC no version claimed */
+     lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+     lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
++    lu-&gt;attrs.removable = 1; /* Default to removable media */
+ 
+     data = lu-&gt;mode_block_descriptor;
+     size = lu-&gt;size &gt;&gt; BLK_SHIFT;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001809.html">[Stgt-devel] [PATCH] read block limits data offset one off
+</A></li>
+	<LI>Next message: <A HREF="001803.html">[Stgt-devel] [PATCH] ssc.c set default to removable media
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1801">[ date ]</a>
+              <a href="thread.html#1801">[ thread ]</a>
+              <a href="subject.html#1801">[ subject ]</a>
+              <a href="author.html#1801">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

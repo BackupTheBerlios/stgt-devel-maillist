@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iscsi target works, minor fixes
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C20061104214319.GB14714%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000346.html">
+   <LINK REL="Next"  HREF="000351.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iscsi target works, minor fixes</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iscsi%20target%20works%2C%20minor%20fixes&In-Reply-To=%3C20061104214319.GB14714%40osc.edu%3E"
+       TITLE="[Stgt-devel] iscsi target works, minor fixes">pw at osc.edu
+       </A><BR>
+    <I>Sat Nov  4 22:43:19 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000346.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+        <LI>Next message: <A HREF="000351.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#350">[ date ]</a>
+              <a href="thread.html#350">[ thread ]</a>
+              <a href="subject.html#350">[ subject ]</a>
+              <a href="author.html#350">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Sat, 04 Nov 2006 01:04 +0900:
+&gt;<i> From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] iscsi target works, minor fixes
+</I>&gt;<i> Date: Thu, 2 Nov 2006 19:45:48 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; --- trunk/usr/bd_aio.c	(revision 609)
+</I>&gt;<i> &gt; +++ trunk/usr/bd_aio.c	(working copy)
+</I>&gt;<i> &gt; @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt;  	for (i = 0; i &lt; nr; i++) {
+</I>&gt;<i> &gt;  		iocb = bai-&gt;events[i].obj;
+</I>&gt;<i> &gt; -		dprintf(&quot;%p\n&quot;, iocb-&gt;data);
+</I>&gt;<i> &gt; -		target_cmd_io_done(iocb-&gt;data, 0);
+</I>&gt;<i> &gt; +		dprintf(&quot;%p\n&quot;, bai-&gt;events[i].data);
+</I>&gt;<i> &gt; +		target_cmd_io_done(bai-&gt;events[i].data, 0);
+</I>&gt;<i> &gt;  	}
+</I>&gt;<i> &gt;  }
+</I>&gt;<i> 
+</I>&gt;<i> Is iocb-&gt;data bogus? It means that io_event-&gt;obj does not refer to
+</I>&gt;<i> the appropriate iocb. I have no idea why.
+</I>
+Here's some logging from the latest stgt, with the extra %p in the debug
+message:
+
+tgtd: iscsi_scsi_cmd_rx_start(1189) 1 28 4096 1 c
+tgtd: iscsi_scsi_cmd_rx_start(1198) 0x538010
+tgtd: iscsi_task_queue(1122) c c 1
+tgtd: target_cmd_queue(287) 28 0
+tgtd: scsi_cmd_perform(477) 28 4096
+tgtd: bd_aio_cmd_submit(159) 8 0 4096 538010 0 0x7fffe26e8510 0x534940
+tgtd: target_cmd_queue(307) c 28 538010 0 4096 0 1
+tgtd: aio_event_handler(83) 0x7fffe26e8510 0x7fffe26e8520
+
+It's pretty clear to me that bai-&gt;events[i].data is what you should
+be using.  See the kernel's io_submit_one, where req-&gt;ki_user_data
+is set, then how it is returned to the user via event-&gt;data in
+aio_complete.  True, bai-&gt;events[i].obj gets set to the address of
+the iocb passed in, but as you used an iocb on the stack in
+bd_aio_cmd_submit, that cannot be trusted.
+
+		-- Pete
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000346.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+	<LI>Next message: <A HREF="000351.html">[Stgt-devel] iscsi target works, minor fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#350">[ date ]</a>
+              <a href="thread.html#350">[ thread ]</a>
+              <a href="subject.html#350">[ subject ]</a>
+              <a href="author.html#350">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

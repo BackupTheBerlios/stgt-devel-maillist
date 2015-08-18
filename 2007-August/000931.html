@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46B988C6.8020707%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000930.html">
+   <LINK REL="Next"  HREF="000932.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46B988C6.8020707%40voltaire.com%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">erezz at voltaire.com
+       </A><BR>
+    <I>Wed Aug  8 11:11:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000930.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000932.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#931">[ date ]</a>
+              <a href="thread.html#931">[ thread ]</a>
+              <a href="subject.html#931">[ subject ]</a>
+              <a href="author.html#931">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Pete Wyckoff wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Tue, 07 Aug 2007 12:21 +0300:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> I was able to setup stgt with iSER support. However, when I try to run a
+</I>&gt;&gt;<i> simple sgp_dd (or dd) command, I get SCSI errors on the initiator side:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> writing blk=256: Host_status=0x02 [DID_BUS_BUSY]
+</I>&gt;&gt;<i> error finishing sg out command
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> If I connect to the target over TCP, everything works ok. Also, if I
+</I>&gt;&gt;<i> connect to our iSCSI over iSER target (not stgt), it also works ok with
+</I>&gt;&gt;<i> iSER.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Is there any required patch for iSER/open-iscsi on the initiator side?
+</I>&gt;&gt;<i> Is there any debug info that I can see on the target side?
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Interesting.  I tend to use the bsg interface here for testing, and
+</I>&gt;<i> may not have gone through all the paths in sg or sd.  Thanks for
+</I>&gt;<i> testing!
+</I>&gt;<i>   
+</I>
+I'm not familiar with bsg. How do you use it?
+&gt;<i> I do have one initiator side patch for iser that I believe is just
+</I>&gt;<i> to support bidirectional commands.  I'll try some dd without it to
+</I>&gt;<i> see if it matters (on Thursday).  Can you send some of the exact
+</I>&gt;<i> command lines that fail?
+</I>&gt;<i>   
+</I>
+Try something like the following command:
+
+sgp_dd if=/dev/sg3 of=/dev/null count=10
+&gt;<i> To debug the target, run as &quot;tgtd -d 9&quot; and it will produce lots of
+</I>&gt;<i> messages to syslog.  We use a local patch here to send the messages
+</I>&gt;<i> to stderr instead, but I think syslog should work for you.  If you
+</I>&gt;<i> send the interesting parts from the log, I can help decipher the
+</I>&gt;<i> messages.
+</I>&gt;<i>   
+</I>When I run with &quot;tgtd -d 9&quot;, I don't see any logs. I only see:
+
+Aug  8 12:01:27 noni tgtd: Target daemon logger with pid=6353 started!
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000930.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000932.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#931">[ date ]</a>
+              <a href="thread.html#931">[ thread ]</a>
+              <a href="subject.html#931">[ subject ]</a>
+              <a href="author.html#931">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

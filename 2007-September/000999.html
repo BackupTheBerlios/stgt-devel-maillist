@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/1] Add support for extra VPD pages within INQUIRY op code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20support%20for%20extra%20VPD%20pages%20within%0A%20INQUIRY%20op%20code&In-Reply-To=%3C20070902114957P.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000998.html">
+   <LINK REL="Next"  HREF="001001.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within INQUIRY op code</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20support%20for%20extra%20VPD%20pages%20within%0A%20INQUIRY%20op%20code&In-Reply-To=%3C20070902114957P.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within INQUIRY op code">tomof at acm.org
+       </A><BR>
+    <I>Sun Sep  2 12:48:18 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000998.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+</A></li>
+        <LI>Next message: <A HREF="001001.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#999">[ date ]</a>
+              <a href="thread.html#999">[ thread ]</a>
+              <a href="subject.html#999">[ subject ]</a>
+              <a href="author.html#999">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 2 Sep 2007 20:23:12 +1000
+&quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+
+&gt;<i> &gt; &gt; diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> &gt; &gt; index b56c0b3..08a4bc5 100644
+</I>&gt;<i> &gt; &gt; --- a/usr/spc.c
+</I>&gt;<i> &gt; &gt; +++ b/usr/spc.c
+</I>&gt;<i> &gt; &gt; @@ -20,6 +20,7 @@
+</I>&gt;<i> &gt; &gt;   * 02110-1301 USA
+</I>&gt;<i> &gt; &gt;   */
+</I>&gt;<i> &gt; &gt;  #include &lt;errno.h&gt;
+</I>&gt;<i> &gt; &gt; +#include &lt;inttypes.h&gt;
+</I>&gt;<i> &gt; &gt;  #include &lt;stdio.h&gt;
+</I>&gt;<i> &gt; &gt;  #include &lt;stdlib.h&gt;
+</I>&gt;<i> &gt; &gt;  #include &lt;string.h&gt;
+</I>&gt;<i> &gt; &gt; @@ -38,6 +39,96 @@
+</I>&gt;<i> &gt; &gt;  #define PRODUCT_REV  &quot;0&quot;
+</I>&gt;<i> &gt; &gt;  #define BLK_SHIFT    9
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; +/** Protocol Identifier Values
+</I>&gt;<i> &gt; &gt; + * 0 Fibre Channel (FCP-2)
+</I>&gt;<i> &gt; &gt; + * 1 Parallel SCSI (SPI-5)
+</I>&gt;<i> &gt; &gt; + * 2 SSA (SSA-S3P)
+</I>&gt;<i> &gt; &gt; + * 3 IEEE 1394 (SBP-3)
+</I>&gt;<i> &gt; &gt; + * 4 SCSI Remote Direct Memory Access (SRP)
+</I>&gt;<i> &gt; &gt; + * 5 iSCSI
+</I>&gt;<i> &gt; &gt; + * 6 SAS Serial SCSI Protocol (SAS)
+</I>&gt;<i> &gt; &gt; + * 7 Automation/Drive Interface (ADT)
+</I>&gt;<i> &gt; &gt; + * 8 AT Attachment Interface (ATA/ATAPI-7)
+</I>&gt;<i> &gt; &gt; + */
+</I>&gt;<i> &gt; &gt; +#define PIV_FCP 0
+</I>&gt;<i> &gt; &gt; +#define PIV_SPI 1
+</I>&gt;<i> &gt; &gt; +#define PIV_S3P 2
+</I>&gt;<i> &gt; &gt; +#define PIV_SBP 3
+</I>&gt;<i> &gt; &gt; +#define PIV_SRP 4
+</I>&gt;<i> &gt; &gt; +#define PIV_ISCSI 5
+</I>&gt;<i> &gt; &gt; +#define PIV_SAS 6
+</I>&gt;<i> &gt; &gt; +#define PIV_ADT 7
+</I>&gt;<i> &gt; &gt; +#define PIV_ATA 8
+</I>&gt;<i> &gt; &gt; +
+</I>&gt;<i> &gt; &gt; +#define PIV_VALID 0x80
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Would be better to use lengthy names for SCSI specification defines
+</I>&gt;<i> &gt; and move them to scsi.h?
+</I>&gt;<i> 
+</I>&gt;<i> As these defines are only used by the SCSI Inquiry page, I kept them
+</I>&gt;<i> in the spc module.
+</I>&gt;<i> 
+</I>&gt;<i> I can move them if you like.
+</I>
+OK, let's keep them in spc.c.
+
+
+&gt;<i> &gt; &gt; +struct vpd *alloc_vpd(uint16_t size)
+</I>&gt;<i> &gt; &gt; +{
+</I>&gt;<i> &gt; &gt; +     struct vpd *vpd;
+</I>&gt;<i> &gt; &gt; +
+</I>&gt;<i> &gt; &gt; +     vpd = zalloc(sizeof(struct vpd) + size);
+</I>&gt;<i> &gt; &gt; +     if (!vpd)
+</I>&gt;<i> &gt; &gt; +             return NULL;
+</I>&gt;<i> &gt; &gt; +
+</I>&gt;<i> &gt; &gt; +     vpd-&gt;size = size;
+</I>&gt;<i> &gt; &gt; +
+</I>&gt;<i> &gt; &gt; +     return vpd;
+</I>&gt;<i> &gt; &gt; +}
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Where do you free vpd?
+</I>&gt;<i> 
+</I>&gt;<i> It's a one time allocation and stays set. i.e. There is no call to free().
+</I>
+When we remove a logical unit, what happens?
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000998.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+</A></li>
+	<LI>Next message: <A HREF="001001.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#999">[ date ]</a>
+              <a href="thread.html#999">[ thread ]</a>
+              <a href="subject.html#999">[ subject ]</a>
+              <a href="author.html#999">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

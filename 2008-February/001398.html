@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%205.1&In-Reply-To=%3C47B2DE1C.5000506%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001397.html">
+   <LINK REL="Next"  HREF="001416.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%205.1&In-Reply-To=%3C47B2DE1C.5000506%40voltaire.com%3E"
+       TITLE="[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1">erezz at voltaire.com
+       </A><BR>
+    <I>Wed Feb 13 13:10:04 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001397.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1
+</A></li>
+        <LI>Next message: <A HREF="001416.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1398">[ date ]</a>
+              <a href="thread.html#1398">[ thread ]</a>
+              <a href="subject.html#1398">[ subject ]</a>
+              <a href="author.html#1398">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Bart Van Assche wrote:
+
+&gt;<i> On Feb 12, 2008 12:17 PM, Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> are you loading mthca with
+</I>&gt;&gt;<i>   options ib_mthca tune_pci=1
+</I>&gt;&gt;<i> so that lspci -vvv says:
+</I>&gt;&gt;<i>   MaxReadReq 4096 bytes
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> An even better way than specifying tune_pci=1 is to perform a BIOS
+</I>&gt;<i> upgrade. On an Intel S5000PAL this increased MaxReadReq from 128 to
+</I>&gt;<i> 512 bytes, which is enough to obtain maximal throughput on an SDR 4x
+</I>&gt;<i> IB network.
+</I>&gt;<i>
+</I>&gt;<i> Bart Van Assche.
+</I>&gt;<i>   
+</I>
+I'm adding Mike Christie. Mike - as the maintainer of stgt in RHEL 5,
+maybe you can help.
+
+I don't think that IB is the problem here. I ran ib_rdma_bw on both
+distros and got ~1350 MB/sec. Note that although there's a big
+difference between SLES &amp; RedHat, we're talking about 400 MB/sec which
+is much lower than IB bandwidth.
+
+Another test that I ran that proves that IB is not the problem here - I
+ran another iSCSI over iSER target (i.e. not stgt) on RHEL 5, and I got
+400 MB/sec when running sgp_dd from the initiator. I guess that there's
+something bad with stgt on RHEL 5...
+
+So, here's the current status for the sgp_dd test:
+
+    * Running open-iscsi over iSER against stgt that runs on SLES 10:
+      READ/WRITE - 400 MB/sec
+    * Running open-iscsi over iSER against stgt that runs on RHEL 5:
+      READ - 240 MB/sec, WRITE - 400 MB/sec
+    * Running open-iscsi over iSER against our own iSCSI over iSER
+      target that runs on RHEL 5: READ/WRITE - 400 MB/sec
+    * Running sgp_dd directly from the target machine: READ/WRITE - 400
+      MB/sec
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001397.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1
+</A></li>
+	<LI>Next message: <A HREF="001416.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1398">[ date ]</a>
+              <a href="thread.html#1398">[ thread ]</a>
+              <a href="subject.html#1398">[ subject ]</a>
+              <a href="author.html#1398">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

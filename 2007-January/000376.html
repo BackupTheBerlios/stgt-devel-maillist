@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1169307059.2762.19.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000375.html">
+   <LINK REL="Next"  HREF="000377.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] sg_turs on stgt iscsi drive is very slow</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1169307059.2762.19.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] sg_turs on stgt iscsi drive is very slow">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Sat Jan 20 16:30:58 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000375.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+        <LI>Next message: <A HREF="000377.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#376">[ date ]</a>
+              <a href="thread.html#376">[ thread ]</a>
+              <a href="subject.html#376">[ subject ]</a>
+              <a href="author.html#376">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 2007-01-21 at 00:22 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</I>&gt;<i> Date: Mon, 11 Dec 2006 11:58:27 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+</I>&gt;<i> &gt; same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+</I>&gt;<i> &gt; r598.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Want to know how efficient stgt handle context switch. 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+</I>&gt;<i> 
+</I>&gt;<i> (snip)
+</I>&gt;<i> 
+</I>&gt;<i> &gt; run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+</I>&gt;<i> &gt; operations/sec. yes, 250.
+</I>&gt;<i> 
+</I>&gt;<i> OK. I did some tests too. As we know, aioepoll isn't effective.
+</I>&gt;<i> 
+</I>&gt;<i> The sg_turs test doesn't need AIO code. So I just tried epoll for
+</I>&gt;<i> event notification.
+</I>&gt;<i> 
+</I>&gt;<i> - tgt (patched)
+</I>&gt;<i> 
+</I>&gt;<i> paris:~# sg_turs -t -n=1000 /dev/sg3
+</I>&gt;<i> time to perform commands was 0.125131 secs; 7991.62 operations/sec
+</I>&gt;<i> Completed 1000 Test Unit Ready commands with 0 errors
+</I>&gt;<i> 
+</I>&gt;<i> - IET
+</I>&gt;<i> 
+</I>&gt;<i> paris:~# sg_turs -t -n=1000 /dev/sg3
+</I>&gt;<i> time to perform commands was 0.128747 secs; 7767.17 operations/sec
+</I>&gt;<i> Completed 1000 Test Unit Ready commands with 0 errors
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Well, not bad at all. And I heard that kevent is more effective than
+</I>&gt;<i> epoll.
+</I>
+the # looks pretty good. thanks for testing. maybe it is bounded by your
+network now? could you try a open-iscsi via loopback?
+
+what is the CPU utilization during test?
+
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Note that aioepoll affects only user-mode target drivers (now only
+</I>&gt;<i> iSCSI). The kernel target drivers don't need AIO code (can use
+</I>&gt;<i> epoll). So they should have no performance problem. And as I said
+</I>&gt;<i> before, I think that the iSCSI target driver is ok in real workloads.
+</I>
+do you have a road map for stgt? see, need to read your reply for Pete
+to know OSD is already under your plan.
+
+
+&gt;<i> 
+</I>&gt;<i> I've attached the patch for people who are interested:
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Index: usr/tgtd.c
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- usr/tgtd.c	(revision 767)
+</I>&gt;<i> +++ usr/tgtd.c	(working copy)
+</I>&gt;<i> @@ -212,13 +212,13 @@
+</I>&gt;<i>  		return;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> -	iocb = iocbs;
+</I>&gt;<i> -	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1);
+</I>&gt;<i> -	err = io_submit(ctx, 1, &amp;iocb);
+</I>&gt;<i> -
+</I>&gt;<i> +/* 	iocb = iocbs; */
+</I>&gt;<i> +/* 	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1); */
+</I>&gt;<i> +/* 	err = io_submit(ctx, 1, &amp;iocb); */
+</I>&gt;<i>  retry:
+</I>&gt;<i> -	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &amp;timeout);
+</I>&gt;<i> +/* 	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &amp;timeout); */
+</I>&gt;<i>  
+</I>&gt;<i> +	nevent = epoll_wait(ep_fd, events, ARRAY_SIZE(events), -1);
+</I>&gt;<i>  	if (nevent &lt; 0) {
+</I>&gt;<i>  		if (errno != EINTR) {
+</I>&gt;<i>  			eprintf(&quot;%m\n&quot;);
+</I>&gt;<i> @@ -226,18 +226,22 @@
+</I>&gt;<i>  		}
+</I>&gt;<i>  	} else if (nevent) {
+</I>&gt;<i>  		for (i = 0; i &lt; nevent; i++) {
+</I>&gt;<i> -			if (iocb == aioevents[i].obj) {
+</I>&gt;<i> -				int j;
+</I>&gt;<i> -				for (j = 0; j &lt; aioevents[i].res; j++) {
+</I>&gt;<i> -					tev = (struct tgt_event *) events[j].data.ptr;
+</I>&gt;<i> -					tev-&gt;handler(tev-&gt;fd, events[j].events, tev-&gt;data);
+</I>&gt;<i> -				}
+</I>&gt;<i>  
+</I>&gt;<i> -				err = io_submit(ctx, 1, &amp;iocb);
+</I>&gt;<i> -			} else {
+</I>&gt;<i> -				/* FIXME */
+</I>&gt;<i> -				target_cmd_io_done(aioevents[i].data, 0);
+</I>&gt;<i> -			}
+</I>&gt;<i> +			tev = (struct tgt_event *) events[i].data.ptr;
+</I>&gt;<i> +			tev-&gt;handler(tev-&gt;fd, events[i].events, tev-&gt;data);
+</I>&gt;<i> +
+</I>&gt;<i> +/* 			if (iocb == aioevents[i].obj) { */
+</I>&gt;<i> +/* 				int j; */
+</I>&gt;<i> +/* 				for (j = 0; j &lt; aioevents[i].res; j++) { */
+</I>&gt;<i> +/* 					tev = (struct tgt_event *) events[j].data.ptr; */
+</I>&gt;<i> +/* 					tev-&gt;handler(tev-&gt;fd, events[j].events, tev-&gt;data); */
+</I>&gt;<i> +/* 				} */
+</I>&gt;<i> +
+</I>&gt;<i> +/* 				err = io_submit(ctx, 1, &amp;iocb); */
+</I>&gt;<i> +/* 			} else { */
+</I>&gt;<i> +/* 				/\* FIXME *\/ */
+</I>&gt;<i> +/* 				target_cmd_io_done(aioevents[i].data, 0); */
+</I>&gt;<i> +/* 			} */
+</I>&gt;<i>  		}
+</I>&gt;<i>  	} else
+</I>&gt;<i>  		schedule();
+</I>&gt;<i> Index: usr/bd_aio.c
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- usr/bd_aio.c	(revision 767)
+</I>&gt;<i> +++ usr/bd_aio.c	(working copy)
+</I>&gt;<i> @@ -75,21 +75,21 @@
+</I>&gt;<i>  	struct iocb iocb, *io;
+</I>&gt;<i>  	int err;
+</I>&gt;<i>  
+</I>&gt;<i> -	*async = 1;
+</I>&gt;<i> +	*async = 0;
+</I>&gt;<i>  
+</I>&gt;<i> -	io = &iocb;
+</I>&gt;<i> -	memset(io, 0, sizeof(*io));
+</I>&gt;<i> +/* 	io = &iocb; */
+</I>&gt;<i> +/* 	memset(io, 0, sizeof(*io)); */
+</I>&gt;<i>  
+</I>&gt;<i> -	dprintf(&quot;%d %d %u %lx %&quot; PRIx64 &quot; %p %p\n&quot;, dev-&gt;fd, rw, datalen, *uaddr, offset,
+</I>&gt;<i> -		io, key);
+</I>&gt;<i> +/* 	dprintf(&quot;%d %d %u %lx %&quot; PRIx64 &quot; %p %p\n&quot;, dev-&gt;fd, rw, datalen, *uaddr, offset, */
+</I>&gt;<i> +/* 		io, key); */
+</I>&gt;<i>  
+</I>&gt;<i> -	if (rw == READ)
+</I>&gt;<i> -		io_prep_pread(io, dev-&gt;fd, (void *) *uaddr, datalen, offset);
+</I>&gt;<i> -	else
+</I>&gt;<i> -		io_prep_pwrite(io, dev-&gt;fd, (void *) *uaddr, datalen, offset);
+</I>&gt;<i> +/* 	if (rw == READ) */
+</I>&gt;<i> +/* 		io_prep_pread(io, dev-&gt;fd, (void *) *uaddr, datalen, offset); */
+</I>&gt;<i> +/* 	else */
+</I>&gt;<i> +/* 		io_prep_pwrite(io, dev-&gt;fd, (void *) *uaddr, datalen, offset); */
+</I>&gt;<i>  
+</I>&gt;<i> -	io-&gt;data = key;
+</I>&gt;<i> -	err = io_submit(ctx, 1, &amp;io);
+</I>&gt;<i> +/* 	io-&gt;data = key; */
+</I>&gt;<i> +/* 	err = io_submit(ctx, 1, &amp;io); */
+</I>&gt;<i>  
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000375.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+	<LI>Next message: <A HREF="000377.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#376">[ date ]</a>
+              <a href="thread.html#376">[ thread ]</a>
+              <a href="subject.html#376">[ subject ]</a>
+              <a href="author.html#376">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

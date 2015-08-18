@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154457764.9903.24.camel%40trinity.ogc.int%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000294.html">
+   <LINK REL="Next"  HREF="000266.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154457764.9903.24.camel%40trinity.ogc.int%3E"
+       TITLE="[Stgt-devel] User-mode iSER">tom at opengridcomputing.com
+       </A><BR>
+    <I>Tue Aug  1 20:42:44 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000294.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000266.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#265">[ date ]</a>
+              <a href="thread.html#265">[ thread ]</a>
+              <a href="subject.html#265">[ subject ]</a>
+              <a href="author.html#265">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>What do people think about something like this...
+
+The target architecture is implemented to the extent possible entirely
+in user-mode. The architecture intends to support multiple Target Device
+Types, SCSI Transport Types and Network Transport Types. The enclosed
+figure below illustrates the components of the architecture.
+
+At the top of the figure are the different Target Device Type Drivers.
+These &quot;drivers&quot; are implemented in user-mode as libraries and plug into
+the Target Interface Layer. The Target Device Type drivers each support
+a particular class of device. For example, the SCSI Disk Driver supports
+SCSI disks, the Block Device driver supports generic block devices
+(e.g. /dev/md0, etc..) and the File Device Driver supports files as
+target devices. In most cases, the Target Device Type Drivers call
+existing system call interfaces to communicate with the actual target
+device, e.g. open, close, read, write, ioctl, etc... High performance
+implementations may use private kernel interfaces to improve
+performance. 
+
+The Target Interface Layer implements a generic target device
+independent API called the Target Device API, and a SCSI transport
+independent API called the SCSI Transport API. This Target Interface
+Layer implements a target/SCSI transport switch that allows any Target
+Device Type to be associated with any SCSI Transport Type. 
+
+The SCSI Transport Class Drivers implement support for the various SCSI
+transport types: SRP Transport implements the SCSI RDMA Protocol
+transport, FCP Transport implements the Fiber Channel transport type,
+and the iSCSI Transport implements the iSCSI transport type. These
+drivers sit between the Target Interface Layer and the Network Interface
+Layer. 
+
+The Network Interface Layer implements a SCSI transport independent API
+called the Transport Class API and a network transport independent API
+called the Transport API. The Network Interface Layer allows a SCSI
+Transport Class driver to support multiple network transports. For
+example, the iSCSI Transport driver will support TCP, IB, and iWARP as
+network transports. The details of a particular SCSI Transport Class's
+device enumeration, login and management are implemented in the SCSI
+Transport Class driver (e.g. iSCSI Transport). The details of a
+particular network transport's connection management paradigm are
+implemented in the Transport Provider driver (e.g. RDMA driver).
+
+The Transport Provider Drivers implement the Transport Provider API and
+provide core network I/O services to the Network Interface Layer. The
+Transport API is a transport independent interface for creating
+endpoints, service points, accepting incoming connection requests and
+performing I/O on an endpoint.
+
+The Management Agent interfaces with the Target Interface Layer and
+performs management functions such as creating targets, devices, loading
+and storing persistent configurations and other management related
+functions.
+
+The various API referred to above are basically simplified versions of
+the existing scsi_transport_template, scsi_host, scsi_host_template
+interfaces, etc... from the current kernel implementation. The
+interfaces between the various components, however, can be reduced to
+function calls since everything resides user mode. 
+
+I think the only tough issue here is with copy avoidance for the network
+user/kernel interface and target device user/kernel interfaces.
+Initially, these could be prototyped without regard to this issue and
+see what kind of performance we could get. The RDMA network transports
+already provide copy avoidance, however, TCP/FC would require some
+cleverness.
+
+Thoughts?
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: user-target.pdf
+Type: application/pdf
+Size: 23541 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20060801/188f7dc4/attachment.pdf">https://lists.berlios.de/pipermail/stgt-devel/attachments/20060801/188f7dc4/attachment.pdf</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000294.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000266.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#265">[ date ]</a>
+              <a href="thread.html#265">[ thread ]</a>
+              <a href="subject.html#265">[ subject ]</a>
+              <a href="author.html#265">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

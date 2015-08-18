@@ -1,0 +1,259 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Add tweaks to get linux dvdrecord happy
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20tweaks%20to%20get%20linux%20dvdrecord%20happy&In-Reply-To=%3Cmailman.29.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001605.html">
+   <LINK REL="Next"  HREF="001609.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Add tweaks to get linux dvdrecord happy</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20tweaks%20to%20get%20linux%20dvdrecord%20happy&In-Reply-To=%3Cmailman.29.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Add tweaks to get linux dvdrecord happy">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue May  6 08:32:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001605.html">[PATCH] Add modepage for MM Capabilities
+</A></li>
+        <LI>Next message: <A HREF="001609.html">[PATCH] Fix a memory corruption bug in build_mode_page
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1607">[ date ]</a>
+              <a href="thread.html#1607">[ thread ]</a>
+              <a href="subject.html#1607">[ subject ]</a>
+              <a href="author.html#1607">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add a new modepage (write performance) and a few commands to keep
+linux dvdrecord happy.
+Document an example on how to use MMC emulation with linux dvdrecord
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ doc/README.mmc |    7 +++++++
+ usr/mmc.c      |   54 +++++++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 54 insertions(+), 7 deletions(-)
+
+diff --git a/doc/README.mmc b/doc/README.mmc
+index 265b95a..6f7074d 100644
+--- a/doc/README.mmc
++++ b/doc/README.mmc
+@@ -37,6 +37,13 @@ operations in which case it may or may not work.
+ It is the intent that the emulation will be enhanced to provide compatibility
+ with all DVD burning applications on all important platforms.
+
++The emulation is also compatible with Linux:dvdrecorder but you must
++specify the command arguments -dao -ignsize -overburn
++
++Example:
++dvdrecord -dao -ignsize -overburn dev=/dev/sg3 ./IMAGE.iso
++
++
+ Please report incompatibilities with other burning applications other than
+ Windows/DVD-Decrypter to <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A> and I will try to
+ enhance the emulation to also support your application of choice.
+diff --git a/usr/mmc.c b/usr/mmc.c
+index 1ab31c3..074b9be 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -54,6 +54,7 @@
+
+ struct mmc_info {
+ 	int current_profile;
++	uint64_t reserve_track_len;
+ };
+
+ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+@@ -61,6 +62,7 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+ 	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+ 	int ret;
+ 	uint64_t end_offset;
++	uint64_t offset, length;
+
+ 	if (mmc-&gt;current_profile == PROFILE_NO_PROFILE) {
+ 		scsi_set_in_resid_by_actual(cmd, 0);
+@@ -97,11 +99,13 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+
+ 	cmd-&gt;scsi_cmd_done = target_cmd_io_done;
+
+-	cmd-&gt;offset = (scsi_rw_offset(cmd-&gt;scb) &lt;&lt; MMC_BLK_SHIFT);
++	offset = scsi_rw_offset(cmd-&gt;scb);
++	cmd-&gt;offset = (offset &lt;&lt; MMC_BLK_SHIFT);
+
+ 	/* update the size of the device */
+-	end_offset = cmd-&gt;offset +
+-		(((uint64_t)scsi_rw_count(cmd-&gt;scb)) &lt;&lt; MMC_BLK_SHIFT);
++	length = scsi_rw_count(cmd-&gt;scb);
++	end_offset = cmd-&gt;offset + (length &lt;&lt; MMC_BLK_SHIFT);
++
+ 	if (end_offset &gt; cmd-&gt;dev-&gt;size)
+ 		cmd-&gt;dev-&gt;size = end_offset;
+
+@@ -116,6 +120,12 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+ 		sense_data_build(cmd, ILLEGAL_REQUEST, ASC_LUN_NOT_SUPPORTED);
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	} else {
++		if ((mmc-&gt;current_profile == PROFILE_DVD_PLUS_R) &amp;&amp;
++			(mmc-&gt;reserve_track_len == (offset + length))) {
++			/* once we close the track it becomes a DVD_ROM */
++			mmc-&gt;current_profile = PROFILE_DVD_ROM;
++		}
++
+ 		set_cmd_mmapio(cmd);
+ 		return SAM_STAT_GOOD;
+ 	}
+@@ -2146,6 +2156,31 @@ static int mmc_read_dvd_structure(int host_no,
+struct scsi_cmd *cmd)
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+
++static int mmc_reserve_track(int host_no, struct scsi_cmd *cmd)
++{
++	struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
++	uint64_t tmp;
++
++	tmp = cmd-&gt;scb[5];
++	tmp = (tmp &lt;&lt; 8) | cmd-&gt;scb[6];
++	tmp = (tmp &lt;&lt; 8) | cmd-&gt;scb[7];
++	tmp = (tmp &lt;&lt; 8) | cmd-&gt;scb[8];
++
++	mmc-&gt;reserve_track_len = tmp;
++
++	return SAM_STAT_GOOD;
++}
++
++static int mmc_mode_select(int host_no, struct scsi_cmd *cmd)
++{
++	return SAM_STAT_GOOD;
++}
++
++static int mmc_set_cd_speed(int host_no, struct scsi_cmd *cmd)
++{
++	return SAM_STAT_GOOD;
++}
++
+ static int mmc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	uint8_t *scb = cmd-&gt;scb;
+@@ -2222,7 +2257,11 @@ static int mmc_lu_init(struct scsi_lu *lu)
+ 			  &quot;0x83:0x00:0x00:0x02:0xc2:0x00:0x00:0x00:&quot;
+ 			  &quot;0x00:0x00:0x00:0x00:0x00:0x00:0x00:0x00:&quot;
+ 			  &quot;0x00&quot;);
+-
++	/* Write parameters */
++	add_mode_page(lu, &quot;0x05:0:0x32:0x62:5:8:0x10:0:0:0:0:0:0:0:&quot;
++			  &quot;0x10:0:0x96:0:0:0:0:0:0:0:0:0:0:0:0:0:0:&quot;
++			  &quot;0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:&quot;
++			  &quot;0:0&quot;);
+ 	return 0;
+ }
+
+@@ -2232,6 +2271,7 @@ static int mmc_lu_online(struct scsi_lu *lu)
+ 	struct stat st;
+
+ 	mmc-&gt;current_profile = PROFILE_NO_PROFILE;
++	mmc-&gt;reserve_track_len = 0;
+
+ 	if (lu-&gt;fd == -1)
+ 		return TGTADM_INVALID_REQUEST;
+@@ -2363,9 +2403,9 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{mmc_read_disc_information,},
+ 		{mmc_read_track_information,},
++		{mmc_reserve_track,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{mmc_mode_select,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+
+@@ -2412,7 +2452,7 @@ static struct device_type_template mmc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{mmc_set_cd_speed,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-- 
+1.5.5
+
+------=_Part_11120_29418391.1210056494449
+Content-Type: application/x-gzip;
+ name=0003-Add-tweaks-to-get-linux-dvdrecord-happy.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_ffw48c7q0
+Content-Disposition: attachment;
+ filename=0003-Add-tweaks-to-get-linux-dvdrecord-happy.patch.gz
+
+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
+------=_Part_11120_29418391.1210056494449--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001605.html">[PATCH] Add modepage for MM Capabilities
+</A></li>
+	<LI>Next message: <A HREF="001609.html">[PATCH] Fix a memory corruption bug in build_mode_page
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1607">[ date ]</a>
+              <a href="thread.html#1607">[ thread ]</a>
+              <a href="subject.html#1607">[ subject ]</a>
+              <a href="author.html#1607">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

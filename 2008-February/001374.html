@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/2] iSER throttling
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20iSER%20throttling&In-Reply-To=%3C20080208194933.GC14485%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001366.html">
+   <LINK REL="Next"  HREF="001384.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/2] iSER throttling</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20iSER%20throttling&In-Reply-To=%3C20080208194933.GC14485%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/2] iSER throttling">pw at osc.edu
+       </A><BR>
+    <I>Fri Feb  8 20:49:33 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001366.html">[Stgt-devel] [PATCH 2/2] iSER throttling
+</A></li>
+        <LI>Next message: <A HREF="001384.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1374">[ date ]</a>
+              <a href="thread.html#1374">[ thread ]</a>
+              <a href="subject.html#1374">[ subject ]</a>
+              <a href="author.html#1374">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Thu, 07 Feb 2008 21:38 -0500:
+&gt;<i> +static int max_queue_cmds_available(struct iscsi_connection *conn)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int max_queue_cmd;
+</I>&gt;<i> +	int max_safe_cmds;
+</I>&gt;<i> +
+</I>&gt;<i> +	max_safe_cmds = conn-&gt;tp-&gt;queue_cmds_available(conn);
+</I>&gt;<i> +	if (max_safe_cmds &lt; 0) {
+</I>&gt;<i> +		eprintf(&quot;iSER max_safe_cmds %d &lt; 0\n&quot;, max_safe_cmds );
+</I>&gt;<i> +		return 0;
+</I>&gt;<i> +	}
+</I>&gt;<i> +	max_queue_cmd = min( MAX_QUEUE_CMD, max_safe_cmds );
+</I>&gt;<i> +
+</I>&gt;<i> +	return max_queue_cmd;
+</I>&gt;<i> +}
+</I>
+Can we just get rid of MAX_QUEUE_CMD?  You don't need this min(), I
+think.  The max_queue_cmd is a property of the transport now, not
+iscsi.
+
+&gt;<i> +/*
+</I>&gt;<i> + * we know how many iSER connections we have, and also how many areas are
+</I>&gt;<i> + * allocated from our mempool, so we can trivially calculate how many
+</I>&gt;<i> + * more cmds we can handle without running out of rdma areas.
+</I>&gt;<i> + */
+</I>&gt;<i> +static int iscsi_rdma_queue_cmds_available(struct iscsi_connection *conn)
+</I>&gt;<i> +{
+</I>&gt;<i> +	struct conn_info *ci = RDMA_CONN(conn);
+</I>&gt;<i> +	struct iser_device *dev = ci-&gt;dev;
+</I>&gt;<i> +	int cmds;
+</I>&gt;<i> +
+</I>&gt;<i> +	cmds = (mempool_num - dev-&gt;mempool_used)/iser_conn_cnt;
+</I>&gt;<i> +
+</I>&gt;<i> +	return cmds;
+</I>&gt;<i> +}
+</I>
+The divide here is used to spread the remaining available mempool
+items on the device across current connections using that device.
+This is why I said that iser_conn_cnt should be on dev-&gt;.
+
+This is approximate.  For commands that ship no data, we don't need
+a mempool buf.  For bidi commands, we need two.  But I think this
+approach definitely meets the most common usage model.
+
+Did you think about just doing static allocation?  Since
+dev-&gt;mempool_used is fairly volatile, you could just give
+mempool_num / iser_conn_cnt to each connection.
+
+Probably should make sure you hand out at least 1 command.
+I don't know what the spec says about handing out 0.
+
+And yeah, to your future work, may want to add a comment saying how
+we could grow the mempool as more clients connect, since there is no
+a priori way to know if tgtd will be used for 1 client or lots.
+
+&gt;<i> +static int iscsi_tcp_queue_cmds_available(struct iscsi_connection *conn) {
+</I>&gt;<i> +	return MAX_TCP_QUEUE_CMD;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>
+Sytle, or lack thereof.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001366.html">[Stgt-devel] [PATCH 2/2] iSER throttling
+</A></li>
+	<LI>Next message: <A HREF="001384.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1374">[ date ]</a>
+              <a href="thread.html#1374">[ thread ]</a>
+              <a href="subject.html#1374">[ subject ]</a>
+              <a href="author.html#1374">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

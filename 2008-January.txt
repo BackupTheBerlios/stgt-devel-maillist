@@ -1,0 +1,4602 @@
+From acro3451 at tss.com.ar  Tue Jan  1 01:25:00 2008
+From: acro3451 at tss.com.ar (Pls check this new site)
+Date: Mon, 31 Dec 2007 19:25 -0500
+Subject: [Stgt-devel] www.diavetes.com.ar
+Message-ID: <20080101002720.F30BA1EA0E@mail.berlios.de>
+
+Please see this site in Subject
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20071231/859e524c/attachment.html>
+
+From acro3451 at tss.com.ar  Tue Jan  1 06:32:00 2008
+From: acro3451 at tss.com.ar (Pls check this new site)
+Date: Tue, 1 Jan 2008 00:32 -0500
+Subject: [Stgt-devel] www.chequexpress.com.ar
+Message-ID: <20080101053407.D21B7124BA3@mail.berlios.de>
+
+Please see this site in Subject
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080101/0e73e8c5/attachment.html>
+
+From erezz at Voltaire.COM  Tue Jan  1 12:50:07 2008
+From: erezz at Voltaire.COM (Erez Zilber)
+Date: Tue, 01 Jan 2008 13:50:07 +0200
+Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+In-Reply-To: <200712301105.lBUB54cL007357@mbox.iij4u.or.jp>
+References: <47775C04.10906@voltaire.com>
+	<200712301105.lBUB54cL007357@mbox.iij4u.or.jp>
+Message-ID: <477A28EF.7000603@Voltaire.COM>
+
+FUJITA Tomonori wrote:
+> From: Erez Zilber <erezz at voltaire.com>
+> Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+> Date: Sun, 30 Dec 2007 10:51:16 +0200
+>
+>   
+>> Add a script that will create a target, add a device to
+>> the target and define the initiator that can connect to it.
+>>     
+>
+> Can you move this to usr/scripts? I guess that this could be improved
+> to handle other protocols later on.
+>   
+
+I will.
+
+> There would be a better name since this script does more than
+> assigning a logical unit, that is, creates a new target, add a lun,
+> and enable an initiator to access to the target.
+>   
+
+In the (near) future I would like to enhance this script, so it will not
+always create a new target (e.g. add a device to a target that already
+exists if the user wants). So, the main thing that this script does is
+to setup a lun. How about "setup_lun"? Do you have other ideas?
+
+>
+>   
+>> Signed-off-by: Erez Zilber <erezz at voltaire.com>
+>> ---
+>>  usr/iscsi/scripts/assign_lun |  127 ++++++++++++++++++++++++++++++++++++++++++
+>>  1 files changed, 127 insertions(+), 0 deletions(-)
+>>  create mode 100755 usr/iscsi/scripts/assign_lun
+>>     
+>
+> (snip)
+>
+>
+>   
+>> +#!/bin/bash
+>> +
+>> +verify_params()
+>> +{
+>> +	# Make sure that the device exists
+>> +	if ! [ -b $dev ]; then
+>> +		echo "$dev is not a device";
+>> +		exit 1;
+>>     
+>
+> Hmm, would be better to have:
+>
+>         if ! [ -b $dev -o -f $dev ]; then
+>
+> We can use a regular file as a logical unit.
+>   
+
+OK
+
+
+From acro3451 at tss.com.ar  Wed Jan  2 20:04:00 2008
+From: acro3451 at tss.com.ar (Pls check this new site)
+Date: Wed, 2 Jan 2008 14:04 -0500
+Subject: [Stgt-devel] www.bankingplans.com
+Message-ID: <20080102190621.EAC4811EA10@mail.berlios.de>
+
+Please see this site in Subject
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080102/f3311e69/attachment.html>
+
+From tomof at acm.org  Thu Jan  3 06:00:57 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Thu, 3 Jan 2008 14:00:57 +0900
+Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+In-Reply-To: <477A28EF.7000603@Voltaire.COM>
+References: <47775C04.10906@voltaire.com>
+	<200712301105.lBUB54cL007357@mbox.iij4u.or.jp>
+	<477A28EF.7000603@Voltaire.COM>
+Message-ID: <20080103140408O.tomof@acm.org>
+
+On Tue, 01 Jan 2008 13:50:07 +0200
+Erez Zilber <erezz at Voltaire.COM> wrote:
+
+> FUJITA Tomonori wrote:
+> > From: Erez Zilber <erezz at voltaire.com>
+> > Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+> > Date: Sun, 30 Dec 2007 10:51:16 +0200
+> >
+> >   
+> >> Add a script that will create a target, add a device to
+> >> the target and define the initiator that can connect to it.
+> >>     
+> >
+> > Can you move this to usr/scripts? I guess that this could be improved
+> > to handle other protocols later on.
+> >   
+> 
+> I will.
+> 
+> > There would be a better name since this script does more than
+> > assigning a logical unit, that is, creates a new target, add a lun,
+> > and enable an initiator to access to the target.
+> >   
+> 
+> In the (near) future I would like to enhance this script, so it will not
+> always create a new target (e.g. add a device to a target that already
+> exists if the user wants). So, the main thing that this script does is
+> to setup a lun. How about "setup_lun"? Do you have other ideas?
+
+I see. Then, you can choose whatever you like. I'm not good at
+naming. :)
+
+Thanks,
+
+
+From erezz at voltaire.com  Thu Jan  3 07:41:19 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Thu, 03 Jan 2008 08:41:19 +0200
+Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+In-Reply-To: <20080103140408O.tomof@acm.org>
+References: <47775C04.10906@voltaire.com>	<200712301105.lBUB54cL007357@mbox.iij4u.or.jp>	<477A28EF.7000603@Voltaire.COM>
+	<20080103140408O.tomof@acm.org>
+Message-ID: <477C838F.2020203@voltaire.com>
+
+FUJITA Tomonori wrote:
+> On Tue, 01 Jan 2008 13:50:07 +0200
+> Erez Zilber <erezz at Voltaire.COM> wrote:
+> 
+>> FUJITA Tomonori wrote:
+>>> From: Erez Zilber <erezz at voltaire.com>
+>>> Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+>>> Date: Sun, 30 Dec 2007 10:51:16 +0200
+>>>
+>>>   
+>>>> Add a script that will create a target, add a device to
+>>>> the target and define the initiator that can connect to it.
+>>>>     
+>>> Can you move this to usr/scripts? I guess that this could be improved
+>>> to handle other protocols later on.
+>>>   
+>> I will.
+>>
+>>> There would be a better name since this script does more than
+>>> assigning a logical unit, that is, creates a new target, add a lun,
+>>> and enable an initiator to access to the target.
+>>>   
+>> In the (near) future I would like to enhance this script, so it will not
+>> always create a new target (e.g. add a device to a target that already
+>> exists if the user wants). So, the main thing that this script does is
+>> to setup a lun. How about "setup_lun"? Do you have other ideas?
+> 
+> I see. Then, you can choose whatever you like. I'm not good at
+> naming. :)
+> 
+> Thanks,
+
+Add a script that will create a target, add a device to
+the target and define the initiator that can connect to it.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 130 insertions(+), 0 deletions(-)
+ create mode 100755 usr/scripts/setup_lun
+
+diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+new file mode 100755
+index 0000000..e35d623
+--- /dev/null
++++ b/usr/scripts/setup_lun
+@@ -0,0 +1,130 @@
++# Copyright (C) Voltaire Ltd. 2001-2008.  ALL RIGHTS RESERVED.
++#
++# This source code (the "Code") is a proprietary product of Voltaire Ltd.
++# (the "Company") and all right, title, and interest in and to the Code,
++# including all associated intellectual property rights, are and shall
++# remain exclusively with the Company.
++#
++# The Code is provided "as is". To the maximum extent permitted by law,
++# the Company disclaims any warranties of any kind, either expressed or
++# implied, including, without limitation, implied warranties of
++# merchantability, fitness for a particular purpose and non-infringement.
++# The Company does not warrant that the Code will operate error free, or
++# in an uninterrupted fashion or that it is compatible with any particular
++# platform. In no event shall the Company be liable for any damages
++# whatsoever (including, without limitation, incidental, direct, indirect,
++# special and consequential damages, damages for loss of business profits,
++# business interruption, loss of business information, or other pecuniary
++# loss) arising out of the use or inability to use the Code, even if
++# advised of the possibility of such damages.
++#
++# Author: Erez Zilber <erezz at voltaire.com>
++
++#!/bin/bash
++
++verify_params()
++{
++	# Make sure that the device exists
++	if ! [ -b $dev -o -f $dev ]; then
++		echo "$dev is not a device";
++		exit 1;
++	fi
++}
++
++find_vacant_tgt_id()
++{
++	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d" " -f2 | sed s/://)
++
++	next_vacant_id=1
++
++	for id in $id_list; do
++		if (($id > $next_vacant_id)); then
++			break;
++		else
++			next_vacant_id=$((next_vacant_id+1))
++		fi
++	done
++
++	return $next_vacant_id
++}
++
++find_vacant_lun()
++{
++	tid=$1
++	tgt_found=0
++	next_vacant_lun=0
++	tmp_file=/tmp/target_list.txt
++
++	tgtadm --lld iscsi --op show --mode target > $tmp_file
++
++	while read line; do
++		# Check if we finished going over this target
++		if ((tgt_found == 1 && $(echo $line | grep -c "^Target") == 1)); then
++			break
++		fi
++
++		# Check if we found the requested target
++		if (($(echo $line | grep -c "Target $tid:") == 1)); then
++			tgt_found=1
++			continue
++		fi
++
++		if ((tgt_found == 1 && $(echo $line | grep -c "LUN:") == 1)); then
++			curr_lun=$(echo $line | cut -d" " -f2)
++			if (($curr_lun > $next_vacant_lun)); then
++				break
++			else
++				next_vacant_lun=$((next_vacant_lun+1))
++			fi
++		fi
++	done < $tmp_file
++
++	rm -f $tmp_file
++
++	if ((tgt_found == 0)); then
++		echo "Error: could not find a LUN for target $tid"
++		return -1
++	fi
++
++	return $next_vacant_lun
++}
++
++if [ $# -ne 3 ]; then
++	name=$(basename $0)
++	echo "usage: $name <dev> <initiator name> <initiator IP>";
++	echo "example: $name /dev/sdb1 noni 192.168.10.63";
++	exit 1;
++fi
++
++dev=$1
++initiator=$2
++initiator_ip=$3
++
++verify_params
++
++# Check if tgtd is running (we should have 2 daemons)
++tgtd_count=$(ps aux|grep -c tgtd)
++if [ $tgtd_count -ne 3 ]; then
++	echo "Starting tgtd"
++	tgtd
++fi
++
++tgt_name="iqn.2001-04.com.$(hostname -s)-$initiator"
++
++find_vacant_tgt_id
++tid=$?
++
++# Create the new target
++echo "Creating the new target"
++tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++
++find_vacant_lun $tid
++lun=$?
++
++# Add a logical unit to the target
++echo "Adding a logical unit to the target"
++tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++
++# Accept only a specific initiator
++echo "Accepting connections only from $initiator_ip"
++tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+-- 
+1.5.3.7
+
+
+
+
+From erezz at voltaire.com  Thu Jan  3 08:08:31 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Thu, 03 Jan 2008 09:08:31 +0200
+Subject: [Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+In-Reply-To: <477C838F.2020203@voltaire.com>
+References: <47775C04.10906@voltaire.com>	<200712301105.lBUB54cL007357@mbox.iij4u.or.jp>	<477A28EF.7000603@Voltaire.COM>	<20080103140408O.tomof@acm.org>
+	<477C838F.2020203@voltaire.com>
+Message-ID: <477C89EF.4090203@voltaire.com>
+
+Here's a better version that also installs the script:
+
+Add a script that will create a target, add a device to
+the target and define the initiator that can connect to it.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/Makefile          |    2 +-
+ usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 131 insertions(+), 1 deletions(-)
+ create mode 100644 usr/scripts/setup_lun
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 6854057..16bd314 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -51,7 +51,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+ 
+ LIBS += -lpthread
+ 
+-PROGRAMS += tgtd tgtadm
++PROGRAMS += tgtd tgtadm scripts/setup_lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+ 		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+ 
+diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+new file mode 100644
+index 0000000..e35d623
+--- /dev/null
++++ b/usr/scripts/setup_lun
+@@ -0,0 +1,130 @@
++# Copyright (C) Voltaire Ltd. 2001-2008.  ALL RIGHTS RESERVED.
++#
++# This source code (the "Code") is a proprietary product of Voltaire Ltd.
++# (the "Company") and all right, title, and interest in and to the Code,
++# including all associated intellectual property rights, are and shall
++# remain exclusively with the Company.
++#
++# The Code is provided "as is". To the maximum extent permitted by law,
++# the Company disclaims any warranties of any kind, either expressed or
++# implied, including, without limitation, implied warranties of
++# merchantability, fitness for a particular purpose and non-infringement.
++# The Company does not warrant that the Code will operate error free, or
++# in an uninterrupted fashion or that it is compatible with any particular
++# platform. In no event shall the Company be liable for any damages
++# whatsoever (including, without limitation, incidental, direct, indirect,
++# special and consequential damages, damages for loss of business profits,
++# business interruption, loss of business information, or other pecuniary
++# loss) arising out of the use or inability to use the Code, even if
++# advised of the possibility of such damages.
++#
++# Author: Erez Zilber <erezz at voltaire.com>
++
++#!/bin/bash
++
++verify_params()
++{
++	# Make sure that the device exists
++	if ! [ -b $dev -o -f $dev ]; then
++		echo "$dev is not a device";
++		exit 1;
++	fi
++}
++
++find_vacant_tgt_id()
++{
++	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d" " -f2 | sed s/://)
++
++	next_vacant_id=1
++
++	for id in $id_list; do
++		if (($id > $next_vacant_id)); then
++			break;
++		else
++			next_vacant_id=$((next_vacant_id+1))
++		fi
++	done
++
++	return $next_vacant_id
++}
++
++find_vacant_lun()
++{
++	tid=$1
++	tgt_found=0
++	next_vacant_lun=0
++	tmp_file=/tmp/target_list.txt
++
++	tgtadm --lld iscsi --op show --mode target > $tmp_file
++
++	while read line; do
++		# Check if we finished going over this target
++		if ((tgt_found == 1 && $(echo $line | grep -c "^Target") == 1)); then
++			break
++		fi
++
++		# Check if we found the requested target
++		if (($(echo $line | grep -c "Target $tid:") == 1)); then
++			tgt_found=1
++			continue
++		fi
++
++		if ((tgt_found == 1 && $(echo $line | grep -c "LUN:") == 1)); then
++			curr_lun=$(echo $line | cut -d" " -f2)
++			if (($curr_lun > $next_vacant_lun)); then
++				break
++			else
++				next_vacant_lun=$((next_vacant_lun+1))
++			fi
++		fi
++	done < $tmp_file
++
++	rm -f $tmp_file
++
++	if ((tgt_found == 0)); then
++		echo "Error: could not find a LUN for target $tid"
++		return -1
++	fi
++
++	return $next_vacant_lun
++}
++
++if [ $# -ne 3 ]; then
++	name=$(basename $0)
++	echo "usage: $name <dev> <initiator name> <initiator IP>";
++	echo "example: $name /dev/sdb1 noni 192.168.10.63";
++	exit 1;
++fi
++
++dev=$1
++initiator=$2
++initiator_ip=$3
++
++verify_params
++
++# Check if tgtd is running (we should have 2 daemons)
++tgtd_count=$(ps aux|grep -c tgtd)
++if [ $tgtd_count -ne 3 ]; then
++	echo "Starting tgtd"
++	tgtd
++fi
++
++tgt_name="iqn.2001-04.com.$(hostname -s)-$initiator"
++
++find_vacant_tgt_id
++tid=$?
++
++# Create the new target
++echo "Creating the new target"
++tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++
++find_vacant_lun $tid
++lun=$?
++
++# Add a logical unit to the target
++echo "Adding a logical unit to the target"
++tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++
++# Accept only a specific initiator
++echo "Accepting connections only from $initiator_ip"
++tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+-- 
+1.5.3
+
+
+
+
+From erezz at voltaire.com  Thu Jan  3 10:55:04 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Thu, 03 Jan 2008 11:55:04 +0200
+Subject: [Stgt-devel] Some general questions about tgt
+Message-ID: <477CB0F8.5010803@voltaire.com>
+
+I'm still a newbie here, so I have many questions:
+
+   1. For each iSCSI target that you create with tgtadm, you can define
+      the initiators that can access it. Why does it use IP addresses
+      instead of iqn.initiator_name?
+   2. tgtadm allows you to create 2 targets with the same name. Is it a bug?
+   3. If the same lun is connected with 2 FC cables, you'll see that
+      device twice. Is there any mechanism for preferred path? If not,
+      is there any plan to do that in the near future?
+
+Thanks,
+-- 
+
+____________________________________________________________
+
+Erez Zilber | 972-9-971-7689
+
+Software Engineer, Storage Solutions
+
+Voltaire ? _The Grid Backbone_
+
+__
+
+www.voltaire.com <http://www.voltaire.com/>
+
+
+
+
+
+From tomof at acm.org  Thu Jan  3 11:54:49 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Thu, 3 Jan 2008 19:54:49 +0900
+Subject: [Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+In-Reply-To: <477C89EF.4090203@voltaire.com>
+References: <20080103140408O.tomof@acm.org> <477C838F.2020203@voltaire.com>
+	<477C89EF.4090203@voltaire.com>
+Message-ID: <20080103195607V.tomof@acm.org>
+
+On Thu, 03 Jan 2008 09:08:31 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> Here's a better version that also installs the script:
+> 
+> Add a script that will create a target, add a device to
+> the target and define the initiator that can connect to it.
+> 
+> Signed-off-by: Erez Zilber <erezz at voltaire.com>
+> ---
+>  usr/Makefile          |    2 +-
+>  usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+>  2 files changed, 131 insertions(+), 1 deletions(-)
+>  create mode 100644 usr/scripts/setup_lun
+> 
+> diff --git a/usr/Makefile b/usr/Makefile
+> index 6854057..16bd314 100644
+> --- a/usr/Makefile
+> +++ b/usr/Makefile
+> @@ -51,7 +51,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+>  
+>  LIBS += -lpthread
+>  
+> -PROGRAMS += tgtd tgtadm
+> +PROGRAMS += tgtd tgtadm scripts/setup_lun
+>  TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+>  		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+
+If you install this, it would be name 'tgt-hoge'. If you don't like
+it, I'm fine with this name.
+
+
+> diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+> new file mode 100644
+> index 0000000..e35d623
+> --- /dev/null
+> +++ b/usr/scripts/setup_lun
+> @@ -0,0 +1,130 @@
+> +# Copyright (C) Voltaire Ltd. 2001-2008.  ALL RIGHTS RESERVED.
+> +#
+> +# This source code (the "Code") is a proprietary product of Voltaire Ltd.
+> +# (the "Company") and all right, title, and interest in and to the Code,
+> +# including all associated intellectual property rights, are and shall
+> +# remain exclusively with the Company.
+> +#
+> +# The Code is provided "as is". To the maximum extent permitted by law,
+> +# the Company disclaims any warranties of any kind, either expressed or
+> +# implied, including, without limitation, implied warranties of
+> +# merchantability, fitness for a particular purpose and non-infringement.
+> +# The Company does not warrant that the Code will operate error free, or
+> +# in an uninterrupted fashion or that it is compatible with any particular
+> +# platform. In no event shall the Company be liable for any damages
+> +# whatsoever (including, without limitation, incidental, direct, indirect,
+> +# special and consequential damages, damages for loss of business profits,
+> +# business interruption, loss of business information, or other pecuniary
+> +# loss) arising out of the use or inability to use the Code, even if
+> +# advised of the possibility of such damages.
+> +#
+> +# Author: Erez Zilber <erezz at voltaire.com>
+
+Why did you change the license from GPL2?
+
+If distribution people are ok with your license, I'll merge it. We
+need to make sure that they can merge tgt into their distributions
+without any problem.
+
+
+From tomof at acm.org  Thu Jan  3 13:14:34 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Thu, 03 Jan 2008 21:14:34 +0900
+Subject: [Stgt-devel] Some general questions about tgt
+In-Reply-To: <477CB0F8.5010803@voltaire.com>
+References: <477CB0F8.5010803@voltaire.com>
+Message-ID: <200801031214.m03CEbw1026606@mbox.iij4u.or.jp>
+
+From: Erez Zilber <erezz at voltaire.com>
+Subject: [Stgt-devel] Some general questions about tgt
+Date: Thu, 03 Jan 2008 11:55:04 +0200
+
+> I'm still a newbie here, so I have many questions:
+> 
+>    1. For each iSCSI target that you create with tgtadm, you can define
+>       the initiators that can access it. Why does it use IP addresses
+>       instead of iqn.initiator_name?
+
+It's a bit harder to forge IP addresses than iSCSI names, I guess. I
+have two comercial iSCSI target systems and both support access
+control based on IP addresses.
+
+
+>    2. tgtadm allows you to create 2 targets with the same name. Is
+> it a bug?
+
+Well, it would be better to add the code to prevent this mistake.
+
+
+>    3. If the same lun is connected with 2 FC cables, you'll see that
+>       device twice. Is there any mechanism for preferred path? If not,
+>       is there any plan to do that in the near future?
+
+Sorry, I'm not sure what you mean. Are you talking about multi-path?
+
+
+From erezz at voltaire.com  Thu Jan  3 13:21:13 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Thu, 03 Jan 2008 14:21:13 +0200
+Subject: [Stgt-devel] [PATCH v3] iscsi: add setup_lun script
+In-Reply-To: <20080103195607V.tomof@acm.org>
+References: <20080103140408O.tomof@acm.org>	<477C838F.2020203@voltaire.com>	<477C89EF.4090203@voltaire.com>
+	<20080103195607V.tomof@acm.org>
+Message-ID: <477CD339.4040609@voltaire.com>
+
+FUJITA Tomonori wrote:
+> On Thu, 03 Jan 2008 09:08:31 +0200
+> Erez Zilber <erezz at voltaire.com> wrote:
+> 
+>> Here's a better version that also installs the script:
+>>
+>> Add a script that will create a target, add a device to
+>> the target and define the initiator that can connect to it.
+>>
+>> Signed-off-by: Erez Zilber <erezz at voltaire.com>
+>> ---
+>>  usr/Makefile          |    2 +-
+>>  usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>  2 files changed, 131 insertions(+), 1 deletions(-)
+>>  create mode 100644 usr/scripts/setup_lun
+>>
+>> diff --git a/usr/Makefile b/usr/Makefile
+>> index 6854057..16bd314 100644
+>> --- a/usr/Makefile
+>> +++ b/usr/Makefile
+>> @@ -51,7 +51,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+>>  
+>>  LIBS += -lpthread
+>>  
+>> -PROGRAMS += tgtd tgtadm
+>> +PROGRAMS += tgtd tgtadm scripts/setup_lun
+>>  TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+>>  		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+> 
+> If you install this, it would be name 'tgt-hoge'. If you don't like
+> it, I'm fine with this name.
+
+I don't understand? What do you mean by 'tgt-hoge'?
+
+> 
+> 
+>> diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+>> new file mode 100644
+>> index 0000000..e35d623
+>> --- /dev/null
+>> +++ b/usr/scripts/setup_lun
+>> @@ -0,0 +1,130 @@
+>> +# Copyright (C) Voltaire Ltd. 2001-2008.  ALL RIGHTS RESERVED.
+>> +#
+>> +# This source code (the "Code") is a proprietary product of Voltaire Ltd.
+>> +# (the "Company") and all right, title, and interest in and to the Code,
+>> +# including all associated intellectual property rights, are and shall
+>> +# remain exclusively with the Company.
+>> +#
+>> +# The Code is provided "as is". To the maximum extent permitted by law,
+>> +# the Company disclaims any warranties of any kind, either expressed or
+>> +# implied, including, without limitation, implied warranties of
+>> +# merchantability, fitness for a particular purpose and non-infringement.
+>> +# The Company does not warrant that the Code will operate error free, or
+>> +# in an uninterrupted fashion or that it is compatible with any particular
+>> +# platform. In no event shall the Company be liable for any damages
+>> +# whatsoever (including, without limitation, incidental, direct, indirect,
+>> +# special and consequential damages, damages for loss of business profits,
+>> +# business interruption, loss of business information, or other pecuniary
+>> +# loss) arising out of the use or inability to use the Code, even if
+>> +# advised of the possibility of such damages.
+>> +#
+>> +# Author: Erez Zilber <erezz at voltaire.com>
+> 
+> Why did you change the license from GPL2?
+> 
+> If distribution people are ok with your license, I'll merge it. We
+> need to make sure that they can merge tgt into their distributions
+> without any problem.
+
+Sorry, I took the wrong file by mistake. Anyway, here's the correct patch:
+
+Add a script that will create a target, add a device to
+the target and define the initiator that can connect to it.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/Makefile          |    2 +-
+ usr/scripts/setup_lun |  127 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 128 insertions(+), 1 deletions(-)
+ create mode 100644 usr/scripts/setup_lun
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 6854057..16bd314 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -51,7 +51,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+ 
+ LIBS += -lpthread
+ 
+-PROGRAMS += tgtd tgtadm
++PROGRAMS += tgtd tgtadm scripts/setup_lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+ 		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+ 
+diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+new file mode 100644
+index 0000000..0c8698c
+--- /dev/null
++++ b/usr/scripts/setup_lun
+@@ -0,0 +1,127 @@
++# LUN assignment script
++#
++# Copyright (C) 2007 Erez Zilber <erezz at voltaire.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation, version 2 of the
++# License.
++#
++# This program is distributed in the hope that it will be useful, but
++# WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++# General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++# 02110-1301 USA
++
++#!/bin/bash
++
++verify_params()
++{
++	# Make sure that the device exists
++	if ! [ -b $dev -o -f $dev ]; then
++		echo "$dev is not a device";
++		exit 1;
++	fi
++}
++
++find_vacant_tgt_id()
++{
++	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d" " -f2 | sed s/://)
++
++	next_vacant_id=1
++
++	for id in $id_list; do
++		if (($id > $next_vacant_id)); then
++			break;
++		else
++			next_vacant_id=$((next_vacant_id+1))
++		fi
++	done
++
++	return $next_vacant_id
++}
++
++find_vacant_lun()
++{
++	tid=$1
++	tgt_found=0
++	next_vacant_lun=0
++	tmp_file=/tmp/target_list.txt
++
++	tgtadm --lld iscsi --op show --mode target > $tmp_file
++
++	while read line; do
++		# Check if we finished going over this target
++		if ((tgt_found == 1 && $(echo $line | grep -c "^Target") == 1)); then
++			break
++		fi
++
++		# Check if we found the requested target
++		if (($(echo $line | grep -c "Target $tid:") == 1)); then
++			tgt_found=1
++			continue
++		fi
++
++		if ((tgt_found == 1 && $(echo $line | grep -c "LUN:") == 1)); then
++			curr_lun=$(echo $line | cut -d" " -f2)
++			if (($curr_lun > $next_vacant_lun)); then
++				break
++			else
++				next_vacant_lun=$((next_vacant_lun+1))
++			fi
++		fi
++	done < $tmp_file
++
++	rm -f $tmp_file
++
++	if ((tgt_found == 0)); then
++		echo "Error: could not find a LUN for target $tid"
++		return -1
++	fi
++
++	return $next_vacant_lun
++}
++
++if [ $# -ne 3 ]; then
++	name=$(basename $0)
++	echo "usage: $name <dev> <initiator name> <initiator IP>";
++	echo "example: $name /dev/sdb1 noni 192.168.10.63";
++	exit 1;
++fi
++
++dev=$1
++initiator=$2
++initiator_ip=$3
++
++verify_params
++
++# Check if tgtd is running (we should have 2 daemons)
++tgtd_count=$(ps aux|grep -c tgtd)
++if [ $tgtd_count -ne 3 ]; then
++	echo "Starting tgtd"
++	tgtd
++fi
++
++tgt_name="iqn.2001-04.com.$(hostname -s)-$initiator"
++
++find_vacant_tgt_id
++tid=$?
++
++# Create the new target
++echo "Creating the new target"
++tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++
++find_vacant_lun $tid
++lun=$?
++
++# Add a logical unit to the target
++echo "Adding a logical unit to the target"
++tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++
++# Accept only a specific initiator
++echo "Accepting connections only from $initiator_ip"
++tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+-- 
+1.5.3.7
+
+
+
+
+From erezz at voltaire.com  Thu Jan  3 13:24:29 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Thu, 03 Jan 2008 14:24:29 +0200
+Subject: [Stgt-devel] Some general questions about tgt
+In-Reply-To: <200801031214.m03CEbw1026606@mbox.iij4u.or.jp>
+References: <477CB0F8.5010803@voltaire.com>
+	<200801031214.m03CEbw1026606@mbox.iij4u.or.jp>
+Message-ID: <477CD3FD.9070104@voltaire.com>
+
+FUJITA Tomonori wrote:
+
+>>    3. If the same lun is connected with 2 FC cables, you'll see that
+>>       device twice. Is there any mechanism for preferred path? If not,
+>>       is there any plan to do that in the near future?
+>>     
+>
+> Sorry, I'm not sure what you mean. Are you talking about multi-path?
+>   
+
+Yes
+
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Jan  4 01:52:39 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 04 Jan 2008 09:52:39 +0900
+Subject: [Stgt-devel] [PATCH v3] iscsi: add setup_lun script
+In-Reply-To: <477CD339.4040609@voltaire.com>
+References: <477C89EF.4090203@voltaire.com> <20080103195607V.tomof@acm.org>
+	<477CD339.4040609@voltaire.com>
+Message-ID: <20080104095239P.fujita.tomonori@lab.ntt.co.jp>
+
+On Thu, 03 Jan 2008 14:21:13 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> FUJITA Tomonori wrote:
+> > On Thu, 03 Jan 2008 09:08:31 +0200
+> > Erez Zilber <erezz at voltaire.com> wrote:
+> > 
+> >> Here's a better version that also installs the script:
+> >>
+> >> Add a script that will create a target, add a device to
+> >> the target and define the initiator that can connect to it.
+> >>
+> >> Signed-off-by: Erez Zilber <erezz at voltaire.com>
+> >> ---
+> >>  usr/Makefile          |    2 +-
+> >>  usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+> >>  2 files changed, 131 insertions(+), 1 deletions(-)
+> >>  create mode 100644 usr/scripts/setup_lun
+> >>
+> >> diff --git a/usr/Makefile b/usr/Makefile
+> >> index 6854057..16bd314 100644
+> >> --- a/usr/Makefile
+> >> +++ b/usr/Makefile
+> >> @@ -51,7 +51,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+> >>  
+> >>  LIBS += -lpthread
+> >>  
+> >> -PROGRAMS += tgtd tgtadm
+> >> +PROGRAMS += tgtd tgtadm scripts/setup_lun
+> >>  TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+> >>  		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+> > 
+> > If you install this, it would be name 'tgt-hoge'. If you don't like
+> > it, I'm fine with this name.
+> 
+> I don't understand? What do you mean by 'tgt-hoge'?
+
+Oops, I meant that we would name this 'tgt-setup-lun'. It enables
+users to easily find that this script is for tgt.
+
+
+From erezz at voltaire.com  Fri Jan  4 15:06:27 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Fri, 4 Jan 2008 16:06:27 +0200
+Subject: [Stgt-devel] [PATCH v3] iscsi: add setup_lun script
+References: <477C89EF.4090203@voltaire.com><20080103195607V.tomof@acm.org><477CD339.4040609@voltaire.com>
+	<20080104095239P.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <39C75744D164D948A170E9792AF8E7CA110B67@exil.voltaire.com>
+
+> > > If you install this, it would be name 'tgt-hoge'. If you don't like
+> > > it, I'm fine with this name.
+> >
+> > I don't understand? What do you mean by 'tgt-hoge'?
+> 
+> Oops, I meant that we would name this 'tgt-setup-lun'. It enables
+> users to easily find that this script is for tgt.
+ 
+I'm ok with tgt-setup-lin.
+ 
+Thanks,
+Erez
+
+
+
+
+From erezz at voltaire.com  Mon Jan  7 15:59:44 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 07 Jan 2008 16:59:44 +0200
+Subject: [Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+Message-ID: <47823E60.1060203@voltaire.com>
+
+The following is a series of patches for tgt-setup-lun. It contains some improvements and mainly error handling.
+
+-- 
+____________________________________________________________
+
+Erez Zilber   |  972-9-971-7689
+
+Software Engineer, Storage Solutions
+
+Voltaire ? _The Grid Backbone_
+
+ __
+
+ www.voltaire.com <http://www.voltaire.com/>
+
+<mailto:g at voltaire.com>
+
+  
+
+
+
+
+From erezz at voltaire.com  Mon Jan  7 16:03:32 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 07 Jan 2008 17:03:32 +0200
+Subject: [Stgt-devel] [PATCH 1/4] iscsi: renamed setup_lun to tgt-setup-lun
+In-Reply-To: <47823E60.1060203@voltaire.com>
+References: <47823E60.1060203@voltaire.com>
+Message-ID: <47823F44.9070800@voltaire.com>
+
+Renamed setup_lun to tgt-setup-lun. It enables
+users to easily find that this script is for tgt.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/scripts/setup_lun     |  127 ---------------------------------------------
+ usr/scripts/tgt-setup-lun |  127 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 127 insertions(+), 127 deletions(-)
+ delete mode 100644 usr/scripts/setup_lun
+ create mode 100644 usr/scripts/tgt-setup-lun
+
+diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+deleted file mode 100644
+index 0c8698c..0000000
+--- a/usr/scripts/setup_lun
++++ /dev/null
+@@ -1,127 +0,0 @@
+-# LUN assignment script
+-#
+-# Copyright (C) 2007 Erez Zilber <erezz at voltaire.com>
+-#
+-# This program is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation, version 2 of the
+-# License.
+-#
+-# This program is distributed in the hope that it will be useful, but
+-# WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+-# General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+-# 02110-1301 USA
+-
+-#!/bin/bash
+-
+-verify_params()
+-{
+-	# Make sure that the device exists
+-	if ! [ -b $dev -o -f $dev ]; then
+-		echo "$dev is not a device";
+-		exit 1;
+-	fi
+-}
+-
+-find_vacant_tgt_id()
+-{
+-	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d" " -f2 | sed s/://)
+-
+-	next_vacant_id=1
+-
+-	for id in $id_list; do
+-		if (($id > $next_vacant_id)); then
+-			break;
+-		else
+-			next_vacant_id=$((next_vacant_id+1))
+-		fi
+-	done
+-
+-	return $next_vacant_id
+-}
+-
+-find_vacant_lun()
+-{
+-	tid=$1
+-	tgt_found=0
+-	next_vacant_lun=0
+-	tmp_file=/tmp/target_list.txt
+-
+-	tgtadm --lld iscsi --op show --mode target > $tmp_file
+-
+-	while read line; do
+-		# Check if we finished going over this target
+-		if ((tgt_found == 1 && $(echo $line | grep -c "^Target") == 1)); then
+-			break
+-		fi
+-
+-		# Check if we found the requested target
+-		if (($(echo $line | grep -c "Target $tid:") == 1)); then
+-			tgt_found=1
+-			continue
+-		fi
+-
+-		if ((tgt_found == 1 && $(echo $line | grep -c "LUN:") == 1)); then
+-			curr_lun=$(echo $line | cut -d" " -f2)
+-			if (($curr_lun > $next_vacant_lun)); then
+-				break
+-			else
+-				next_vacant_lun=$((next_vacant_lun+1))
+-			fi
+-		fi
+-	done < $tmp_file
+-
+-	rm -f $tmp_file
+-
+-	if ((tgt_found == 0)); then
+-		echo "Error: could not find a LUN for target $tid"
+-		return -1
+-	fi
+-
+-	return $next_vacant_lun
+-}
+-
+-if [ $# -ne 3 ]; then
+-	name=$(basename $0)
+-	echo "usage: $name <dev> <initiator name> <initiator IP>";
+-	echo "example: $name /dev/sdb1 noni 192.168.10.63";
+-	exit 1;
+-fi
+-
+-dev=$1
+-initiator=$2
+-initiator_ip=$3
+-
+-verify_params
+-
+-# Check if tgtd is running (we should have 2 daemons)
+-tgtd_count=$(ps aux|grep -c tgtd)
+-if [ $tgtd_count -ne 3 ]; then
+-	echo "Starting tgtd"
+-	tgtd
+-fi
+-
+-tgt_name="iqn.2001-04.com.$(hostname -s)-$initiator"
+-
+-find_vacant_tgt_id
+-tid=$?
+-
+-# Create the new target
+-echo "Creating the new target"
+-tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
+-
+-find_vacant_lun $tid
+-lun=$?
+-
+-# Add a logical unit to the target
+-echo "Adding a logical unit to the target"
+-tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
+-
+-# Accept only a specific initiator
+-echo "Accepting connections only from $initiator_ip"
+-tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+new file mode 100644
+index 0000000..0c8698c
+--- /dev/null
++++ b/usr/scripts/tgt-setup-lun
+@@ -0,0 +1,127 @@
++# LUN assignment script
++#
++# Copyright (C) 2007 Erez Zilber <erezz at voltaire.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation, version 2 of the
++# License.
++#
++# This program is distributed in the hope that it will be useful, but
++# WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++# General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++# 02110-1301 USA
++
++#!/bin/bash
++
++verify_params()
++{
++	# Make sure that the device exists
++	if ! [ -b $dev -o -f $dev ]; then
++		echo "$dev is not a device";
++		exit 1;
++	fi
++}
++
++find_vacant_tgt_id()
++{
++	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d" " -f2 | sed s/://)
++
++	next_vacant_id=1
++
++	for id in $id_list; do
++		if (($id > $next_vacant_id)); then
++			break;
++		else
++			next_vacant_id=$((next_vacant_id+1))
++		fi
++	done
++
++	return $next_vacant_id
++}
++
++find_vacant_lun()
++{
++	tid=$1
++	tgt_found=0
++	next_vacant_lun=0
++	tmp_file=/tmp/target_list.txt
++
++	tgtadm --lld iscsi --op show --mode target > $tmp_file
++
++	while read line; do
++		# Check if we finished going over this target
++		if ((tgt_found == 1 && $(echo $line | grep -c "^Target") == 1)); then
++			break
++		fi
++
++		# Check if we found the requested target
++		if (($(echo $line | grep -c "Target $tid:") == 1)); then
++			tgt_found=1
++			continue
++		fi
++
++		if ((tgt_found == 1 && $(echo $line | grep -c "LUN:") == 1)); then
++			curr_lun=$(echo $line | cut -d" " -f2)
++			if (($curr_lun > $next_vacant_lun)); then
++				break
++			else
++				next_vacant_lun=$((next_vacant_lun+1))
++			fi
++		fi
++	done < $tmp_file
++
++	rm -f $tmp_file
++
++	if ((tgt_found == 0)); then
++		echo "Error: could not find a LUN for target $tid"
++		return -1
++	fi
++
++	return $next_vacant_lun
++}
++
++if [ $# -ne 3 ]; then
++	name=$(basename $0)
++	echo "usage: $name <dev> <initiator name> <initiator IP>";
++	echo "example: $name /dev/sdb1 noni 192.168.10.63";
++	exit 1;
++fi
++
++dev=$1
++initiator=$2
++initiator_ip=$3
++
++verify_params
++
++# Check if tgtd is running (we should have 2 daemons)
++tgtd_count=$(ps aux|grep -c tgtd)
++if [ $tgtd_count -ne 3 ]; then
++	echo "Starting tgtd"
++	tgtd
++fi
++
++tgt_name="iqn.2001-04.com.$(hostname -s)-$initiator"
++
++find_vacant_tgt_id
++tid=$?
++
++# Create the new target
++echo "Creating the new target"
++tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++
++find_vacant_lun $tid
++lun=$?
++
++# Add a logical unit to the target
++echo "Adding a logical unit to the target"
++tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++
++# Accept only a specific initiator
++echo "Accepting connections only from $initiator_ip"
++tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+-- 
+1.5.3.7
+
+
+
+
+From erezz at voltaire.com  Mon Jan  7 16:05:07 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 07 Jan 2008 17:05:07 +0200
+Subject: [Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in
+	tgt-setup-lun
+In-Reply-To: <47823E60.1060203@voltaire.com>
+References: <47823E60.1060203@voltaire.com>
+Message-ID: <47823FA3.90809@voltaire.com>
+
+Currently, tgt-setup-lun only allows the assignment of a
+single initiator per target. This fix allows the
+assignment of multiple initiators per target (or all
+initiators).
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/scripts/tgt-setup-lun |   64 +++++++++++++++++++++++++++++++++-----------
+ 1 files changed, 48 insertions(+), 16 deletions(-)
+
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+index 0c8698c..d63a793 100644
+--- a/usr/scripts/tgt-setup-lun
++++ b/usr/scripts/tgt-setup-lun
+@@ -19,11 +19,28 @@
+ 
+ #!/bin/bash
+ 
++usage()
++{
++	name=$(basename $0)
++	echo "usage: $name -d dev -n target_name [initiator_IP1 initiator_IP2 ...] ";
++	echo "example: $name /dev/sdb1 noni 192.168.10.63";
++}
++
+ verify_params()
+ {
++	if ! [ "$dev" ]; then
++		echo "Error: a device is mandatory";
++		exit 1;
++	fi
++
+ 	# Make sure that the device exists
+ 	if ! [ -b $dev -o -f $dev ]; then
+-		echo "$dev is not a device";
++		echo "Error: $dev is not a device";
++		exit 1;
++	fi
++
++	if ! [ "$tgt_name" ]; then
++		echo "Error: target name is mandatory";
+ 		exit 1;
+ 	fi
+ }
+@@ -86,16 +103,22 @@ find_vacant_lun()
+ 	return $next_vacant_lun
+ }
+ 
+-if [ $# -ne 3 ]; then
+-	name=$(basename $0)
+-	echo "usage: $name <dev> <initiator name> <initiator IP>";
+-	echo "example: $name /dev/sdb1 noni 192.168.10.63";
+-	exit 1;
+-fi
++while getopts "d:n:" opt
++do
++	case ${opt} in
++	d)
++		dev=$OPTARG;;
++	n)
++		tgt_name=$OPTARG;;
++	*)
++		usage
++		exit 1
++	esac
++done
++
++shift $(($OPTIND - 1))
+ 
+-dev=$1
+-initiator=$2
+-initiator_ip=$3
++initiators=$*
+ 
+ verify_params
+ 
+@@ -106,22 +129,31 @@ if [ $tgtd_count -ne 3 ]; then
+ 	tgtd
+ fi
+ 
+-tgt_name="iqn.2001-04.com.$(hostname -s)-$initiator"
++tgt_name="iqn.2001-04.com.$(hostname -s)-$tgt_name"
+ 
+ find_vacant_tgt_id
+ tid=$?
+ 
+ # Create the new target
+-echo "Creating the new target"
++echo "Creating the new target ($tgt_name)"
+ tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
+ 
+ find_vacant_lun $tid
+ lun=$?
+ 
+ # Add a logical unit to the target
+-echo "Adding a logical unit to the target"
++echo "Adding a logical unit ($dev) to the target"
+ tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
+ 
+-# Accept only a specific initiator
+-echo "Accepting connections only from $initiator_ip"
+-tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
++# Define which initiators can use this target
++if test "$initiators" ; then
++	# Allow access only for specific initiators
++	echo "Accepting connections only from $initiators"
++	for initiator in $initiators; do
++		tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator
++	done
++else
++	# Allow access for everyone
++	echo "Accepting connections from every initiator"
++	tgtadm --lld iscsi --op bind --mode target --tid $tid -I ALL
++fi
+-- 
+1.5.3.7
+
+
+
+
+From erezz at voltaire.com  Mon Jan  7 16:06:26 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 07 Jan 2008 17:06:26 +0200
+Subject: [Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in
+	tgt-setup-lun
+In-Reply-To: <47823E60.1060203@voltaire.com>
+References: <47823E60.1060203@voltaire.com>
+Message-ID: <47823FF2.9050101@voltaire.com>
+
+If tgtadm fails, we need to rollback (i.e. delete the
+target).
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/scripts/tgt-setup-lun |   37 +++++++++++++++++++++++++++++++++++++
+ 1 files changed, 37 insertions(+), 0 deletions(-)
+ mode change 100644 => 100755 usr/scripts/tgt-setup-lun
+
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+old mode 100644
+new mode 100755
+index d63a793..df5418a
+--- a/usr/scripts/tgt-setup-lun
++++ b/usr/scripts/tgt-setup-lun
+@@ -103,6 +103,19 @@ find_vacant_lun()
+ 	return $next_vacant_lun
+ }
+ 
++err_exit()
++{
++	echo "Deleting the new target"
++	tgtadm --lld iscsi --op delete --mode target --tid $tid
++	res=$?
++
++	if [ $res -ne 0 ]; then
++		echo "Error: could not delete a target"
++	fi
++
++	exit 1
++}
++
+ while getopts "d:n:" opt
+ do
+ 	case ${opt} in
+@@ -137,6 +150,12 @@ tid=$?
+ # Create the new target
+ echo "Creating the new target ($tgt_name)"
+ tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++res=$?
++
++if [ $res -ne 0 ]; then
++	echo "Error: could not create a target"
++	exit 1
++fi
+ 
+ find_vacant_lun $tid
+ lun=$?
+@@ -144,6 +163,12 @@ lun=$?
+ # Add a logical unit to the target
+ echo "Adding a logical unit ($dev) to the target"
+ tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++res=$?
++
++if [ $res -ne 0 ]; then
++	echo "Error: could not add a logical unit to the target"
++	err_exit
++fi
+ 
+ # Define which initiators can use this target
+ if test "$initiators" ; then
+@@ -151,9 +176,21 @@ if test "$initiators" ; then
+ 	echo "Accepting connections only from $initiators"
+ 	for initiator in $initiators; do
+ 		tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator
++		res=$?
++
++		if [ $res -ne 0 ]; then
++			echo "Error: could not assign an initiator to the target"
++			err_exit
++		fi
+ 	done
+ else
+ 	# Allow access for everyone
+ 	echo "Accepting connections from every initiator"
+ 	tgtadm --lld iscsi --op bind --mode target --tid $tid -I ALL
++	res=$?
++
++	if [ $res -ne 0 ]; then
++		echo "Error: could not assign initiators to the target"
++		err_exit
++	fi
+ fi
+-- 
+1.5.3.7
+
+
+
+
+From erezz at voltaire.com  Mon Jan  7 16:07:28 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 07 Jan 2008 17:07:28 +0200
+Subject: [Stgt-devel] [PATCH 4/4] iscsi: do not create target if it already
+	exists
+In-Reply-To: <47823E60.1060203@voltaire.com>
+References: <47823E60.1060203@voltaire.com>
+Message-ID: <47824030.8070504@voltaire.com>
+
+In tgt-setup-lun, if the user tries to create a target
+with a name that already exists, the script should fail.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/scripts/tgt-setup-lun |   21 +++++++++++++++++++++
+ 1 files changed, 21 insertions(+), 0 deletions(-)
+
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+index df5418a..824c7d3 100755
+--- a/usr/scripts/tgt-setup-lun
++++ b/usr/scripts/tgt-setup-lun
+@@ -116,6 +116,19 @@ err_exit()
+ 	exit 1
+ }
+ 
++check_if_tgt_exists()
++{
++	tgt_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d" " -f3)
++
++	for curr_tgt in $tgt_list; do
++		if [ $tgt_name = $curr_tgt ]; then
++			return 1
++		fi
++	done
++
++	return 0
++}
++
+ while getopts "d:n:" opt
+ do
+ 	case ${opt} in
+@@ -144,6 +157,14 @@ fi
+ 
+ tgt_name="iqn.2001-04.com.$(hostname -s)-$tgt_name"
+ 
++# Make sure that a target with the same name doesn't exist
++check_if_tgt_exists
++if [ $? -eq 1 ]; then
++	echo "Error: a target named $tgt_name already exists"
++	echo "Please select a different target name"
++	exit 1
++fi
++
+ find_vacant_tgt_id
+ tid=$?
+ 
+-- 
+1.5.3.7
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jan  8 01:10:40 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 08 Jan 2008 09:10:40 +0900
+Subject: [Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+In-Reply-To: <47823E60.1060203@voltaire.com>
+References: <47823E60.1060203@voltaire.com>
+Message-ID: <20080108091040M.fujita.tomonori@lab.ntt.co.jp>
+
+On Mon, 07 Jan 2008 16:59:44 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> The following is a series of patches for tgt-setup-lun. It contains
+> some improvements and mainly error handling.
+
+Thanks, I added your script.
+
+I put the script at the scripts/ directory (sorry that I told you that
+I wanted it at usr/scripts/. I meant scripts/). I'll add Makefile at
+the top directory to install the scripts if you want.
+
+
+From erezz at voltaire.com  Tue Jan  8 07:31:50 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Tue, 08 Jan 2008 08:31:50 +0200
+Subject: [Stgt-devel] Some general questions about tgt
+In-Reply-To: <477CD3FD.9070104@voltaire.com>
+References: <477CB0F8.5010803@voltaire.com>	<200801031214.m03CEbw1026606@mbox.iij4u.or.jp>
+	<477CD3FD.9070104@voltaire.com>
+Message-ID: <478318D6.307@voltaire.com>
+
+Erez Zilber wrote:
+
+> FUJITA Tomonori wrote:
+>
+>   
+>>>    3. If the same lun is connected with 2 FC cables, you'll see that
+>>>       device twice. Is there any mechanism for preferred path? If not,
+>>>       is there any plan to do that in the near future?
+>>>     
+>>>       
+>> Sorry, I'm not sure what you mean. Are you talking about multi-path?
+>>   
+>>     
+>
+> Yes
+>
+>   
+So does tgt have this feature? Does it have anything else that has to do
+with HA?
+
+Thanks,
+Erez
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jan  8 10:40:25 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 08 Jan 2008 18:40:25 +0900
+Subject: [Stgt-devel] Some general questions about tgt
+In-Reply-To: <478318D6.307@voltaire.com>
+References: <200801031214.m03CEbw1026606@mbox.iij4u.or.jp>
+	<477CD3FD.9070104@voltaire.com> <478318D6.307@voltaire.com>
+Message-ID: <20080108184025G.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 08 Jan 2008 08:31:50 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> Erez Zilber wrote:
+> 
+> > FUJITA Tomonori wrote:
+> >
+> >   
+> >>>    3. If the same lun is connected with 2 FC cables, you'll see that
+> >>>       device twice. Is there any mechanism for preferred path? If not,
+> >>>       is there any plan to do that in the near future?
+> >>>     
+> >>>       
+> >> Sorry, I'm not sure what you mean. Are you talking about multi-path?
+> >>   
+> >>     
+> >
+> > Yes
+> >
+> >   
+> So does tgt have this feature?
+
+No. What do you want to implement in tgt?
+
+
+> Does it have anything else that has to do with HA?
+
+You can configure multipath.
+
+
+From robin.humble+stgt at anu.edu.au  Tue Jan  8 11:40:33 2008
+From: robin.humble+stgt at anu.edu.au (Robin Humble)
+Date: Tue, 8 Jan 2008 05:40:33 -0500
+Subject: [Stgt-devel] Some general questions about tgt
+In-Reply-To: <477CB0F8.5010803@voltaire.com>
+References: <477CB0F8.5010803@voltaire.com>
+Message-ID: <20080108104033.GA1686@lemming.cita.utoronto.ca>
+
+On Thu, Jan 03, 2008 at 11:55:04AM +0200, Erez Zilber wrote:
+>   3. If the same lun is connected with 2 FC cables, you'll see that
+>      device twice. Is there any mechanism for preferred path? If not,
+>      is there any plan to do that in the near future?
+
+under tgt with dm-multipath across FC targets, or over tgt with
+dm-multipath across iSCSI/iSER targets would suffice?
+
+I think dm-multipath has preferred paths - maybe with prio_callout's.
+
+cheers,
+robin
+
+
+From erezz at voltaire.com  Wed Jan  9 14:23:15 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Wed, 09 Jan 2008 15:23:15 +0200
+Subject: [Stgt-devel] Some general questions about tgt
+In-Reply-To: <20080108104033.GA1686@lemming.cita.utoronto.ca>
+References: <477CB0F8.5010803@voltaire.com>
+	<20080108104033.GA1686@lemming.cita.utoronto.ca>
+Message-ID: <4784CAC3.7020405@voltaire.com>
+
+Robin Humble wrote:
+
+> On Thu, Jan 03, 2008 at 11:55:04AM +0200, Erez Zilber wrote:
+>   
+>>   3. If the same lun is connected with 2 FC cables, you'll see that
+>>      device twice. Is there any mechanism for preferred path? If not,
+>>      is there any plan to do that in the near future?
+>>     
+>
+> under tgt with dm-multipath across FC targets, or over tgt with
+> dm-multipath across iSCSI/iSER targets would suffice?
+>
+> I think dm-multipath has preferred paths - maybe with prio_callout's.
+>   
+
+We've used dm-multipath only on the initiator side so far, so I just
+want to make sure: usually, when I add a device to a target (using
+tgtadm), I use something like /dev/sdX. Can I do something like the
+following?
+
+tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /dev/dm0
+
+
+If it's ok and you can also set a preferred path, this could be good enough.
+
+Another question - did you actually try to run tgt with dm devices? Did
+you face any problems?
+
+Thanks,
+Erez
+
+
+
+From bart.vanassche at gmail.com  Thu Jan 17 10:27:08 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Thu, 17 Jan 2008 10:27:08 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+Message-ID: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+
+Hello,
+
+I have performed a test to compare the performance of SCST and STGT.
+Apparently the SCST target implementation performed far better than
+the STGT target implementation. This makes me wonder whether this is
+due to the design of SCST or whether STGT's performance can be
+improved to the level of SCST ?
+
+Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+cache -- no disk reads were performed, all reads were from the cache).
+Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+
+                              STGT read             SCST read
+                           performance (MB/s)   performance (MB/s)
+Ethernet (1 Gb/s network)        77                    89
+IPoIB (8 Gb/s network)           82                   229
+SRP (8 Gb/s network)            N/A                   600
+iSER (8 Gb/s network)            80                   N/A
+
+These results show that SCST uses the InfiniBand network very well
+(effectivity of about 88% via SRP), but that the current STGT version
+is unable to transfer data faster than 82 MB/s. Does this mean that
+there is a severe bottleneck  present in the current STGT
+implementation ?
+
+Details about the test equipment:
+ - Ethernet controller: Intel 80003ES2LAN Gigabit Ethernet controller
+(copper) in full duplex mode.
+- InfiniBand controller: Mellanox MT25204 [InfiniHost III Lx HCA].
+According to ib_rdma_bw and ib_rdma_lat, the InfiniBand peak bandwith
+on this system is 675 MB/sec and its latency is 3 microseconds.
+- CPU: one CPU, an Intel Xeon CPU 5130 @ 2.00GHz.
+ - RAM: 2 GB in the initiator, 8 GB in the target. According to
+lmbench, memory read bandwidth is 2960 MB/s and write bandwidth is
+1080 MB/s.
+ - Software: 64-bit Ubuntu 7.10 server edition + OFED 1.2.5.4
+userspace components + SCST revision 242 (January 4, 2008) + TGT
+version 20071227.
+
+Regards,
+
+Bart Van Assche.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jan 17 10:40:52 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 17 Jan 2008 18:40:52 +0900
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+Message-ID: <20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+
+On Thu, 17 Jan 2008 10:27:08 +0100
+"Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+
+> Hello,
+> 
+> I have performed a test to compare the performance of SCST and STGT.
+> Apparently the SCST target implementation performed far better than
+> the STGT target implementation. This makes me wonder whether this is
+> due to the design of SCST or whether STGT's performance can be
+> improved to the level of SCST ?
+> 
+> Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+> cache -- no disk reads were performed, all reads were from the cache).
+> Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+> 
+>                               STGT read             SCST read
+>                            performance (MB/s)   performance (MB/s)
+> Ethernet (1 Gb/s network)        77                    89
+> IPoIB (8 Gb/s network)           82                   229
+> SRP (8 Gb/s network)            N/A                   600
+> iSER (8 Gb/s network)            80                   N/A
+> 
+> These results show that SCST uses the InfiniBand network very well
+> (effectivity of about 88% via SRP), but that the current STGT version
+> is unable to transfer data faster than 82 MB/s. Does this mean that
+> there is a severe bottleneck  present in the current STGT
+> implementation ?
+
+I don't know about the details but Pete said that he can achieve more
+than 900MB/s read performance with tgt iSER target using ramdisk.
+
+http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+
+
+From vst at vlnb.net  Thu Jan 17 10:48:28 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 17 Jan 2008 12:48:28 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <478F246C.4040400@vlnb.net>
+
+FUJITA Tomonori wrote:
+> On Thu, 17 Jan 2008 10:27:08 +0100
+> "Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+> 
+> 
+>>Hello,
+>>
+>>I have performed a test to compare the performance of SCST and STGT.
+>>Apparently the SCST target implementation performed far better than
+>>the STGT target implementation. This makes me wonder whether this is
+>>due to the design of SCST or whether STGT's performance can be
+>>improved to the level of SCST ?
+>>
+>>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+>>cache -- no disk reads were performed, all reads were from the cache).
+>>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+>>
+>>                              STGT read             SCST read
+>>                           performance (MB/s)   performance (MB/s)
+>>Ethernet (1 Gb/s network)        77                    89
+>>IPoIB (8 Gb/s network)           82                   229
+>>SRP (8 Gb/s network)            N/A                   600
+>>iSER (8 Gb/s network)            80                   N/A
+>>
+>>These results show that SCST uses the InfiniBand network very well
+>>(effectivity of about 88% via SRP), but that the current STGT version
+>>is unable to transfer data faster than 82 MB/s. Does this mean that
+>>there is a severe bottleneck  present in the current STGT
+>>implementation ?
+> 
+> 
+> I don't know about the details but Pete said that he can achieve more
+> than 900MB/s read performance with tgt iSER target using ramdisk.
+> 
+> http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+
+Please don't confuse multithreaded latency insensitive workload with 
+single threaded, hence latency sensitive one.
+
+> To unsubscribe from this list: send the line "unsubscribe linux-scsi" in
+> the body of a message to majordomo at vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jan 17 11:05:58 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 17 Jan 2008 19:05:58 +0900
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <478F246C.4040400@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+Message-ID: <20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+
+On Thu, 17 Jan 2008 12:48:28 +0300
+Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+
+> FUJITA Tomonori wrote:
+> > On Thu, 17 Jan 2008 10:27:08 +0100
+> > "Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+> > 
+> > 
+> >>Hello,
+> >>
+> >>I have performed a test to compare the performance of SCST and STGT.
+> >>Apparently the SCST target implementation performed far better than
+> >>the STGT target implementation. This makes me wonder whether this is
+> >>due to the design of SCST or whether STGT's performance can be
+> >>improved to the level of SCST ?
+> >>
+> >>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+> >>cache -- no disk reads were performed, all reads were from the cache).
+> >>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+> >>
+> >>                              STGT read             SCST read
+> >>                           performance (MB/s)   performance (MB/s)
+> >>Ethernet (1 Gb/s network)        77                    89
+> >>IPoIB (8 Gb/s network)           82                   229
+> >>SRP (8 Gb/s network)            N/A                   600
+> >>iSER (8 Gb/s network)            80                   N/A
+> >>
+> >>These results show that SCST uses the InfiniBand network very well
+> >>(effectivity of about 88% via SRP), but that the current STGT version
+> >>is unable to transfer data faster than 82 MB/s. Does this mean that
+> >>there is a severe bottleneck  present in the current STGT
+> >>implementation ?
+> > 
+> > 
+> > I don't know about the details but Pete said that he can achieve more
+> > than 900MB/s read performance with tgt iSER target using ramdisk.
+> > 
+> > http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+> 
+> Please don't confuse multithreaded latency insensitive workload with 
+> single threaded, hence latency sensitive one.
+
+Seems that he can get good performance with single threaded workload:
+
+http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf
+
+
+But I don't know about the details so let's wait for Pete to comment
+on this.
+
+Perhaps Voltaire people could comment on the tgt iSER performances.
+
+
+From vst at vlnb.net  Thu Jan 17 11:34:46 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 17 Jan 2008 13:34:46 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <478F2F46.9040103@vlnb.net>
+
+FUJITA Tomonori wrote:
+> On Thu, 17 Jan 2008 12:48:28 +0300
+> Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+> 
+> 
+>>FUJITA Tomonori wrote:
+>>
+>>>On Thu, 17 Jan 2008 10:27:08 +0100
+>>>"Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+>>>
+>>>
+>>>
+>>>>Hello,
+>>>>
+>>>>I have performed a test to compare the performance of SCST and STGT.
+>>>>Apparently the SCST target implementation performed far better than
+>>>>the STGT target implementation. This makes me wonder whether this is
+>>>>due to the design of SCST or whether STGT's performance can be
+>>>>improved to the level of SCST ?
+>>>>
+>>>>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+>>>>cache -- no disk reads were performed, all reads were from the cache).
+>>>>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+>>>>
+>>>>                             STGT read             SCST read
+>>>>                          performance (MB/s)   performance (MB/s)
+>>>>Ethernet (1 Gb/s network)        77                    89
+>>>>IPoIB (8 Gb/s network)           82                   229
+>>>>SRP (8 Gb/s network)            N/A                   600
+>>>>iSER (8 Gb/s network)            80                   N/A
+>>>>
+>>>>These results show that SCST uses the InfiniBand network very well
+>>>>(effectivity of about 88% via SRP), but that the current STGT version
+>>>>is unable to transfer data faster than 82 MB/s. Does this mean that
+>>>>there is a severe bottleneck  present in the current STGT
+>>>>implementation ?
+>>>
+>>>
+>>>I don't know about the details but Pete said that he can achieve more
+>>>than 900MB/s read performance with tgt iSER target using ramdisk.
+>>>
+>>>http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+>>
+>>Please don't confuse multithreaded latency insensitive workload with 
+>>single threaded, hence latency sensitive one.
+> 
+> 
+> Seems that he can get good performance with single threaded workload:
+> 
+> http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf
+
+Hmm, I can't find which IB hardware did he use and it's declared Gbps 
+speed. He declared only "Mellanox 4X SDR, switch". What does it mean?
+
+> But I don't know about the details so let's wait for Pete to comment
+> on this.
+
+I added him on CC
+
+> Perhaps Voltaire people could comment on the tgt iSER performances.
+> 
+
+
+
+From robin.humble+stgt at anu.edu.au  Thu Jan 17 13:29:56 2008
+From: robin.humble+stgt at anu.edu.au (Robin Humble)
+Date: Thu, 17 Jan 2008 07:29:56 -0500
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <478F2F46.9040103@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<478F2F46.9040103@vlnb.net>
+Message-ID: <20080117122956.GA3567@porcupine.cita.utoronto.ca>
+
+On Thu, Jan 17, 2008 at 01:34:46PM +0300, Vladislav Bolkhovitin wrote:
+>Hmm, I can't find which IB hardware did he use and it's declared Gbps 
+>speed. He declared only "Mellanox 4X SDR, switch". What does it mean?
+
+SDR is 10Gbit carrier, at most about  ~900MB/s data rate.
+DDR is 20Gbit carrier, at most about ~1400MB/s data rate.
+
+On Thu, 17 Jan 2008 10:27:08 +0100 "Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+> Test performed: read 2 GB of data in blocks of 1 MB from a target (hot                                                                                                       
+> cache -- no disk reads were performed, all reads were from the cache).                                                                                                       
+> Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000                                                                                                              
+>                                                                                                                                                                              
+>                               STGT read             SCST read                                                                                                                
+>                            performance (MB/s)   performance (MB/s)                                                                                                           
+> Ethernet (1 Gb/s network)        77                    89                                                                                                                    
+> IPoIB (8 Gb/s network)           82                   229                                                                                                                    
+> SRP (8 Gb/s network)            N/A                   600                                                                                                                    
+> iSER (8 Gb/s network)            80                   N/A                                                                                                                    
+
+it kinda looks to me like the tgt iSER tests were waaay too slow to be
+using RDMA :-/
+I use tgt to get 500MB/s writes over iSER DDR IB to real files (not
+ramdisk). Reads are a little slower, but that changes a bit with distro
+vs. mainline kernels.
+
+was iscsiadm was pointed at the IP of the IPoIB interface on the
+target? I think tgtd requires that.
+
+how about setting the transport to be iser with eg.
+  iscsiadm --mode node --targetname <something> --portal <ipoib>:3260 --op update -n node.transport_name -v iser
+  iscsiadm --mode node --targetname <something> --portal <ipoib>:3260 --op update -n "node.conn[0].iscsi.HeaderDigest" -v None
+
+does the initiator side kernel report that it's using iSER?
+it should look roughly like the below.
+
+ Jan 14 14:37:21 x2 kernel: iscsi: registered transport (iser) 
+ Jan 14 14:37:21 x2 iscsid: iSCSI logger with pid=5617 started! 
+ Jan 14 14:37:22 x2 iscsid: transport class version 2.0-724. iscsid version 2.0-865 
+ Jan 14 14:37:22 x2 iscsid: iSCSI daemon with pid=5618 started! 
+ Jan 14 14:37:22 x2 kernel: iser: iser_connect:connecting to: 192.168.1.8, port 0xbc0c 
+ Jan 14 14:37:23 x2 kernel: iser: iser_cma_handler:event 0 conn ffff8102523c4c80 id ffff81025df68e00 
+ Jan 14 14:37:23 x2 kernel: iser: iser_cma_handler:event 2 conn ffff8102523c4c80 id ffff81025df68e00 
+ Jan 14 14:37:24 x2 kernel: iser: iser_create_ib_conn_res:setting conn ffff8102523c4c80 cma_id ffff81025df68e00: fmr_pool ffff81025341b5c0 qp ffff810252109200 
+ Jan 14 14:37:24 x2 kernel: iser: iser_cma_handler:event 9 conn ffff8102523c4c80 id ffff81025df68e00 
+ Jan 14 14:37:24 x2 kernel: iser: iscsi_iser_ep_poll:ib conn ffff8102523c4c80 rc = 1 
+ Jan 14 14:37:24 x2 kernel: scsi6 : iSCSI Initiator over iSER, v.0.1 
+ Jan 14 14:37:24 x2 kernel: iser: iscsi_iser_conn_bind:binding iscsi conn ffff810251a94290 to iser_conn ffff8102523c4c80 
+ Jan 14 14:37:24 x2 kernel:   Vendor: IET       Model: Controller        Rev: 0001 
+ Jan 14 14:37:24 x2 kernel:   Type:   RAID                               ANSI SCSI revision: 05 
+ Jan 14 14:37:24 x2 kernel: scsi 6:0:0:0: Attached scsi generic sg2 type 12 
+ Jan 14 14:37:25 x2 kernel:   Vendor: IET       Model: VIRTUAL-DISK      Rev: 0001 
+ Jan 14 14:37:25 x2 kernel:   Type:   Direct-Access                      ANSI SCSI revision: 05 
+ Jan 14 14:37:25 x2 kernel: SCSI device sdc: 20971520 512-byte hdwr sectors (10737 MB) 
+ Jan 14 14:37:25 x2 kernel: sdc: Write Protect is off 
+ Jan 14 14:37:25 x2 kernel: SCSI device sdc: drive cache: write back 
+ Jan 14 14:37:25 x2 kernel: SCSI device sdc: 20971520 512-byte hdwr sectors (10737 MB) 
+ Jan 14 14:37:25 x2 kernel: sdc: Write Protect is off 
+ Jan 14 14:37:25 x2 kernel: SCSI device sdc: drive cache: write back 
+ Jan 14 14:37:25 x2 kernel:  sdc: unknown partition table 
+ Jan 14 14:37:25 x2 kernel: sd 6:0:0:1: Attached scsi disk sdc 
+ Jan 14 14:37:26 x2 kernel: sd 6:0:0:1: Attached scsi generic sg3 type 0 
+ Jan 14 14:37:26 x2 iscsid: connection1:0 is operational now 
+
+cheers,
+robin
+
+
+From vst at vlnb.net  Thu Jan 17 14:44:31 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 17 Jan 2008 16:44:31 +0300
+Subject: [Stgt-devel] [Scst-devel]  Performance of SCST versus STGT
+In-Reply-To: <20080117122956.GA3567@porcupine.cita.utoronto.ca>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	<478F2F46.9040103@vlnb.net>
+	<20080117122956.GA3567@porcupine.cita.utoronto.ca>
+Message-ID: <478F5BBF.3080905@vlnb.net>
+
+Robin Humble wrote:
+> On Thu, Jan 17, 2008 at 01:34:46PM +0300, Vladislav Bolkhovitin wrote:
+> 
+>>Hmm, I can't find which IB hardware did he use and it's declared Gbps 
+>>speed. He declared only "Mellanox 4X SDR, switch". What does it mean?
+> 
+> 
+> SDR is 10Gbit carrier, at most about  ~900MB/s data rate.
+> DDR is 20Gbit carrier, at most about ~1400MB/s data rate.
+
+Thanks. Then the single threaded rate with one outstanding command 
+between SCST SRP on 8Gbps link vs STGT iSRP on 10Gbps link (according to 
+that paper) is 600MB/s vs ~480MB/s (page 26). Still SCST based target is 
+about 60% faster.
+
+> On Thu, 17 Jan 2008 10:27:08 +0100 "Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+> 
+>>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot                                                                                                       
+>>cache -- no disk reads were performed, all reads were from the cache).                                                                                                       
+>>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000                                                                                                              
+>>                                                                                                                                                                             
+>>                              STGT read             SCST read                                                                                                                
+>>                           performance (MB/s)   performance (MB/s)                                                                                                           
+>>Ethernet (1 Gb/s network)        77                    89                                                                                                                    
+>>IPoIB (8 Gb/s network)           82                   229                                                                                                                    
+>>SRP (8 Gb/s network)            N/A                   600                                                                                                                    
+>>iSER (8 Gb/s network)            80                   N/A                                                                                                                    
+> 
+> 
+> it kinda looks to me like the tgt iSER tests were waaay too slow to be
+> using RDMA :-/
+> I use tgt to get 500MB/s writes over iSER DDR IB to real files (not
+> ramdisk). Reads are a little slower, but that changes a bit with distro
+> vs. mainline kernels.
+
+
+From erezz at Voltaire.COM  Thu Jan 17 15:05:23 2008
+From: erezz at Voltaire.COM (Erez Zilber)
+Date: Thu, 17 Jan 2008 16:05:23 +0200
+Subject: [Stgt-devel] Assigning a device to multiple targets - bug or
+	feature?
+Message-ID: <478F60A3.8050406@Voltaire.COM>
+
+It is possible to assign the same device (e.g. /dev/sdb1) to multiple
+targets. Is it on purpose? If yes, why?
+
+Thanks,
+Erez
+
+
+From erezz at Voltaire.COM  Thu Jan 17 15:22:24 2008
+From: erezz at Voltaire.COM (Erez Zilber)
+Date: Thu, 17 Jan 2008 16:22:24 +0200
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <478F64A0.6020201@Voltaire.COM>
+
+FUJITA Tomonori wrote:
+> On Thu, 17 Jan 2008 12:48:28 +0300
+> Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+>
+>   
+>> FUJITA Tomonori wrote:
+>>     
+>>> On Thu, 17 Jan 2008 10:27:08 +0100
+>>> "Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+>>>
+>>>
+>>>       
+>>>> Hello,
+>>>>
+>>>> I have performed a test to compare the performance of SCST and STGT.
+>>>> Apparently the SCST target implementation performed far better than
+>>>> the STGT target implementation. This makes me wonder whether this is
+>>>> due to the design of SCST or whether STGT's performance can be
+>>>> improved to the level of SCST ?
+>>>>
+>>>> Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+>>>> cache -- no disk reads were performed, all reads were from the cache).
+>>>> Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+>>>>
+>>>>                              STGT read             SCST read
+>>>>                           performance (MB/s)   performance (MB/s)
+>>>> Ethernet (1 Gb/s network)        77                    89
+>>>> IPoIB (8 Gb/s network)           82                   229
+>>>> SRP (8 Gb/s network)            N/A                   600
+>>>> iSER (8 Gb/s network)            80                   N/A
+>>>>
+>>>> These results show that SCST uses the InfiniBand network very well
+>>>> (effectivity of about 88% via SRP), but that the current STGT version
+>>>> is unable to transfer data faster than 82 MB/s. Does this mean that
+>>>> there is a severe bottleneck  present in the current STGT
+>>>> implementation ?
+>>>>         
+>>> I don't know about the details but Pete said that he can achieve more
+>>> than 900MB/s read performance with tgt iSER target using ramdisk.
+>>>
+>>> http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+>>>       
+>> Please don't confuse multithreaded latency insensitive workload with 
+>> single threaded, hence latency sensitive one.
+>>     
+>
+> Seems that he can get good performance with single threaded workload:
+>
+> http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf
+>
+>
+> But I don't know about the details so let's wait for Pete to comment
+> on this.
+>
+> Perhaps Voltaire people could comment on the tgt iSER performances.
+>   
+
+We didn't run any real performance test with tgt, so I don't have
+numbers yet. I know that Pete got ~900 MB/sec by hacking sgp_dd, so all
+data was read/written to the same block (so it was all done in the
+cache). Pete - am I right?
+
+As already mentioned, he got that with IB SDR cards that are 10 Gb/sec
+cards in theory (actual speed is ~900 MB/sec). With DDR cards (20
+Gb/sec), you can get even more. I plan to test that in the near future.
+
+Erez
+
+
+From vst at vlnb.net  Thu Jan 17 15:32:40 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 17 Jan 2008 17:32:40 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <478F64A0.6020201@Voltaire.COM>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<478F64A0.6020201@Voltaire.COM>
+Message-ID: <478F6708.30604@vlnb.net>
+
+Erez Zilber wrote:
+> FUJITA Tomonori wrote:
+> 
+>>On Thu, 17 Jan 2008 12:48:28 +0300
+>>Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+>>
+>>  
+>>
+>>>FUJITA Tomonori wrote:
+>>>    
+>>>
+>>>>On Thu, 17 Jan 2008 10:27:08 +0100
+>>>>"Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+>>>>
+>>>>
+>>>>      
+>>>>
+>>>>>Hello,
+>>>>>
+>>>>>I have performed a test to compare the performance of SCST and STGT.
+>>>>>Apparently the SCST target implementation performed far better than
+>>>>>the STGT target implementation. This makes me wonder whether this is
+>>>>>due to the design of SCST or whether STGT's performance can be
+>>>>>improved to the level of SCST ?
+>>>>>
+>>>>>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+>>>>>cache -- no disk reads were performed, all reads were from the cache).
+>>>>>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+>>>>>
+>>>>>                             STGT read             SCST read
+>>>>>                          performance (MB/s)   performance (MB/s)
+>>>>>Ethernet (1 Gb/s network)        77                    89
+>>>>>IPoIB (8 Gb/s network)           82                   229
+>>>>>SRP (8 Gb/s network)            N/A                   600
+>>>>>iSER (8 Gb/s network)            80                   N/A
+>>>>>
+>>>>>These results show that SCST uses the InfiniBand network very well
+>>>>>(effectivity of about 88% via SRP), but that the current STGT version
+>>>>>is unable to transfer data faster than 82 MB/s. Does this mean that
+>>>>>there is a severe bottleneck  present in the current STGT
+>>>>>implementation ?
+>>>>>        
+>>>>
+>>>>I don't know about the details but Pete said that he can achieve more
+>>>>than 900MB/s read performance with tgt iSER target using ramdisk.
+>>>>
+>>>>http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+>>>>      
+>>>
+>>>Please don't confuse multithreaded latency insensitive workload with 
+>>>single threaded, hence latency sensitive one.
+>>>    
+>>
+>>Seems that he can get good performance with single threaded workload:
+>>
+>>http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf
+>>
+>>
+>>But I don't know about the details so let's wait for Pete to comment
+>>on this.
+>>
+>>Perhaps Voltaire people could comment on the tgt iSER performances.
+>
+> We didn't run any real performance test with tgt, so I don't have
+> numbers yet. I know that Pete got ~900 MB/sec by hacking sgp_dd, so all
+> data was read/written to the same block (so it was all done in the
+> cache). Pete - am I right?
+> 
+> As already mentioned, he got that with IB SDR cards that are 10 Gb/sec
+> cards in theory (actual speed is ~900 MB/sec). With DDR cards (20
+> Gb/sec), you can get even more. I plan to test that in the near future.
+
+Are you writing about a maximum possible speed which he got, including 
+multithreded tests with many outstanding commands or about speed he got 
+  on single threaded reads with one outstanding command? This thread is 
+about the second one.
+
+> Erez
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-scsi" in
+> the body of a message to majordomo at vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+
+From bart.vanassche at gmail.com  Thu Jan 17 15:43:32 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Thu, 17 Jan 2008 15:43:32 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117122956.GA3567@porcupine.cita.utoronto.ca>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<478F2F46.9040103@vlnb.net>
+	<20080117122956.GA3567@porcupine.cita.utoronto.ca>
+Message-ID: <e2e108260801170643o532888eajdbc13030af5814ef@mail.gmail.com>
+
+On Jan 17, 2008 1:29 PM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+
+> was iscsiadm was pointed at the IP of the IPoIB interface on the target? I think tgtd requires that.
+>
+> how about setting the transport to be iser with eg.
+>   iscsiadm --mode node --targetname <something> --portal <ipoib>:3260 --op update -n node.transport_name -v iser
+>   iscsiadm --mode node --targetname <something> --portal <ipoib>:3260 --op update -n "node.conn[0].iscsi.HeaderDigest" -v None
+
+Ah, thanks. After issuing these commands I get better performance with
+STGT and iSER. The updated table is as follows:
+
+                             STGT read             SCST read
+                          performance (MB/s)   performance (MB/s)
+Ethernet (1 Gb/s network)        77                    89
+IPoIB (8 Gb/s network)           82                   229
+SRP (8 Gb/s network)            N/A                   600
+iSER (8 Gb/s network)           324                   N/A
+
+Can we conclude that with the tested software versions SCST performs
+significantly better than STGT on an InfiniBand network ?
+
+Bart.
+
+
+From erezz at Voltaire.COM  Thu Jan 17 15:46:22 2008
+From: erezz at Voltaire.COM (Erez Zilber)
+Date: Thu, 17 Jan 2008 16:46:22 +0200
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <478F6708.30604@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<478F64A0.6020201@Voltaire.COM> <478F6708.30604@vlnb.net>
+Message-ID: <478F6A3E.6020301@Voltaire.COM>
+
+
+>> We didn't run any real performance test with tgt, so I don't have
+>> numbers yet. I know that Pete got ~900 MB/sec by hacking sgp_dd, so all
+>> data was read/written to the same block (so it was all done in the
+>> cache). Pete - am I right?
+>>
+>> As already mentioned, he got that with IB SDR cards that are 10 Gb/sec
+>> cards in theory (actual speed is ~900 MB/sec). With DDR cards (20
+>> Gb/sec), you can get even more. I plan to test that in the near future.
+>
+> Are you writing about a maximum possible speed which he got, including
+> multithreded tests with many outstanding commands or about speed he
+> got  on single threaded reads with one outstanding command? This
+> thread is about the second one.
+>
+
+As I said, we didn't run any performance tests on stgt yet.
+
+Erez
+
+
+From pw at osc.edu  Thu Jan 17 18:45:42 2008
+From: pw at osc.edu (Pete Wyckoff)
+Date: Thu, 17 Jan 2008 12:45:42 -0500
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <20080117174542.GC29650@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Thu, 17 Jan 2008 19:05 +0900:
+> On Thu, 17 Jan 2008 12:48:28 +0300
+> Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+> 
+> > FUJITA Tomonori wrote:
+> > > On Thu, 17 Jan 2008 10:27:08 +0100
+> > > "Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+> > > 
+> > > 
+> > >>Hello,
+> > >>
+> > >>I have performed a test to compare the performance of SCST and STGT.
+> > >>Apparently the SCST target implementation performed far better than
+> > >>the STGT target implementation. This makes me wonder whether this is
+> > >>due to the design of SCST or whether STGT's performance can be
+> > >>improved to the level of SCST ?
+> > >>
+> > >>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+> > >>cache -- no disk reads were performed, all reads were from the cache).
+> > >>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+> > >>
+> > >>                              STGT read             SCST read
+> > >>                           performance (MB/s)   performance (MB/s)
+> > >>Ethernet (1 Gb/s network)        77                    89
+> > >>IPoIB (8 Gb/s network)           82                   229
+> > >>SRP (8 Gb/s network)            N/A                   600
+> > >>iSER (8 Gb/s network)            80                   N/A
+> > >>
+> > >>These results show that SCST uses the InfiniBand network very well
+> > >>(effectivity of about 88% via SRP), but that the current STGT version
+> > >>is unable to transfer data faster than 82 MB/s. Does this mean that
+> > >>there is a severe bottleneck  present in the current STGT
+> > >>implementation ?
+> > > 
+> > > 
+> > > I don't know about the details but Pete said that he can achieve more
+> > > than 900MB/s read performance with tgt iSER target using ramdisk.
+> > > 
+> > > http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+> > 
+> > Please don't confuse multithreaded latency insensitive workload with 
+> > single threaded, hence latency sensitive one.
+> 
+> Seems that he can get good performance with single threaded workload:
+> 
+> http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf
+> 
+> But I don't know about the details so let's wait for Pete to comment
+> on this.
+
+Page 16 is pretty straight forward.  One command outstanding from
+the client.  It is an OSD read command.  Data on tmpfs.  500 MB/s is
+pretty easy to get on IB.
+
+The other graph on page 23 is for block commands.  600 MB/s ish.
+Still single command; so essentially a "latency" test.  Dominated by
+the memcpy time from tmpfs to pinned IB buffer, as per page 24.
+
+Erez said:
+
+> We didn't run any real performance test with tgt, so I don't have
+> numbers yet. I know that Pete got ~900 MB/sec by hacking sgp_dd, so all
+> data was read/written to the same block (so it was all done in the
+> cache). Pete - am I right?
+
+Yes (actually just 1 thread in sg_dd).  This is obviously cheating.
+Take the pread time to zero in SCSI Read analysis on page 24 to show
+max theoretical.  It's IB theoretical minus some initiator and stgt
+overheads.
+
+The other way to get more read throughput is to throw multiple
+simultaneous commands at the server.
+
+There's nothing particularly stunning here.  Suspect Bart has
+configuration issues if not even IPoIB will do > 100 MB/s.
+
+		-- Pete
+
+
+
+From bart.vanassche at gmail.com  Fri Jan 18 11:30:47 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Fri, 18 Jan 2008 11:30:47 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117174542.GC29650@osc.edu>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+Message-ID: <e2e108260801180230sb1bd6edj4cbe6cd99e2f030e@mail.gmail.com>
+
+On Jan 17, 2008 6:45 PM, Pete Wyckoff <pw at osc.edu> wrote:
+> There's nothing particularly stunning here.  Suspect Bart has
+> configuration issues if not even IPoIB will do > 100 MB/s.
+
+Regarding configuration issues: the systems I ran the test on probably
+communicate via PCI-e x4 with the InfiniBand HCA's. With other systems
+with identical software and with PCI-e x8 HCA's on the same InfiniBand
+network I reach a throughput of 934 MB/s instead of 675 MB/s (PCI-e
+x4). This is something I only found out today, otherwise I would have
+run all tests on the systems with PCI-e x8 HCA's.
+
+So the relative utilization of the InfiniBand network is as follows:
+* STGT + iSER, PCI-e x4 HCA: 324/675 = 48% (measured myself)
+* STGT + iSER, PCI-e x8 HCA: 550/934 = 59%
+(http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf)
+* SCST + SRP, PCI-e x4 HCA: 600/675 = 89% (measured myself)
+
+Or: SCST uses the InfiniBand network much more effectively than STGT.
+
+Bart.
+
+
+From vst at vlnb.net  Fri Jan 18 13:08:50 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Fri, 18 Jan 2008 15:08:50 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117174542.GC29650@osc.edu>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+Message-ID: <479096D2.8090003@vlnb.net>
+
+Pete Wyckoff wrote:
+>>>>>I have performed a test to compare the performance of SCST and STGT.
+>>>>>Apparently the SCST target implementation performed far better than
+>>>>>the STGT target implementation. This makes me wonder whether this is
+>>>>>due to the design of SCST or whether STGT's performance can be
+>>>>>improved to the level of SCST ?
+>>>>>
+>>>>>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+>>>>>cache -- no disk reads were performed, all reads were from the cache).
+>>>>>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+>>>>>
+>>>>>                             STGT read             SCST read
+>>>>>                          performance (MB/s)   performance (MB/s)
+>>>>>Ethernet (1 Gb/s network)        77                    89
+>>>>>IPoIB (8 Gb/s network)           82                   229
+>>>>>SRP (8 Gb/s network)            N/A                   600
+>>>>>iSER (8 Gb/s network)            80                   N/A
+>>>>>
+>>>>>These results show that SCST uses the InfiniBand network very well
+>>>>>(effectivity of about 88% via SRP), but that the current STGT version
+>>>>>is unable to transfer data faster than 82 MB/s. Does this mean that
+>>>>>there is a severe bottleneck  present in the current STGT
+>>>>>implementation ?
+>>>>
+>>>>
+>>>>I don't know about the details but Pete said that he can achieve more
+>>>>than 900MB/s read performance with tgt iSER target using ramdisk.
+>>>>
+>>>>http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00004.html
+>>>
+>>>Please don't confuse multithreaded latency insensitive workload with 
+>>>single threaded, hence latency sensitive one.
+>>
+>>Seems that he can get good performance with single threaded workload:
+>>
+>>http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf
+>>
+>>But I don't know about the details so let's wait for Pete to comment
+>>on this.
+> 
+> Page 16 is pretty straight forward.  One command outstanding from
+> the client.  It is an OSD read command.  Data on tmpfs. 
+
+Hmm, I wouldn't say it's pretty straight forward. It has data for 
+"InfiniBand" and it's unclear if it's using iSER or some IB performance 
+test tool. I would rather interpret those data as for IB, not iSER.
+
+> 500 MB/s is
+> pretty easy to get on IB.
+> 
+> The other graph on page 23 is for block commands.  600 MB/s ish.
+> Still single command; so essentially a "latency" test.  Dominated by
+> the memcpy time from tmpfs to pinned IB buffer, as per page 24.
+> 
+> Erez said:
+> 
+> 
+>>We didn't run any real performance test with tgt, so I don't have
+>>numbers yet. I know that Pete got ~900 MB/sec by hacking sgp_dd, so all
+>>data was read/written to the same block (so it was all done in the
+>>cache). Pete - am I right?
+> 
+> Yes (actually just 1 thread in sg_dd).  This is obviously cheating.
+> Take the pread time to zero in SCSI Read analysis on page 24 to show
+> max theoretical.  It's IB theoretical minus some initiator and stgt
+> overheads.
+
+Yes, that's obviously cheating and its result can't be compared with 
+what Bart had. Full data footprint on target fit in the CPU cache, so 
+you had rather results for NULLIO (SCST term).
+
+So, seems I understood your slides correctly: the more valuable data for 
+our SCST SRP vs STGT iSER comparison should be on page 26 for 1 command 
+read (~480MB/s, i.e. ~60% from Bart's result on the equivalent hardware).
+
+> The other way to get more read throughput is to throw multiple
+> simultaneous commands at the server.
+> 
+> There's nothing particularly stunning here.  Suspect Bart has
+> configuration issues if not even IPoIB will do > 100 MB/s.
+> 
+> 		-- Pete
+> 
+> 
+
+
+
+From tomof at acm.org  Sun Jan 20 08:04:27 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sun, 20 Jan 2008 16:04:27 +0900
+Subject: [Stgt-devel] Assigning a device to multiple targets - bug
+	or	feature?
+In-Reply-To: <478F60A3.8050406@Voltaire.COM>
+References: <478F60A3.8050406@Voltaire.COM>
+Message-ID: <20080120160424L.tomof@acm.org>
+
+On Thu, 17 Jan 2008 16:05:23 +0200
+Erez Zilber <erezz at Voltaire.COM> wrote:
+
+> It is possible to assign the same device (e.g. /dev/sdb1) to multiple
+> targets.
+
+You can. But tgt doesn't know multiple targets access to the same
+device.
+
+
+> Is it on purpose? If yes, why?
+
+Let people to do what they want.
+
+
+From tomof at acm.org  Sun Jan 20 08:43:56 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sun, 20 Jan 2008 16:43:56 +0900
+Subject: [Stgt-devel] add aio backing store using eventfd
+Message-ID: <20080120164347B.tomof@acm.org>
+
+I restored the aio backing store feature because Linux finally support
+a resonable AIO event notification (eventfd). I tested the feature
+with 2.6.24-rc8 but it also works with 2.6.23, I guess.
+
+This backing store doesn't use the workaround in bs_rdwr to play with
+pthread and pipe, which incurs large latency.
+
+You can specify the backing store type when adding a logical
+unit. Here is an example:
+
+$ tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 -b /var/tmp/lun1 --bstype aio
+
+
+Note that:
+
+- Linux AIO works only with O_DIRECT. So this backing store mode
+doesn't use page cache. You probably need fast disk to enjoy this
+backing store. I guess that we still need to wait for Linux AIO to
+support non O_DIRECT.
+
+- The writeback cache is not supported yet. This always works in the
+writethrough cache mode.
+
+
+From bart.vanassche at gmail.com  Sun Jan 20 10:36:18 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Sun, 20 Jan 2008 10:36:18 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <479096D2.8090003@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu> <479096D2.8090003@vlnb.net>
+Message-ID: <e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+
+On Jan 18, 2008 1:08 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+>
+> [ ... ]
+> So, seems I understood your slides correctly: the more valuable data for
+> our SCST SRP vs STGT iSER comparison should be on page 26 for 1 command
+> read (~480MB/s, i.e. ~60% from Bart's result on the equivalent hardware).
+
+At least in my tests SCST performed significantly better than STGT.
+These tests were performed with the currently available
+implementations of SCST and STGT. Which performance improvements are
+possible for these projects (e.g. zero-copying), and by how much is it
+expected that these performance improvements will increase throughput
+and will decrease latency ?
+
+Bart.
+
+
+From erezz at voltaire.com  Sun Jan 20 13:47:35 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 20 Jan 2008 14:47:35 +0200
+Subject: [Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+Message-ID: <479342E7.50503@voltaire.com>
+
+The following is a series of patches for tgt-setup-lun. It contains a man page, Makefile modifications and fixes for the script itself.
+
+Erez
+  
+
+
+
+
+From erezz at voltaire.com  Sun Jan 20 13:53:01 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 20 Jan 2008 14:53:01 +0200
+Subject: [Stgt-devel] [PATCH 1/4] iscsi: Install tgt-setup-lun
+In-Reply-To: <479342E7.50503@voltaire.com>
+References: <479342E7.50503@voltaire.com>
+Message-ID: <4793442D.7090501@voltaire.com>
+
+Install tgt-setup-lun when running 'make install'.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 02ef860..0c02277 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -53,6 +53,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+ LIBS += -lpthread
+ 
+ PROGRAMS += tgtd tgtadm
++PROGRAMS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+ 		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+ 
+-- 
+1.5.3
+
+
+
+
+From erezz at voltaire.com  Sun Jan 20 13:54:07 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 20 Jan 2008 14:54:07 +0200
+Subject: [Stgt-devel] [PATCH 2/4] iscsi: Add usage information to
+	tgt-setup-lun
+In-Reply-To: <479342E7.50503@voltaire.com>
+References: <479342E7.50503@voltaire.com>
+Message-ID: <4793446F.80404@voltaire.com>
+
+If the script is ran without parameters or with -h, the usage
+message is printed.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ scripts/tgt-setup-lun |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/tgt-setup-lun b/scripts/tgt-setup-lun
+index 824c7d3..53bb934 100755
+--- a/scripts/tgt-setup-lun
++++ b/scripts/tgt-setup-lun
+@@ -129,14 +129,19 @@ check_if_tgt_exists()
+ 	return 0
+ }
+ 
+-while getopts "d:n:" opt
++if [ $# -eq 0 ]; then
++	usage
++	exit 1
++fi
++
++while getopts "d:n:h" opt
+ do
+ 	case ${opt} in
+ 	d)
+ 		dev=$OPTARG;;
+ 	n)
+ 		tgt_name=$OPTARG;;
+-	*)
++	h*)
+ 		usage
+ 		exit 1
+ 	esac
+-- 
+1.5.3
+
+
+
+
+From erezz at voltaire.com  Sun Jan 20 13:55:10 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 20 Jan 2008 14:55:10 +0200
+Subject: [Stgt-devel] [PATCH 3/4] iscsi: Add man page for tgt-setup-lun
+In-Reply-To: <479342E7.50503@voltaire.com>
+References: <479342E7.50503@voltaire.com>
+Message-ID: <479344AE.9090503@voltaire.com>
+
+Add man page for tgt-setup-lun
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ doc/tgt-setup-lun.8 |   45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
+ create mode 100644 doc/tgt-setup-lun.8
+
+diff --git a/doc/tgt-setup-lun.8 b/doc/tgt-setup-lun.8
+new file mode 100644
+index 0000000..2c7c3b0
+--- /dev/null
++++ b/doc/tgt-setup-lun.8
+@@ -0,0 +1,45 @@
++.de Vb \" Begin verbatim text
++.ft CW
++.nf
++.ne \\$1
++..
++
++.TH "tgt-setup-lun" 8
++.SH NAME
++tgt-setup-lun \- creates a target, adds a device to the target and defines initiators that can connect to the target
++.SH SYNOPSIS
++.B tgt-setup-lun -d device -n target_name [initiator_IP1 initiator_IP2 ...] [-h]
++
++.SH DESCRIPTION
++Starts tgtd if necessary and creates a target according to the supplied target_name. The format of the target name is as follows:
++.br
++iqn.2001-04.com.<hostname>-<target_name>
++The target name must be unique.
++
++The script then adds the requested device to the target. If specific IP addresses are defined, it adds them to the
++list of allowed initiators for that target. If no IP addresses is defined, it defines that the target accepts any
++initiator.
++
++.SH  EXAMPLES
++Create a target that uses /dev/sdb1 and allows connections only from 192.168.10.81:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target 192.168.10.81
++
++Create a target that uses /dev/sdb1 and allows connections only from 192.168.10.81 and 192.168.10.82:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target 192.168.10.81 192.168.10.82
++
++Create a target that uses /dev/sdb1 and allows connections from any initiator:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target
++
++Display help:
++.br
++tgt-setup-lun -h
++
++.SH AUTHOR
++Written by Erez Zilber
++.SH "REPORTING BUGS"
++Report bugs to <erezz at voltaire.com>.
++.SH COPYRIGHT
++Copyright \(co Voltaire Ltd. 2008.
+-- 
+1.5.3
+
+
+
+
+From erezz at voltaire.com  Sun Jan 20 13:56:00 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 20 Jan 2008 14:56:00 +0200
+Subject: [Stgt-devel] [PATCH 4/4] iscsi: Add documentation installation
+In-Reply-To: <479342E7.50503@voltaire.com>
+References: <479342E7.50503@voltaire.com>
+Message-ID: <479344E0.2020909@voltaire.com>
+
+Install documentation as part of running 'make install'.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/Makefile |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 0c02277..67fe655 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -1,3 +1,5 @@
++mandir = /usr/share/man
++
+ ifneq ($(IBMVIO),)
+ CFLAGS += -DIBMVIO -DUSE_KERNEL
+ TGTD_OBJS += $(addprefix ibmvio/, ibmvio.o)
+@@ -56,6 +58,7 @@ PROGRAMS += tgtd tgtadm
+ PROGRAMS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+ 		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
++MANPAGES = ../doc/tgt-setup-lun.8
+ 
+ TGTD_DEP = $(TGTD_OBJS:.o=.d)
+ 
+@@ -77,9 +80,13 @@ tgtadm: tgtadm.o
+ 	@$(CC) -MM $(CFLAGS) -MF $*.d -MT $*.o $*.c
+ 
+ .PHONY: install
+-install: $(PROGRAMS)
++install: $(PROGRAMS) install_doc
+ 	install -m 0755 $(PROGRAMS) $(DESTDIR)/usr/sbin
+ 
++install_doc: $(MANPAGES)
++	install -d $(DESTDIR)$(mandir)/man8
++	install -m 644 $^ $(DESTDIR)$(mandir)/man8
++
+ .PHONY: clean
+ clean:
+ 	rm -f *.[od] $(PROGRAMS) iscsi/*.[od] ibmvio/*.[od] fc/*.[od] fcoe/*.[od]
+-- 
+1.5.3
+
+
+
+
+From vst at vlnb.net  Mon Jan 21 13:07:40 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Mon, 21 Jan 2008 15:07:40 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	
+	<478F246C.4040400@vlnb.net>	
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	
+	<20080117174542.GC29650@osc.edu> <479096D2.8090003@vlnb.net>
+	<e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+Message-ID: <47948B0C.7020702@vlnb.net>
+
+Bart Van Assche wrote:
+> On Jan 18, 2008 1:08 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+> 
+>>[ ... ]
+>>So, seems I understood your slides correctly: the more valuable data for
+>>our SCST SRP vs STGT iSER comparison should be on page 26 for 1 command
+>>read (~480MB/s, i.e. ~60% from Bart's result on the equivalent hardware).
+> 
+> 
+> At least in my tests SCST performed significantly better than STGT.
+> These tests were performed with the currently available
+> implementations of SCST and STGT. Which performance improvements are
+> possible for these projects (e.g. zero-copying), and by how much is it
+> expected that these performance improvements will increase throughput
+> and will decrease latency ?
+
+Sure, zero-copying cache support is well possible for SCST and hopefully 
+will be available soon. The performance (throughput) improvement will 
+depend from used hardware and data access pattern, but the upper bound 
+estimation can be made knowing memory copy throughput on your system 
+(1.6GB/s according to your measurements). For 10Gbps link with 0.9GB/s 
+wire speed it should be up to 30%, for 20Gbps link with wire speed 
+1.5GB/s (PCI-E 8x limitation) - something up to 70-80%.
+
+Vlad
+
+
+From erezz at voltaire.com  Mon Jan 21 14:06:32 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 21 Jan 2008 15:06:32 +0200
+Subject: [Stgt-devel] [PATCH 3/4 v2] iscsi: Add man page for tgt-setup-lun
+In-Reply-To: <479344AE.9090503@voltaire.com>
+References: <479342E7.50503@voltaire.com> <479344AE.9090503@voltaire.com>
+Message-ID: <479498D8.1070300@voltaire.com>
+
+I just saw that man pages should be place under doc/manpages, so here's a fixed patch.
+
+Add man page for tgt-setup-lun
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ doc/manpages/tgt-setup-lun.8 |   45 ++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
+ create mode 100644 doc/manpages/tgt-setup-lun.8
+
+diff --git a/doc/manpages/tgt-setup-lun.8 b/doc/manpages/tgt-setup-lun.8
+new file mode 100644
+index 0000000..2c7c3b0
+--- /dev/null
++++ b/doc/manpages/tgt-setup-lun.8
+@@ -0,0 +1,45 @@
++.de Vb \" Begin verbatim text
++.ft CW
++.nf
++.ne \\$1
++..
++
++.TH "tgt-setup-lun" 8
++.SH NAME
++tgt-setup-lun \- creates a target, adds a device to the target and defines initiators that can connect to the target
++.SH SYNOPSIS
++.B tgt-setup-lun -d device -n target_name [initiator_IP1 initiator_IP2 ...] [-h]
++
++.SH DESCRIPTION
++Starts tgtd if necessary and creates a target according to the supplied target_name. The format of the target name is as follows:
++.br
++iqn.2001-04.com.<hostname>-<target_name>
++The target name must be unique.
++
++The script then adds the requested device to the target. If specific IP addresses are defined, it adds them to the
++list of allowed initiators for that target. If no IP addresses is defined, it defines that the target accepts any
++initiator.
++
++.SH  EXAMPLES
++Create a target that uses /dev/sdb1 and allows connections only from 192.168.10.81:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target 192.168.10.81
++
++Create a target that uses /dev/sdb1 and allows connections only from 192.168.10.81 and 192.168.10.82:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target 192.168.10.81 192.168.10.82
++
++Create a target that uses /dev/sdb1 and allows connections from any initiator:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target
++
++Display help:
++.br
++tgt-setup-lun -h
++
++.SH AUTHOR
++Written by Erez Zilber
++.SH "REPORTING BUGS"
++Report bugs to <erezz at voltaire.com>.
++.SH COPYRIGHT
++Copyright \(co Voltaire Ltd. 2008.
+-- 
+1.5.3.7
+
+
+
+
+From erezz at voltaire.com  Mon Jan 21 14:11:35 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 21 Jan 2008 15:11:35 +0200
+Subject: [Stgt-devel] [PATCH 4/4 v2] iscsi: Add documentation installation
+In-Reply-To: <479344E0.2020909@voltaire.com>
+References: <479342E7.50503@voltaire.com> <479344E0.2020909@voltaire.com>
+Message-ID: <47949A07.7070807@voltaire.com>
+
+Here's a fixed patch that installs man pages from doc/manpages.
+
+Install documentation as part of running 'make install'.
+
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ usr/Makefile |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 0c02277..9b31432 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -1,3 +1,5 @@
++mandir = /usr/share/man
++
+ ifneq ($(IBMVIO),)
+ CFLAGS += -DIBMVIO -DUSE_KERNEL
+ TGTD_OBJS += $(addprefix ibmvio/, ibmvio.o)
+@@ -56,6 +58,7 @@ PROGRAMS += tgtd tgtadm
+ PROGRAMS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+ 		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
++MANPAGES = ../doc/manpages/tgtadm.8 ../doc/manpages/tgt-setup-lun.8
+ 
+ TGTD_DEP = $(TGTD_OBJS:.o=.d)
+ 
+@@ -77,9 +80,13 @@ tgtadm: tgtadm.o
+ 	@$(CC) -MM $(CFLAGS) -MF $*.d -MT $*.o $*.c
+ 
+ .PHONY: install
+-install: $(PROGRAMS)
++install: $(PROGRAMS) install_doc
+ 	install -m 0755 $(PROGRAMS) $(DESTDIR)/usr/sbin
+ 
++install_doc: $(MANPAGES)
++	install -d $(DESTDIR)$(mandir)/man8
++	install -m 644 $^ $(DESTDIR)$(mandir)/man8
++
+ .PHONY: clean
+ clean:
+ 	rm -f *.[od] $(PROGRAMS) iscsi/*.[od] ibmvio/*.[od] fc/*.[od] fcoe/*.[od]
+-- 
+1.5.3.7
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jan 22 04:26:57 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 22 Jan 2008 12:26:57 +0900
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+References: <20080117174542.GC29650@osc.edu> <479096D2.8090003@vlnb.net>
+	<e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+Message-ID: <20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+
+On Sun, 20 Jan 2008 10:36:18 +0100
+"Bart Van Assche" <bart.vanassche at gmail.com> wrote:
+
+> On Jan 18, 2008 1:08 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+> >
+> > [ ... ]
+> > So, seems I understood your slides correctly: the more valuable data for
+> > our SCST SRP vs STGT iSER comparison should be on page 26 for 1 command
+> > read (~480MB/s, i.e. ~60% from Bart's result on the equivalent hardware).
+> 
+> At least in my tests SCST performed significantly better than STGT.
+> These tests were performed with the currently available
+> implementations of SCST and STGT. Which performance improvements are
+
+First, I recommend you to examine iSER stuff more since it has some
+parameters unlike SRP, which effects the performance, IIRC. At least,
+you could get the iSER performances similar to Pete's.
+
+
+> possible for these projects (e.g. zero-copying), and by how much is it
+> expected that these performance improvements will increase throughput
+> and will decrease latency ?
+
+The major bottleneck about RDMA transfer is registering the buffer
+before transfer. stgt's iSER driver has pre-registered buffers and
+move data between page cache and thsse buffers, and then does RDMA
+transfer.
+
+The big problem of stgt iSER is disk I/Os (move data between disk and
+page cache). We need a proper asynchronous I/O mechanism, however,
+Linux doesn't provide such and we use a workaround, which incurs large
+latency. I guess, we cannot solve this until syslets is merged into
+mainline.
+
+The above approach still needs one memory copy (between the
+pre-registered buffers and page cahce). If we need more performance,
+we have to implement a new caching mechanism using the pre-registered
+buffers instead of just using page cache. AIO with O_DIRECT enables us
+to implement such caching mechanism (we can use eventfd so we don't
+need something like syslets, that is, we can implement such now).
+
+I'm not sure someone will implement such RDMA caching mechanism for
+stgt. Pete and his colleagues implemented stgt iSER driver (thanks!)
+but they are not interested in block I/Os (they are OSD people).
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jan 22 05:29:33 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 22 Jan 2008 13:29:33 +0900
+Subject: [Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+In-Reply-To: <479342E7.50503@voltaire.com>
+References: <479342E7.50503@voltaire.com>
+Message-ID: <20080122132933E.fujita.tomonori@lab.ntt.co.jp>
+
+On Sun, 20 Jan 2008 14:47:35 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> The following is a series of patches for tgt-setup-lun. It contains
+> a man page, Makefile modifications and fixes for the script itself.
+
+Applied all the patches, thanks!
+
+
+From bart.vanassche at gmail.com  Tue Jan 22 08:50:03 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Tue, 22 Jan 2008 08:50:03 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+References: <20080117174542.GC29650@osc.edu> <479096D2.8090003@vlnb.net>
+	<e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+	<20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <e2e108260801212350h7308caccs4be0f519e1e9bb72@mail.gmail.com>
+
+On Jan 22, 2008 4:26 AM, FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp> wrote:
+
+> First, I recommend you to examine iSER stuff more since it has some
+> parameters unlike SRP, which effects the performance, IIRC. At least,
+> you could get the iSER performances similar to Pete's.
+
+Documentation about configuring iSER parameters at the initiator side
+appears to be hard to find. A Google query for (iscsiadm "op update"
+"v iser" -- http://www.google.com/search?q=iscsiadm+%22op+update%22+%22v+iser%22)
+gave only one result:
+http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00033.html.
+I also found an update of this document:
+http://www.mail-archive.com/stgt-devel at lists.berlios.de/msg00133.html.
+
+Are you referring to parameters like MaxRecvDataSegmentLength,
+TargetRecvDataSegmentLength, InitiatorRecvDataSegmentLength and
+MaxOutstandingUnexpectedPDUs as explained in RFC 5046
+(http://www.ietf.org/rfc/rfc5046.txt) ?
+
+It would be interesting for me to know which values Pete had
+configured in his tests, such that I can configure the same values for
+these parameters.
+
+Bart.
+
+
+From bart.vanassche at gmail.com  Tue Jan 22 11:04:15 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Tue, 22 Jan 2008 11:04:15 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080117174542.GC29650@osc.edu>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+Message-ID: <e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+
+On Jan 17, 2008 6:45 PM, Pete Wyckoff <pw at osc.edu> wrote:
+> There's nothing particularly stunning here.  Suspect Bart has
+> configuration issues if not even IPoIB will do > 100 MB/s.
+
+By this time I found out that the BIOS of the test systems (Intel
+Server Board S5000PAL) set the PCI-e parameter MaxReadReq to 128
+bytes, which explains the low InfiniBand performance. After changing
+this parameter to 4096 bytes the InfiniBand throughput was as
+expected: ib_rdma_bw now reports a
+bandwidth of 933 MB/s.
+
+Bart.
+
+
+From vst at vlnb.net  Tue Jan 22 12:33:13 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Tue, 22 Jan 2008 14:33:13 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+References: <20080117174542.GC29650@osc.edu>	<479096D2.8090003@vlnb.net>	<e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+	<20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <4795D479.1080805@vlnb.net>
+
+FUJITA Tomonori wrote:
+> The big problem of stgt iSER is disk I/Os (move data between disk and
+> page cache). We need a proper asynchronous I/O mechanism, however,
+> Linux doesn't provide such and we use a workaround, which incurs large
+> latency. I guess, we cannot solve this until syslets is merged into
+> mainline.
+
+Hmm, SCST also doesn't have ability to use asynchronous I/O, but that 
+doesn't prevent it from showing good performance.
+
+Vlad
+
+
+From vst at vlnb.net  Tue Jan 22 12:33:59 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Tue, 22 Jan 2008 14:33:59 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	
+	<478F246C.4040400@vlnb.net>	
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+Message-ID: <4795D4A7.5000105@vlnb.net>
+
+Bart Van Assche wrote:
+> On Jan 17, 2008 6:45 PM, Pete Wyckoff <pw at osc.edu> wrote:
+> 
+>>There's nothing particularly stunning here.  Suspect Bart has
+>>configuration issues if not even IPoIB will do > 100 MB/s.
+> 
+> 
+> By this time I found out that the BIOS of the test systems (Intel
+> Server Board S5000PAL) set the PCI-e parameter MaxReadReq to 128
+> bytes, which explains the low InfiniBand performance. After changing
+> this parameter to 4096 bytes the InfiniBand throughput was as
+> expected: ib_rdma_bw now reports a
+> bandwidth of 933 MB/s.
+
+What are the new SRPT/iSER numbers?
+
+> Bart.
+> 
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Jan 22 12:48:45 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 22 Jan 2008 20:48:45 +0900
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <4795D479.1080805@vlnb.net>
+References: <e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+	<20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+	<4795D479.1080805@vlnb.net>
+Message-ID: <20080122204845E.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 22 Jan 2008 14:33:13 +0300
+Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+
+> FUJITA Tomonori wrote:
+> > The big problem of stgt iSER is disk I/Os (move data between disk and
+> > page cache). We need a proper asynchronous I/O mechanism, however,
+> > Linux doesn't provide such and we use a workaround, which incurs large
+> > latency. I guess, we cannot solve this until syslets is merged into
+> > mainline.
+> 
+> Hmm, SCST also doesn't have ability to use asynchronous I/O, but that 
+> doesn't prevent it from showing good performance.
+
+I don't know how SCST performs I/Os, but surely, in kernel space, you
+can performs I/Os asynchronously. Or you use an event notification
+mechanism with multiple kernel threads performing I/Os synchronously.
+
+Xen blktap has the same problem as stgt. IIRC, Xen mainline uses a
+kernel patch to add a proper event notification to AIO though redhat
+uses the same workaround as stgt instead of applying the kernel patch.
+
+
+From vst at vlnb.net  Tue Jan 22 13:20:44 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Tue, 22 Jan 2008 15:20:44 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080122204845E.fujita.tomonori@lab.ntt.co.jp>
+References: <e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>	<20080122122657R.fujita.tomonori@lab.ntt.co.jp>	<4795D479.1080805@vlnb.net>
+	<20080122204845E.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <4795DF9C.4000809@vlnb.net>
+
+FUJITA Tomonori wrote:
+> On Tue, 22 Jan 2008 14:33:13 +0300
+> Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+> 
+> 
+>>FUJITA Tomonori wrote:
+>>
+>>>The big problem of stgt iSER is disk I/Os (move data between disk and
+>>>page cache). We need a proper asynchronous I/O mechanism, however,
+>>>Linux doesn't provide such and we use a workaround, which incurs large
+>>>latency. I guess, we cannot solve this until syslets is merged into
+>>>mainline.
+>>
+>>Hmm, SCST also doesn't have ability to use asynchronous I/O, but that 
+>>doesn't prevent it from showing good performance.
+> 
+> 
+> I don't know how SCST performs I/Os, but surely, in kernel space, you
+> can performs I/Os asynchronously.
+
+Sure, but currently it all synchronous
+
+> Or you use an event notification
+> mechanism with multiple kernel threads performing I/Os synchronously.
+> 
+> Xen blktap has the same problem as stgt. IIRC, Xen mainline uses a
+> kernel patch to add a proper event notification to AIO though redhat
+> uses the same workaround as stgt instead of applying the kernel patch.
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-scsi" in
+> the body of a message to majordomo at vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+
+From bart.vanassche at gmail.com  Tue Jan 22 13:32:08 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Tue, 22 Jan 2008 13:32:08 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <4795D4A7.5000105@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+Message-ID: <e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+
+On Jan 22, 2008 12:33 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+>
+> What are the new SRPT/iSER numbers?
+
+You can find the new performance numbers below. These are all numbers for
+reading from the remote buffer cache, no actual disk reads were performed.
+The read tests have been performed with dd, both for a block size of 512
+bytes and of 1 MB. The tests with small block size learn more about latency,
+while the tests with large block size learn more about the maximal possible
+throughput.
+
+.............................................................................................
+.                           .   STGT read     SCST read    .    STGT
+read      SCST read    .
+.                           .  performance   performance   .
+performance    performance   .
+.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB,
+MB/s)   (1 MB, MB/s)  .
+.............................................................................................
+. Ethernet (1 Gb/s network) .      77             78       .        77
+      89       .
+. IPoIB    (8 Gb/s network) .     163            185       .
+201            239       .
+. iSER     (8 Gb/s network) .     250            N/A       .
+360            N/A       .
+. SRP      (8 Gb/s network) .     N/A            421       .
+N/A            683       .
+.............................................................................................
+
+My conclusion from the above numbers: the performance difference between
+STGT and SCST is small for a Gigabit Ethernet network. The faster the
+network technology, the larger the difference between SCST and STGT.
+
+Bart.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080122/6ef51e39/attachment.html>
+
+From bart.vanassche at gmail.com  Tue Jan 22 13:33:08 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Tue, 22 Jan 2008 13:33:08 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <4795D4A7.5000105@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+Message-ID: <e2e108260801220433t33cf52feka52520b0023763e3@mail.gmail.com>
+
+On Jan 22, 2008 12:33 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+>
+> What are the new SRPT/iSER numbers?
+
+You can find the new performance numbers below. These are all numbers
+for reading from the remote buffer cache, no actual disk reads were
+performed. The read tests have been performed with dd, both for a
+block size of 512 bytes and of 1 MB. The tests with small block size
+learn more about latency, while the tests with large block size learn
+more about the maximal possible throughput.
+
+.............................................................................................
+.                           .   STGT read     SCST read    .    STGT
+read      SCST read    .
+.                           .  performance   performance   .
+performance    performance   .
+.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB,
+MB/s)   (1 MB, MB/s)  .
+.............................................................................................
+. Ethernet (1 Gb/s network) .      77             78       .        77
+            89       .
+. IPoIB    (8 Gb/s network) .     163            185       .       201
+           239       .
+. iSER     (8 Gb/s network) .     250            N/A       .       360
+           N/A       .
+. SRP      (8 Gb/s network) .     N/A            421       .       N/A
+           683       .
+.............................................................................................
+
+My conclusion from the above numbers: the performance difference
+between STGT and SCST is small for a Gigabit Ethernet network. The
+faster the network technology, the larger the difference between SCST
+and STGT.
+
+Bart.
+
+
+From bart.vanassche at gmail.com  Tue Jan 22 16:14:39 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Tue, 22 Jan 2008 16:14:39 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+References: <20080117174542.GC29650@osc.edu> <479096D2.8090003@vlnb.net>
+	<e2e108260801200136g7f17b8a0g89a54cc1d73bbc34@mail.gmail.com>
+	<20080122122657R.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <e2e108260801220714w6aa564b5q2140a4e5651a11f@mail.gmail.com>
+
+On Jan 22, 2008 4:26 AM, FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp> wrote:
+>
+> First, I recommend you to examine iSER stuff more since it has some
+> parameters unlike SRP, which effects the performance, IIRC. At least,
+> you could get the iSER performances similar to Pete's.
+
+Apparently open-iscsi uses the following defaults:
+node.session.iscsi.FirstBurstLength = 262144
+node.session.iscsi.MaxBurstLength = 16776192
+node.conn[0].tcp.window_size = 524288
+node.conn[0].iscsi.MaxRecvDataSegmentLength = 131072
+
+I have tried to change some of these parameters to a larger value, but
+this did not have a noticeable effect (read bandwidth increased less
+than 1%):
+$ iscsiadm --mode node --targetname
+iqn.2007-05.com.example:storage.disk2.sys1.xyz --portal
+192.168.102.5:3260 --op update -n node.session.iscsi.FirstBurstLength
+-v 16776192
+$ iscsiadm --mode node --targetname
+iqn.2007-05.com.example:storage.disk2.sys1.xyz --portal
+192.168.102.5:3260 --op update -n node.session.iscsi.MaxBurstLength -v
+16776192
+$ iscsiadm --mode node --targetname
+iqn.2007-05.com.example:storage.disk2.sys1.xyz --portal
+192.168.102.5:3260 --op update -n
+"node.conn[0].iscsi.MaxRecvDataSegmentLength" -v 16776192
+
+Bart.
+
+
+From vst at vlnb.net  Tue Jan 22 16:23:25 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Tue, 22 Jan 2008 18:23:25 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	
+	<478F246C.4040400@vlnb.net>	
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	
+	<20080117174542.GC29650@osc.edu>	
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>	
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+Message-ID: <47960A6D.6010602@vlnb.net>
+
+Bart Van Assche wrote:
+> On Jan 22, 2008 12:33 PM, Vladislav Bolkhovitin <vst at vlnb.net 
+> <mailto:vst at vlnb.net>> wrote:
+>>
+>>  What are the new SRPT/iSER numbers?
+> 
+> You can find the new performance numbers below. These are all numbers 
+> for reading from the remote buffer cache, no actual disk reads were 
+> performed. The read tests have been performed with dd, both for a block 
+> size of 512 bytes and of 1 MB. The tests with small block size learn 
+> more about latency, while the tests with large block size learn more 
+> about the maximal possible throughput.
+
+If you want to compare performance of 512b vs 1MB blocks, your 
+experiment isn't fully correct. You should use "iflag=direct" dd option 
+for that.
+
+> ............................................................................................. 
+> 
+> .                           .   STGT read     SCST read    .    STGT 
+> read      SCST read    .
+> .                           .  performance   performance   .   
+> performance    performance   .
+> .                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB, 
+> MB/s)   (1 MB, MB/s)  .
+> .............................................................................................
+> . Ethernet (1 Gb/s network) .      77             78       .        
+> 77             89       .
+> . IPoIB    (8 Gb/s network) .     163            185       .       
+> 201            239       .
+> . iSER     (8 Gb/s network) .     250            N/A       .       
+> 360            N/A       .
+> . SRP      (8 Gb/s network) .     N/A            421       .       
+> N/A            683       .
+> .............................................................................................
+> 
+> My conclusion from the above numbers: the performance difference between 
+> STGT and SCST is small for a Gigabit Ethernet network. The faster the 
+> network technology, the larger the difference between SCST and STGT.
+
+This is what I expected
+
+> Bart.
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Jan 24 06:29:36 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 24 Jan 2008 14:29:36 +0900
+Subject: [Stgt-devel] [PATCH 4/4] iscsi: Add documentation installation
+In-Reply-To: <479344E0.2020909@voltaire.com>
+References: <479342E7.50503@voltaire.com>
+	<479344E0.2020909@voltaire.com>
+Message-ID: <20080124142936O.fujita.tomonori@lab.ntt.co.jp>
+
+On Sun, 20 Jan 2008 14:56:00 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> Install documentation as part of running 'make install'.
+> 
+> Signed-off-by: Erez Zilber <erezz at voltaire.com>
+> ---
+>  usr/Makefile |    9 ++++++++-
+>  1 files changed, 8 insertions(+), 1 deletions(-)
+> 
+> diff --git a/usr/Makefile b/usr/Makefile
+> index 0c02277..67fe655 100644
+> --- a/usr/Makefile
+> +++ b/usr/Makefile
+> @@ -1,3 +1,5 @@
+> +mandir = /usr/share/man
+> +
+>  ifneq ($(IBMVIO),)
+>  CFLAGS += -DIBMVIO -DUSE_KERNEL
+>  TGTD_OBJS += $(addprefix ibmvio/, ibmvio.o)
+> @@ -56,6 +58,7 @@ PROGRAMS += tgtd tgtadm
+>  PROGRAMS += ../scripts/tgt-setup-lun
+>  TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+>  		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+> +MANPAGES = ../doc/tgt-setup-lun.8
+>  
+>  TGTD_DEP = $(TGTD_OBJS:.o=.d)
+>  
+> @@ -77,9 +80,13 @@ tgtadm: tgtadm.o
+>  	@$(CC) -MM $(CFLAGS) -MF $*.d -MT $*.o $*.c
+>  
+>  .PHONY: install
+> -install: $(PROGRAMS)
+> +install: $(PROGRAMS) install_doc
+>  	install -m 0755 $(PROGRAMS) $(DESTDIR)/usr/sbin
+>  
+> +install_doc: $(MANPAGES)
+> +	install -d $(DESTDIR)$(mandir)/man8
+> +	install -m 644 $^ $(DESTDIR)$(mandir)/man8
+> +
+>  .PHONY: clean
+>  clean:
+>  	rm -f *.[od] $(PROGRAMS) iscsi/*.[od] ibmvio/*.[od] fc/*.[od] fcoe/*.[od]
+
+I found that `make clean` removes your tgt-setup-lun script.
+
+fujita at lily:~/tgt/usr$ make clean
+rm -f *.[od] tgtd tgtadm ../scripts/tgt-setup-lun iscsi/*.[od] ibmvio/*.[od] fc/*.[od] fcoe/*.[od]
+
+
+Here's a fix.
+
+=
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: [PATCH] fix Makefile mess
+
+- we should not remove scripts/tgt-setup-lun
+- we need to create directories properly
+
+Signed-off-by: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+---
+ usr/Makefile |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 9b31432..ec15934 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -55,7 +55,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+ LIBS += -lpthread
+ 
+ PROGRAMS += tgtd tgtadm
+-PROGRAMS += ../scripts/tgt-setup-lun
++SCRIPTS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+ 		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+ MANPAGES = ../doc/manpages/tgtadm.8 ../doc/manpages/tgt-setup-lun.8
+@@ -80,7 +80,8 @@ tgtadm: tgtadm.o
+ 	@$(CC) -MM $(CFLAGS) -MF $*.d -MT $*.o $*.c
+ 
+ .PHONY: install
+-install: $(PROGRAMS) install_doc
++install: $(PROGRAMS) $(SCRIPTS) install_doc
++	install -d $(DESTDIR)/usr/sbin
+ 	install -m 0755 $(PROGRAMS) $(DESTDIR)/usr/sbin
+ 
+ install_doc: $(MANPAGES)
+-- 
+1.5.3.4
+
+
+
+From robin.humble+stgt at anu.edu.au  Thu Jan 24 08:06:16 2008
+From: robin.humble+stgt at anu.edu.au (Robin Humble)
+Date: Thu, 24 Jan 2008 02:06:16 -0500
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+Message-ID: <20080124070616.GA31633@porcupine.cita.utoronto.ca>
+
+On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+>On Jan 22, 2008 12:33 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+>> What are the new SRPT/iSER numbers?
+>You can find the new performance numbers below. These are all numbers for
+>reading from the remote buffer cache, no actual disk reads were performed.
+>The read tests have been performed with dd, both for a block size of 512
+>bytes and of 1 MB. The tests with small block size learn more about latency,
+>while the tests with large block size learn more about the maximal possible
+>throughput.
+>
+>.............................................................................................
+>.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+>.                           .  performance   performance   .   performance    performance   .
+>.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+>.............................................................................................
+>. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+>. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+>. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+>. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+>............................................................................................
+
+how are write speeds with SCST SRP?
+for some kernels and tests tgt writes at >2x the read speed.
+
+also I see much higher speeds that what you report in my DDR 4x IB tgt
+testing... which could be taken as inferring that tgt is scaling quite
+nicely on the faster fabric?
+  ib_write_bw of 1473 MB/s
+  ib_read_bw  of 1378 MB/s
+
+iSER to 7G ramfs, x86_64, centos4.6, 2.6.22 kernels, git tgtd,
+initiator end booted with mem=512M, target with 8G ram
+
+ direct i/o dd
+  write/read  800/751 MB/s
+    dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+    dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+
+ buffered i/o dd
+  write/read 1109/350 MB/s
+    dd if=/dev/zero of=/dev/sdc bs=1M count=5000
+    dd of=/dev/null if=/dev/sdc bs=1M count=5000
+
+ buffered i/o lmdd
+  write/read  682/438 MB/s
+    lmdd if=internal of=/dev/sdc bs=1M count=5000
+    lmdd of=internal if=/dev/sdc bs=1M count=5000
+
+which goes to show that a) buffered i/o makes reads suck and writes fly
+b) most benchmarks are unreliable c) at these high speeds you get all
+sorts of weird effects which can easily vary with kernel, OS, ... and
+d) that IMHO really we shouldn't get too caught up in these very
+artificial tests to ramdisks/ram because it's the speed of real
+applications to actual spinning rust that matters.
+
+having said that, if you know of a way to clock my IB cards down to your
+SDR rates then let me know and I'll be happy to re-run the tests.
+
+cheers,
+robin
+
+>My conclusion from the above numbers: the performance difference between
+>STGT and SCST is small for a Gigabit Ethernet network. The faster the
+>network technology, the larger the difference between SCST and STGT.
+>
+>Bart.
+
+>_______________________________________________
+>Stgt-devel mailing list
+>Stgt-devel at lists.berlios.de
+>https://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From bart.vanassche at gmail.com  Thu Jan 24 11:36:45 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Thu, 24 Jan 2008 11:36:45 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080124070616.GA31633@porcupine.cita.utoronto.ca>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+Message-ID: <e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+
+On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+> On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+> >
+> >.............................................................................................
+> >.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+> >.                           .  performance   performance   .   performance    performance   .
+> >.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+> >.............................................................................................
+> >. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+> >. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+> >. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+> >. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+> >............................................................................................
+>
+> how are write speeds with SCST SRP?
+> for some kernels and tests tgt writes at >2x the read speed.
+>
+> also I see much higher speeds that what you report in my DDR 4x IB tgt
+> testing... which could be taken as inferring that tgt is scaling quite
+> nicely on the faster fabric?
+>   ib_write_bw of 1473 MB/s
+>   ib_read_bw  of 1378 MB/s
+>
+> iSER to 7G ramfs, x86_64, centos4.6, 2.6.22 kernels, git tgtd,
+> initiator end booted with mem=512M, target with 8G ram
+>
+>  direct i/o dd
+>   write/read  800/751 MB/s
+>     dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+>     dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+>
+>  buffered i/o dd
+>   write/read 1109/350 MB/s
+>     dd if=/dev/zero of=/dev/sdc bs=1M count=5000
+>     dd of=/dev/null if=/dev/sdc bs=1M count=5000
+
+Hello Robin,
+
+The tests I performed were read performance tests with dd and with
+buffered I/O. For this test you obtained 350 MB/s with STGT on a DDR
+4x InfiniBand network, while I obtained 360 MB/s on a SDR 4x
+InfiniBand network. I don't think that we can call this "scaling up"
+...
+
+Regarding write performance: the write tests were performed with a
+real target (three disks in RAID-0, write bandwidth about 100 MB/s). I
+did not yet publish these numbers because it is not yet clear to me
+how much disk writing speed / InfiniBand transfer speed / target write
+buffering each contribute in the results. The results I obtained in
+the write tests (dd, buffered I/O) show the same trend as for the read
+tests: for large data transfers over a Gigabit Ethernet network the
+results for STGT and SCST are similar. For small transfer sizes (512
+bytes) or fast network technology (SRP / iSER) the write performance
+of SCST is significantly better than that of STGT.
+
+Bart.
+
+Bart.
+
+
+From vst at vlnb.net  Thu Jan 24 12:10:06 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 24 Jan 2008 14:10:06 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	<20080117174542.GC29650@osc.edu>	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>	<4795D4A7.5000105@vlnb.net>	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+	<e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+Message-ID: <4798720E.4020802@vlnb.net>
+
+Bart Van Assche wrote:
+> On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+> 
+>>On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+>>
+>>>.............................................................................................
+>>>.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+>>>.                           .  performance   performance   .   performance    performance   .
+>>>.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+>>>.............................................................................................
+>>>. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+>>>. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+>>>. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+>>>. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+>>>............................................................................................
+>>
+>>how are write speeds with SCST SRP?
+>>for some kernels and tests tgt writes at >2x the read speed.
+
+Robin,
+
+There is a fundamental difference between regular dd-like reads and 
+writes: reads are sync, i.e. latency sensitive, but writes are async, 
+i.e. latency insensitive. You should use O_DIRECT dd writes for the fair 
+comparison.
+
+Vlad
+
+
+From robin.humble+stgt at anu.edu.au  Thu Jan 24 12:32:15 2008
+From: robin.humble+stgt at anu.edu.au (Robin Humble)
+Date: Thu, 24 Jan 2008 06:32:15 -0500
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+	<e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+Message-ID: <20080124113215.GB26751@porcupine.cita.utoronto.ca>
+
+On Thu, Jan 24, 2008 at 11:36:45AM +0100, Bart Van Assche wrote:
+>On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+>> On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+>> >.............................................................................................
+>> >.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+>> >.                           .  performance   performance   .   performance    performance   .
+>> >.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+>> >.............................................................................................
+>> >. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+>> >. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+>> >. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+>> >. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+>> >............................................................................................
+>>
+>> how are write speeds with SCST SRP?
+>> for some kernels and tests tgt writes at >2x the read speed.
+>>
+>> also I see much higher speeds that what you report in my DDR 4x IB tgt
+>> testing... which could be taken as inferring that tgt is scaling quite
+>> nicely on the faster fabric?
+>>   ib_write_bw of 1473 MB/s
+>>   ib_read_bw  of 1378 MB/s
+>>
+>> iSER to 7G ramfs, x86_64, centos4.6, 2.6.22 kernels, git tgtd,
+>> initiator end booted with mem=512M, target with 8G ram
+>>
+>>  direct i/o dd
+>>   write/read  800/751 MB/s
+>>     dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+>>     dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+>>
+>>  buffered i/o dd
+>>   write/read 1109/350 MB/s
+>>     dd if=/dev/zero of=/dev/sdc bs=1M count=5000
+>>     dd of=/dev/null if=/dev/sdc bs=1M count=5000
+>>
+>> buffered i/o lmdd
+>>  write/read  682/438 MB/s
+>>    lmdd if=internal of=/dev/sdc bs=1M count=5000
+>>    lmdd of=internal if=/dev/sdc bs=1M count=5000
+
+>The tests I performed were read performance tests with dd and with
+>buffered I/O. For this test you obtained 350 MB/s with STGT on a DDR
+
+... and 1.1GB/s writes :)
+presumably because buffer aggregation works well.
+
+>4x InfiniBand network, while I obtained 360 MB/s on a SDR 4x
+>InfiniBand network. I don't think that we can call this "scaling up"
+>...
+
+the direct i/o read speed being twice the buffered i/o speed would seem
+to imply that Linux's page cache is being slow and confused with this
+particular set of kernel + OS + OFED versions.
+I doubt that this result actually says that much about tgt really.
+
+>Regarding write performance: the write tests were performed with a
+>real target (three disks in RAID-0, write bandwidth about 100 MB/s). I
+
+I'd be interested to see ramdisk writes.
+
+cheers,
+robin
+
+
+From robin.humble+stgt at anu.edu.au  Thu Jan 24 12:40:27 2008
+From: robin.humble+stgt at anu.edu.au (Robin Humble)
+Date: Thu, 24 Jan 2008 06:40:27 -0500
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <4798720E.4020802@vlnb.net>
+References: <20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+	<e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+	<4798720E.4020802@vlnb.net>
+Message-ID: <20080124114027.GC26751@porcupine.cita.utoronto.ca>
+
+On Thu, Jan 24, 2008 at 02:10:06PM +0300, Vladislav Bolkhovitin wrote:
+>> On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+>>> how are write speeds with SCST SRP?
+>>> for some kernels and tests tgt writes at >2x the read speed.
+>
+> There is a fundamental difference between regular dd-like reads and writes: 
+> reads are sync, i.e. latency sensitive, but writes are async, i.e. latency 
+> insensitive. You should use O_DIRECT dd writes for the fair comparison.
+
+I agree, although the vast majority of applications don't use O_DIRECT.
+anwyay, the direct i/o results were in the email:
+
+  direct i/o dd
+   write/read  800/751 MB/s
+     dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+     dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+
+I couldn't find a direct i/o option for lmdd.
+
+cheers,
+robin
+
+
+From vst at vlnb.net  Thu Jan 24 13:40:24 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 24 Jan 2008 15:40:24 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080124113215.GB26751@porcupine.cita.utoronto.ca>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	<478F246C.4040400@vlnb.net>	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	<20080117174542.GC29650@osc.edu>	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>	<4795D4A7.5000105@vlnb.net>	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>	<20080124070616.GA31633@porcupine.cita.utoronto.ca>	<e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+	<20080124113215.GB26751@porcupine.cita.utoronto.ca>
+Message-ID: <47988738.5090000@vlnb.net>
+
+Robin Humble wrote:
+> On Thu, Jan 24, 2008 at 11:36:45AM +0100, Bart Van Assche wrote:
+> 
+>>On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+>>
+>>>On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+>>>
+>>>>.............................................................................................
+>>>>.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+>>>>.                           .  performance   performance   .   performance    performance   .
+>>>>.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+>>>>.............................................................................................
+>>>>. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+>>>>. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+>>>>. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+>>>>. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+>>>>............................................................................................
+>>>
+>>>how are write speeds with SCST SRP?
+>>>for some kernels and tests tgt writes at >2x the read speed.
+>>>
+>>>also I see much higher speeds that what you report in my DDR 4x IB tgt
+>>>testing... which could be taken as inferring that tgt is scaling quite
+>>>nicely on the faster fabric?
+>>>  ib_write_bw of 1473 MB/s
+>>>  ib_read_bw  of 1378 MB/s
+>>>
+>>>iSER to 7G ramfs, x86_64, centos4.6, 2.6.22 kernels, git tgtd,
+>>>initiator end booted with mem=512M, target with 8G ram
+>>>
+>>> direct i/o dd
+>>>  write/read  800/751 MB/s
+>>>    dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+>>>    dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+>>>
+>>> buffered i/o dd
+>>>  write/read 1109/350 MB/s
+>>>    dd if=/dev/zero of=/dev/sdc bs=1M count=5000
+>>>    dd of=/dev/null if=/dev/sdc bs=1M count=5000
+>>>
+>>>buffered i/o lmdd
+>>> write/read  682/438 MB/s
+>>>   lmdd if=internal of=/dev/sdc bs=1M count=5000
+>>>   lmdd of=internal if=/dev/sdc bs=1M count=5000
+> 
+> 
+>>The tests I performed were read performance tests with dd and with
+>>buffered I/O. For this test you obtained 350 MB/s with STGT on a DDR
+> 
+> 
+> ... and 1.1GB/s writes :)
+> presumably because buffer aggregation works well.
+> 
+> 
+>>4x InfiniBand network, while I obtained 360 MB/s on a SDR 4x
+>>InfiniBand network. I don't think that we can call this "scaling up"
+>>...
+> 
+> 
+> the direct i/o read speed being twice the buffered i/o speed would seem
+> to imply that Linux's page cache is being slow and confused with this
+> particular set of kernel + OS + OFED versions.
+> I doubt that this result actually says that much about tgt really.
+
+Buffered dd read is, actually, one of the best benchmarks if you want to 
+compare STGT vs SCST, because it's single threaded with one outstanding 
+command most of the time, i.e. it's a latency bound workload. Plus, most 
+of the applications reading files do exactly what dd does.
+
+Both SCST and STGT suffer equally from possible problems on the 
+initiator, but SCST bears it much better, because it has much less 
+processing latency (e.g., because there are no extra user<->kernel 
+spaces switches and other related overhead).
+
+>>Regarding write performance: the write tests were performed with a
+>>real target (three disks in RAID-0, write bandwidth about 100 MB/s). I
+> 
+> 
+> I'd be interested to see ramdisk writes.
+> 
+> cheers,
+> robin
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+> 
+
+
+
+From vst at vlnb.net  Thu Jan 24 13:41:35 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 24 Jan 2008 15:41:35 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080124114027.GC26751@porcupine.cita.utoronto.ca>
+References: <20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+	<e2e108260801240236o2273be0bw24a2a61dcc781222@mail.gmail.com>
+	<4798720E.4020802@vlnb.net>
+	<20080124114027.GC26751@porcupine.cita.utoronto.ca>
+Message-ID: <4798877F.9090702@vlnb.net>
+
+Robin Humble wrote:
+> On Thu, Jan 24, 2008 at 02:10:06PM +0300, Vladislav Bolkhovitin wrote:
+> 
+>>>On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+>>>
+>>>>how are write speeds with SCST SRP?
+>>>>for some kernels and tests tgt writes at >2x the read speed.
+>>
+>>There is a fundamental difference between regular dd-like reads and writes: 
+>>reads are sync, i.e. latency sensitive, but writes are async, i.e. latency 
+>>insensitive. You should use O_DIRECT dd writes for the fair comparison.
+> 
+> I agree, although the vast majority of applications don't use O_DIRECT.
+
+Sorry, it isn't about O_DIRECT usage. It's about latency bound or not 
+workload.
+
+> anwyay, the direct i/o results were in the email:
+> 
+>   direct i/o dd
+>    write/read  800/751 MB/s
+>      dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+>      dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+> 
+> I couldn't find a direct i/o option for lmdd.
+> 
+> cheers,
+> robin
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-scsi" in
+> the body of a message to majordomo at vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+
+From bart.vanassche at gmail.com  Thu Jan 24 17:16:10 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Thu, 24 Jan 2008 17:16:10 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <20080124070616.GA31633@porcupine.cita.utoronto.ca>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+Message-ID: <e2e108260801240816n93a234av4368f5e8b3e49bca@mail.gmail.com>
+
+On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+> On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+> >
+> >.............................................................................................
+> >.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+> >.                           .  performance   performance   .   performance    performance   .
+> >.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+> >.............................................................................................
+> >. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+> >. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+> >. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+> >. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+> >............................................................................................
+>
+
+Results with /dev/ram0 configured as backing store on the target (buffered I/O):
+                    Read          Write             Read          Write
+                  performance   performance       performance   performance
+                  (0.5K, MB/s)  (0.5K, MB/s)      (1 MB, MB/s)  (1 MB, MB/s)
+STGT + iSER           250          48                 349          781
+SCST + SRP            411          66                 659          746
+
+Results with /dev/ram0 configured as backing store on the target (direct I/O):
+                    Read          Write             Read          Write
+                  performance   performance       performance   performance
+                  (0.5K, MB/s)  (0.5K, MB/s)      (1 MB, MB/s)  (1 MB, MB/s)
+STGT + iSER             7.9         9.8               589          647
+SCST + SRP             12.3         9.7               811          794
+
+Bart.
+
+
+From vst at vlnb.net  Thu Jan 24 20:54:47 2008
+From: vst at vlnb.net (Vladislav Bolkhovitin)
+Date: Thu, 24 Jan 2008 22:54:47 +0300
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <e2e108260801240816n93a234av4368f5e8b3e49bca@mail.gmail.com>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>	
+	<20080117184052F.fujita.tomonori@lab.ntt.co.jp>	
+	<478F246C.4040400@vlnb.net>	
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>	
+	<20080117174542.GC29650@osc.edu>	
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>	
+	<4795D4A7.5000105@vlnb.net>	
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>	
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+	<e2e108260801240816n93a234av4368f5e8b3e49bca@mail.gmail.com>
+Message-ID: <4798ED07.90000@vlnb.net>
+
+Bart Van Assche wrote:
+> On Jan 24, 2008 8:06 AM, Robin Humble <robin.humble+stgt at anu.edu.au> wrote:
+> 
+>>On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+>>
+>>>.............................................................................................
+>>>.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+>>>.                           .  performance   performance   .   performance    performance   .
+>>>.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB >MB/s)   (1 MB, MB/s)  .
+>>>.............................................................................................
+>>>. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+>>>. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+>>>. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+>>>. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+>>>............................................................................................
+>>
+> 
+> Results with /dev/ram0 configured as backing store on the target (buffered I/O):
+>                     Read          Write             Read          Write
+>                   performance   performance       performance   performance
+>                   (0.5K, MB/s)  (0.5K, MB/s)      (1 MB, MB/s)  (1 MB, MB/s)
+> STGT + iSER           250          48                 349          781
+> SCST + SRP            411          66                 659          746
+
+Ib_rdma_bw now reports 933 MB/s on the same system, correct? Those 
+~250MB/s difference is what you will gain with zero-copy IO implemented 
+and what STGT with the current architecture has no chance to achieve.
+
+> Results with /dev/ram0 configured as backing store on the target (direct I/O):
+>                     Read          Write             Read          Write
+>                   performance   performance       performance   performance
+>                   (0.5K, MB/s)  (0.5K, MB/s)      (1 MB, MB/s)  (1 MB, MB/s)
+> STGT + iSER             7.9         9.8               589          647
+> SCST + SRP             12.3         9.7               811          794
+> 
+> Bart.
+> 
+
+
+
+From bart.vanassche at gmail.com  Fri Jan 25 08:24:50 2008
+From: bart.vanassche at gmail.com (Bart Van Assche)
+Date: Fri, 25 Jan 2008 08:24:50 +0100
+Subject: [Stgt-devel] Performance of SCST versus STGT
+In-Reply-To: <4798ED07.90000@vlnb.net>
+References: <e2e108260801170127w2937b2afg9bef324efa945e43@mail.gmail.com>
+	<478F246C.4040400@vlnb.net>
+	<20080117190558K.fujita.tomonori@lab.ntt.co.jp>
+	<20080117174542.GC29650@osc.edu>
+	<e2e108260801220204k4b914ea1o9b47c0b22c6d098b@mail.gmail.com>
+	<4795D4A7.5000105@vlnb.net>
+	<e2e108260801220432l353b1d76xd2707b5e6f336aef@mail.gmail.com>
+	<20080124070616.GA31633@porcupine.cita.utoronto.ca>
+	<e2e108260801240816n93a234av4368f5e8b3e49bca@mail.gmail.com>
+	<4798ED07.90000@vlnb.net>
+Message-ID: <e2e108260801242324j6e52f80fw346ff2c3fdb0eaab@mail.gmail.com>
+
+On Jan 24, 2008 8:54 PM, Vladislav Bolkhovitin <vst at vlnb.net> wrote:
+> Ib_rdma_bw now reports 933 MB/s on the same system, correct? Those
+> ~250MB/s difference is what you will gain with zero-copy IO implemented
+> and what STGT with the current architecture has no chance to achieve.
+
+Yes, that's correct:
+* ib_rdma_bw, ib_write_bw and ib_read_bw report 933 MB/s between the
+two test systems.
+* ib_read_bw reports 905 MB/s.
+* ib_rdma_lat reports 3.1 microseconds.
+* ib_read_lat reports 7.5 microseconds.
+
+Bart.
+
+
+From pw at osc.edu  Sun Jan 27 21:46:16 2008
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sun, 27 Jan 2008 15:46:16 -0500
+Subject: [Stgt-devel] [PATCH 1/2] bstype before lu alloc
+Message-ID: <c123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw@osc.edu>
+
+Set the specified bstype before allocating space for the lu, because
+the allocation must include space required by the particular bstype.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+ usr/target.c |   26 ++++++++++++--------------
+ 1 files changed, 12 insertions(+), 14 deletions(-)
+
+diff --git a/usr/target.c b/usr/target.c
+index 8c870ff..b8e25a4 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -242,6 +242,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	struct target *target;
+ 	struct scsi_lu *lu, *pos;
+ 	struct device_type_template *t;
++	struct backingstore_template *bst;
+ 
+ 	dprintf("%d %" PRIu64 "\n", tid, lun);
+ 
+@@ -273,14 +274,23 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 		return TGTADM_LUN_EXIST;
+ 	}
+ 
+-	lu = zalloc(sizeof(*lu) + target->bst->bs_datasize);
++	bst = target->bst;
++	if (backing && bstype) {
++		bst = get_backingstore_template(bstype);
++		if (!bst) {
++			eprintf("failed to find bstype, %s\n", bstype);
++			goto out;
++		}
++	}
++
++	lu = zalloc(sizeof(*lu) + bst->bs_datasize);
+ 	if (!lu)
+ 		return TGTADM_NOMEM;
+ 
+ 	t = device_type_lookup(dev_type);
+ 	if (t) {
+ 		lu->dev_type_template = *t;
+-		lu->bst = target->bst;
++		lu->bst = bst;
+ 	} else {
+ 		eprintf("Unknown device type %d\n", dev_type);
+ 		ret = TGTADM_INVALID_REQUEST;
+@@ -300,21 +310,9 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	}
+ 
+ 	if (backing) {
+-		struct backingstore_template *bst;
+-
+ 		if (!path)
+ 			return TGTADM_INVALID_REQUEST;
+ 
+-		if (bstype) {
+-			bst = get_backingstore_template(bstype);
+-			if (bst)
+-				lu->bst = bst;
+-			else {
+-				eprintf("failed to find bstype, %s\n", bstype);
+-				goto free_lu;
+-			}
+-		}
+-
+ 		ret = tgt_device_path_update(target, lu, path);
+ 		if (ret)
+ 			goto free_lu;
+-- 
+1.5.3.7
+
+
+
+From pw at osc.edu  Sun Jan 27 21:54:49 2008
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sun, 27 Jan 2008 15:54:49 -0500
+Subject: [Stgt-devel] [PATCH 2/2] tgt device create error cleanup
+In-Reply-To: <c123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw@osc.edu>
+References: <c123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw@osc.edu>
+Message-ID: <41b51dd66da060945609fa0165a13046b17c72cd.1201467656.git.pw@osc.edu>
+
+Clean up error paths in tgt_device_create now that it might alloc
+memory.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+ usr/target.c |   48 ++++++++++++++++++++++++++++--------------------
+ 1 files changed, 28 insertions(+), 20 deletions(-)
+
+diff --git a/usr/target.c b/usr/target.c
+index b8e25a4..2f8195b 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -265,40 +265,51 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	}
+ 
+ 	target = target_lookup(tid);
+-	if (!target)
+-		return TGTADM_NO_TARGET;
++	if (!target) {
++		ret = TGTADM_NO_TARGET;
++		goto out;
++	}
+ 
+ 	lu = device_lookup(target, lun);
+ 	if (lu) {
+ 		eprintf("device %" PRIu64 " already exists\n", lun);
+-		return TGTADM_LUN_EXIST;
++		ret = TGTADM_LUN_EXIST;
++		goto out;
+ 	}
+ 
+ 	bst = target->bst;
+-	if (backing && bstype) {
+-		bst = get_backingstore_template(bstype);
+-		if (!bst) {
+-			eprintf("failed to find bstype, %s\n", bstype);
++	if (backing) {
++		if (!path) {
++			ret = TGTADM_INVALID_REQUEST;
+ 			goto out;
+ 		}
+-	}
+ 
+-	lu = zalloc(sizeof(*lu) + bst->bs_datasize);
+-	if (!lu)
+-		return TGTADM_NOMEM;
++		if (bstype) {
++			bst = get_backingstore_template(bstype);
++			if (!bst) {
++				eprintf("failed to find bstype, %s\n", bstype);
++				ret = TGTADM_INVALID_REQUEST;
++				goto out;
++			}
++		}
++	}
+ 
+ 	t = device_type_lookup(dev_type);
+-	if (t) {
+-		lu->dev_type_template = *t;
+-		lu->bst = bst;
+-	} else {
++	if (!t) {
+ 		eprintf("Unknown device type %d\n", dev_type);
+ 		ret = TGTADM_INVALID_REQUEST;
+-		goto free_lu;
++		goto out;
+ 	}
+ 
+-	lu->tgt = target;
++	lu = zalloc(sizeof(*lu) + bst->bs_datasize);
++	if (!lu) {
++		ret = TGTADM_NOMEM;
++		goto out;
++	}
+ 
++	lu->dev_type_template = *t;
++	lu->bst = bst;
++	lu->tgt = target;
+ 	lu->lun = lun;
+ 	lu->lu_state = SCSI_LU_RUNNING;
+ 	tgt_cmd_queue_init(&lu->cmd_queue);
+@@ -310,9 +321,6 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	}
+ 
+ 	if (backing) {
+-		if (!path)
+-			return TGTADM_INVALID_REQUEST;
+-
+ 		ret = tgt_device_path_update(target, lu, path);
+ 		if (ret)
+ 			goto free_lu;
+-- 
+1.5.3.7
+
+
+
+From tomof at acm.org  Tue Jan 29 10:38:04 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Tue, 29 Jan 2008 18:38:04 +0900
+Subject: [Stgt-devel] [PATCH 1/2] bstype before lu alloc
+In-Reply-To: <c123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw@osc.edu>
+References: <c123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw@osc.edu>
+Message-ID: <20080129183800A.tomof@acm.org>
+
+On Sun, 27 Jan 2008 15:46:16 -0500
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> Set the specified bstype before allocating space for the lu, because
+> the allocation must include space required by the particular bstype.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/target.c |   26 ++++++++++++--------------
+>  1 files changed, 12 insertions(+), 14 deletions(-)
+
+I applied both, thanks!
+
+
+From mangoo at wpkg.org  Thu Jan 31 12:29:44 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Thu, 31 Jan 2008 12:29:44 +0100
+Subject: [Stgt-devel] data corruption problems with stgt (aborted journal,
+	remounting ro)?
+Message-ID: <47A1B128.2000308@wpkg.org>
+
+Perhaps I'm doing something wrong - but with stgt I'm facing problems I 
+didn't have with IET or SCST.
+
+Whenever I kill tgtd daemon and start it again (i.e., target server 
+restart), the initiator detects an aborted journal and remount the 
+device ro.
+
+Why is it so?
+
+What is the recommended way to kill the tgtd daemon? It doesn't seem to 
+react on TERM signal.
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mangoo at wpkg.org  Thu Jan 31 12:54:17 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Thu, 31 Jan 2008 12:54:17 +0100
+Subject: [Stgt-devel] data corruption problems with stgt (aborted journal,
+	remounting ro)?
+Message-ID: <47A1B6E9.30603@wpkg.org>
+
+Doesn't look my posts get to this list... or is it just lagged a lot? 
+Resending.
+
+
+Perhaps I'm doing something wrong - but with stgt I'm facing problems I 
+didn't have with IET or SCST.
+
+Whenever I kill tgtd daemon and start it again (i.e., target server 
+restart), the initiator detects an aborted journal and remount the 
+device ro.
+
+Why is it so?
+
+What is the recommended way to kill the tgtd daemon? It doesn't seem to 
+react on TERM signal.
+
+
+
+-- 
+Tomasz Chmielewski
+
+
+From nab at kernel.org  Thu Jan 31 14:34:11 2008
+From: nab at kernel.org (Nicholas A. Bellinger)
+Date: Thu, 31 Jan 2008 05:34:11 -0800
+Subject: [Stgt-devel] [Fwd: Re: Integration of SCST in the mainstream Linux
+	kernel]
+Message-ID: <1201786451.11265.1.camel@haakon2.linux-iscsi.org>
+
+My original email probably got bounced..
+
+--nab
+-------------- next part --------------
+An embedded message was scrubbed...
+From: "Nicholas A. Bellinger" <nab at linux-iscsi.org>
+Subject: Re: Integration of SCST in the mainstream Linux kernel
+Date: Thu, 31 Jan 2008 05:25:41 -0800
+Size: 6945
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080131/92595806/attachment.mht>
+

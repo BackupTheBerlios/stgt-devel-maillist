@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/2] tgt device create error cleanup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20tgt%20device%20create%20error%20cleanup&In-Reply-To=%3C41b51dd66da060945609fa0165a13046b17c72cd.1201467656.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001329.html">
+   <LINK REL="Next"  HREF="001331.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/2] tgt device create error cleanup</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20tgt%20device%20create%20error%20cleanup&In-Reply-To=%3C41b51dd66da060945609fa0165a13046b17c72cd.1201467656.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/2] tgt device create error cleanup">pw at osc.edu
+       </A><BR>
+    <I>Sun Jan 27 21:54:49 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001329.html">[Stgt-devel] [PATCH 1/2] bstype before lu alloc
+</A></li>
+        <LI>Next message: <A HREF="001331.html">[Stgt-devel] [PATCH 1/2] bstype before lu alloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1330">[ date ]</a>
+              <a href="thread.html#1330">[ thread ]</a>
+              <a href="subject.html#1330">[ subject ]</a>
+              <a href="author.html#1330">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Clean up error paths in tgt_device_create now that it might alloc
+memory.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/target.c |   48 ++++++++++++++++++++++++++++--------------------
+ 1 files changed, 28 insertions(+), 20 deletions(-)
+
+diff --git a/usr/target.c b/usr/target.c
+index b8e25a4..2f8195b 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -265,40 +265,51 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	}
+ 
+ 	target = target_lookup(tid);
+-	if (!target)
+-		return TGTADM_NO_TARGET;
++	if (!target) {
++		ret = TGTADM_NO_TARGET;
++		goto out;
++	}
+ 
+ 	lu = device_lookup(target, lun);
+ 	if (lu) {
+ 		eprintf(&quot;device %&quot; PRIu64 &quot; already exists\n&quot;, lun);
+-		return TGTADM_LUN_EXIST;
++		ret = TGTADM_LUN_EXIST;
++		goto out;
+ 	}
+ 
+ 	bst = target-&gt;bst;
+-	if (backing &amp;&amp; bstype) {
+-		bst = get_backingstore_template(bstype);
+-		if (!bst) {
+-			eprintf(&quot;failed to find bstype, %s\n&quot;, bstype);
++	if (backing) {
++		if (!path) {
++			ret = TGTADM_INVALID_REQUEST;
+ 			goto out;
+ 		}
+-	}
+ 
+-	lu = zalloc(sizeof(*lu) + bst-&gt;bs_datasize);
+-	if (!lu)
+-		return TGTADM_NOMEM;
++		if (bstype) {
++			bst = get_backingstore_template(bstype);
++			if (!bst) {
++				eprintf(&quot;failed to find bstype, %s\n&quot;, bstype);
++				ret = TGTADM_INVALID_REQUEST;
++				goto out;
++			}
++		}
++	}
+ 
+ 	t = device_type_lookup(dev_type);
+-	if (t) {
+-		lu-&gt;dev_type_template = *t;
+-		lu-&gt;bst = bst;
+-	} else {
++	if (!t) {
+ 		eprintf(&quot;Unknown device type %d\n&quot;, dev_type);
+ 		ret = TGTADM_INVALID_REQUEST;
+-		goto free_lu;
++		goto out;
+ 	}
+ 
+-	lu-&gt;tgt = target;
++	lu = zalloc(sizeof(*lu) + bst-&gt;bs_datasize);
++	if (!lu) {
++		ret = TGTADM_NOMEM;
++		goto out;
++	}
+ 
++	lu-&gt;dev_type_template = *t;
++	lu-&gt;bst = bst;
++	lu-&gt;tgt = target;
+ 	lu-&gt;lun = lun;
+ 	lu-&gt;lu_state = SCSI_LU_RUNNING;
+ 	tgt_cmd_queue_init(&amp;lu-&gt;cmd_queue);
+@@ -310,9 +321,6 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	}
+ 
+ 	if (backing) {
+-		if (!path)
+-			return TGTADM_INVALID_REQUEST;
+-
+ 		ret = tgt_device_path_update(target, lu, path);
+ 		if (ret)
+ 			goto free_lu;
+-- 
+1.5.3.7
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001329.html">[Stgt-devel] [PATCH 1/2] bstype before lu alloc
+</A></li>
+	<LI>Next message: <A HREF="001331.html">[Stgt-devel] [PATCH 1/2] bstype before lu alloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1330">[ date ]</a>
+              <a href="thread.html#1330">[ thread ]</a>
+              <a href="subject.html#1330">[ subject ]</a>
+              <a href="author.html#1330">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

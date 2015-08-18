@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/6] iser task transport data
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/6%5D%20iser%20task%20transport%20data&In-Reply-To=%3C20071210150451.GC31889%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001197.html">
+   <LINK REL="Next"  HREF="001204.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/6] iser task transport data</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/6%5D%20iser%20task%20transport%20data&In-Reply-To=%3C20071210150451.GC31889%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/6] iser task transport data">pw at osc.edu
+       </A><BR>
+    <I>Mon Dec 10 16:04:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001197.html">[Stgt-devel] [PATCH 1/6] iser docs
+</A></li>
+        <LI>Next message: <A HREF="001204.html">[Stgt-devel] [PATCH 2/6] iser task transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1198">[ date ]</a>
+              <a href="thread.html#1198">[ thread ]</a>
+              <a href="subject.html#1198">[ subject ]</a>
+              <a href="author.html#1198">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>RDMA will need to store some per-task data to use initiator-provided tags
+in later RDMA operations.  Provide some space for this and hook into the
+transport at task initialization time.
+
+Based on the patch by Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_tcp.c |    6 ++++++
+ usr/iscsi/iscsid.c    |   13 +++++++++++--
+ usr/iscsi/iscsid.h    |    8 ++++----
+ usr/iscsi/transport.h |    3 +++
+ 4 files changed, 24 insertions(+), 6 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 38d2df6..99db99d 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -226,6 +226,10 @@ static int iscsi_tcp_conn_login_complete(struct iscsi_connection *conn)
+ 	return 0;
+ }
+ 
++static void iscsi_tcp_task_init(struct iscsi_task *task)
++{
++}
++
+ static size_t iscsi_tcp_read(struct iscsi_connection *conn, void *buf,
+ 			     size_t nbytes)
+ {
+@@ -334,8 +338,10 @@ int iscsi_tcp_getpeername(struct iscsi_connection *conn, struct sockaddr *sa,
+ struct iscsi_transport iscsi_tcp = {
+ 	.name			= &quot;iscsi&quot;,
+ 	.rdma			= 0,
++	.task_trans_len		= 0,
+ 	.ep_init		= iscsi_tcp_init,
+ 	.ep_login_complete	= iscsi_tcp_conn_login_complete,
++	.ep_task_init		= iscsi_tcp_task_init,
+ 	.ep_read		= iscsi_tcp_read,
+ 	.ep_write_begin		= iscsi_tcp_write_begin,
+ 	.ep_write_end		= iscsi_tcp_write_end,
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index ab1999d..3cb804e 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -997,10 +997,10 @@ static struct iscsi_task *iscsi_alloc_task(struct iscsi_connection *conn,
+ 	struct iscsi_task *task;
+ 	void *buf;
+ 
+-	task = malloc(sizeof(*task) + ext_len);
++	task = malloc(sizeof(*task) + conn-&gt;tp-&gt;task_trans_len + ext_len);
+ 	if (!task)
+ 		return NULL;
+-	memset(task, 0, sizeof(*task) + ext_len);
++	memset(task, 0, sizeof(*task) + conn-&gt;tp-&gt;task_trans_len + ext_len);
+ 
+ 	if (data_len) {
+ 		buf = conn-&gt;tp-&gt;alloc_data_buf(conn, data_len);
+@@ -1016,6 +1016,13 @@ static struct iscsi_task *iscsi_alloc_task(struct iscsi_connection *conn,
+ 	INIT_LIST_HEAD(&amp;task-&gt;c_hlist);
+ 	INIT_LIST_HEAD(&amp;task-&gt;c_list);
+ 
++	if (conn-&gt;tp-&gt;task_trans_len)
++		task-&gt;trans_data = (void *) &amp;task[1];
++
++	if (ext_len)
++		task-&gt;extdata = (void *)((uintptr_t) &amp;task[1] +
++				      conn-&gt;tp-&gt;task_trans_len);
++
+ 	conn_get(conn);
+ 	return task;
+ }
+@@ -1465,6 +1472,8 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 
+ 	task-&gt;tag = req-&gt;itt;
+ 
++	conn-&gt;tp-&gt;ep_task_init(task);
++
+ 	if (ahs_len) {
+ 		task-&gt;ahs = task-&gt;extdata + sizeof(req-&gt;cdb);
+ 		conn-&gt;req.ahs = task-&gt;ahs;
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 518c0eb..3fabfba 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -117,12 +117,12 @@ struct iscsi_task {
+ 	int unsol_count;
+ 	int exp_r2tsn;
+ 
+-	void *ahs;
+-	void *data;
+-
+ 	struct scsi_cmd scmd;
+ 
+-	unsigned long extdata[0];
++	void *trans_data;   /* transport specific data */
++	void *extdata;      /* extra data, after transport, for ahs only */
++	void *ahs;
++	void *data;
+ };
+ 
+ struct iscsi_connection {
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index e1b514d..38e28ae 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -4,13 +4,16 @@
+ #include &lt;sys/socket.h&gt;
+ 
+ struct iscsi_connection;
++struct iscsi_task;
+ 
+ struct iscsi_transport {
+ 	const char *name;
+ 	int rdma;
++	int task_trans_len;
+ 
+ 	int (*ep_init) (void);
+ 	int (*ep_login_complete)(struct iscsi_connection *conn);
++	void (*ep_task_init)(struct iscsi_task *task);
+ 	size_t (*ep_read)(struct iscsi_connection *conn, void *buf,
+ 			  size_t nbytes);
+ 	size_t (*ep_write_begin)(struct iscsi_connection *conn, void *buf,
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001197.html">[Stgt-devel] [PATCH 1/6] iser docs
+</A></li>
+	<LI>Next message: <A HREF="001204.html">[Stgt-devel] [PATCH 2/6] iser task transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1198">[ date ]</a>
+              <a href="thread.html#1198">[ thread ]</a>
+              <a href="subject.html#1198">[ subject ]</a>
+              <a href="author.html#1198">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

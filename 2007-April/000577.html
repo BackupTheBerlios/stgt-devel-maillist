@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20FirstBurstLenght%20%3E%20MaxBurstLength%20--%3E%20error&In-Reply-To=%3C4624F1AD.2090705%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000576.html">
+   <LINK REL="Next"  HREF="000587.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20FirstBurstLenght%20%3E%20MaxBurstLength%20--%3E%20error&In-Reply-To=%3C4624F1AD.2090705%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Tue Apr 17 18:11:25 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000576.html">[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</A></li>
+        <LI>Next message: <A HREF="000587.html">[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#577">[ date ]</a>
+              <a href="thread.html#577">[ thread ]</a>
+              <a href="subject.html#577">[ subject ]</a>
+              <a href="author.html#577">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</I>&gt;<i> Date: Sun, 15 Apr 2007 11:33:27 +0200
+</I>&gt;<i> 
+</I>&gt;&gt;<i> Running the test regression script of open-iscsi on stgt I found an 
+</I>&gt;&gt;<i> error, which I did not encounter with other targets.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> It is test #17 with the following parameters:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> ================== TEST #17 BEGIN ====================
+</I>&gt;&gt;<i> ImmediateData = No
+</I>&gt;&gt;<i> InitialR2T = No
+</I>&gt;&gt;<i> HeaderDigest = None
+</I>&gt;&gt;<i> DataDigest = None
+</I>&gt;&gt;<i> FirstBurstLength = 8192
+</I>&gt;&gt;<i> MaxBurstLength = 4096
+</I>&gt;&gt;<i> MaxRecvDataSegmentLength = 4096
+</I>&gt;&gt;<i> MaxOutstandingR2T = 1
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I get the error &quot;Invalid burst lengths first_burst 8192 max_burst 4096&quot; 
+</I>&gt;&gt;<i> in /var/log/messages and the login breaks of.
+</I>&gt;&gt;<i> According to the RFC 3720 &quot;FirstBurstLength MUST NOT exceed 
+</I>&gt;&gt;<i> MaxBurstLength&quot; (chap 12.14), which means that the target
+</I>&gt;&gt;<i> should answer back with a FirstBurstLenght parameters equal to 
+</I>&gt;&gt;<i> MaxBurstLenght.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I investigated with wireshark and found that this is exactly the 
+</I>&gt;&gt;<i> behaviour of the Wasabi Storagebuilder target,
+</I>&gt;&gt;<i> iscsi-target silently accepts FirstBurstLength &gt; MaxBurstLength, and 
+</I>&gt;&gt;<i> stgt only gives an error.
+</I>&gt;<i> 
+</I>&gt;<i> Thanks a lot.
+</I>&gt;<i> 
+</I>&gt;<i> I put it on my to do list since it's a bit tricky to handle this.
+</I>&gt;<i> 
+</I>&gt;<i> BTW, would it better for open-iscsi not to send invalid parameters?
+</I>
+I will fix that on my side.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000576.html">[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</A></li>
+	<LI>Next message: <A HREF="000587.html">[Stgt-devel] FirstBurstLenght &gt; MaxBurstLength --&gt; error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#577">[ date ]</a>
+              <a href="thread.html#577">[ thread ]</a>
+              <a href="subject.html#577">[ subject ]</a>
+              <a href="author.html#577">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C47ADD83D.9080109%40scalableinformatics.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001376.html">
+   <LINK REL="Next"  HREF="001346.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)</H1>
+    <B>Joe Landman</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C47ADD83D.9080109%40scalableinformatics.com%3E"
+       TITLE="[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)">landman at scalableinformatics.com
+       </A><BR>
+    <I>Sat Feb  9 17:43:41 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001376.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+        <LI>Next message: <A HREF="001346.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1378">[ date ]</a>
+              <a href="thread.html#1378">[ thread ]</a>
+              <a href="subject.html#1378">[ subject ]</a>
+              <a href="author.html#1378">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+
+&gt;<i> Can you try the latest git tree
+</I>&gt;<i> (65a3f8b0c14305aaee5bcaade569b40882e8dd88)? It works for me:
+</I>&gt;<i> 
+</I>&gt;<i> scsi3 : iSCSI Initiator over TCP/IP
+</I>&gt;<i> scsi 3:0:0:0: RAID              IET      Controller       0001 PQ: 0 ANSI: 5
+</I>&gt;<i> scsi 3:0:0:1: Direct-Access     IET      VIRTUAL-DISK     0001 PQ: 0 ANSI: 5
+</I>&gt;<i> sd 3:0:0:1: [sdb] Very big device. Trying to use READ CAPACITY(16).
+</I>&gt;<i> sd 3:0:0:1: [sdb] 12884901888 512-byte hardware sectors (6597070 MB)
+</I>&gt;<i> sd 3:0:0:1: [sdb] Write Protect is off
+</I>&gt;<i> sd 3:0:0:1: [sdb] Mode Sense: 79 00 00 08
+</I>&gt;<i> sd 3:0:0:1: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Somehow I forgot to add READ_CAPACITY_16 support. I would appreciate
+</I>&gt;<i> it if you could read and write on over 2TB position properly.
+</I>
+Ok, I will pull it a little later today, build and let you know.
+
+
+-- 
+Joseph Landman, Ph.D
+Founder and CEO
+Scalable Informatics LLC,
+email: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">landman at scalableinformatics.com</A>
+web  : <A HREF="http://www.scalableinformatics.com">http://www.scalableinformatics.com</A>
+        <A HREF="http://jackrabbit.scalableinformatics.com">http://jackrabbit.scalableinformatics.com</A>
+phone: +1 734 786 8423
+fax  : +1 866 888 3112
+cell : +1 734 612 4615
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001376.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+	<LI>Next message: <A HREF="001346.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1378">[ date ]</a>
+              <a href="thread.html#1378">[ thread ]</a>
+              <a href="subject.html#1378">[ subject ]</a>
+              <a href="author.html#1378">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

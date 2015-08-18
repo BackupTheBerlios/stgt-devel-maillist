@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C62550.196.40.47.66.1206651371.squirrel%40webmail.decarpentier.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001482.html">
+   <LINK REL="Next"  HREF="001488.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>Niels de Carpentier</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C62550.196.40.47.66.1206651371.squirrel%40webmail.decarpentier.com%3E"
+       TITLE="[Stgt-devel] Open connections">stgt at decarpentier.com
+       </A><BR>
+    <I>Thu Mar 27 21:56:11 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001482.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001488.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1487">[ date ]</a>
+              <a href="thread.html#1487">[ thread ]</a>
+              <a href="subject.html#1487">[ subject ]</a>
+              <a href="author.html#1487">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;&gt;<i> On Wed, 19 Mar 2008 03:53:36 +0100 (CET)
+</I>&gt;&gt;<i> &quot;Niels de Carpentier&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt at decarpentier.com</A>&gt; wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> The issue where a connection isn't properly closed because
+</I>&gt;&gt;&gt;<i> it_nexus_destroy returns EBUSY.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> This probably isn't very important anymore, as the reconnect should now
+</I>&gt;&gt;&gt;<i> close the old connection properly.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> We hit that issue since tgt doesn't implement session reinstatement
+</I>&gt;&gt;<i> properly, I think.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> You still hit that issue with the patch?
+</I>&gt;&gt;<i>
+</I>&gt;<i> Yes, that issue is still there. (And it actually happens before the
+</I>&gt;<i> session reinstatement).
+</I>&gt;<i>
+</I>
+Some debug information about the close issue:
+
+tgtd: iscsi_tcp_event_handler(160) connection closed
+tgtd: conn_close(88) connection closed
+tgtd: conn_close(111) Forcing release of tx task 34
+tgtd: conn_close(111) Forcing release of tx task 2f
+tgtd: conn_close(111) Forcing release of tx task 4e
+tgtd: conn_close(111) Forcing release of tx task 66
+tgtd: conn_close(111) Forcing release of tx task 39
+tgtd: conn_close(111) Forcing release of tx task 6a
+tgtd: conn_close(111) Forcing release of tx task 28
+tgtd: conn_close(111) Forcing release of tx task 40
+tgtd: conn_close(111) Forcing release of tx task 3d
+tgtd: conn_close(111) Forcing release of tx task 37
+tgtd: conn_close(111) Forcing release of tx task 2a
+tgtd: conn_close(111) Forcing release of tx task 4c
+tgtd: conn_close(111) Forcing release of tx task 6c
+tgtd: conn_close(111) Forcing release of tx task 4a
+tgtd: conn_close(111) Forcing release of tx task 49
+tgtd: conn_close(111) Forcing release of tx task 48
+tgtd: conn_close(111) Forcing release of tx task 41
+tgtd: conn_close(111) Forcing release of tx task 54
+tgtd: conn_close(111) Forcing release of tx task 38
+tgtd: conn_close(111) Forcing release of tx task 4f
+tgtd: conn_close(111) Forcing release of tx task 15
+tgtd: conn_close(111) Forcing release of tx task 20
+tgtd: it_nexus_destroy(257) 1 1
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 0 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 1 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 2 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 3 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 7 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 8 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 9 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 11 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 12 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 13 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 14 not empty
+tgtd: it_nexus_destroy(265) cmd_hash_list entry 15 not empty
+tgtd: iscsi_tcp_event_handler(167) connection closed
+
+So it looks like the cmd_hash_list is not actually cleared on a connection
+close.
+
+Is there anything more I can do to troubleshoot this issue?
+
+Niels
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001482.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001488.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1487">[ date ]</a>
+              <a href="thread.html#1487">[ thread ]</a>
+              <a href="subject.html#1487">[ subject ]</a>
+              <a href="author.html#1487">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

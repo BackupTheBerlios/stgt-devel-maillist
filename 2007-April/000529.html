@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Thoughts on vtl setup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20setup&In-Reply-To=%3C1175802330.3622.89.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000528.html">
+   <LINK REL="Next"  HREF="000532.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Thoughts on vtl setup</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20setup&In-Reply-To=%3C1175802330.3622.89.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] Thoughts on vtl setup">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu Apr  5 21:45:30 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000528.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+        <LI>Next message: <A HREF="000532.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#529">[ date ]</a>
+              <a href="thread.html#529">[ thread ]</a>
+              <a href="subject.html#529">[ subject ]</a>
+              <a href="author.html#529">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-04-05 at 21:32 +0200, Albert Pauw wrote:
+&gt;<i> Here are a few thoughts I wanted to share regarding the virtual tape
+</I>&gt;<i> library, just shoot at it if you think otherwise. Hope you don't find
+</I>&gt;<i> this too nosy Mark (Harvey) as you started the idea.
+</I>&gt;<i> 
+</I>&gt;<i> General - Best would be to have the changer and the tapedrives on one
+</I>&gt;<i> target, the changer can be LUN 0, the drive(s) LUN 1 and onwards.
+</I>
+in real world, tape and changer most time does not use 1 target. though
+some of them are. so ideally is to have both.
+
+of course, for simplicity purpose, i agree with u. but since it is
+emulation, it should looks like real stuff.
+
+&gt;<i> 
+</I>&gt;<i> Configuration - Would be best to keep this simple. The changer can be
+</I>&gt;<i> a standard one, implementing all necessary functions. For the drives
+</I>&gt;<i> you define the type once, and how many drives you want. If you use
+</I>&gt;<i> symbolic names (as to numeric) for the drive types, then this can be
+</I>&gt;<i> easily expanded. E.g. LTO3, DDS4, etc. for the drive type. If you need
+</I>&gt;<i> three different type of drives, then you just add one of each type.
+</I>&gt;<i> Since these types are predefined you don't have to set other
+</I>&gt;<i> parameters for these drives (like size etc). Lastly you define the
+</I>&gt;<i> directory where the tapeslots are.
+</I>
+problem is different real changer will not always perform the same and
+some have features others do not have. so no one emulation fit all
+solution.
+
+ideal way is the code implement as many feature sets as possible. and
+specific model can enable/disable or override the generic
+implementation.
+
+
+&gt;<i> 
+</I>&gt;<i> Tapes - Well, virtual tapes. I guess the filename can be the barcode,
+</I>&gt;<i> the extension the tape type, e.g. A00001.LTO2. However, when these
+</I>&gt;<i> files are accidentally renamed you loose the barcode and type. So
+</I>&gt;<i> every tape should have a header containing the barcode, and tape type.
+</I>&gt;<i> The barcode and tapetype should be in clear text (e.g. 4 characters
+</I>&gt;<i> LTO2). Another addition could be a two-byte field, containing
+</I>&gt;<i> bitfields, like this:
+</I>&gt;<i> 
+</I>&gt;<i> 0000 0000 0000 RCCC
+</I>
+yes. need a header or extra meta file to describe the tapes.
+
+&gt;<i> 
+</I>&gt;<i> were
+</I>&gt;<i> CCC -&gt; compression 0-7, where 0 is no compression, 1 is LZ, etc. for
+</I>&gt;<i> different types of compression, if implemented. We can start without
+</I>&gt;<i> compression.
+</I>
+&gt;<i> 
+</I>&gt;<i> R -&gt; Readonly bit, even if the file was readonly and set to readwrite,
+</I>&gt;<i> it would protect the data. Don't know if this setting can be done in
+</I>&gt;<i> the SCSI set.
+</I>
+virtual tape drive can read this and disable write. 
+
+&gt;<i> 
+</I>&gt;<i> Tape handling - Before starting stgt vtl and point it to the tapeslot
+</I>&gt;<i> directory you create tape slot subdirectories like this, where you
+</I>&gt;<i> define at startup the directory /var/tape as the slot directory:
+</I>&gt;<i> 
+</I>&gt;<i> /var/tape/slot-01
+</I>&gt;<i> ...
+</I>&gt;<i> /var/tape/slot-24
+</I>&gt;<i> 
+</I>&gt;<i> In the /var/tape directory there would be symbolic links like this
+</I>&gt;<i> 
+</I>&gt;<i> /var/tape/drive-1 -&gt; /var/slot-01/A00001.LTO3
+</I>&gt;<i> 
+</I>&gt;<i> if a tape is loaded into drive-1, when a drive is empty (startup
+</I>&gt;<i> setting) it does not have a symbolic link.
+</I>&gt;<i> 
+</I>&gt;<i> Note that by creating these directories by hand you can define how
+</I>&gt;<i> many slots you have, but also leave existing &quot;tapes&quot; in the slots
+</I>&gt;<i> between restarts of the vtl stgt service. And stopping the service
+</I>&gt;<i> should delete the symbolic drive links, so the drives &quot;eject&quot; the
+</I>&gt;<i> virtual tape and start up &quot;empty&quot; next time.
+</I>
+this sounds interesting. but what is the action to &quot;insert&quot; a tape to
+drive? then program has to capture the symlink event.
+
+
+&gt;<i> 
+</I>&gt;<i> Well, just a thought.
+</I>&gt;<i> 
+</I>&gt;<i> Albert
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000528.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+	<LI>Next message: <A HREF="000532.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#529">[ date ]</a>
+              <a href="thread.html#529">[ thread ]</a>
+              <a href="subject.html#529">[ subject ]</a>
+              <a href="author.html#529">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C47DC29F8.3040608%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001467.html">
+   <LINK REL="Next"  HREF="001469.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C47DC29F8.3040608%40wpkg.org%3E"
+       TITLE="[Stgt-devel] Open connections">mangoo at wpkg.org
+       </A><BR>
+    <I>Sat Mar 15 20:56:40 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001467.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001469.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1468">[ date ]</a>
+              <a href="thread.html#1468">[ thread ]</a>
+              <a href="subject.html#1468">[ subject ]</a>
+              <a href="author.html#1468">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Niels de Carpentier schrieb:
+&gt;<i> I'm having an issue where old connections keep being listed in tgt, while
+</I>&gt;<i> they are not in use anymore.
+</I>&gt;<i> 
+</I>&gt;<i> I'm running a diskless system with an iscsi root, which uses open-iscsi as
+</I>&gt;<i> the initiator. The initrd mount does the initial mounting, and on the
+</I>&gt;<i> final image iscsid is started, which does a reconnect.
+</I>&gt;<i> 
+</I>&gt;<i> After the system has booted, the follow status is available on the target:
+</I>
+(...)
+
+&gt;<i> If I reboot the iscsi root system without restarting tgtd, the initial
+</I>&gt;<i> connect will fail. A logout and a new login is necessary to get a working
+</I>&gt;<i> connection in this case.
+</I>
+I reported a similar issue with diskless iSCSI nodes in &quot;yet another 
+tgtd iSCSI misbehaviour (aborted journal, remounting ro)&quot;:
+
+<A HREF="https://lists.berlios.de/pipermail/stgt-devel/2008-February/thread.html#1353">https://lists.berlios.de/pipermail/stgt-devel/2008-February/thread.html#1353</A>
+
+I didn't send a tcpdump, though.
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001467.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001469.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1468">[ date ]</a>
+              <a href="thread.html#1468">[ thread ]</a>
+              <a href="subject.html#1468">[ subject ]</a>
+              <a href="author.html#1468">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

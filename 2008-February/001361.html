@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C47AB2C2F.2090707%40scalableinformatics.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001382.html">
+   <LINK REL="Next"  HREF="001370.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)</H1>
+    <B>Joe Landman</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C47AB2C2F.2090707%40scalableinformatics.com%3E"
+       TITLE="[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)">landman at scalableinformatics.com
+       </A><BR>
+    <I>Thu Feb  7 17:05:03 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001382.html">[Stgt-devel] [ewg] Re: [ofa-general] [ANNOUNCE] open iSCSI over iSER target RPMis	available
+</A></li>
+        <LI>Next message: <A HREF="001370.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1361">[ date ]</a>
+              <a href="thread.html#1361">[ thread ]</a>
+              <a href="subject.html#1361">[ subject ]</a>
+              <a href="author.html#1361">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Update:
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at woody</A> etc]# dd if=/dev/zero of=/big/local.file bs=256k count=100000
+100000+0 records in
+100000+0 records out
+26214400000 bytes (26 GB) copied, 58.7484 seconds, 446 MB/s
+
+Better. I rebuilt OFED 1.2.5.5.  Are there specific recommended tuning 
+guides for iSER?  Backing store in this case are real disks, and we can 
+sink/source &gt;750 MB/s on them, so I am not worried about disk IO 
+bottlenecks, more worried about bad config of iSCSI/iSER.
+
+BTW:  the 2TB LUN limit I asked about is still here in this code.  Same 
+machines (initiator and target) used for SRP reported correct LUN sizes. 
+  Here we are using the -868 open-iscsi initiator, and the tgt RPM 
+announced.  I would like to dig into this.
+
+This is what I am getting in dmesg for this iSER target:
+
+iscsi: registered transport (tcp)
+iscsi: registered transport (iser)
+iser: iser_connect:connecting to: 10.2.1.2, port 0xbc0c
+iser: iser_cma_handler:event 0 conn ffff81024b9f69c0 id ffff810209748c00
+iser: iser_cma_handler:event 2 conn ffff81024b9f69c0 id ffff810209748c00
+iser: iser_create_ib_conn_res:setting conn ffff81024b9f69c0 cma_id 
+ffff810209748c00: fmr_pool ffff81024bfb32c0 qp ffff8101cb16d600
+iser: iser_cma_handler:event 9 conn ffff81024b9f69c0 id ffff810209748c00
+iser: iscsi_iser_ep_poll:ib conn ffff81024b9f69c0 rc = 1
+scsi13 : iSCSI Initiator over iSER, v.0.1
+iser: iscsi_iser_conn_bind:binding iscsi conn ffff81021b65fa90 to 
+iser_conn ffff81024b9f69c0
+   Vendor: IET       Model: Controller        Rev: 0001
+   Type:   RAID                               ANSI SCSI revision: 05
+scsi 13:0:0:0: Attached scsi generic sg2 type 12
+   Vendor: IET       Model: VIRTUAL-DISK      Rev: 0001
+   Type:   Direct-Access                      ANSI SCSI revision: 05
+sdc : very big device. try to use READ CAPACITY(16).
+sdc : READ CAPACITY(16) failed.
+sdc : status=1, message=00, host=0, driver=08
+sdc : use 0xffffffff as device size
+SCSI device sdc: 4294967296 512-byte hdwr sectors (2199023 MB)
+sdc: Write Protect is off
+sdc: Mode Sense: 79 00 00 08
+SCSI device sdc: drive cache: write back
+sdc : very big device. try to use READ CAPACITY(16).
+sdc : READ CAPACITY(16) failed.
+sdc : status=1, message=00, host=0, driver=08
+sdc : use 0xffffffff as device size
+SCSI device sdc: 4294967296 512-byte hdwr sectors (2199023 MB)
+sdc: Write Protect is off
+sdc: Mode Sense: 79 00 00 08
+SCSI device sdc: drive cache: write back
+  sdc: unknown partition table
+sd 13:0:0:1: Attached scsi disk sdc
+sd 13:0:0:1: Attached scsi generic sg3 type 0
+
+
+and this is what we get in SRP
+
+scsi6 : SRP.T10:0008F104039862A4
+   Vendor: SCST_BIO  Model: vdisk0            Rev:  096
+   Type:   Direct-Access                      ANSI SCSI revision: 04
+sdc : very big device. try to use READ CAPACITY(16).
+SCSI device sdc: 12693355130 512-byte hdwr sectors (6498998 MB)
+sdc: Write Protect is off
+sdc: Mode Sense: 6b 00 10 08
+SCSI device sdc: drive cache: write back w/ FUA
+
+
+This looks suspiciously like a 2^32 limit somewhere.
+
+
+Our exported device is
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at jr1</A> ~]# parted /dev/sdb print
+
+Model: Areca jrvs1 (scsi)
+Disk /dev/sdb: 6500GB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+
+Number  Start   End     Size    File system  Flags
+  1      0.00kB  6500GB  6500GB  xfs
+
+
+and this is what tgtadm reports
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at jr1</A> ~]# tgtadm --lld iscsi --op show --mode target
+Target 1: iqn.2001-04.com.jr1-jackrabbit.small
+     System information:
+         Driver: iscsi
+         Status: running
+     I_T nexus information:
+         I_T nexus: 4
+             Initiator: iqn.1996-04.voltaire.com:01:dfa8888a3fd
+             Connection: 0
+                 RDMA IP Address: 10.2.1.1
+     LUN information:
+         LUN: 0
+             Type: controller
+             SCSI ID: deadbeaf1:0
+             SCSI SN: beaf10
+             Size: 0
+             Online: No
+             Poweron/Reset: Yes
+             Removable media: No
+             Backing store: No backing store
+         LUN: 1
+             Type: disk
+             SCSI ID: deadbeaf1:1
+             SCSI SN: beaf11
+             Size: 5T
+             Online: Yes
+             Poweron/Reset: No
+             Removable media: No
+             Backing store: /dev/sdb
+     Account information:
+     ACL information:
+         10.2.1.1
+
+So it looks like the LUN 1 is approximately correct (5T ???) on the 
+target, and incorrect when the initiator asks for it.
+
+Please note that I have successfully used the full 6+TB as an iSCSI 
+target using the SCST-iscsi code, so I do know that the initiator works 
+correctly.
+
+Is there a source RPM/tree for this target?
+
+Joe Landman wrote:
+&gt;<i> Hi Erez
+</I>&gt;<i> 
+</I>&gt;<i> Erez Zilber wrote:
+</I>&gt;&gt;<i> stgt (SCSI target) is an open-source framework for storage target
+</I>&gt;&gt;<i> drivers. It supports iSCSI over iSER among other storage target drivers.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Voltaire added a git tree for stgt that will be added to OFED 1.4:
+</I>&gt;&gt;<i> <A HREF="http://www2.openfabrics.org/git/?p=~dorons/tgt.git;a=summary">http://www2.openfabrics.org/git/?p=~dorons/tgt.git;a=summary</A>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Until OFED 1.4 gets released, it is possible to install the stgt RPM on
+</I>&gt;&gt;<i> top of OFED 1.3. For more details about how to install and use stgt,
+</I>&gt;&gt;<i> please refer to 
+</I>&gt;&gt;<i> <A HREF="https://wiki.openfabrics.org/tiki-index.php?page=ISER-target">https://wiki.openfabrics.org/tiki-index.php?page=ISER-target</A>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Some performance numbers that were measured by OSC (using SDR cards):
+</I>&gt;<i> 
+</I>&gt;<i> Is there a 2TB limit on this target? It turns our 6TB partition into a 
+</I>&gt;<i> 2TB lun.
+</I>&gt;<i> 
+</I>&gt;&gt;<i>     * READ: 920 MB/sec
+</I>&gt;&gt;<i>     * WRITE: 850 MB/sec
+</I>&gt;<i> 
+</I>&gt;<i> Not getting anything even remotely close to this.  Are there more 
+</I>&gt;<i> details on configuration somewhere?  I followed the web page as indicated.
+</I>&gt;<i> 
+</I>&gt;<i> Joe
+</I>&gt;<i> 
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> We hope to have DDR measurements numbers soon.
+</I>&gt;&gt;<i>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>
+
+-- 
+Joseph Landman, Ph.D
+Founder and CEO
+Scalable Informatics LLC,
+email: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">landman at scalableinformatics.com</A>
+web  : <A HREF="http://www.scalableinformatics.com">http://www.scalableinformatics.com</A>
+        <A HREF="http://jackrabbit.scalableinformatics.com">http://jackrabbit.scalableinformatics.com</A>
+phone: +1 734 786 8423
+fax  : +1 866 888 3112
+cell : +1 734 612 4615
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001382.html">[Stgt-devel] [ewg] Re: [ofa-general] [ANNOUNCE] open iSCSI over iSER target RPMis	available
+</A></li>
+	<LI>Next message: <A HREF="001370.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1361">[ date ]</a>
+              <a href="thread.html#1361">[ thread ]</a>
+              <a href="subject.html#1361">[ subject ]</a>
+              <a href="author.html#1361">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

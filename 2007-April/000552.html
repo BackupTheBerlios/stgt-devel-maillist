@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vtl patch.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3Cb2919bc20704110146p4cd5670dka54abc20de8de1b0%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000551.html">
+   <LINK REL="Next"  HREF="000553.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vtl patch.</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3Cb2919bc20704110146p4cd5670dka54abc20de8de1b0%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] vtl patch.">albert.pauw at gmail.com
+       </A><BR>
+    <I>Wed Apr 11 10:46:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000551.html">[Stgt-devel] vtl patch.
+</A></li>
+        <LI>Next message: <A HREF="000553.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#552">[ date ]</a>
+              <a href="thread.html#552">[ thread ]</a>
+              <a href="subject.html#552">[ subject ]</a>
+              <a href="author.html#552">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Mark,
+
+it would be more readable if the value for ElementType is not a number,
+but more symbolic:
+
+MT or picker (Media Transport element)
+ST or slot (Storage element)
+IE or portal (Import/Export element)
+DT or drive (Data Transfer element)
+
+Using enumeration this can easily be converted internally.
+
+Just my 2 cents.
+
+Albert
+
+
+On 4/11/07, Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> On 4/11/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] vtl patch.
+</I>&gt;<i> &gt; Date: Thu, 5 Apr 2007 09:56:10 +1000
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt; Apologies for this being an attachment. It is rather large to include
+</I>&gt;<i> &gt; &gt; inline (57k).
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; Follow up to feedback from earlier postings, I have implemented the
+</I>&gt;<i> following:
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; This patch includes the following changes.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; - Patch to tgtadm so multiple '--name, --value' arguments can be
+</I>&gt;<i> passed.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Why do we need multiple arguments?
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I prefer to keep the current semantics:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i> &gt;          -n VendorIdent -v QUANTUM
+</I>&gt;<i> &gt; $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i> &gt;          -n ProductIdent -v SDLT600
+</I>&gt;<i> &gt; $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i> &gt;          -n ProductRev -v 0001
+</I>&gt;<i> &gt; $ tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i> &gt;          -n SerialNumber -v XYZZY10
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; rather than:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; tgtadm --lld iscsi --mode logicalunit --op update --tid=1 --lun=0 \
+</I>&gt;<i> &gt;         -n VendorIdent -v QUANTUM       \
+</I>&gt;<i> &gt;         -n ProductIdent -v SDLT600      \
+</I>&gt;<i> &gt;         -n ProductRev -v 0001           \
+</I>&gt;<i> &gt;         -n SerialNumber -v XYZZY10
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; The rest looks ok.
+</I>&gt;<i> &gt;
+</I>&gt;<i>
+</I>&gt;<i> Thanks for the feedback.
+</I>&gt;<i>
+</I>&gt;<i> While setting the Vendor Ident etc can be easly acheived one field at
+</I>&gt;<i> a time, configuring the parameters for the SMC device requires
+</I>&gt;<i> multiple parameters at the same time.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> e.g.
+</I>&gt;<i> &gt; (Reserve address space for storage slots)
+</I>&gt;<i> &gt; --name=ElementType --value=[1|2|3]
+</I>&gt;<i> &gt; --name=StartAddress --value=number
+</I>&gt;<i> &gt; --name=Quanity --value=number
+</I>&gt;<i> &gt; --name=Sides --value=[1|2]          (Single/double sided)
+</I>&gt;<i>
+</I>&gt;<i> I need to get the element type, starting address and number of slots
+</I>&gt;<i> and if media is single/double sided (or at minimum, the element type
+</I>&gt;<i> and the element address - if configuring a slot per instance of
+</I>&gt;<i> tgtcmd)
+</I>&gt;<i>
+</I>&gt;<i> &gt; (To reserve address space for 'drives')
+</I>&gt;<i> &gt; --name=ElementType --value=4
+</I>&gt;<i> &gt; --name=StartAddress --value=number
+</I>&gt;<i> &gt; --name=Quanity --value=number
+</I>&gt;<i> &gt; --name=Type --value=&quot;ssc|mmc|sbc&quot;
+</I>&gt;<i>
+</I>&gt;<i> Again for slots which contain Data Transfer Elements, the element
+</I>&gt;<i> type, slot number, type of 'data transfer element' needs to be passed
+</I>&gt;<i> in 'one go'
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Same basic argument for the two other configuration options below..
+</I>&gt;<i>
+</I>&gt;<i> &gt; (To 'tie' a previously known TID/LUN to a slot Address..)
+</I>&gt;<i> &gt; --name=ElementType --value=4
+</I>&gt;<i> &gt; --name=Address --value=&lt;Within Range from above&gt;
+</I>&gt;<i> &gt; --name=tid --value=&lt;tid&gt;
+</I>&gt;<i> &gt; --name=lun --value=&lt;lun&gt;
+</I>&gt;<i> &gt; --name=SerialNumber --value-&lt;Device S/No&gt;
+</I>&gt;<i>
+</I>&gt;<i> &gt; To 'populate' slots with 'media'
+</I>&gt;<i> &gt; --name=ElementType --value=[2|3]
+</I>&gt;<i> &gt; --name=Address --value=&lt;slot number&gt;
+</I>&gt;<i> &gt; --name=BarCode --value=&quot;string&quot;
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> The only other way I can see to acheive this would be to create unique
+</I>&gt;<i> options within tgtadm. The number of unique options within tgtadm is
+</I>&gt;<i> already quite long, hence I followed the '--name=&lt;&gt; --value=&lt;&gt;'
+</I>&gt;<i> option.
+</I>&gt;<i>
+</I>&gt;<i> Cheers
+</I>&gt;<i> Mark
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070411/c79a7da8/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070411/c79a7da8/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000551.html">[Stgt-devel] vtl patch.
+</A></li>
+	<LI>Next message: <A HREF="000553.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#552">[ date ]</a>
+              <a href="thread.html#552">[ thread ]</a>
+              <a href="subject.html#552">[ subject ]</a>
+              <a href="author.html#552">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

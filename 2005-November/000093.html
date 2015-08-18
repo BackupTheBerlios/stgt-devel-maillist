@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] STGT build fails on FC4
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20STGT%20build%20fails%20on%20FC4&In-Reply-To=%3C588EBCAA757D5F4484EC6017EC5126CCC93F44%40chzhx001.ch.int.atosorigin.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000092.html">
+   <LINK REL="Next"  HREF="000094.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] STGT build fails on FC4</H1>
+    <B>Rehmann Oliver</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20STGT%20build%20fails%20on%20FC4&In-Reply-To=%3C588EBCAA757D5F4484EC6017EC5126CCC93F44%40chzhx001.ch.int.atosorigin.com%3E"
+       TITLE="[Stgt-devel] STGT build fails on FC4">oliver.rehmann at atosorigin.com
+       </A><BR>
+    <I>Fri Nov 11 13:03:07 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000092.html">[Stgt-devel] What is kernel version of stgt developed on?
+</A></li>
+        <LI>Next message: <A HREF="000094.html">[Stgt-devel] STGT build fails on FC4
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#93">[ date ]</a>
+              <a href="thread.html#93">[ thread ]</a>
+              <a href="subject.html#93">[ subject ]</a>
+              <a href="author.html#93">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Dear Colleagues
+
+I tried to compile STGT Build 164 under Fedora Core 4 but it fails.
+I know this is still early Beta or even Alpha but I discussed it with Ming
+Zhang
+and he told me that it should compile on Kernel 2.6.14
+
+Kernel Version: Official FC4 Kernel (2.6.14-1.1637_FC4)
+See the output from the make command:
+
+make -C istgt
+make[1]: Entering directory `/user1/software/STGT/trunk/istgt'
+make -C usr
+make[2]: Entering directory `/user1/software/STGT/trunk/istgt/usr'
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o istgt.o istgt.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o conn.o conn.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o param.o param.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o iscsid.o iscsid.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o session.o session.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o target.o target.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o chap.o chap.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o ctldev.o ctldev.c
+In file included from ctldev.c:21:
+/usr/include/linux/netlink.h:22: error: syntax error before '__u32'
+/usr/include/linux/netlink.h:28: error: syntax error before '__u32'
+/usr/include/linux/netlink.h:30: error: syntax error before 'nlmsg_flags'
+/usr/include/linux/netlink.h:31: error: syntax error before 'nlmsg_seq'
+/usr/include/linux/netlink.h:32: error: syntax error before 'nlmsg_pid'
+/usr/include/linux/netlink.h:82: error: field 'msg' has incomplete type
+ctldev.c: In function 'ipc_cmnd_execute':
+ctldev.c:40: error: dereferencing pointer to incomplete type
+ctldev.c:44: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:45: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'nlmsg_init':
+ctldev.c:85: error: dereferencing pointer to incomplete type
+ctldev.c:86: error: dereferencing pointer to incomplete type
+ctldev.c:87: error: dereferencing pointer to incomplete type
+ctldev.c:88: error: dereferencing pointer to incomplete type
+ctldev.c:89: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'get_iet_msg':
+ctldev.c:101: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:107: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c: In function 'iscsi_conn_destroy':
+ctldev.c:133: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_param_get':
+ctldev.c:155: error: dereferencing pointer to incomplete type
+ctldev.c:161: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c: In function 'iscsi_param_set':
+ctldev.c:199: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_session_create':
+ctldev.c:294: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_session_destroy':
+ctldev.c:315: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_conn_create':
+ctldev.c:344: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'ipc_mgmt':
+ctldev.c:451: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:454: error: dereferencing pointer to incomplete type
+ctldev.c:480: error: dereferencing pointer to incomplete type
+ctldev.c:480: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:481: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+make[2]: *** [ctldev.o] Error 1
+make[2]: Leaving directory `/user1/software/STGT/trunk/istgt/usr'
+make[1]: *** [libs] Error 2
+make[1]: Leaving directory `/user1/software/STGT/trunk/istgt'
+make: *** [all] Error 2
+
+
+Any idea why compilation fails ? I mean, I can't think of a syntax error in
+/usr/include/linux/netlink.h
+This would affect building KERNELs.
+
+And as far as I can see the file seems to be OK in syntax. I have attached
+it to the EMail together
+with the MAKE output as well.
+
+Regards
+Oliver
+ 
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment.html</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: netlink.h
+Type: application/octet-stream
+Size: 2967 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment.obj</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: build_stgt164_2.6.14-1.1637_FC4
+Type: application/octet-stream
+Size: 3853 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment-0001.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment-0001.obj</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000092.html">[Stgt-devel] What is kernel version of stgt developed on?
+</A></li>
+	<LI>Next message: <A HREF="000094.html">[Stgt-devel] STGT build fails on FC4
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#93">[ date ]</a>
+              <a href="thread.html#93">[ thread ]</a>
+              <a href="subject.html#93">[ subject ]</a>
+              <a href="author.html#93">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

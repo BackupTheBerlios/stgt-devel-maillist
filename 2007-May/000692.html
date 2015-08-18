@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question for pass-through target design
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C46541B56.7000501%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000674.html">
+   <LINK REL="Next"  HREF="000703.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question for pass-through target design</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C46541B56.7000501%40vlnb.net%3E"
+       TITLE="[Stgt-devel] Question for pass-through target design">vst at vlnb.net
+       </A><BR>
+    <I>Wed May 23 12:45:42 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000674.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+        <LI>Next message: <A HREF="000703.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#692">[ date ]</a>
+              <a href="thread.html#692">[ thread ]</a>
+              <a href="subject.html#692">[ subject ]</a>
+              <a href="author.html#692">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Robert Jennings wrote:
+&gt;&gt;&gt;&gt;<i>What I meant that is that the kernel tgt code (scsi_tgt*) receives
+</I>&gt;&gt;&gt;&gt;<i>SCSI commands from one lld and send them to another lld instead of
+</I>&gt;&gt;&gt;&gt;<i>sending them to user space.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>Although the approach of passing SCSI commands from a target LLD to an
+</I>&gt;&gt;&gt;<i>initiator one without any significant interventions from the target
+</I>&gt;&gt;&gt;<i>software looks to be nice and simple, you should realize how limited,
+</I>&gt;&gt;&gt;<i>unsafe and illegal it is, since it badly violates SCSI specs.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>I think that 'implemented cleanly' means that one scsi_host is assigned
+</I>&gt;&gt;<i>to only one initiator.
+</I>&gt;<i> 
+</I>&gt;<i> Vladislav listed a number of issues that are inherent in an implementation
+</I>&gt;<i> that does not have a 1:1 relationship of initiators to targets.  The vscsi
+</I>&gt;<i> architecture defines the 1:1 relationship; it's imposible to have more
+</I>&gt;<i> than one initiator per target.
+</I>
+Just few small notes:
+
+1. As I already wrote, complete 1:1 relationship isn't practically 
+possible, because there is always a local access on the target (i.e. one 
+more initiator) and you can't disable it on practice.
+
+2. 1:1 relationship is a serious limitation for usage cases like an SPI 
+tape library serving backup for several servers on an FC net.
+
+Vlad
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000674.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+	<LI>Next message: <A HREF="000703.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#692">[ date ]</a>
+              <a href="thread.html#692">[ thread ]</a>
+              <a href="subject.html#692">[ subject ]</a>
+              <a href="author.html#692">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

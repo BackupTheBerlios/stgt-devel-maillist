@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20list.h%3A%20prevent%20a%20SEGV%20if%20we%20try%20to%0A%20clear%09a%20list%20that%20is%20already%20empty&In-Reply-To=%3C20080709143247S.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001740.html">
+   <LINK REL="Next"  HREF="001754.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20list.h%3A%20prevent%20a%20SEGV%20if%20we%20try%20to%0A%20clear%09a%20list%20that%20is%20already%20empty&In-Reply-To=%3C20080709143247S.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Jul  9 07:32:53 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001740.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+</A></li>
+        <LI>Next message: <A HREF="001754.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to	clear a list that is already empty
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1747">[ date ]</a>
+              <a href="thread.html#1747">[ thread ]</a>
+              <a href="subject.html#1747">[ subject ]</a>
+              <a href="author.html#1747">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 7 Jul 2008 11:12:08 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> Please apply.
+</I>&gt;<i> 
+</I>&gt;<i> I have reproduced the SEGV that was reported when I/O has failed/been aborted.
+</I>&gt;<i> This pathc prevents the SEGV from occuring in this situation.
+</I>&gt;<i> 
+</I>&gt;<i> It does however not address the root cause why tgtd tries to clear a
+</I>&gt;<i> list that is already (and it should know is already?) empty.
+</I>
+It might be easy to debug tgtd with this workaround patch but after
+all we need to fix the root problem. It's likely that this workaround
+will hurt us in the future.
+
+I think that there might be bugs in Task Management Message
+handling. I try to reproduce the problem after I get the detailed
+information of Tomasz's configuration.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001740.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+</A></li>
+	<LI>Next message: <A HREF="001754.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to	clear a list that is already empty
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1747">[ date ]</a>
+              <a href="thread.html#1747">[ thread ]</a>
+              <a href="subject.html#1747">[ subject ]</a>
+              <a href="author.html#1747">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

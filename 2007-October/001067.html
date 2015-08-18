@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER tgtd performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20tgtd%20performance&In-Reply-To=%3C20071010031745.GC28356%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001066.html">
+   <LINK REL="Next"  HREF="001068.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER tgtd performance</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20tgtd%20performance&In-Reply-To=%3C20071010031745.GC28356%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER tgtd performance">pw at osc.edu
+       </A><BR>
+    <I>Wed Oct 10 05:17:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001066.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+        <LI>Next message: <A HREF="001068.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1067">[ date ]</a>
+              <a href="thread.html#1067">[ thread ]</a>
+              <a href="subject.html#1067">[ subject ]</a>
+              <a href="author.html#1067">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nejc.porenta at gmail.com</A> wrote on Tue, 09 Oct 2007 10:46 +0200:
+&gt;<i> I am using OSC git tgt tree for testing iSER with virtualization. My
+</I>&gt;<i> research focus in on I/O performance in virtualization tehniques
+</I>&gt;<i> (OpenVZ, VMWare server, Xen).
+</I>&gt;<i> 
+</I>&gt;<i> I am using CentOS5 + OFED1.2.5 where it is possible (on target and
+</I>&gt;<i> OpenVZ) with Dell 1950 servers with 4GB ram with Mellanox single port
+</I>&gt;<i> memfree infiniband cards.
+</I>&gt;<i> 
+</I>&gt;<i> On target node i usually setup my iSCSI target like this:
+</I>&gt;<i> dd if=/dev/zero bs=1k count=1 seek=1048575 of=/dev/shm/tid1lun1
+</I>&gt;<i> ./tgtadm --lld iscsi --mode target --op new --tid 1 --targetname node1.nejc.net
+</I>&gt;<i> ./tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address ALL
+</I>&gt;<i> ./tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+</I>&gt;<i> --backing-store /dev/shm/tid1lun1
+</I>&gt;<i> 
+</I>&gt;<i> And the performance from client using ib_iser, measured with disktest,
+</I>&gt;<i> is around 1030MB/s which is quite impressive.
+</I>&gt;<i> 
+</I>&gt;<i> But the performance drops significantly when I increase the backing
+</I>&gt;<i> store size to 3.5GB. Usually I get around 400MB/s. This
+</I>&gt;<i> happens with tmpfs or with /dev/ram0.
+</I>
+Apparently you have DDR IB cards.  1030 MB/s is quite amazing.
+We've only seen 920-ish for reads with SDR, 850-ish for writes.
+
+The tests you are running.  Disktest does big linear reads/writes to
+its iscsi block device?  If you stay within the first 1GB for both
+test setups you describe, I would expect the same performance.  But
+if you wander up closer to the 3.5 GB area for the larger ram disk,
+the Linux VM will probably start pushing some of the older pages out
+to swap.  It likes to keep some amount of memory free.
+
+If you just want to torture the network, you can edit bs_sync.c to
+stub out the pread64 and pwrite64 calls, and just set ret to
+cmd-&gt;len.  Of course, hopefully disktest doesn't ever look at the
+read results.  :)  Maybe you could use scsi_debug on the target with
+&quot;fake_rw&quot; to do the same thing.
+
+&gt;<i> My init scripts on target and client are available here:
+</I>&gt;<i> <A HREF="http://www.nejc.net/diploma/tgtd/">http://www.nejc.net/diploma/tgtd/</A>
+</I>
+Scripts look fine.  Is it necessary to turn off HeaderDigest on the
+initiator side?  I had hoped that iscsiadm would realize it was
+asked to use iser and turn off HeaderDigest and DataDigest on its
+own, but never got around to testing that.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001066.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+	<LI>Next message: <A HREF="001068.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1067">[ date ]</a>
+              <a href="thread.html#1067">[ thread ]</a>
+              <a href="subject.html#1067">[ subject ]</a>
+              <a href="author.html#1067">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

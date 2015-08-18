@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio is slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C20070620084051R.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000801.html">
+   <LINK REL="Next"  HREF="000821.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio is slow</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20is%20slow&In-Reply-To=%3C20070620084051R.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] ibmvio is slow">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Jun 20 01:40:51 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000801.html">[Stgt-devel] ibmvio is slow
+</A></li>
+        <LI>Next message: <A HREF="000821.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#802">[ date ]</a>
+              <a href="thread.html#802">[ thread ]</a>
+              <a href="subject.html#802">[ subject ]</a>
+              <a href="author.html#802">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">waldi at berlios.de</A>&gt;
+Subject: [Stgt-devel] ibmvio is slow
+Date: Tue, 19 Jun 2007 19:18:38 +0200
+
+&gt;<i> Hi folks
+</I>&gt;<i> 
+</I>&gt;<i> I tried the ibmvio target on a busy vioserver on a power5 machine. It
+</I>&gt;<i> works fine, I got no problem. It provides services to 7 initiators with
+</I>&gt;<i> at least 2 luns each.
+</I>
+Nice.
+
+
+&gt;<i> But it is slow. I can write at most 15MiB/s to the disks, regardless of
+</I>&gt;<i> the count of the initiators and disks.
+</I>&gt;<i> 
+</I>&gt;<i> I used strace and saw the following:
+</I>&gt;<i> 
+</I>&gt;<i> | mmap2(NULL, 131072, PROT_READ|PROT_WRITE, MAP_SHARED, 14, 0xc6185) = 0xf7e28000 &lt;0.000026&gt;
+</I>&gt;<i> | write(8, &quot;\0&quot;, 1)                       = 1 &lt;0.002088&gt;
+</I>&gt;<i> | munmap(0xf7f5e000, 12288)               = 0 &lt;0.000022&gt;
+</I>&gt;<i> | mmap2(NULL, 131072, PROT_READ|PROT_WRITE, MAP_SHARED, 14, 0xc61a5) = 0xf7e08000 &lt;0.000025&gt;
+</I>&gt;<i> | write(8, &quot;\0&quot;, 1)                       = 1 &lt;0.002060&gt;
+</I>&gt;<i> | munmap(0xf7fde000, 4096)                = 0 &lt;0.000022&gt;
+</I>&gt;<i> | mmap2(NULL, 131072, PROT_READ|PROT_WRITE, MAP_SHARED, 14, 0xc61c5) = 0xf7de8000 &lt;0.000023&gt;
+</I>&gt;<i> | write(8, &quot;\0&quot;, 1)                       = 1 &lt;0.002130&gt;
+</I>&gt;<i> | munmap(0xf7f12000, 73728)               = 0 &lt;0.000031&gt;
+</I>&gt;<i> 
+</I>&gt;<i> Each request produces a mmap, a write and a unmap. The time needed for the
+</I>&gt;<i> write, which seems to be a request available flag, needs 2ms, which means at
+</I>&gt;<i> most 50 requests/s.
+</I>
+We don't need to call mmap/unmap per request though this hack is
+disable to keep the code simple. We need to find a way to avoid
+registering/de-registering memory region for more high performance.
+
+But we are not ready for them yet. I need to fix the patches in
+the scsi-target tree and send them to upstream first.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000801.html">[Stgt-devel] ibmvio is slow
+</A></li>
+	<LI>Next message: <A HREF="000821.html">[Stgt-devel] ibmvio is slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#802">[ date ]</a>
+              <a href="thread.html#802">[ thread ]</a>
+              <a href="subject.html#802">[ subject ]</a>
+              <a href="author.html#802">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

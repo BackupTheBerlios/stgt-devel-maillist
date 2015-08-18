@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add dumping current tgtd configuration in	tgt-admin
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20dumping%20current%20tgtd%20configuration%20in%0A%09tgt-admin&In-Reply-To=%3C4889EDC0.6070208%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001920.html">
+   <LINK REL="Next"  HREF="001910.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add dumping current tgtd configuration in	tgt-admin</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20dumping%20current%20tgtd%20configuration%20in%0A%09tgt-admin&In-Reply-To=%3C4889EDC0.6070208%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [PATCH] add dumping current tgtd configuration in	tgt-admin">mangoo at wpkg.org
+       </A><BR>
+    <I>Fri Jul 25 17:14:08 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001920.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+        <LI>Next message: <A HREF="001910.html">[Stgt-devel] [PATCH] add dumping current tgtd configuration	in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1880">[ date ]</a>
+              <a href="thread.html#1880">[ thread ]</a>
+              <a href="subject.html#1880">[ subject ]</a>
+              <a href="author.html#1880">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add dumping current tgtd configuration to stdout in tgt-admin.
+The dumped config will not contain any passwords as tgtadm doesn't show 
+them, they are currently substituted with some BIG FAT words.
+
+It currently adds a &quot;driver&quot; config option to each target (i.e. driver 
+iscsi) in order to support more target types than just iscsi - I will 
+add support to it in the rest of tgt-admin next week.
+
+
+Signed-off-by: Tomasz Chmielewski (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>)
+
+
+--- tgt-admin   2008-07-25 16:01:28.000000000 +0200
++++ tgt-admin.new       2008-07-25 17:07:24.000000000 +0200
+@@ -29,6 +29,7 @@
+    -c, --conf &lt;conf file&gt;     specify an alternative configuration file
+    -f, --force                don't exit on tgtadm errors
+    -p, --pretend              only print tgtadm options
++      --dump                 dump current tgtd configuration
+    -v, --verbose              increase verbosity (no effect in 
+&quot;pretend&quot; mode)
+    -h, --help                 show this help
+
+@@ -44,6 +45,7 @@
+  my $alternate_conf=&quot;0&quot;;
+  my $force = 0;
+  my $pretend = 0;
++my $dump = 0;
+  my $verbose = 0;
+  my $help = 0;
+  my $result = GetOptions (
+@@ -53,6 +55,7 @@
+         &quot;c|conf=s&quot;    =&gt; \$alternate_conf,
+         &quot;f|force&quot;   =&gt; \$force,
+         &quot;p|pretend&quot; =&gt; \$pretend,
++       &quot;dump&quot;    =&gt; \$dump,
+         &quot;v|verbose&quot; =&gt; \$verbose,
+         &quot;h|help&quot;    =&gt; \$help,
+  );
+@@ -285,6 +288,70 @@
+
+  }
+
++# Dump current tgtd configuration
++sub dump_config {
++
++       &amp;process_configs;
++
++       my @all_targets = keys %tgtadm_output_tid;
++
++       foreach my $target (@all_targets) {
++               foreach my $show_target_line ($tgtadm_output{$target}) {
++                   if ( $show_target_line =~ m/^Target (\d*): (.+)/ ) {
++                       print &quot;&lt;target $2&gt;\n&quot;;
++                   }
++
++                   if ( $show_target_line =~ m/\s+Driver: (.+)/ ) {
++                       print &quot;\tdriver $1\n&quot;;
++                   }
++
++                   if ( $show_target_line =~ m/\s+Backing store: (?!No 
+backing store)(.+)/ ) {
++                       print &quot;\tbacking-store $1\n&quot;;
++                   }
++               }
++
++               # Process account and ACL information
++               my $account_acl;
++
++               foreach my $show_target_line ($tgtadm_output{$target}) {
++                   $account_acl .= $show_target_line
++               }
++
++               # start with account information...
++               while ($account_acl =~ m{
++                       \s+Account\ information:\n(.*)ACL\ information:
++                            }xmgs
++                     ) {
++
++                       my @account = split(/\n/, $1);
++
++                       foreach my $user (@account) {
++                               my @var = split(/^\s+/, $user);
++                               @var = split(/\s/, $var[1]);
++
++                               if ( $var[1] eq &quot;(outgoing)&quot; ) {
++                                       print &quot;\toutgoinguser $var[0] 
+PLEASE_CORRECT_THE_PASSWORD\n&quot;;
++                               } elsif ( ($var[0] ne &quot;&quot;) &amp;&amp; ($var[1] eq 
+&quot;&quot;) ) {
++                                       print &quot;\tincominguser $var[0] 
+PLEASE_CORRECT_THE_PASSWORD\n&quot;;
++                               }
++                       }
++               }
++
++               #...and finish with ACL information
++               while ($account_acl =~ m{
++                       \s+ACL\ information:\n(.*)
++                            }xmgs
++                     ) {
++                   my @ini_addresses = split(/\n/, $1);
++                   foreach my $ini_address (@ini_addresses) {
++                       my @var = split(/^\s+/, $ini_address);
++                       print &quot;\tinitiator-address $var[1]\n&quot;;
++                       }
++               }
++               print &quot;&lt;/target&gt;\n\n&quot;;
++       }
++}
++
+  # Execute or just print (or both) everything we start or would start
+  sub execute {
+         if ($pretend == 0) {
+@@ -321,6 +388,8 @@
+         &delete;
+         %conf = ParseConfig(-ConfigFile =&gt; &quot;$configfile&quot;, 
+-UseApacheInclude =&gt; 1, -IncludeGlob =&gt; 1,);
+         &amp;remove_targets;
++} elsif ($dump == 1) {
++       &amp;dump_config;
+  } else {
+         print &quot;No action specified.\n&quot;;
+  }
+
+
+
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001920.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+	<LI>Next message: <A HREF="001910.html">[Stgt-devel] [PATCH] add dumping current tgtd configuration	in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1880">[ date ]</a>
+              <a href="thread.html#1880">[ thread ]</a>
+              <a href="subject.html#1880">[ subject ]</a>
+              <a href="author.html#1880">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

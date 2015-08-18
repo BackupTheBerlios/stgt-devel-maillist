@@ -1,0 +1,395 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 10/20] iser connection transport data
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2010/20%5D%20iser%20connection%20transport%20data&In-Reply-To=%3C200711141504.lAEF4akL027279%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001142.html">
+   <LINK REL="Next"  HREF="001148.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 10/20] iser connection transport data</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2010/20%5D%20iser%20connection%20transport%20data&In-Reply-To=%3C200711141504.lAEF4akL027279%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 10/20] iser connection transport data">tomof at acm.org
+       </A><BR>
+    <I>Wed Nov 14 15:33:27 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001142.html">[Stgt-devel] tgt disk and cd target with Microsoft initiator
+</A></li>
+        <LI>Next message: <A HREF="001148.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1147">[ date ]</a>
+              <a href="thread.html#1147">[ thread ]</a>
+              <a href="subject.html#1147">[ subject ]</a>
+              <a href="author.html#1147">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: [Stgt-devel] [PATCH 10/20] iser connection transport data
+Date: Tue, 16 Oct 2007 11:20:44 -0400
+
+&gt;<i> Add a private data field to iscsi_connection to hold state for the
+</I>&gt;<i> transport, and allocate room for it at connection allocation time.
+</I>&gt;<i> 
+</I>&gt;<i> Move the TCP socket fd from generic code into this private data region.
+</I>&gt;<i> 
+</I>&gt;<i> Also virtualize getsockname and getpeername as TCP and RDMA determine
+</I>&gt;<i> those IP addresses differently.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/conn.c      |   21 +++++++-------
+</I>&gt;<i>  usr/iscsi/iscsi_tcp.c |   72 ++++++++++++++++++++++++++++++++++++------------
+</I>&gt;<i>  usr/iscsi/iscsid.c    |   58 +++++++++++++++++++-------------------
+</I>&gt;<i>  usr/iscsi/iscsid.h    |   14 +++++-----
+</I>&gt;<i>  usr/iscsi/session.c   |    2 +-
+</I>&gt;<i>  usr/iscsi/target.c    |   10 +++---
+</I>&gt;<i>  usr/iscsi/transport.h |   20 +++++++++----
+</I>&gt;<i>  7 files changed, 120 insertions(+), 77 deletions(-)
+</I>
+Merged, thanks.
+
+Moving connection allocation to transport would work better for iSER?
+
+This patch is against the lastest git tree
+(09532079071d65ec62dae982324ab07a895e16f1).
+
+=
+From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Date: Wed, 14 Nov 2007 20:31:33 +0900
+Subject: [PATCH] move connection allocation to transport
+
+Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+---
+ usr/iscsi/conn.c      |   31 +++++-------------
+ usr/iscsi/iscsi_tcp.c |   80 +++++++++++++++++++++++++++++++-----------------
+ usr/iscsi/iscsid.h    |    4 +-
+ usr/iscsi/transport.h |    2 +
+ 4 files changed, 65 insertions(+), 52 deletions(-)
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index 1e9dace..e131549 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -42,24 +42,16 @@ void conn_add_to_session(struct iscsi_connection *conn, struct iscsi_session *se
+ 	list_add(&amp;conn-&gt;clist, &amp;session-&gt;conn_list);
+ }
+ 
+-struct iscsi_connection *conn_alloc(unsigned int trans_len)
++int conn_init(struct iscsi_connection *conn)
+ {
+-	struct iscsi_connection *conn;
+-
+-	conn = zalloc(sizeof(*conn) + trans_len);
+-	if (!conn)
+-		return NULL;
+-
+ 	conn-&gt;req_buffer = malloc(INCOMING_BUFSIZE);
+-	if (!conn-&gt;req_buffer) {
+-		free(conn);
+-		return NULL;
+-	}
++	if (!conn-&gt;req_buffer)
++		return -ENOMEM;
++
+ 	conn-&gt;rsp_buffer = malloc(INCOMING_BUFSIZE);
+ 	if (!conn-&gt;rsp_buffer) {
+ 		free(conn-&gt;req_buffer);
+-		free(conn);
+-		return NULL;
++		return -ENOMEM;
+ 	}
+ 
+ 	conn-&gt;refcount = 1;
+@@ -69,22 +61,17 @@ struct iscsi_connection *conn_alloc(unsigned int trans_len)
+ 	INIT_LIST_HEAD(&amp;conn-&gt;clist);
+ 	INIT_LIST_HEAD(&amp;conn-&gt;tx_clist);
+ 
+-	if (trans_len)
+-		conn-&gt;trans_data = &amp;conn[1];
+-
+-	return conn;
++	return 0;
+ }
+ 
+-static void conn_free(struct iscsi_connection *conn)
++void conn_exit(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_session *session = conn-&gt;session;
+ 
+-	dprintf(&quot;freeing connection\n&quot;);
+ 	list_del(&amp;conn-&gt;clist);
+ 	free(conn-&gt;req_buffer);
+ 	free(conn-&gt;rsp_buffer);
+ 	free(conn-&gt;initiator);
+-	free(conn);
+ 
+ 	if (session)
+ 		session_put(session);
+@@ -145,8 +132,8 @@ done:
+ void conn_put(struct iscsi_connection *conn)
+ {
+ 	conn-&gt;refcount--;
+-	if (conn-&gt;refcount == 0)
+-		conn_free(conn);
++	if (!conn-&gt;refcount)
++		conn-&gt;tp-&gt;ep_release(conn);
+ }
+ 
+ int conn_get(struct iscsi_connection *conn)
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 31e7b29..b3f730d 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -42,10 +42,17 @@
+ 
+ static void iscsi_tcp_event_handler(int fd, int events, void *data);
+ 
+-struct tcp_conn_info {
++struct iscsi_tcp_connection {
+ 	int fd;
++
++	struct iscsi_connection iscsi_conn;
+ };
+ 
++static inline struct iscsi_tcp_connection *TCP_CONN(struct iscsi_connection *conn)
++{
++	return container_of(conn, struct iscsi_tcp_connection, iscsi_conn);
++}
++
+ static int set_keepalive(int fd)
+ {
+ 	int ret, opt;
+@@ -78,7 +85,7 @@ static void accept_connection(int afd, int events, void *data)
+ 	struct sockaddr_storage from;
+ 	socklen_t namesize;
+ 	struct iscsi_connection *conn;
+-	struct tcp_conn_info *tci;
++	struct iscsi_tcp_connection *tcp_conn;
+ 	int fd, err;
+ 
+ 	dprintf(&quot;%d\n&quot;, afd);
+@@ -94,24 +101,32 @@ static void accept_connection(int afd, int events, void *data)
+ 	if (err)
+ 		goto out;
+ 
+-	conn = conn_alloc(sizeof(*tci));
+-	if (!conn)
++	tcp_conn = zalloc(sizeof(*tcp_conn));
++	if (!tcp_conn)
+ 		goto out;
+ 
+-	tci = conn-&gt;trans_data;
+-	tci-&gt;fd = fd;
++	conn = &amp;tcp_conn-&gt;iscsi_conn;
++
++	err = conn_init(conn);
++	if (err) {
++		free(tcp_conn);
++		goto out;
++	}
++
++	tcp_conn-&gt;fd = fd;
+ 	conn-&gt;tp = &amp;iscsi_tcp;
+ 
+ 	conn_read_pdu(conn);
+ 	set_non_blocking(fd);
+ 
+ 	err = tgt_event_add(fd, EPOLLIN, iscsi_tcp_event_handler, conn);
+-	if (err)
+-		goto free_conn;
++	if (err) {
++		conn_exit(conn);
++		free(tcp_conn);
++		goto out;
++	}
+ 
+ 	return;
+-free_conn:
+-	free(conn);
+ out:
+ 	close(fd);
+ 	return;
+@@ -213,46 +228,54 @@ static int iscsi_tcp_init(void)
+ static size_t iscsi_tcp_read(struct iscsi_connection *conn, void *buf,
+ 			     size_t nbytes)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
+-	return read(tci-&gt;fd, buf, nbytes);
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
++	return read(tcp_conn-&gt;fd, buf, nbytes);
+ }
+ 
+ static size_t iscsi_tcp_write_begin(struct iscsi_connection *conn, void *buf,
+ 				    size_t nbytes)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int opt = 1;
+ 
+-	setsockopt(tci-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
+-	return write(tci-&gt;fd, buf, nbytes);
++	setsockopt(tcp_conn-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
++	return write(tcp_conn-&gt;fd, buf, nbytes);
+ }
+ 
+ static void iscsi_tcp_write_end(struct iscsi_connection *conn)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int opt = 0;
+ 
+-	setsockopt(tci-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
++	setsockopt(tcp_conn-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
+ }
+ 
+ static size_t iscsi_tcp_close(struct iscsi_connection *conn)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
++
++	tgt_event_del(tcp_conn-&gt;fd);
++	return close(tcp_conn-&gt;fd);
++}
++
++static void iscsi_tcp_release(struct iscsi_connection *conn)
++{
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 
+-	tgt_event_del(tci-&gt;fd);
+-	return close(tci-&gt;fd);
++	conn_exit(conn);
++	free(tcp_conn);
+ }
+ 
+ static int iscsi_tcp_show(struct iscsi_connection *conn, char *buf, int rest)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int err, total = 0;
+ 	socklen_t slen;
+ 	char dst[INET6_ADDRSTRLEN];
+ 	struct sockaddr_storage from;
+ 
+ 	slen = sizeof(from);
+-	err = getpeername(tci-&gt;fd, (struct sockaddr *) &amp;from, &amp;slen);
++	err = getpeername(tcp_conn-&gt;fd, (struct sockaddr *) &amp;from, &amp;slen);
+ 	if (err &lt; 0) {
+ 		eprintf(&quot;%m\n&quot;);
+ 		return 0;
+@@ -272,10 +295,10 @@ static int iscsi_tcp_show(struct iscsi_connection *conn, char *buf, int rest)
+ 
+ void iscsi_event_modify(struct iscsi_connection *conn, int events)
+ {
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int ret;
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
+ 
+-	ret = tgt_event_modify(tci-&gt;fd, events);
++	ret = tgt_event_modify(tcp_conn-&gt;fd, events);
+ 	if (ret)
+ 		eprintf(&quot;tgt_event_modify failed\n&quot;);
+ }
+@@ -294,17 +317,17 @@ void iscsi_tcp_free_data_buf(struct iscsi_connection *conn, void *buf)
+ int iscsi_tcp_getsockname(struct iscsi_connection *conn, struct sockaddr *sa,
+ 			  socklen_t *len)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 
+-	return getsockname(tci-&gt;fd, sa, len);
++	return getsockname(tcp_conn-&gt;fd, sa, len);
+ }
+ 
+ int iscsi_tcp_getpeername(struct iscsi_connection *conn, struct sockaddr *sa,
+ 			  socklen_t *len)
+ {
+-	struct tcp_conn_info *tci = conn-&gt;trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 
+-	return getpeername(tci-&gt;fd, sa, len);
++	return getpeername(tcp_conn-&gt;fd, sa, len);
+ }
+ 
+ struct iscsi_transport iscsi_tcp = {
+@@ -315,6 +338,7 @@ struct iscsi_transport iscsi_tcp = {
+ 	.ep_write_begin		= iscsi_tcp_write_begin,
+ 	.ep_write_end		= iscsi_tcp_write_end,
+ 	.ep_close		= iscsi_tcp_close,
++	.ep_release		= iscsi_tcp_release,
+ 	.ep_show		= iscsi_tcp_show,
+ 	.ep_event_modify	= iscsi_event_modify,
+ 	.alloc_data_buf		= iscsi_tcp_alloc_data_buf,
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index fe4c556..e5a7f2c 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -179,7 +179,6 @@ struct iscsi_connection {
+ 	} auth;
+ 
+ 	struct iscsi_transport *tp;
+-	void *trans_data;   /* transport specific data */
+ };
+ 
+ #define STATE_FREE		0
+@@ -245,7 +244,8 @@ extern struct list_head iscsi_targets_list;
+ extern int cmnd_exec_auth_chap(struct iscsi_connection *conn);
+ 
+ /* conn.c */
+-extern struct iscsi_connection *conn_alloc(unsigned int trans_len);
++extern int conn_init(struct iscsi_connection *conn);
++extern void conn_exit(struct iscsi_connection *conn);
+ extern void conn_close(struct iscsi_connection *conn);
+ extern void conn_put(struct iscsi_connection *conn);
+ extern int conn_get(struct iscsi_connection *conn);
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index 788fa41..f7239c7 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -16,6 +16,8 @@ struct iscsi_transport {
+ 				 size_t nbytes);
+ 	void (*ep_write_end)(struct iscsi_connection *conn);
+ 	size_t (*ep_close)(struct iscsi_connection *conn);
++	void (*ep_release)(struct iscsi_connection *conn);
++
+ 	int (*ep_show)(struct iscsi_connection *conn, char *buf, int rest);
+ 	void (*ep_event_modify)(struct iscsi_connection *conn, int events);
+ 	void *(*alloc_data_buf)(struct iscsi_connection *conn, size_t sz);
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001142.html">[Stgt-devel] tgt disk and cd target with Microsoft initiator
+</A></li>
+	<LI>Next message: <A HREF="001148.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1147">[ date ]</a>
+              <a href="thread.html#1147">[ thread ]</a>
+              <a href="subject.html#1147">[ subject ]</a>
+              <a href="author.html#1147">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

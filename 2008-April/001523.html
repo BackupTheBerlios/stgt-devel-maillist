@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540804141945r1d696334n3e9c9f0cf76117c%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001522.html">
+   <LINK REL="Next"  HREF="001528.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540804141945r1d696334n3e9c9f0cf76117c%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue Apr 15 04:45:23 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001522.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+        <LI>Next message: <A HREF="001528.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1523">[ date ]</a>
+              <a href="thread.html#1523">[ thread ]</a>
+              <a href="subject.html#1523">[ subject ]</a>
+              <a href="author.html#1523">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Apr 15, 2008 at 10:23 AM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+
+&gt;<i>  Let me review the changes to the core first.
+</I>&gt;<i>
+</I>&gt;<i>  Once we agree on the changes to the core, please send them as separate
+</I>&gt;<i>  patches. Then you can post mmc patches as you like, a single patch or
+</I>&gt;<i>  multiple patches. I'm fine with either way.
+</I>
+Great, thanks.
+Thinking about it, it might not be necessary to be able to create a
+LUN which lacks a backing store, so that part of my proposed patch
+it probably a mistake.
+
+The semantics in core and tgtadm that i think would be useful for
+devices such as MMC, and probably also SSC, that support
+removable/ejectable media would be
+1, ability to administratively make LUNs online/offline. Such offline
+LUNs would still show up in report luns and be accessable, but the LUN
+when in offline
+    would behave as if there was no media loaded.
+2, something similar to the two added lun methods :
+lu_online/lu_offline which are called when the online/offline
+attribute changes.
+   So that the lun emulation cna perform additional, commandset
+specific actions when the online attribute changes.
+   For MMC, I think online/offline would map very nicely to &quot;media is
+inserted&quot;/&quot;no media loaded&quot;.
+   For MMC I think it would make sense to let the LUN close the
+backend file completely when the device goes offline and reopen it
+again
+   when the backend file goes online.   Thus
+offline/replacefile/online would be similar to eject tray/replace
+disk/close tray on a real physical device.
+
+I think that for SSC it would also make sense to have the emulation
+for this commandset also be informed/called on any/all changes on the
+online attribute
+in case SSC would want to map this and change its behaviour to map
+&quot;tape is inserted&quot;/&quot;no tape loaded&quot;.
+
+
+Maybe there are better ways to implement this than lu_online/offline
+methods for the lun. Though, for removable media it would be nice if
+the offline/online cycle did close and reopen the backingstore file
+incase one wants to &quot;swap the media&quot; while the device is offline.
+
+regards
+ronnie s.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001522.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+	<LI>Next message: <A HREF="001528.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1523">[ date ]</a>
+              <a href="thread.html#1523">[ thread ]</a>
+              <a href="subject.html#1523">[ subject ]</a>
+              <a href="author.html#1523">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

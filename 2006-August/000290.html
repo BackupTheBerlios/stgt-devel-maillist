@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154528383.2665.5.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000289.html">
+   <LINK REL="Next"  HREF="000278.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154528383.2665.5.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] User-mode iSER">mingz at ele.uri.edu
+       </A><BR>
+    <I>Wed Aug  2 16:19:43 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000289.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000278.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#290">[ date ]</a>
+              <a href="thread.html#290">[ thread ]</a>
+              <a href="subject.html#290">[ subject ]</a>
+              <a href="author.html#290">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 2006-08-02 at 09:01 -0500, Tom Tucker wrote:
+&gt;<i> [...snip...]
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I think this is the area where we will need to get fancy if we want
+</I>&gt;<i> &gt; &gt; higher performance. To avoid the copy, we would have to migrate to
+</I>&gt;<i> &gt; &gt; netchannels (if they every happen) or implement our own simple tear-away
+</I>&gt;<i> &gt; &gt; buffer scheme on top of a socket. I think this is phase-ii, however. 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; ok, otherwise copy to user space and copy back to kernel for disk = low
+</I>&gt;<i> &gt; performance. yes, direct io can be used here, but then u lose whole
+</I>&gt;<i> &gt; cache benefits.
+</I>&gt;<i> 
+</I>&gt;<i> Can you elaborate on the loss of &quot;whole cache benefits&quot;. 
+</I>
+if you use a Linux box as a storage server, it will be desired to use
+page cache as storage cache. though this will bring data integrity
+issues, but so many people still want to have it for specific
+applications.
+
+
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; you need an in-kernel target mode driver for FCP HBA. and i t shink this
+</I>&gt;<i> &gt; are one type of transports.
+</I>&gt;<i> 
+</I>&gt;<i> One possibility is to move up the kernel/user line to just above the
+</I>&gt;<i> network provider layer and make this a zero-copy interface. This would
+</I>&gt;<i> support zcopy for TCP, FC and RDMA. 
+</I>&gt;<i> 
+</I>&gt;<i> I don't think you would want this to be a netlink based interface,
+</I>&gt;<i> however, I think you would want it to be a syscall (or ioctl)
+</I>&gt;<i> interface...and this makes me worry that the Linux kernel guys wouldn't
+</I>&gt;<i> like that.
+</I>
+i could be wrong, in previous stgt design, the data need not to be
+copied to user space. but there are needs that process/transforming data
+before writing it to disk. for that, you need a zero copy for sure. as
+you said, kernel guy maybe dislike both.
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000289.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000278.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#290">[ date ]</a>
+              <a href="thread.html#290">[ thread ]</a>
+              <a href="subject.html#290">[ subject ]</a>
+              <a href="author.html#290">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

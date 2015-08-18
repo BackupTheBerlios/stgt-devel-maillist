@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Dealing with filemarks in SSC ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Dealing%20with%20filemarks%20in%20SSC%20...&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C04758A30%40TUS1XCHCLUPIN05.enterprise.veritas.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001966.html">
+   <LINK REL="Next"  HREF="001969.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Dealing with filemarks in SSC ...</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Dealing%20with%20filemarks%20in%20SSC%20...&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C04758A30%40TUS1XCHCLUPIN05.enterprise.veritas.com%3E"
+       TITLE="[Stgt-devel] Dealing with filemarks in SSC ...">mark_harvey at symantec.com
+       </A><BR>
+    <I>Wed Jul 30 01:54:40 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001966.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+        <LI>Next message: <A HREF="001969.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1968">[ date ]</a>
+              <a href="thread.html#1968">[ thread ]</a>
+              <a href="subject.html#1968">[ subject ]</a>
+              <a href="author.html#1968">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Both NetBackup and NetWorker use the following filemark handling.
+
+[data][filemark1][data][filemark1][data][filemark1][filemark2]
+
+Using the 'bsd' close (vs AT&amp;T close), the tape head is positioned after
+[filemark1] and before [filemark2]. A new 'write' command will overwrite
+[filemark2].
+
+Using this method, end of valid backup data is easily detected by two
+consecutive filemarks on tape. If there is only one filemark, there is
+more valid data to follow.
+
+Note: filemark1 and filemark2 are just 'filemarks' - they are not
+different types of filemarks. (Just in case this created any sort of
+confusion).
+
+Cheers
+Mark
+
+-----Original Message-----
+From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>
+[mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of Richard Sharpe
+Sent: Wednesday, July 30, 2008 9:45 AM
+To: stgt-devel
+Subject: [Stgt-devel] Dealing with filemarks in SSC ...
+
+I have been looking at this issue of filemarks in SSC, and it seems to
+me that there are a couple of questions that need to be answered.
+
+For example, if there are two file marks on a tape, or even three, and
+you write records onto the tape and overwrite one of the file marks,
+in some sense the drive should still be able to seek to the old second
+filemark (now the first filemark) ... and reliably recover the third
+file on the tape.
+
+I don't know if any software depends on that behavior, though.
+_______________________________________________
+Stgt-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001966.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+	<LI>Next message: <A HREF="001969.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1968">[ date ]</a>
+              <a href="thread.html#1968">[ thread ]</a>
+              <a href="subject.html#1968">[ subject ]</a>
+              <a href="author.html#1968">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

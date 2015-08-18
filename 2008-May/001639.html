@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] how to remove a disconnected target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20how%20to%20remove%20a%20disconnected%20target%3F&In-Reply-To=%3C482AD430.9030401%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001638.html">
+   <LINK REL="Next"  HREF="001640.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] how to remove a disconnected target?</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20how%20to%20remove%20a%20disconnected%20target%3F&In-Reply-To=%3C482AD430.9030401%40wpkg.org%3E"
+       TITLE="[Stgt-devel] how to remove a disconnected target?">mangoo at wpkg.org
+       </A><BR>
+    <I>Wed May 14 13:59:44 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001638.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1
+</A></li>
+        <LI>Next message: <A HREF="001640.html">[Stgt-devel] Next tgt release?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1639">[ date ]</a>
+              <a href="thread.html#1639">[ thread ]</a>
+              <a href="subject.html#1639">[ subject ]</a>
+              <a href="author.html#1639">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>As mentioned before on the list, removing a target which has any initiators 
+connected is currently not supported. Is there a workaround for that?
+
+I tried offlining the target first, which caused the initiator to be 
+disconnected, but &quot;tgtadm --op show --mode target&quot; erroneously shows that the 
+initiator is connected.
+
+Let's try to remove a target:
+
+# tgtadm --op update --mode target --tid=2 -n state -v offline
+# tgtadm --mode target --op delete --tid=2
+tgtadm: this target unit is still active
+
+
+After a while, the initiator will disconnect itself:
+
+  connection52:0: detected conn error (1011)
+sd 53:0:0:1: scsi: Device offlined - not ready after error recovery
+sd 53:0:0:1: SCSI error: return code = 0x00020000
+end_request: I/O error, dev sday, sector 128
+Buffer I/O error on device sday, logical block 16
+  connection52:0: iscsi conn_destroy(): host_busy 0 host_failed 0
+PM: Removing info for No Bus:connection52:0
+PM: Removing info for scsi:53:0:0:0
+PM: Removing info for scsi:53:0:0:1
+PM: Removing info for No Bus:session52
+PM: Removing info for No Bus:host53
+scsi 53:0:0:1: SCSI error: return code = 0x00010000
+end_request: I/O error, dev sday, sector 128
+Buffer I/O error on device sday, logical block 16
+
+
+For about a minute or so, both the target and the initiator will show a 
+TIME_WAIT for the connection (in netstat output), but soon, it will be gone.
+
+Despite that, &quot;tgtadm --op show --mode target&quot; shows the initiator on the 
+connection list. Why? Will it time out eventually?
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001638.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1
+</A></li>
+	<LI>Next message: <A HREF="001640.html">[Stgt-devel] Next tgt release?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1639">[ date ]</a>
+              <a href="thread.html#1639">[ thread ]</a>
+              <a href="subject.html#1639">[ subject ]</a>
+              <a href="author.html#1639">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

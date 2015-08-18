@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Re: SCSI Target framework configuration
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20SCSI%20Target%20framework%20configuration&In-Reply-To=%3C20050823004351S.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000001.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Re: SCSI Target framework configuration</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20SCSI%20Target%20framework%20configuration&In-Reply-To=%3C20050823004351S.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] Re: SCSI Target framework configuration">tomof at acm.org
+       </A><BR>
+    <I>Mon Aug 22 17:43:51 CEST 2005</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000001.html">[Stgt-devel] Re: SCSI Target framework configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#0">[ date ]</a>
+              <a href="thread.html#0">[ thread ]</a>
+              <a href="subject.html#0">[ subject ]</a>
+              <a href="author.html#0">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: SCSI Target framework configuration
+Date: Tue, 16 Aug 2005 15:27:39 -0500
+
+&gt;<i> &gt; I think we should export attributes through sysfs, and leave actual
+</I>&gt;<i> &gt; handling of the commands and complex configuration bits to netlink.
+</I>&gt;<i> &gt; Having different attributes for different drivers doesn't sound like
+</I>&gt;<i> &gt; a problem.
+</I>&gt;<i> 
+</I>&gt;<i> So, Fujita we can do something similar to scsi_transport_iscsi.c for the
+</I>&gt;<i> transport specific bits then. For driver specific things we should look
+</I>&gt;<i> at scsi-ml's way to add host and device attributes I think.
+</I>&gt;<i> 
+</I>&gt;<i> Do you want me to at least get the ioctl and procfs (session file only
+</I>&gt;<i> for now since LU suff should be stgt attributes like how scsi-ml does
+</I>&gt;<i> scsi_device attributes) stuff replaced with sysfs and nelinks? From
+</I>&gt;<i> there we can move the netlink processing out of the iscsi target transport
+</I>&gt;<i> class to its final destination.
+</I>
+Really sorry for novice questions again.
+
+How do 'iscsi_target_class' (similar to scsi_transport_iscsi.c) and
+'scsi_target_class' work together?
+
+scsi_target_class can handle LU stuff, which are common for all target
+drivers (FC and iSCSI at present).
+
+iscsi_target_class can handle connections (iSCSI specific) and sessions
+and targets, which some of thier informations are protocol specific.
+
+
+My first impression is that stgt.c has 'struct scsi_target_internal'
+like 'struct iscsi_internal' and stgt_iscsi.c and stgt_fc.c have
+protocol specific functions (e.g., exporting attributes). That is,
+target drivers call scsi_target_register (similar to
+iscsi_register_transport) and use helper functions in stgt_iscsi.c or
+stgt_fc.c to simplify their implementations.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000001.html">[Stgt-devel] Re: SCSI Target framework configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#0">[ date ]</a>
+              <a href="thread.html#0">[ thread ]</a>
+              <a href="subject.html#0">[ subject ]</a>
+              <a href="author.html#0">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

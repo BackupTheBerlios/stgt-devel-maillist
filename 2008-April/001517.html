@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C47FE2861.20202%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001516.html">
+   <LINK REL="Next"  HREF="001518.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C47FE2861.20202%40wpkg.org%3E"
+       TITLE="[Stgt-devel] Open connections">mangoo at wpkg.org
+       </A><BR>
+    <I>Thu Apr 10 16:46:57 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001516.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001518.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1517">[ date ]</a>
+              <a href="thread.html#1517">[ thread ]</a>
+              <a href="subject.html#1517">[ subject ]</a>
+              <a href="author.html#1517">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Thu, 10 Apr 2008 16:16:45 +0200
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> Niels de Carpentier schrieb:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> (...)
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Other problem I had with today's git is that tgtd &quot;hangs&quot;, i.e., the
+</I>&gt;&gt;&gt;&gt;<i> process still exists, but:
+</I>&gt;&gt;&gt;<i> There should be 2 processes, probably 1 died? I've had this happen during
+</I>&gt;&gt;&gt;<i> a initiator reconnect while the target was being configured. Putting the
+</I>&gt;&gt;&gt;<i> target offline during configuration has solved all these issues for me.
+</I>&gt;&gt;<i> It happened again - only one initiator was connected and operational, 
+</I>&gt;&gt;<i> after ~2 days of iscsi connection. I didn't restart anything, filter 
+</I>&gt;&gt;<i> packets, unplug cables, reconfigure or anything like that.
+</I>&gt;<i> 
+</I>&gt;<i> What kind of workload did you use?
+</I>&gt;<i> 
+</I>&gt;<i> I need to reproduce the bug. If you can, please run tgtd via gdb.
+</I>
+It's about ~10 MB/s read or write; sometimes it goes up to ~20-25 MB/s.
+Mostly random reads or writes.
+
+With that amount of data exchanged I don't think I have enough storage 
+for any kind of trace (it also doesn't happen very often - 2 days after 
+installation of the newest git snapshot).
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001516.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001518.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1517">[ date ]</a>
+              <a href="thread.html#1517">[ thread ]</a>
+              <a href="subject.html#1517">[ subject ]</a>
+              <a href="author.html#1517">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

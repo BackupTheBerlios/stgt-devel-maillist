@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%20persistent%0A%09device%09binding&In-Reply-To=%3C488EF64B.9090705%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001927.html">
+   <LINK REL="Next"  HREF="001948.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%20persistent%0A%09device%09binding&In-Reply-To=%3C488EF64B.9090705%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding">dorons at Voltaire.COM
+       </A><BR>
+    <I>Tue Jul 29 12:51:55 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001927.html">[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+</A></li>
+        <LI>Next message: <A HREF="001948.html">[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1947">[ date ]</a>
+              <a href="thread.html#1947">[ thread ]</a>
+              <a href="subject.html#1947">[ subject ]</a>
+              <a href="author.html#1947">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Eli Dorfman wrote:
+&gt;&gt;&gt;<i> maybe use the following format :
+</I>&gt;&gt;&gt;<i> &lt;target xyz&gt;
+</I>&gt;&gt;&gt;<i>     &lt;backing-store /dev/sdb&gt;
+</I>&gt;&gt;&gt;<i>           properties  custom # use properties specified below or
+</I>&gt;&gt;&gt;<i> default (generate the deadbeaf id) or direct (get real serial number)
+</I>&gt;&gt;&gt;<i>           serial-number 12345678
+</I>&gt;&gt;&gt;<i>           vendor myvendor
+</I>&gt;&gt;&gt;<i>     &lt;/backing-store&gt;
+</I>&gt;&gt;&gt;<i> &lt;/target&gt;
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> what do you think?
+</I>&gt;&gt;<i> Hmm, 'properties custom' looks unnecessary for me. If a device file of
+</I>&gt;&gt;<i> a disk drive is used as backing-store and none of the properties are
+</I>&gt;&gt;<i> specified, we can use the physical properties.
+</I>&gt;<i> 
+</I>&gt;<i> we need something like properties to differentiate between disk (read
+</I>&gt;<i> real props), file (generate unique serial number
+</I>&gt;<i> disk-sn-partition-filename) and custom (applicable to any case).
+</I>&gt;<i> we can call this attribute: &quot;type&quot; which can accept 3 values disk,
+</I>&gt;<i> file or custom (default).
+</I>
+This is what I suggest:
+
+&lt;target iqn.2007-04.com.example:san.monitoring&gt;
+   &lt;backing-store /tmp/ramdisk/lun1&gt;
+      type default
+      serial 12345678
+      vendor my_vendor
+      product_id my_id
+      product_rev my_rev
+   &lt;/backing-store&gt;
+
+   &lt;backing-store /dev/sdc&gt;
+      type disk
+   &lt;/backing-store&gt;
+&lt;/target&gt;
+
+The reason we use XML is that the original implementation used XML.
+
+We suggest two types:
+1. disk: &quot;real&quot; physical devices, where we read the properties from the device itself - i.e. storage disks.
+2. default - use default tgt values. 
+   We can also override the properties with user defined values (optional).
+
+The reason for the type attribute is to differentiate between these two types.
+
+What do you think about it?
+If it is agreed by everyone, I'll send a patch.
+
+Thanks,
+Doron
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001927.html">[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+</A></li>
+	<LI>Next message: <A HREF="001948.html">[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1947">[ date ]</a>
+              <a href="thread.html#1947">[ thread ]</a>
+              <a href="subject.html#1947">[ subject ]</a>
+              <a href="author.html#1947">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

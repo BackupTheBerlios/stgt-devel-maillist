@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] discovery not working anymore?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20discovery%20not%20working%20anymore%3F&In-Reply-To=%3C4719B4F3.6020401%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001088.html">
+   <LINK REL="Next"  HREF="001103.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] discovery not working anymore?</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20discovery%20not%20working%20anymore%3F&In-Reply-To=%3C4719B4F3.6020401%40gmail.com%3E"
+       TITLE="[Stgt-devel] discovery not working anymore?">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Oct 20 09:57:39 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001088.html">[Stgt-devel] [PATCH 12/20] iser task transport data
+</A></li>
+        <LI>Next message: <A HREF="001103.html">[Stgt-devel] discovery not working anymore?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1100">[ date ]</a>
+              <a href="thread.html#1100">[ thread ]</a>
+              <a href="subject.html#1100">[ subject ]</a>
+              <a href="author.html#1100">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>If I remember correctly I had used iscsiadm -m discovery -p &lt;IP&gt; before 
+on the tgt target, which worked.
+
+However, I noticed that using the latest SVN version I can't get the 
+discovery to work and detect the target. I tried with both open-iscsi 
+and tgt on the same machine as using separate machines for them, but it 
+didn't make a difference.
+
+Albert
+
+P.S. open-iscsi works fine discovering the targets on iscsi-target and 
+Wasabi, so it looks like the problem lies with tgt.
+
+Here's the setup I used:
+
+#!/bin/sh
+
+tgtadm --lld iscsi --mode target --op new --tid 1 -T 
+iqn.2007-09.net.homeunix.pauw:blue.stgt.disk
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name 
+scsi_id --value &quot;CONTROLLER&quot;
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name 
+scsi_sn --value &quot;001&quot;
+#
+# Define backing-store
+#
+tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 
+--backing-store /root/disk.bin --device-type disk
+#
+# Define SCSI ID (max 23 characters)
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 \
+         --params 
+vendor_id=SEAGATE,product_id=HD100,product_rev=0001,removable=0,sense_format=0
+#
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --name 
+scsi_id --value &quot;HARDDISK&quot;
+#
+# Define SCSI SN (max 23 characters)
+#
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --name 
+scsi_sn --value &quot;001&quot;
+#
+# Define who can connect
+#
+tgtadm --lld iscsi --mode target --op bind   --tid 1 -I All
+#
+# Set iSCSI parameters
+#
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+MaxConnections --value 1
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+MaxRecvDataSegmentLength --value 262144
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+MaxXmitDataSegmentLength --value 262144
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+FirstBurstLength --value 262144
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+MaxBurstLength --value 262144
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+DefaultTime2Wait --value 2
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+DefaultTime2Retain --value 20
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+MaxOutstandingR2T --value 8
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+DataPDUInOrder --value &quot;Yes&quot;
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+DataSequenceInOrder --value &quot;Yes&quot;
+tgtadm --lld iscsi --mode target --op update --tid 1 --name 
+ErrorRecoveryLevel --value 0
+tgtadm --lld iscsi --mode target --op update --tid 1 --name HeaderDigest 
+--value &quot;None&quot;
+tgtadm --lld iscsi --mode target --op update --tid 1 --name DataDigest 
+--value &quot;None&quot;
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001088.html">[Stgt-devel] [PATCH 12/20] iser task transport data
+</A></li>
+	<LI>Next message: <A HREF="001103.html">[Stgt-devel] discovery not working anymore?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1100">[ date ]</a>
+              <a href="thread.html#1100">[ thread ]</a>
+              <a href="subject.html#1100">[ subject ]</a>
+              <a href="author.html#1100">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

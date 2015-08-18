@@ -1,0 +1,384 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> RFC - Implement PERSISTENT RESERVE IN/OUT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20RFC%20-%20Implement%20PERSISTENT%20RESERVE%20IN/OUT&In-Reply-To=%3Cmailman.50.1331738485.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002041.html">
+   <LINK REL="Next"  HREF="002035.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>RFC - Implement PERSISTENT RESERVE IN/OUT</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20RFC%20-%20Implement%20PERSISTENT%20RESERVE%20IN/OUT&In-Reply-To=%3Cmailman.50.1331738485.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="RFC - Implement PERSISTENT RESERVE IN/OUT">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Aug 20 06:42:27 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002041.html">[Stgt-devel] [PATCH 2/2] Take 2: Implement smc INITIALIZE ELEMENT STATUS WITH RANGE
+</A></li>
+        <LI>Next message: <A HREF="002035.html">Add persistent reserve in/out to ssc module
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2034">[ date ]</a>
+              <a href="thread.html#2034">[ thread ]</a>
+              <a href="subject.html#2034">[ subject ]</a>
+              <a href="author.html#2034">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Implement service action 'READ KEY' which returns
+a hard-coded string 'ABC1234'
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/scsi.h |    5 ++
+ usr/spc.c  |  231 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/spc.h  |    2 +
+ usr/tgtd.h |   13 ++++
+ 4 files changed, 251 insertions(+), 0 deletions(-)
+
+diff --git a/usr/scsi.h b/usr/scsi.h
+index 84fadff..a9481a1 100644
+--- a/usr/scsi.h
++++ b/usr/scsi.h
+@@ -208,6 +208,11 @@
+ #define ASC_POSITION_PAST_BOM			0x3b0c
+ #define ASC_MEDIUM_REMOVAL_PREVENTED		0x5302
+ #define ASC_BAD_MICROCODE_DETECTED		0x8283
++#define ASC_INSUFFICENT_RESERVE_RESOURCE	0x5502
++#define ASC_INSUFFICENT_RESOURCE		0x5503
++#define ASC_INSUFFICENT_REGISTRAT_RESOURCE	0x5504
++#define ASC_INSUFFICENT_AC_RESOURCE		0x5505
++#define ASC_AUX_MEMORY_OUT_OF_SPACE		0x5506
+
+ /* Key 6: Unit Attention */
+ #define ASC_NOT_READY_TO_TRANSITION		0x2800
+diff --git a/usr/spc.c b/usr/spc.c
+index bd2c975..cc088bf 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -880,6 +880,237 @@ void dump_cdb(struct scsi_cmd *cmd)
+ 	}
+ }
+
++/**
++ * SCSI Persistent Reservation
++ *
++ * Reference: spc4r16 Ch 5.7
++ *
++ * Interesting points:
++ *  - Persistent reservations are not reset by hard reset, lu reset ot I_T loss
++ *  - Optionally, may be retained when power to target is lost
++ */
++
++/**
++ * PERSISTENT RESERVE IN - 5Eh
++ * Ref: 6.13
++ *
++ */
++#define PR_IN_READ_KEYS 0
++#define PR_IN_READ_RESERVATION 1
++#define PR_IN_REPORT_CAPABILITIES 2
++#define PR_IN_READ_FULL_STATUS 3
++static int spc_pr_read_keys(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t *buf;
++	int len;
++	int cdb_alloc_len;
++	struct scsi_pr *pr;
++
++	cdb_alloc_len = ((cmd-&gt;scb[7] &amp; 0xff) &lt;&lt; 8) | (cmd-&gt;scb[8] &amp; 0xff);
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++
++	buf = scsi_get_in_buffer(cmd);
++	len = sizeof(cmd-&gt;dev-&gt;pr.pr_key);
++	memset(buf, 0, len + 8);
++
++	dprintf(&quot;Buf: %p, len: %d, cdb_alloc_len: %d\n&quot;,
++			 buf, len, cdb_alloc_len);
++
++	buf[0] = (pr-&gt;PRgeneration &gt;&gt; 24) &amp; 0xff;
++	buf[1] = (pr-&gt;PRgeneration &gt;&gt; 16) &amp; 0xff;
++	buf[2] = (pr-&gt;PRgeneration &gt;&gt;  8) &amp; 0xff;
++	buf[3] = pr-&gt;PRgeneration &amp; 0xff;
++	buf[4] = (len &gt;&gt; 24) &amp; 0xff;
++	buf[5] = (len &gt;&gt; 16) &amp; 0xff;
++	buf[6] = (len &gt;&gt;  8) &amp; 0xff;
++	buf[7] = len &amp; 0xff;
++
++	strcpy(buf + 8, &quot;ABC1234&quot;);
++	memcpy(scsi_get_in_buffer(cmd), buf, min(cdb_alloc_len, len + 8));
++
++	scsi_set_in_resid_by_actual(cmd, len + 8);
++
++	return SAM_STAT_GOOD;
++}
++
++static int spc_pr_read_reservation(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf(&quot;**** Called ****\n&quot;);
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_report_capabilities(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf(&quot;**** Called ****\n&quot;);
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_read_full_status(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf(&quot;**** Called ****\n&quot;);
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++struct service_action pr_in_service_actions[] = {
++	{PR_IN_READ_KEYS, spc_pr_read_keys},
++	{PR_IN_READ_RESERVATION, spc_pr_read_reservation},
++	{PR_IN_REPORT_CAPABILITIES, spc_pr_report_capabilities},
++	{PR_IN_READ_FULL_STATUS, spc_pr_read_full_status},
++	{0, NULL}
++};
++
++int persistent_reserve_in(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t action;
++	struct service_action *service_action;
++
++	action = cmd-&gt;scb[1] &amp; 0x1f;
++	service_action = find_service_action(pr_in_service_actions, action);
++
++	if (!service_action) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++				ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	return service_action-&gt;cmd_perform(host_no, cmd);
++}
++
++/**
++ * PERSISTENT RESERVE OUT - 5Fh
++ * Ref: 6.14
++ */
++#define PR_OUT_REGISTER 0
++#define PR_OUT_RESERVE 1
++#define PR_OUT_RELEASE 2
++#define PR_OUT_CLEAR 3
++#define PR_OUT_PREEMPT 4
++#define PR_OUT_PREEMPT_ABORT 5
++#define PR_OUT_REGISTER_IGNORE 6
++#define PR_OUT_REGISTER_MOVE 7
++
++static int spc_pr_register(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++	pr-&gt;PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_reserve(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf(&quot;**** Called ****\n&quot;);
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_release(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf(&quot;**** Called ****\n&quot;);
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_clear(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++	pr-&gt;PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_preempt(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++	pr-&gt;PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_preempt_abort(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++	pr-&gt;PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_register_ignore(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++	pr-&gt;PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_register_move(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf(&quot;**** Called ****\n&quot;);
++	pr = &amp;cmd-&gt;dev-&gt;pr;
++	pr-&gt;PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++struct service_action pr_out_service_actions[] = {
++	{PR_OUT_REGISTER, spc_pr_register},
++	{PR_OUT_RESERVE, spc_pr_reserve},
++	{PR_OUT_RELEASE, spc_pr_release},
++	{PR_OUT_CLEAR, spc_pr_clear},
++	{PR_OUT_PREEMPT, spc_pr_preempt},
++	{PR_OUT_PREEMPT_ABORT, spc_pr_preempt_abort},
++	{PR_OUT_REGISTER_IGNORE, spc_pr_register_ignore},
++	{PR_OUT_REGISTER_MOVE, spc_pr_register_move},
++	{0, NULL}
++};
++
++int persistent_reserve_out(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t action;
++	struct service_action *service_action;
++
++	action = cmd-&gt;scb[1] &amp; 0x1f;
++	service_action = find_service_action(pr_out_service_actions, action);
++
++	if (!service_action) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++				ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	return service_action-&gt;cmd_perform(host_no, cmd);
++}
++
+ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+ {
+ 	dump_cdb(cmd);
+diff --git a/usr/spc.h b/usr/spc.h
+index 8fe3e3c..bdc3c1f 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -9,6 +9,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+ extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+ extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
++extern int persistent_reserve_in(int host_no, struct scsi_cmd *cmd);
++extern int persistent_reserve_out(int host_no, struct scsi_cmd *cmd);
+ extern int spc_lu_init(struct scsi_lu *lu);
+
+ typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 4febcd3..d2c7135 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -19,6 +19,11 @@
+
+ #define VENDOR_ID	&quot;IET&quot;
+
++/* 8 byte reservation key size */
++#define PR_KEY_SZ 8
++/* Number of PR keys we can store at any one time */
++#define PR_RESERVATION_SZ 4
++
+ #define _TAB1 &quot;    &quot;
+ #define _TAB2 _TAB1 _TAB1
+ #define _TAB3 _TAB1 _TAB1 _TAB1
+@@ -126,6 +131,12 @@ struct mode_pg {
+ 	uint8_t mode_data[0];	/* Rest of mode page info */
+ };
+
++struct scsi_pr {
++	/* Persistent Reservation Generation */
++	uint32_t PRgeneration;
++	uint8_t pr_key[PR_RESERVATION_SZ][PR_KEY_SZ];
++};
++
+ struct scsi_lu {
+ 	int fd;
+ 	uint64_t addr; /* persistent mapped address */
+@@ -150,6 +161,8 @@ struct scsi_lu {
+ 	uint8_t	mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+ 	struct mode_pg *mode_pgs[0x3f];
+
++	struct scsi_pr pr;
++
+ 	struct lu_phy_attr attrs;
+
+ 	/* A pointer for each modules private use.
+-- 
+1.5.6
+
+[PATCH 2/2]
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002041.html">[Stgt-devel] [PATCH 2/2] Take 2: Implement smc INITIALIZE ELEMENT STATUS WITH RANGE
+</A></li>
+	<LI>Next message: <A HREF="002035.html">Add persistent reserve in/out to ssc module
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2034">[ date ]</a>
+              <a href="thread.html#2034">[ thread ]</a>
+              <a href="subject.html#2034">[ subject ]</a>
+              <a href="author.html#2034">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

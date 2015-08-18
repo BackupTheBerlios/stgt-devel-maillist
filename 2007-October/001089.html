@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 19/20] iser flush before disconn
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2019/20%5D%20iser%20flush%20before%20disconn&In-Reply-To=%3C9388035f4da72b26d0dde09445776bc84b0cf861.1192554396.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001091.html">
+   <LINK REL="Next"  HREF="001084.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 19/20] iser flush before disconn</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2019/20%5D%20iser%20flush%20before%20disconn&In-Reply-To=%3C9388035f4da72b26d0dde09445776bc84b0cf861.1192554396.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 19/20] iser flush before disconn">pw at osc.edu
+       </A><BR>
+    <I>Tue Oct 16 17:21:26 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001091.html">[Stgt-devel] [PATCH 18/20] iser core
+</A></li>
+        <LI>Next message: <A HREF="001084.html">[Stgt-devel] [PATCH 20/20] iser wait for rdma completion
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1089">[ date ]</a>
+              <a href="thread.html#1089">[ thread ]</a>
+              <a href="subject.html#1089">[ subject ]</a>
+              <a href="author.html#1089">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>It sometimes happens that the CQ will have a flushed work request
+before we have gotten around to picking up the CM disconnect event.
+Don't exit if this happens, just complain a bit.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_rdma.c |   35 +++++++++++++++++------------------
+ 1 files changed, 17 insertions(+), 18 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+index 9e6bac6..f4c6c23 100644
+--- a/usr/iscsi/iscsi_rdma.c
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -1045,27 +1045,26 @@ static void iser_rx_progress_one(struct iser_device *dev)
+ 		}
+ 
+ 		VALGRIND_MAKE_MEM_DEFINED(&amp;wc, sizeof(wc));
+-		if (wc.status != IBV_WC_SUCCESS) {
+-			if (wc.status == IBV_WC_WR_FLUSH_ERR) {
+-				recvl = ptr_from_int64(wc.wr_id);
+-				ci = recvl-&gt;conn;
+-				if (ci-&gt;draining) {
+-					--ci-&gt;recvl_posted;
+-					if (ci-&gt;freed &amp;&amp; ci-&gt;recvl_posted == 0)
+-						iscsi_rdma_conn_free(
+-							ci-&gt;iscsi_conn);
+-					continue;
+-				}
++		if (wc.status == IBV_WC_SUCCESS) {
++			handle_wc(&amp;wc);
++			if (++numwc == MAX_RX_PROGRESS) {
++				num_rx_ready = 1;
++				break;
++			}
++		} else if (wc.status == IBV_WC_WR_FLUSH_ERR) {
++			recvl = ptr_from_int64(wc.wr_id);
++			ci = recvl-&gt;conn;
++			if (ci-&gt;draining) {
++				--ci-&gt;recvl_posted;
++				if (ci-&gt;freed &amp;&amp; ci-&gt;recvl_posted == 0)
++					iscsi_rdma_conn_free(ci-&gt;iscsi_conn);
++			} else {
++				eprintf(&quot;conn %p flush recv\n&quot;, ci);
++				/* call disconnect now? */
+ 			}
++		} else {
+ 			eprintf(&quot;bad WC status %d for wr_id 0x%llx\n&quot;,
+ 				wc.status, (unsigned long long) wc.wr_id);
+-			exit(1);
+-		}
+-
+-		handle_wc(&amp;wc);
+-		if (++numwc == MAX_RX_PROGRESS) {
+-			num_rx_ready = 1;
+-			break;
+ 		}
+ 	}
+ }
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001091.html">[Stgt-devel] [PATCH 18/20] iser core
+</A></li>
+	<LI>Next message: <A HREF="001084.html">[Stgt-devel] [PATCH 20/20] iser wait for rdma completion
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1089">[ date ]</a>
+              <a href="thread.html#1089">[ thread ]</a>
+              <a href="subject.html#1089">[ subject ]</a>
+              <a href="author.html#1089">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

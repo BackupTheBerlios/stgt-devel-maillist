@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1169476732.2784.19.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000383.html">
+   <LINK REL="Next"  HREF="000382.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] sg_turs on stgt iscsi drive is very slow</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1169476732.2784.19.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] sg_turs on stgt iscsi drive is very slow">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Mon Jan 22 15:38:52 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000383.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+        <LI>Next message: <A HREF="000382.html">[Stgt-devel] [PATCH] stgt: compile fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#386">[ date ]</a>
+              <a href="thread.html#386">[ thread ]</a>
+              <a href="subject.html#386">[ subject ]</a>
+              <a href="author.html#386">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 2007-01-22 at 15:39 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</I>&gt;<i> Date: Sat, 20 Jan 2007 11:08:00 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; On Sun, 2007-01-21 at 01:05 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; &gt; From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; &gt; Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</I>&gt;<i> &gt; &gt; Date: Sat, 20 Jan 2007 10:52:42 -0500
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; do you have a road map for stgt? see, need to read your reply for Pete
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; to know OSD is already under your plan.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; Well, I decided not to plan anything. I was supposed to finish iSER
+</I>&gt;<i> &gt; &gt; &gt; &gt; target code however I'm playing with other stuff like sg v4.
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; this does not do good for stgt project in long term. u can always lay it
+</I>&gt;<i> &gt; &gt; &gt; out and people know how to contribute more efficiently.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I can't say when something will be implemented. But I said what the
+</I>&gt;<i> &gt; &gt; project needs (and what I want to do). So I think that people know how
+</I>&gt;<i> &gt; &gt; to contribute.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; sure. maybe i missed some email traffic here, then could u have wish
+</I>&gt;<i> &gt; list here? thanks.
+</I>&gt;<i> 
+</I>&gt;<i> Here's something that I think about. Mike also has some different
+</I>&gt;<i> ideas, I think.
+</I>&gt;<i> 
+</I>
+thanks a lot!
+
+&gt;<i> 
+</I>&gt;<i> - FC target mode drivers
+</I>&gt;<i> 
+</I>&gt;<i> First, we need to figure out how to add target mode support to
+</I>&gt;<i> mainline scsi_transport_fc. Then we need more tweaks in the user-space
+</I>&gt;<i> code.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - user-space passthrough
+</I>&gt;<i> 
+</I>&gt;<i> sg v4 is necessary for the user-space target drivers' passthrough.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - AIO event notification
+</I>&gt;<i> 
+</I>&gt;<i> The user-space target drivers (only iSCSI now, possibly SRP later on)
+</I>&gt;<i> need the event notification to handle both synchronous and
+</I>&gt;<i> asynchronous file descriptors. We use the aio epoll patch (that would
+</I>&gt;<i> be merged into mainline at 2.6.21), but it's not effective. We need
+</I>&gt;<i> something like kevent.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - backing-storage disk images
+</I>&gt;<i> 
+</I>&gt;<i> bd_mmap/aio support only raw images. They should support fancy disk
+</I>&gt;<i> images (like QCOW, vmdk, etc) to enjoy snapshot without using LVM.
+</I>&gt;<i> Adding QCOW to bd_mmap is quite simple, but a bit tricky to bd_aio
+</I>&gt;<i> (see Xen's blktap code). Without code duplication, we need to add disk
+</I>&gt;<i> images to both bd_mmap/aio.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - rearrange backing storage code
+</I>&gt;<i> 
+</I>&gt;<i> Now the backing storage code includes: file I/O (bd_mmap/aio/xen) and
+</I>&gt;<i> user-space passthrough (bd_sg). The design are hacky. The backing
+</I>&gt;<i> storage code will be more complicated (supports the fancy disk images,
+</I>&gt;<i> OSD, etc). We need to reconsider the design at some future time.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - kernel-space passthrough
+</I>&gt;<i> 
+</I>&gt;<i> We need a new kernel module for the kernel-space target drivers'
+</I>&gt;<i> passthrough. Seems it's ok by James as long as it's cleanly
+</I>&gt;<i> implemented.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - persistent reservations
+</I>&gt;<i> 
+</I>&gt;<i> Nice though I'm not sure this is that important.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> - backing-storage virtualization
+</I>&gt;<i> 
+</I>&gt;<i> Virtual tape support would be nice but it needs lot of work and I have
+</I>&gt;<i> no plan to implement this.
+</I>&gt;<i> 
+</I>&gt;<i> Virtual cdrom support isn't difficult but I'm not sure people really
+</I>&gt;<i> need it.
+</I>-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000383.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+	<LI>Next message: <A HREF="000382.html">[Stgt-devel] [PATCH] stgt: compile fixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#386">[ date ]</a>
+              <a href="thread.html#386">[ thread ]</a>
+              <a href="subject.html#386">[ subject ]</a>
+              <a href="author.html#386">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

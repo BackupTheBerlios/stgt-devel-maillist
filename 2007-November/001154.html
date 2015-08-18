@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 03/20] iser transport buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2003/20%5D%20iser%20transport%20buf&In-Reply-To=%3C20071115124527L.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001145.html">
+   <LINK REL="Next"  HREF="001139.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 03/20] iser transport buf</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2003/20%5D%20iser%20transport%20buf&In-Reply-To=%3C20071115124527L.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 03/20] iser transport buf">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Nov 15 04:45:27 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001145.html">[Stgt-devel] [PATCH 03/20] iser transport buf
+</A></li>
+        <LI>Next message: <A HREF="001139.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1154">[ date ]</a>
+              <a href="thread.html#1154">[ thread ]</a>
+              <a href="subject.html#1154">[ subject ]</a>
+              <a href="author.html#1154">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 14 Nov 2007 16:33:32 +0900
+FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt; wrote:
+
+&gt;<i> On Tue, 13 Nov 2007 19:36:05 -0500
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Mon, 12 Nov 2007 23:14 +0900:
+</I>&gt;<i> &gt; &gt; On Tue, 16 Oct 2007 11:18:57 -0400
+</I>&gt;<i> &gt; &gt; Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; For RDMA, it is often nice to use data from a pool of pre-registered
+</I>&gt;<i> &gt; &gt; &gt; buffers.  To do this, the transport allocates memory for a response and
+</I>&gt;<i> &gt; &gt; &gt; passes it down to the devices to fill.  Some operations, though,
+</I>&gt;<i> &gt; &gt; &gt; allocate their own buffers and return that new memory instead.  These
+</I>&gt;<i> &gt; &gt; &gt; are usually small and the allocation is just done for convenience to
+</I>&gt;<i> &gt; &gt; &gt; avoid length bounds checking.  Copy the data into the provided transport
+</I>&gt;<i> &gt; &gt; &gt; buffer instead.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I killed memory allocation in scsi device code (spc, mmc, sbc, smc)
+</I>&gt;<i> &gt; &gt; and kill all the hacky memory management code. Now LLDs allocate and
+</I>&gt;<i> &gt; &gt; free buffer for data transfer.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; But now you need two mallocs per command:  one for the task and one
+</I>&gt;<i> &gt; for the (aligned) data.  Bidi needs three.  This will show up in
+</I>&gt;<i> &gt; iser performance, but might be a worthwhile trade-off.  Maybe we
+</I>&gt;<i> &gt; could add slabs for common sizes (ick).
+</I>&gt;<i> 
+</I>&gt;<i> I thought that iSER code already does something like that since you
+</I>&gt;<i> use pre-registered buffer again and again.
+</I>&gt;<i> 
+</I>&gt;<i> glib also does something like that. So I don't think that this change
+</I>&gt;<i> will effect performance much.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; I have a lot of rebasing to do after all your bidi buffer work.  It
+</I>&gt;<i> &gt; looks like good changes so far, but I have a couple of concerns from
+</I>&gt;<i> &gt; a brief peruse of the changes in git.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Zeroing out the data chunk for non-READ/WRITE commands.  There are
+</I>&gt;<i> &gt; lots of OSD commands hidden inside the 0x7f extended format, and
+</I>&gt;<i> &gt; other non-OSD non-SBC commands too.  Can we just move the zeroing to
+</I>&gt;<i> &gt; where it is needed?  Like in each of the inquiry, etc.  This zeroing
+</I>&gt;<i> &gt; was a major performance problem for iser.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, I added that hack because device type code is broken (assumes
+</I>&gt;<i> that buffer is large enough and zero'ed out). We need to fix device
+</I>&gt;<i> type code.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Accessor and setter functions for scmd.  I don't see what value they
+</I>&gt;<i> &gt; add.  Except maybe for the &quot;(void*)(unsigned long)&quot; ones.
+</I>&gt;<i> 
+</I>&gt;<i> I want to insulate LLDs from scsi_cmd internals like Linux scsi-ml
+</I>&gt;<i> does. It enables us to change the structure freely in the future
+</I>&gt;<i> without caring about device type code and llds.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Also, building functions using cpp to glue names together breaks
+</I>&gt;<i> &gt; things like ctags, cscope, and diff -p.  Curious to hear why you
+</I>&gt;<i> &gt; like them.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, there are the pros and cons of using cpp magic. I prefer using
+</I>&gt;<i> cpp magic than defining lots of similar functions. And I think that
+</I>&gt;<i> linux scsi developers are already familiar with that (see the
+</I>&gt;<i> transport classes).
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Thanks for working on this.  Bidi handling in bs_* will be much
+</I>&gt;<i> &gt; cleaner now.
+</I>&gt;<i> 
+</I>&gt;<i> No problem. I wanted this cleanups before the code becomes bigger by
+</I>&gt;<i> adding iSER, FCoE, etc.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt;  I'll be away from email until 25 nov, but will look at
+</I>&gt;<i> &gt; your changes in detail and rebase iser after.
+</I>&gt;<i> 
+</I>&gt;<i> Thanks. Until 25, I try to merge some of your iSER patches that
+</I>&gt;<i> haven't been merged yet.
+</I>
+I think that I've merged all the patches that I can merge. I wait for
+your third submission.
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001145.html">[Stgt-devel] [PATCH 03/20] iser transport buf
+</A></li>
+	<LI>Next message: <A HREF="001139.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1154">[ date ]</a>
+              <a href="thread.html#1154">[ thread ]</a>
+              <a href="subject.html#1154">[ subject ]</a>
+              <a href="author.html#1154">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

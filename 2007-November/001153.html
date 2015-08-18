@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 15/20] iser rounding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2015/20%5D%20iser%20rounding&In-Reply-To=%3C20071115112052Z.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001156.html">
+   <LINK REL="Next"  HREF="001150.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 15/20] iser rounding</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2015/20%5D%20iser%20rounding&In-Reply-To=%3C20071115112052Z.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 15/20] iser rounding">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Nov 15 03:20:52 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001156.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+        <LI>Next message: <A HREF="001150.html">[Stgt-devel] [PATCH 13/20] iser close free
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1153">[ date ]</a>
+              <a href="thread.html#1153">[ thread ]</a>
+              <a href="subject.html#1153">[ subject ]</a>
+              <a href="author.html#1153">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 16 Oct 2007 11:21:23 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> RDMA data packets are not padded up to 4 byte boundaries, unlike TCP.
+</I>&gt;<i> Reasons for this can be found in doc/README.iser.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/iscsid.c |   24 +++++++++++++++++-------
+</I>&gt;<i>  1 files changed, 17 insertions(+), 7 deletions(-)
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> index 8b7b48e..6d5471e 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> @@ -1157,7 +1157,9 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+</I>&gt;<i>  			uint32_t len;
+</I>&gt;<i>  			void *buf;
+</I>&gt;<i>  
+</I>&gt;<i> -			len = roundup(task-&gt;read_len, 4);
+</I>&gt;<i> +			len = task-&gt;read_len;
+</I>&gt;<i> +			if (!conn-&gt;tp-&gt;rdma)
+</I>&gt;<i> +				len = roundup(len, 4);
+</I>
+I want to avoid doing something like this:
+
+if (conn-&gt;tp-&gt;rdma)
+	do iser
+else
+	do tcp
+
+
+Can you add 'pad_len' to iscsi_transport struct and do something like:
+
+len = roundup(task-&gt;read_len, conn-&gt;tp-&gt;pad_len);
+
+
+tcp sets it to PAD_WORD_LEN and iser sets it to 1.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001156.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+	<LI>Next message: <A HREF="001150.html">[Stgt-devel] [PATCH 13/20] iser close free
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1153">[ date ]</a>
+              <a href="thread.html#1153">[ thread ]</a>
+              <a href="subject.html#1153">[ subject ]</a>
+              <a href="author.html#1153">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

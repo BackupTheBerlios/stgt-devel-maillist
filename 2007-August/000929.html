@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Inconsistency%20in%20usage%20of%20scsi_id%20and%20iscsi_sn%3F&In-Reply-To=%3C46B8511E.6080806%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000928.html">
+   <LINK REL="Next"  HREF="000971.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Inconsistency%20in%20usage%20of%20scsi_id%20and%20iscsi_sn%3F&In-Reply-To=%3C46B8511E.6080806%40gmail.com%3E"
+       TITLE="[Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?">albert.pauw at gmail.com
+       </A><BR>
+    <I>Tue Aug  7 13:01:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000928.html">[Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?
+</A></li>
+        <LI>Next message: <A HREF="000971.html">[Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#929">[ date ]</a>
+              <a href="thread.html#929">[ thread ]</a>
+              <a href="subject.html#929">[ subject ]</a>
+              <a href="author.html#929">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mark Harvey wrote:
+&gt;<i> Try a 'lsscsi -g' and then a &quot;sg_inq -v /dev/sg??' where ?? is the sg 
+</I>&gt;<i> path returned from 'lsscsi -g'
+</I>&gt;<i> And
+</I>&gt;<i> sg_inq -p 80 /dev/sg??
+</I>&gt;<i> sg_inq -p 83 /dev/sg??
+</I>&gt;<i>
+</I>&gt;<i> Some of the parameters are used inq params 80, 83 etc
+</I>&gt;<i>
+</I>&gt;<i> I need to refer back to the code to identify exactly where each param 
+</I>&gt;<i> is used. (A follow up email tomorrow).
+</I>&gt;<i>
+</I>&gt;<i> Note: lsscsi &amp; sg3_utils available from www.torque.net/sg/
+</I>&gt;<i>
+</I>&gt;<i> Cheers
+</I>&gt;<i> Mark
+</I>[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at orange</A> ~]# sg_inq -v /dev/sg3
+    inquiry cdb: 12 00 00 00 24 00
+standard INQUIRY:
+    inquiry cdb: 12 00 00 00 42 00
+  PQual=0  Device_type=5  RMB=1  version=0x05  [SPC-3]
+  [AERC=0]  [TrmTsk=1]  NormACA=0  HiSUP=0  Resp_data_format=2
+  SCCS=0  ACC=0  TGPS=0  3PC=0  Protect=0  BQue=0
+  EncServ=0  MultiP=0  [MChngr=0]  [ACKREQQ=0]  Addr16=0
+  [RelAdr=0]  WBus16=0  Sync=0  Linked=0  [TranDis=0]  CmdQue=1
+  [SPI: Clocking=0x0  QAS=0  IUS=0]
+    length=66 (0x42)   Peripheral device type: cd/dvd
+ Vendor identification: MITSUMI
+ Product identification: FD001
+ Product revision level: 0001
+    inquiry cdb: 12 01 00 00 fc 00
+    inquiry: requested 252 bytes but got 7 bytes
+    inquiry cdb: 12 01 80 00 fc 00
+    inquiry: requested 252 bytes but got 12 bytes
+ Unit serial number: 001
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at orange</A> ~]# sg_inq -p 0x83 /dev/sg3
+VPD INQUIRY: Device Identification page
+  Designation descriptor number 1, descriptor length: 28
+    id_type: T10 vendor identification,  code_set: Binary
+    associated with the addressed logical unit
+      vendor id: CDROM IS
+      vendor specific: O
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at orange</A> ~]# sg_inq -p 0x80 /dev/sg3
+VPD INQUIRY: Unit serial number page
+  Unit serial number: 001
+
+By the way, as you can see it's sg_inq -p 0x80/0x83 (hex, not decimal) 
+but that was easy to figure out.
+If you look at the vendor id and vendor specific of the -p 0x83, then it 
+looks like the scsi_id is send,
+but in a wrong way. The scsi_id was set up as &quot;CDROM ISO&quot;, here you can 
+see that vendor id is seen
+as &quot;CDROM IS&quot; and vendor specific as &quot;O&#168;.
+
+Albert
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000928.html">[Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?
+</A></li>
+	<LI>Next message: <A HREF="000971.html">[Stgt-devel] Inconsistency in usage of scsi_id and iscsi_sn?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#929">[ date ]</a>
+              <a href="thread.html#929">[ thread ]</a>
+              <a href="subject.html#929">[ subject ]</a>
+              <a href="author.html#929">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

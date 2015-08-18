@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Ideas on more flexible cd handling
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Ideas%20on%20more%20flexible%20cd%20handling&In-Reply-To=%3Cf29db9a80711041744t460798adqdae322e29fe7c75a%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001131.html">
+   <LINK REL="Next"  HREF="001134.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Ideas on more flexible cd handling</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Ideas%20on%20more%20flexible%20cd%20handling&In-Reply-To=%3Cf29db9a80711041744t460798adqdae322e29fe7c75a%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Ideas on more flexible cd handling">markh794 at gmail.com
+       </A><BR>
+    <I>Mon Nov  5 02:44:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001131.html">[Stgt-devel] Ideas on more flexible cd handling
+</A></li>
+        <LI>Next message: <A HREF="001134.html">[Stgt-devel] Ideas on more flexible cd handling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1133">[ date ]</a>
+              <a href="thread.html#1133">[ thread ]</a>
+              <a href="subject.html#1133">[ subject ]</a>
+              <a href="author.html#1133">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Albert,
+
+As far as I can remember, I have already added this support for to MMC device.
+
+You need to make sure you set the MMC device as 'removable'
+
+i.e. By combining the SMC with the MMC module, you can have a workable
+CD jukebox within the SCSI target framework.
+
+I'm been busy for the last couple of months with work related issues
+and have not really visited the code lately.
+
+Cheers
+Mark
+On Nov 3, 2007 4:35 AM, Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+&gt;<i> At the moment it is possible to export a CD iso through tgt but it is
+</I>&gt;<i> not very flexible.
+</I>&gt;<i>
+</I>&gt;<i> What I would like to see is that an eject command on the initiator side
+</I>&gt;<i> &quot;ejects&quot; the iso image on the tgt side, effectively replacing the cd iso
+</I>&gt;<i> image by /dev/null or /dev/zero on the backing store. On the initiator
+</I>&gt;<i> side it looks like no cd is inserted now. When, at the target side, I
+</I>&gt;<i> add again a backing store (a new iso cd image) to the cd LUN it will
+</I>&gt;<i> send a CD inserted message up to the initiator.
+</I>&gt;<i>
+</I>&gt;<i> The same can be used for the virtual tapes as it has the same principle
+</I>&gt;<i> (tape ejected/tape inserted).
+</I>&gt;<i>
+</I>&gt;<i> This could then be tied into a cd/tape changer device which could manage
+</I>&gt;<i> a directory containing iso/tape images.
+</I>&gt;<i>
+</I>&gt;<i> In fact you can argue the same for disks, albeit not a standard way of
+</I>&gt;<i> using them, but it would have the same result of inserting a new
+</I>&gt;<i> (SATA/SAS/SCSI) disk to a controller with hotplug insertion.
+</I>&gt;<i>
+</I>&gt;<i> So what do people think of this idea?
+</I>&gt;<i>
+</I>&gt;<i> Albert
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001131.html">[Stgt-devel] Ideas on more flexible cd handling
+</A></li>
+	<LI>Next message: <A HREF="001134.html">[Stgt-devel] Ideas on more flexible cd handling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1133">[ date ]</a>
+              <a href="thread.html#1133">[ thread ]</a>
+              <a href="subject.html#1133">[ subject ]</a>
+              <a href="author.html#1133">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

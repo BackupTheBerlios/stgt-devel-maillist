@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C4868A0C4.6010404%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001714.html">
+   <LINK REL="Next"  HREF="001707.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C4868A0C4.6010404%40wpkg.org%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Jun 30 11:00:52 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001714.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+        <LI>Next message: <A HREF="001707.html">[Stgt-devel] fula albinotic
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1732">[ date ]</a>
+              <a href="thread.html#1732">[ thread ]</a>
+              <a href="subject.html#1732">[ subject ]</a>
+              <a href="author.html#1732">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mark Harvey schrieb:
+&gt;<i> My 2c worth.
+</I>&gt;<i> 
+</I>&gt;<i> Try running the tgtd in 'foreground' mode (after setting &quot;ulimit -c
+</I>&gt;<i> unlimited&quot;).
+</I>&gt;<i> 
+</I>&gt;<i> You will then get a core file which should be a little easier to work
+</I>&gt;<i> with (vs gdb on a running tgtd instance).
+</I>&gt;<i> e.g.
+</I>
+It doesn't crash when started in the foreground mode.
+
+Also, when started in the foreground mode, we only have one tgtd 
+process, so perhaps this somehow makes the issue harder or impossible to 
+reproduce.
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001714.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+	<LI>Next message: <A HREF="001707.html">[Stgt-devel] fula albinotic
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1732">[ date ]</a>
+              <a href="thread.html#1732">[ thread ]</a>
+              <a href="subject.html#1732">[ subject ]</a>
+              <a href="author.html#1732">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C47D946E6.5070604%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001463.html">
+   <LINK REL="Next"  HREF="001465.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C47D946E6.5070604%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel">mangoo at wpkg.org
+       </A><BR>
+    <I>Thu Mar 13 16:23:18 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001463.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+        <LI>Next message: <A HREF="001465.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1464">[ date ]</a>
+              <a href="thread.html#1464">[ thread ]</a>
+              <a href="subject.html#1464">[ subject ]</a>
+              <a href="author.html#1464">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+
+(...)
+
+&gt;&gt;&gt;<i> I could make it as the startup (boot) option though I don't like it
+</I>&gt;&gt;&gt;<i> either but I think that it's less problematic to set the default state
+</I>&gt;&gt;&gt;<i> to 'offline'.
+</I>&gt;&gt;<i> Either default to offline (bad for existing users) or give a startup 
+</I>&gt;<i> 
+</I>&gt;<i> Not only for existing users. People dislike extra operations.
+</I>&gt;<i> 
+</I>&gt;<i> I've used several commercial iSCSI target systems. All I need to do are
+</I>&gt;<i> setting up security (which initiators can connect) and luns with them.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;&gt;<i> option to tgtd (better). There is no other way, I guess (other than 
+</I>&gt;&gt;<i> making it compile-time option, which is really bad).
+</I>&gt;<i> 
+</I>&gt;<i> There is another option. If tgtd has no targets, then tgtd closes a
+</I>&gt;<i> connection instead of sending a response. So you can change the state
+</I>&gt;<i> to offline, configure targets and then change the state to running.
+</I>&gt;<i> 
+</I>&gt;<i> Try this patch (against the current git head).
+</I>
+No, this won't work reliably if you have more than one target.
+
+Let's say you have these targets; initiators connected to it:
+
+tgtadm --lld iscsi --op new --mode target --tid 1 -T 
+iqn.2008-03.com.example:san.target1
+tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b 
+/dev/san/target1
+tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+
+tgtadm --lld iscsi --op new --mode target --tid 2 -T 
+iqn.2008-03.com.example:san.target2
+tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 2 -b 
+/dev/san/target2
+tgtadm --lld iscsi --op bind --mode target --tid 2 -I ALL
+
+
+You just upgraded and restarted your target without disconnecting the 
+initiators. You have to go through these steps:
+
+target              initiator
+-----------------------------------
+not started         trying to reconnect
+start tgtd          trying to reconnect
+sleep 2s            trying to reconnect
+nothing configured  login I/O error - non fatal
+configure target1   conn to target1 OK
+no such target      conn to target2 FAIL
+                     I/O error to target2
+configure target2   too late, fatal, we lost it
+
+
+With one target it will never fail.
+With two targets it is not very likely to fail.
+
+With lots of targets and initiators the things will fail, and a user 
+which is not familiar with technicals will say &quot;it fails randomly&quot;.
+
+So I prefer the previous version of the patch, where the target is 
+explicitly in offline state (with &quot;tgtd --offline&quot; flag, perhaps).
+
+
+Or, is it possible not to fail connections to non-existing targets, but 
+to answer that the (non-existing, not-yet-configured) target is 
+offlined? Or will it be against RFCs?
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001463.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+	<LI>Next message: <A HREF="001465.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1464">[ date ]</a>
+              <a href="thread.html#1464">[ thread ]</a>
+              <a href="subject.html#1464">[ subject ]</a>
+              <a href="author.html#1464">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

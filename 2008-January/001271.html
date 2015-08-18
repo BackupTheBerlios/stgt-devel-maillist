@@ -1,0 +1,342 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/4] iscsi: renamed setup_lun to tgt-setup-lun
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/4%5D%20iscsi%3A%20renamed%20setup_lun%20to%20tgt-setup-lun&In-Reply-To=%3C47823F44.9070800%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001270.html">
+   <LINK REL="Next"  HREF="001272.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/4] iscsi: renamed setup_lun to tgt-setup-lun</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/4%5D%20iscsi%3A%20renamed%20setup_lun%20to%20tgt-setup-lun&In-Reply-To=%3C47823F44.9070800%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 1/4] iscsi: renamed setup_lun to tgt-setup-lun">erezz at voltaire.com
+       </A><BR>
+    <I>Mon Jan  7 16:03:32 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001270.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001272.html">[Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1271">[ date ]</a>
+              <a href="thread.html#1271">[ thread ]</a>
+              <a href="subject.html#1271">[ subject ]</a>
+              <a href="author.html#1271">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Renamed setup_lun to tgt-setup-lun. It enables
+users to easily find that this script is for tgt.
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ usr/scripts/setup_lun     |  127 ---------------------------------------------
+ usr/scripts/tgt-setup-lun |  127 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 127 insertions(+), 127 deletions(-)
+ delete mode 100644 usr/scripts/setup_lun
+ create mode 100644 usr/scripts/tgt-setup-lun
+
+diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+deleted file mode 100644
+index 0c8698c..0000000
+--- a/usr/scripts/setup_lun
++++ /dev/null
+@@ -1,127 +0,0 @@
+-# LUN assignment script
+-#
+-# Copyright (C) 2007 Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+-#
+-# This program is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation, version 2 of the
+-# License.
+-#
+-# This program is distributed in the hope that it will be useful, but
+-# WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+-# General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+-# 02110-1301 USA
+-
+-#!/bin/bash
+-
+-verify_params()
+-{
+-	# Make sure that the device exists
+-	if ! [ -b $dev -o -f $dev ]; then
+-		echo &quot;$dev is not a device&quot;;
+-		exit 1;
+-	fi
+-}
+-
+-find_vacant_tgt_id()
+-{
+-	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d&quot; &quot; -f2 | sed s/://)
+-
+-	next_vacant_id=1
+-
+-	for id in $id_list; do
+-		if (($id &gt; $next_vacant_id)); then
+-			break;
+-		else
+-			next_vacant_id=$((next_vacant_id+1))
+-		fi
+-	done
+-
+-	return $next_vacant_id
+-}
+-
+-find_vacant_lun()
+-{
+-	tid=$1
+-	tgt_found=0
+-	next_vacant_lun=0
+-	tmp_file=/tmp/target_list.txt
+-
+-	tgtadm --lld iscsi --op show --mode target &gt; $tmp_file
+-
+-	while read line; do
+-		# Check if we finished going over this target
+-		if ((tgt_found == 1 &amp;&amp; $(echo $line | grep -c &quot;^Target&quot;) == 1)); then
+-			break
+-		fi
+-
+-		# Check if we found the requested target
+-		if (($(echo $line | grep -c &quot;Target $tid:&quot;) == 1)); then
+-			tgt_found=1
+-			continue
+-		fi
+-
+-		if ((tgt_found == 1 &amp;&amp; $(echo $line | grep -c &quot;LUN:&quot;) == 1)); then
+-			curr_lun=$(echo $line | cut -d&quot; &quot; -f2)
+-			if (($curr_lun &gt; $next_vacant_lun)); then
+-				break
+-			else
+-				next_vacant_lun=$((next_vacant_lun+1))
+-			fi
+-		fi
+-	done &lt; $tmp_file
+-
+-	rm -f $tmp_file
+-
+-	if ((tgt_found == 0)); then
+-		echo &quot;Error: could not find a LUN for target $tid&quot;
+-		return -1
+-	fi
+-
+-	return $next_vacant_lun
+-}
+-
+-if [ $# -ne 3 ]; then
+-	name=$(basename $0)
+-	echo &quot;usage: $name &lt;dev&gt; &lt;initiator name&gt; &lt;initiator IP&gt;&quot;;
+-	echo &quot;example: $name /dev/sdb1 noni 192.168.10.63&quot;;
+-	exit 1;
+-fi
+-
+-dev=$1
+-initiator=$2
+-initiator_ip=$3
+-
+-verify_params
+-
+-# Check if tgtd is running (we should have 2 daemons)
+-tgtd_count=$(ps aux|grep -c tgtd)
+-if [ $tgtd_count -ne 3 ]; then
+-	echo &quot;Starting tgtd&quot;
+-	tgtd
+-fi
+-
+-tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$initiator&quot;
+-
+-find_vacant_tgt_id
+-tid=$?
+-
+-# Create the new target
+-echo &quot;Creating the new target&quot;
+-tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
+-
+-find_vacant_lun $tid
+-lun=$?
+-
+-# Add a logical unit to the target
+-echo &quot;Adding a logical unit to the target&quot;
+-tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
+-
+-# Accept only a specific initiator
+-echo &quot;Accepting connections only from $initiator_ip&quot;
+-tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+new file mode 100644
+index 0000000..0c8698c
+--- /dev/null
++++ b/usr/scripts/tgt-setup-lun
+@@ -0,0 +1,127 @@
++# LUN assignment script
++#
++# Copyright (C) 2007 Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation, version 2 of the
++# License.
++#
++# This program is distributed in the hope that it will be useful, but
++# WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++# General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++# 02110-1301 USA
++
++#!/bin/bash
++
++verify_params()
++{
++	# Make sure that the device exists
++	if ! [ -b $dev -o -f $dev ]; then
++		echo &quot;$dev is not a device&quot;;
++		exit 1;
++	fi
++}
++
++find_vacant_tgt_id()
++{
++	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d&quot; &quot; -f2 | sed s/://)
++
++	next_vacant_id=1
++
++	for id in $id_list; do
++		if (($id &gt; $next_vacant_id)); then
++			break;
++		else
++			next_vacant_id=$((next_vacant_id+1))
++		fi
++	done
++
++	return $next_vacant_id
++}
++
++find_vacant_lun()
++{
++	tid=$1
++	tgt_found=0
++	next_vacant_lun=0
++	tmp_file=/tmp/target_list.txt
++
++	tgtadm --lld iscsi --op show --mode target &gt; $tmp_file
++
++	while read line; do
++		# Check if we finished going over this target
++		if ((tgt_found == 1 &amp;&amp; $(echo $line | grep -c &quot;^Target&quot;) == 1)); then
++			break
++		fi
++
++		# Check if we found the requested target
++		if (($(echo $line | grep -c &quot;Target $tid:&quot;) == 1)); then
++			tgt_found=1
++			continue
++		fi
++
++		if ((tgt_found == 1 &amp;&amp; $(echo $line | grep -c &quot;LUN:&quot;) == 1)); then
++			curr_lun=$(echo $line | cut -d&quot; &quot; -f2)
++			if (($curr_lun &gt; $next_vacant_lun)); then
++				break
++			else
++				next_vacant_lun=$((next_vacant_lun+1))
++			fi
++		fi
++	done &lt; $tmp_file
++
++	rm -f $tmp_file
++
++	if ((tgt_found == 0)); then
++		echo &quot;Error: could not find a LUN for target $tid&quot;
++		return -1
++	fi
++
++	return $next_vacant_lun
++}
++
++if [ $# -ne 3 ]; then
++	name=$(basename $0)
++	echo &quot;usage: $name &lt;dev&gt; &lt;initiator name&gt; &lt;initiator IP&gt;&quot;;
++	echo &quot;example: $name /dev/sdb1 noni 192.168.10.63&quot;;
++	exit 1;
++fi
++
++dev=$1
++initiator=$2
++initiator_ip=$3
++
++verify_params
++
++# Check if tgtd is running (we should have 2 daemons)
++tgtd_count=$(ps aux|grep -c tgtd)
++if [ $tgtd_count -ne 3 ]; then
++	echo &quot;Starting tgtd&quot;
++	tgtd
++fi
++
++tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$initiator&quot;
++
++find_vacant_tgt_id
++tid=$?
++
++# Create the new target
++echo &quot;Creating the new target&quot;
++tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++
++find_vacant_lun $tid
++lun=$?
++
++# Add a logical unit to the target
++echo &quot;Adding a logical unit to the target&quot;
++tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++
++# Accept only a specific initiator
++echo &quot;Accepting connections only from $initiator_ip&quot;
++tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+-- 
+1.5.3.7
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001270.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001272.html">[Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1271">[ date ]</a>
+              <a href="thread.html#1271">[ thread ]</a>
+              <a href="subject.html#1271">[ subject ]</a>
+              <a href="author.html#1271">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200508231547.j7NFlfZX009190%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000024.html">
+   <LINK REL="Next"  HREF="000010.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200508231547.j7NFlfZX009190%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">tomof at acm.org
+       </A><BR>
+    <I>Tue Aug 23 17:47:40 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000024.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000010.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#9">[ date ]</a>
+              <a href="thread.html#9">[ thread ]</a>
+              <a href="subject.html#9">[ subject ]</a>
+              <a href="author.html#9">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 00:59:16 -0500
+
+&gt;<i> This adds the beginings of a stgt_device_template for
+</I>&gt;<i> passthrough commands. It will end up using the block
+</I>&gt;<i> layer BLOCK_PC facility to pass the command to the
+</I>&gt;<i> underlying device similar to how we do it for SG_IO
+</I>&gt;<i> and dm-multipath hw_handlers like dm-emc.c.
+</I>&gt;<i> 
+</I>&gt;<i> It is not completely hooked in yet. The command
+</I>&gt;<i> handling needs to be done and so does the actual
+</I>&gt;<i> device creation.
+</I>&gt;<i> 
+</I>&gt;<i> This was built over my last patch.
+</I>
+The patch to fix memory leak.
+
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.vsd/kernel/stgt_sd.c stgt.work/kernel/stgt_sd.c
+--- stgt.vsd/kernel/stgt_sd.c	2005-08-23 23:47:50.000000000 +0900
++++ stgt.work/kernel/stgt_sd.c	2005-08-24 00:45:16.000000000 +0900
+@@ -71,10 +71,6 @@
+ 	if (err)
+ 		return err;
+ 
+-	sddev = kmalloc(sizeof(*sddev), GFP_KERNEL);
+-	if (!sddev)
+-		return -ENOMEM;
+-
+ 	err = open_dev(sddev, devt);
+ 	if (err)
+ 		goto free_sddev;
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000024.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000010.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#9">[ date ]</a>
+              <a href="thread.html#9">[ thread ]</a>
+              <a href="subject.html#9">[ subject ]</a>
+              <a href="author.html#9">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

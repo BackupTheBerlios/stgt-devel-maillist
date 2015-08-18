@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Which kernel should be used for stgt?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Which%20kernel%20should%20be%20used%20for%20stgt%3F&In-Reply-To=%3C471BA5FF.9080202%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001101.html">
+   <LINK REL="Next"  HREF="001104.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Which kernel should be used for stgt?</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Which%20kernel%20should%20be%20used%20for%20stgt%3F&In-Reply-To=%3C471BA5FF.9080202%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] Which kernel should be used for stgt?">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Sun Oct 21 21:18:23 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001101.html">[Stgt-devel] Which kernel should be used for stgt?
+</A></li>
+        <LI>Next message: <A HREF="001104.html">[Stgt-devel] Which kernel should be used for stgt?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1102">[ date ]</a>
+              <a href="thread.html#1102">[ thread ]</a>
+              <a href="subject.html#1102">[ subject ]</a>
+              <a href="author.html#1102">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Erez Zilber wrote:
+&gt;<i> Hi,
+</I>&gt;<i> 
+</I>&gt;<i> So far, I ran stgt only over the kernel from the linux-2.6-target git 
+</I>&gt;<i> tree. Can I run it over any kernel &gt;= 2.6.20? Can I also run it over any 
+</I>&gt;<i> major distro? SLES 10 sp1? RHEL 5? RHEL 5.1?
+</I>
+It depends on what target you want to run. Are you just wanting to run 
+the iscsi/iser parts? You did not want to run ibm vscsi did you?
+
+&gt;<i> 
+</I>&gt;<i> BTW - are there any planned changes for the kernel code? Is stgt 
+</I>&gt;<i> progress done only in userspace now?
+</I>&gt;<i> 
+</I>
+For targets that require hardware like lpfc or qla2xxx, there will be 
+some kernel bits like the scsi_tgt_* code and LLD driver changes. But a 
+good chunk like is still in userspace.
+
+For targets like software iscsi, it is all userspace.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001101.html">[Stgt-devel] Which kernel should be used for stgt?
+</A></li>
+	<LI>Next message: <A HREF="001104.html">[Stgt-devel] Which kernel should be used for stgt?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1102">[ date ]</a>
+              <a href="thread.html#1102">[ thread ]</a>
+              <a href="subject.html#1102">[ subject ]</a>
+              <a href="author.html#1102">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

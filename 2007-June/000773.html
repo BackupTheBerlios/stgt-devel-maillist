@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into scsi_lu	struct.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/2%5D%20Move%20lu_phy_attr%20struct%20into%20scsi_lu%0A%09struct.&In-Reply-To=%3Cf29db9a80706132106k2298e6e8n568cb8ed18eb8dd8%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000772.html">
+   <LINK REL="Next"  HREF="000774.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into scsi_lu	struct.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/2%5D%20Move%20lu_phy_attr%20struct%20into%20scsi_lu%0A%09struct.&In-Reply-To=%3Cf29db9a80706132106k2298e6e8n568cb8ed18eb8dd8%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into scsi_lu	struct.">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Jun 14 06:06:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000772.html">[Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into	scsi_lu	struct.
+</A></li>
+        <LI>Next message: <A HREF="000774.html">[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#773">[ date ]</a>
+              <a href="thread.html#773">[ thread ]</a>
+              <a href="subject.html#773">[ subject ]</a>
+              <a href="author.html#773">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 6/13/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+&gt;<i> On Wed, 2007-06-13 at 18:04 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; Re-arrange lu_phy_attr structure into scsi_lu struct.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> &gt; index a8aced5..0ac5f72 100644
+</I>&gt;<i> &gt; --- a/usr/mmc.c
+</I>&gt;<i> &gt; +++ b/usr/mmc.c
+</I>&gt;<i> &gt; @@ -126,11 +126,11 @@ static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> &gt;       if (spc_lu_init(lu))
+</I>&gt;<i> &gt;               return -ENOMEM;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; -     memcpy(lu-&gt;attrs-&gt;product_id, &quot;VIRTUAL-CDROM&quot;, 16);
+</I>&gt;<i> &gt; -     lu-&gt;attrs-&gt;sense_format = 0;
+</I>&gt;<i> &gt; -     lu-&gt;attrs-&gt;version_desc[0] = 0x02A0; /* MMC3, no version claimed */
+</I>&gt;<i> &gt; -     lu-&gt;attrs-&gt;version_desc[1] = 0x0960; /* iSCSI */
+</I>&gt;<i> &gt; -     lu-&gt;attrs-&gt;version_desc[2] = 0x0300; /* SPC-3 */
+</I>&gt;<i> &gt; +     memcpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CDROM&quot;, 16);
+</I>&gt;<i>
+</I>&gt;<i> access the memory over boundary. strncpy is better.
+</I>
+Cheers.
+
+I'll get a patch together to fix very soon.
+
+Mark Harvey
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000772.html">[Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into	scsi_lu	struct.
+</A></li>
+	<LI>Next message: <A HREF="000774.html">[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#773">[ date ]</a>
+              <a href="thread.html#773">[ thread ]</a>
+              <a href="subject.html#773">[ subject ]</a>
+              <a href="author.html#773">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

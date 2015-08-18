@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question for pass-through target design
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C4656F4DC.5000407%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000703.html">
+   <LINK REL="Next"  HREF="000602.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question for pass-through target design</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C4656F4DC.5000407%40vlnb.net%3E"
+       TITLE="[Stgt-devel] Question for pass-through target design">vst at vlnb.net
+       </A><BR>
+    <I>Fri May 25 16:38:20 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000703.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+        <LI>Next message: <A HREF="000602.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#708">[ date ]</a>
+              <a href="thread.html#708">[ thread ]</a>
+              <a href="subject.html#708">[ subject ]</a>
+              <a href="author.html#708">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Robert Jennings wrote:
+&gt;<i> * Vladislav Bolkhovitin (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>) wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i>Robert Jennings wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i>What I meant that is that the kernel tgt code (scsi_tgt*) receives
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i>SCSI commands from one lld and send them to another lld instead of
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i>sending them to user space.
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;<i>Although the approach of passing SCSI commands from a target LLD to an
+</I>&gt;&gt;&gt;&gt;&gt;<i>initiator one without any significant interventions from the target
+</I>&gt;&gt;&gt;&gt;&gt;<i>software looks to be nice and simple, you should realize how limited,
+</I>&gt;&gt;&gt;&gt;&gt;<i>unsafe and illegal it is, since it badly violates SCSI specs.
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i>I think that 'implemented cleanly' means that one scsi_host is assigned
+</I>&gt;&gt;&gt;&gt;<i>to only one initiator.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>Vladislav listed a number of issues that are inherent in an implementation
+</I>&gt;&gt;&gt;<i>that does not have a 1:1 relationship of initiators to targets.  The vscsi
+</I>&gt;&gt;&gt;<i>architecture defines the 1:1 relationship; it's imposible to have more
+</I>&gt;&gt;&gt;<i>than one initiator per target.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>Just few small notes:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>1. As I already wrote, complete 1:1 relationship isn't practically 
+</I>&gt;&gt;<i>possible, because there is always a local access on the target (i.e. one 
+</I>&gt;&gt;<i>more initiator) and you can't disable it on practice.
+</I>&gt;<i> 
+</I>&gt;<i> I was proposing a 1:1 relationship of initiator to target within the
+</I>&gt;<i> target framework for in-kernel pass-through.  We would still have the
+</I>&gt;<i> case that local access on the target is possible; an administrator with
+</I>&gt;<i> privileges neccessary to create a target would have the responsibility
+</I>&gt;<i> to not then access the device locally.  
+</I>&gt;<i> 
+</I>&gt;<i> This is no different than if I create my root file system on /dev/sda1,
+</I>&gt;<i> I should not also 'dd' data to /dev/sda1 while the system is running.
+</I>&gt;<i> It's a bad idea, but nothing stops me; however this is something that
+</I>&gt;<i> only a root level user can do.  This would be the same, these targets in
+</I>&gt;<i> pass-through have permissions by default that do not allow local access
+</I>&gt;<i> by non-root users.
+</I>
+In principle, yes, but, as usually, on practice it's not so easy. In 
+your file system example the device is accessed via the FS, which 
+provides a shared mode, and everybody doesn't have any need to do 
+anything directly with the device. But in case of non-disk devices they 
+are always accessed directly, so to explain your limitation you will 
+have to write it with HUGE letters everywhere. Once one SCST user 
+cleared Unit Attention on his exported tape device using st driver and 
+asked then me why it isn't delivered to his remote initiator.
+
+&gt;&gt;<i>2. 1:1 relationship is a serious limitation for usage cases like an SPI 
+</I>&gt;&gt;<i>tape library serving backup for several servers on an FC net.
+</I>&gt;<i> 
+</I>&gt;<i> Restricting the relationship to 1:1 would be for pass-through devices
+</I>&gt;<i> only, this would not necessarily dictate other target types which could
+</I>&gt;<i> be used for such cases.
+</I>
+The tape library from my example is the pass-through device. You can't 
+access a parallel SCSI (SPI) device on an Fibre Channel (FC) in any 
+other mode, right?
+
+Vlad
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000703.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+	<LI>Next message: <A HREF="000602.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#708">[ date ]</a>
+              <a href="thread.html#708">[ thread ]</a>
+              <a href="subject.html#708">[ subject ]</a>
+              <a href="author.html#708">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

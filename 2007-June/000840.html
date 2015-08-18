@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Some remarks on current git version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Some%20remarks%20on%20current%20git%20version&In-Reply-To=%3Cb2919bc20706250141m20ceeff5o68c92e45ea6b28b0%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000839.html">
+   <LINK REL="Next"  HREF="000835.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Some remarks on current git version</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Some%20remarks%20on%20current%20git%20version&In-Reply-To=%3Cb2919bc20706250141m20ceeff5o68c92e45ea6b28b0%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Some remarks on current git version">albert.pauw at gmail.com
+       </A><BR>
+    <I>Mon Jun 25 10:41:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000839.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+        <LI>Next message: <A HREF="000835.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#840">[ date ]</a>
+              <a href="thread.html#840">[ thread ]</a>
+              <a href="subject.html#840">[ subject ]</a>
+              <a href="author.html#840">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>That's the thing I tried (redefine LUN 0) but for the moment that doesn't
+work.
+But it sounds like a good compromise to me.
+
+I'm all for it.
+
+Albert
+
+On 6/25/07, Hannes Reinecke &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> Albert Pauw wrote:
+</I>&gt;<i> &gt; FUJITA Tomonori wrote:
+</I>&gt;<i> &gt;&gt; From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+</I>&gt;<i> &gt;&gt; Subject: [Stgt-devel] Some remarks on current git version
+</I>&gt;<i> &gt;&gt; Date: Fri, 22 Jun 2007 21:06:10 +0200
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; Here are a few loose ends, some of which are very simple, some are
+</I>&gt;<i> remarks:
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; - ssc.c uses the word Controler, should be Controller, just a typo
+</I>&gt;<i> (yes,
+</I>&gt;<i> &gt;&gt;&gt; I am just being picky).
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt; Thanks, fixed.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; - when configuring just a disk target I still get harrassed by this
+</I>&gt;<i> Lun
+</I>&gt;<i> &gt;&gt;&gt; 0 Controller,
+</I>&gt;<i> &gt;&gt;&gt;   I understand you need one when you are doing vtl, but there should
+</I>&gt;<i> be
+</I>&gt;<i> &gt;&gt;&gt; a way to get rid of it when not needed.
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt; Only if the current code doesn't work, we should implement a feature
+</I>&gt;<i> &gt;&gt; to remove I want to keep the code simple.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; - I am not able to define a cdrom anymore (using an cd iso as backing
+</I>&gt;<i> &gt;&gt;&gt; store),  --device-type cdrom doesn't work.
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt; Try Mark's way. It should work. Patches to improve the manpage and
+</I>&gt;<i> &gt;&gt; documents are welcome.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt; Thanks Mark and Fujita,
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; using &quot;cd&quot; works fine, tried other descriptions but not this one.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I guess I have to live with the conroller, I am ok with it, as long as
+</I>&gt;<i> &gt; it doesn't bite :-)
+</I>&gt;<i> &gt;
+</I>&gt;<i> There is actually an easy way around this:
+</I>&gt;<i> Allow the LUN0 default LUN to be overwritten by later configuration.
+</I>&gt;<i> This way we'll have the default LUN only if not configured (ie avoid the
+</I>&gt;<i> lun==0 checks) but we have the highest flexibility.
+</I>&gt;<i> And it'll work with existing setups.
+</I>&gt;<i>
+</I>&gt;<i> Cheers,
+</I>&gt;<i>
+</I>&gt;<i> Hannes
+</I>&gt;<i> --
+</I>&gt;<i> Dr. Hannes Reinecke                   zSeries &amp; Storage
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>                          +49 911 74053 688
+</I>&gt;<i> SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N&#252;rnberg
+</I>&gt;<i> GF: Markus Rex, HRB 16746 (AG N&#252;rnberg)
+</I>&gt;<i>
+</I>-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070625/5bbcb929/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070625/5bbcb929/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000839.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+	<LI>Next message: <A HREF="000835.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#840">[ date ]</a>
+              <a href="thread.html#840">[ thread ]</a>
+              <a href="subject.html#840">[ subject ]</a>
+              <a href="author.html#840">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

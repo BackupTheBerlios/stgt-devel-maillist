@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C478F246C.4040400%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001281.html">
+   <LINK REL="Next"  HREF="001283.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C478F246C.4040400%40vlnb.net%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">vst at vlnb.net
+       </A><BR>
+    <I>Thu Jan 17 10:48:28 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001281.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001283.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1282">[ date ]</a>
+              <a href="thread.html#1282">[ thread ]</a>
+              <a href="subject.html#1282">[ subject ]</a>
+              <a href="author.html#1282">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> On Thu, 17 Jan 2008 10:27:08 +0100
+</I>&gt;<i> &quot;Bart Van Assche&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bart.vanassche at gmail.com</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;&gt;<i>Hello,
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>I have performed a test to compare the performance of SCST and STGT.
+</I>&gt;&gt;<i>Apparently the SCST target implementation performed far better than
+</I>&gt;&gt;<i>the STGT target implementation. This makes me wonder whether this is
+</I>&gt;&gt;<i>due to the design of SCST or whether STGT's performance can be
+</I>&gt;&gt;<i>improved to the level of SCST ?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+</I>&gt;&gt;<i>cache -- no disk reads were performed, all reads were from the cache).
+</I>&gt;&gt;<i>Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>                              STGT read             SCST read
+</I>&gt;&gt;<i>                           performance (MB/s)   performance (MB/s)
+</I>&gt;&gt;<i>Ethernet (1 Gb/s network)        77                    89
+</I>&gt;&gt;<i>IPoIB (8 Gb/s network)           82                   229
+</I>&gt;&gt;<i>SRP (8 Gb/s network)            N/A                   600
+</I>&gt;&gt;<i>iSER (8 Gb/s network)            80                   N/A
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>These results show that SCST uses the InfiniBand network very well
+</I>&gt;&gt;<i>(effectivity of about 88% via SRP), but that the current STGT version
+</I>&gt;&gt;<i>is unable to transfer data faster than 82 MB/s. Does this mean that
+</I>&gt;&gt;<i>there is a severe bottleneck  present in the current STGT
+</I>&gt;&gt;<i>implementation ?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I don't know about the details but Pete said that he can achieve more
+</I>&gt;<i> than 900MB/s read performance with tgt iSER target using ramdisk.
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://www.mail-archive.com/stgt-devel@lists.berlios.de/msg00004.html">http://www.mail-archive.com/stgt-devel@lists.berlios.de/msg00004.html</A>
+</I>
+Please don't confuse multithreaded latency insensitive workload with 
+single threaded, hence latency sensitive one.
+
+&gt;<i> To unsubscribe from this list: send the line &quot;unsubscribe linux-scsi&quot; in
+</I>&gt;<i> the body of a message to <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">majordomo at vger.kernel.org</A>
+</I>&gt;<i> More majordomo info at  <A HREF="http://vger.kernel.org/majordomo-info.html">http://vger.kernel.org/majordomo-info.html</A>
+</I>&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001281.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001283.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1282">[ date ]</a>
+              <a href="thread.html#1282">[ thread ]</a>
+              <a href="subject.html#1282">[ subject ]</a>
+              <a href="author.html#1282">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

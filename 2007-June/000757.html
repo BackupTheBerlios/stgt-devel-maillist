@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%0A%091/2%5D%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3C200706090712.l597CSZV022841%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000756.html">
+   <LINK REL="Next"  HREF="000764.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%0A%091/2%5D%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3C200706090712.l597CSZV022841%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Jun  9 09:12:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000756.html">[Stgt-devel]	[Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+        <LI>Next message: <A HREF="000764.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#757">[ date ]</a>
+              <a href="thread.html#757">[ thread ]</a>
+              <a href="subject.html#757">[ subject ]</a>
+              <a href="author.html#757">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+Date: Tue, 5 Jun 2007 13:18:04 +1000
+
+&gt;<i> OK, just when I thought I'd found all my coding blunders...
+</I>&gt;<i> 
+</I>&gt;<i> A quick 'grep &quot;if\(&quot; identified some of my mistakes and a couple of
+</I>&gt;<i> other that slipped thru.
+</I>
+Applied, thanks a lot. No base64 attachment next time, please.
+
+Some comments for next time.
+
+&gt;<i>  int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i> @@ -40,7 +44,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	uint8_t *data;
+</I>&gt;<i>  	uint8_t *scb = cmd-&gt;scb;
+</I>&gt;<i>  	unsigned char device_type = cmd-&gt;c_target-&gt;dev_type_template.type;
+</I>&gt;<i> -	char *product_id = cmd-&gt;c_target-&gt;dev_type_template.pid;
+</I>&gt;<i> +	struct lu_phy_attr *attributes = cmd-&gt;dev-&gt;attributes;
+</I>&gt;<i>  	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+</I>&gt;<i>  
+</I>&gt;<i>  	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+</I>&gt;<i> @@ -57,22 +61,21 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+</I>&gt;<i>  
+</I>&gt;<i>  	if (!(scb[1] &amp; 0x3)) {
+</I>&gt;<i> +		int i;
+</I>&gt;<i>  		data[0] = device_type;
+</I>&gt;<i> -		data[2] = 4;
+</I>&gt;<i> +		data[1] = (attributes-&gt;is_removable) ? 0x80 : 0;
+</I>&gt;<i> +		data[2] = 5;	/* SPC-3 */
+</I>&gt;<i>  		data[3] = 0x42;
+</I>&gt;<i> -		data[4] = 59;
+</I>&gt;<i>  		data[7] = 0x02;
+</I>&gt;<i>  		memset(data + 8, 0x20, 28);
+</I>&gt;<i> -		strncpy((char *)data + 8, VENDOR_ID, 8);
+</I>&gt;<i> -		strncpy((char *)data + 16, product_id, 16);
+</I>&gt;<i> -		strncpy((char *)data + 32, PRODUCT_REV, 4);
+</I>&gt;<i> -		data[58] = 0x03;
+</I>&gt;<i> -		data[59] = 0x20;
+</I>&gt;<i> -		data[60] = 0x09;
+</I>&gt;<i> -		data[61] = 0x60;
+</I>&gt;<i> -		data[62] = 0x03;
+</I>&gt;<i> -		data[63] = 0x00;
+</I>&gt;<i> -		len = 64;
+</I>&gt;<i> +		strncpy((char *)data + 8, attributes-&gt;vendor_ident, 8);
+</I>&gt;<i> +		strncpy((char *)data + 16, attributes-&gt;product_ident, 16);
+</I>&gt;<i> +		strncpy((char *)data + 32, attributes-&gt;product_rev, 4);
+</I>&gt;<i> +		for (i=0, len=58; i &lt; VERSION_DESCRIPTOR_LEN; i++, len += 2) {
+</I>&gt;<i> +			data[len] = (attributes-&gt;version_desc[i] &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i> +			data[len+1] = attributes-&gt;version_desc[i] &amp; 0xff;
+</I>&gt;<i> +		}
+</I>
+Should be:
+
+&gt;<i> +		for (i = 0, len = 58; i &lt; VERSION_DESCRIPTOR_LEN; i++, len += 2) {
+</I>
+Anyway, this part looks odd to me. I rewrote this part.
+
+
+&gt;<i> +struct lu_phy_attr {
+</I>&gt;<i> +	char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> +	char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i> +
+</I>&gt;<i> +	/* SCSI Inquiry Params */
+</I>&gt;<i> +	char vendor_ident[9];
+</I>&gt;<i> +	char product_ident[17];
+</I>
+Renamed vendor_id and product_id.
+
+&gt;<i> +	char product_rev[5];
+</I>&gt;<i> +	uint16_t version_desc[VERSION_DESCRIPTOR_LEN];
+</I>&gt;<i> +
+</I>&gt;<i> +	char is_removable;	/* Removable media */
+</I>&gt;<i> +	char online;		/* Logical Unit online ? */
+</I>&gt;<i> +	char reset;		/* Power-on or reset has occured */
+</I>&gt;<i> +	char sense_format;	/* Descrptor format sense data supported */
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i>  struct scsi_lu {
+</I>&gt;<i>  	int fd;
+</I>&gt;<i>  	uint64_t addr; /* persistent mapped address */
+</I>&gt;<i>  	uint64_t size;
+</I>&gt;<i>  	uint64_t lun;
+</I>&gt;<i> -	char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> -	char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i>  	char *path;
+</I>&gt;<i>  
+</I>&gt;<i>  	/* the list of devices belonging to a target */
+</I>&gt;<i> @@ -48,7 +63,7 @@ struct scsi_lu {
+</I>&gt;<i>  	uint64_t reserve_id;
+</I>&gt;<i>  
+</I>&gt;<i>  	/* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i> -	uint8_t d_sense;
+</I>&gt;<i> +	struct lu_phy_attr *attributes;
+</I>
+Why do we use a struct lu_phy_attr pointer? Why just can't we do:
+
+struct scsi_lu {
+...
+	struct lu_phy_attr attrs;
+};
+
+'attributes' is too long for me. renamed 'attrs'.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000756.html">[Stgt-devel]	[Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+	<LI>Next message: <A HREF="000764.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#757">[ date ]</a>
+              <a href="thread.html#757">[ thread ]</a>
+              <a href="subject.html#757">[ subject ]</a>
+              <a href="author.html#757">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi: refactor residual calculation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20refactor%20residual%20calculation&In-Reply-To=%3C20070322053347T.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000459.html">
+   <LINK REL="Next"  HREF="000462.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi: refactor residual calculation</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20refactor%20residual%20calculation&In-Reply-To=%3C20070322053347T.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi: refactor residual calculation">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Mar 22 15:05:42 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000459.html">[Stgt-devel] [PATCH] iscsi: refactor residual calculation
+</A></li>
+        <LI>Next message: <A HREF="000462.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#463">[ date ]</a>
+              <a href="thread.html#463">[ thread ]</a>
+              <a href="subject.html#463">[ subject ]</a>
+              <a href="author.html#463">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: [Stgt-devel] [PATCH] iscsi: refactor residual calculation
+Date: Wed, 21 Mar 2007 16:38:01 -0400
+
+&gt;<i> Break out iscsi residual calculation into a shared function
+</I>&gt;<i> to avoid code duplication.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>
+Thanks. I got:
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at ac</A>:~/git/tgt$ git-am --whitespace=error ~/Mail/iscsi/stgt/1410
+
+Applying 'iscsi: refactor residual calculation'
+
+Adds trailing whitespace.
+.dotest/patch:103:
+fatal: 1 line adds trailing whitespaces.
+Patch failed at 0001.
+When you have resolved this problem run &quot;git-am --resolved&quot;.
+If you would prefer to skip this patch, instead run &quot;git-am --skip&quot;.
+
+
+I fixed and merged this patch.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000459.html">[Stgt-devel] [PATCH] iscsi: refactor residual calculation
+</A></li>
+	<LI>Next message: <A HREF="000462.html">[Stgt-devel] Initial patch to add Tape and Library support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#463">[ date ]</a>
+              <a href="thread.html#463">[ thread ]</a>
+              <a href="subject.html#463">[ subject ]</a>
+              <a href="author.html#463">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

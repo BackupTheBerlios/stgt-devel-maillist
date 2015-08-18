@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Bugreport - tgtadm --param scsi_id= and scripts
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bugreport%20-%20tgtadm%20--param%20scsi_id%3D%20and%20scripts&In-Reply-To=%3C488D9506.9020009%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001956.html">
+   <LINK REL="Next"  HREF="001918.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Bugreport - tgtadm --param scsi_id= and scripts</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bugreport%20-%20tgtadm%20--param%20scsi_id%3D%20and%20scripts&In-Reply-To=%3C488D9506.9020009%40gmail.com%3E"
+       TITLE="[Stgt-devel] Bugreport - tgtadm --param scsi_id= and scripts">albert.pauw at gmail.com
+       </A><BR>
+    <I>Mon Jul 28 11:44:38 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001956.html">[Stgt-devel]	[PATCH]	tgt-admin:	support	persistent	device	binding
+</A></li>
+        <LI>Next message: <A HREF="001918.html">[Stgt-devel] [PATCH] make config file not needed for most	operations it tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1916">[ date ]</a>
+              <a href="thread.html#1916">[ thread ]</a>
+              <a href="subject.html#1916">[ subject ]</a>
+              <a href="author.html#1916">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Just noticed the following with my tgtadm script:
+
+This is what I have in the script:
+
+TID=1
+LUN=4
+ID=&quot;LTO2 ULTRIUM&quot;
+SN=0104
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN 
+--params 
+vendor_id=STGT,product_id=Tape,product_rev=1.01,scsi_id=$ID,scsi_sn=$SN,removable=1
+
+Unfortunately, that gives with the tgtadm -m target -o show command the 
+following result:
+
+            Type: tape
+            SCSI ID: deadbeaf1:4
+            SCSI SN: beaf14
+            Size: 0 MB
+            Online: Yes
+            Removable media: Yes
+            Backing store: /root/01/tape.bin
+
+The shell will expand the tgtadm line to
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 4 
+--params vendor_id=STGT,product_id=Tape,product_rev=1.01,scsi_id=LTO2 
+ULTRIUM,scsi_sn=0104,removable=1
+
+leaving a space between LTO and ULTRIUM, which gives tgtadm a hard time. 
+If I change in the line scsi_id=&quot;LTO2 ULTRIUM&quot; then it works fine.
+
+Obviously, tgtadm sees the space (without quotes) as a parameter 
+separater and doesn't even process the stuff after the space properly. I 
+guess solving this is quite tricky, but I wanted
+to mention it anyway.
+
+Albert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001956.html">[Stgt-devel]	[PATCH]	tgt-admin:	support	persistent	device	binding
+</A></li>
+	<LI>Next message: <A HREF="001918.html">[Stgt-devel] [PATCH] make config file not needed for most	operations it tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1916">[ date ]</a>
+              <a href="thread.html#1916">[ thread ]</a>
+              <a href="subject.html#1916">[ subject ]</a>
+              <a href="author.html#1916">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

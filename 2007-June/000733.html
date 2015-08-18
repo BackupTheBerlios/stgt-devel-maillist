@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/2%5D%20Re-format%20/%20resubmit%20patch%20-%20try%203.&In-Reply-To=%3Cf29db9a80705311728rd64b53q3e5379b091f6bcde%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000740.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/2%5D%20Re-format%20/%20resubmit%20patch%20-%20try%203.&In-Reply-To=%3Cf29db9a80705311728rd64b53q3e5379b091f6bcde%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.">markh794 at gmail.com
+       </A><BR>
+    <I>Fri Jun  1 02:28:28 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000740.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#733">[ date ]</a>
+              <a href="thread.html#733">[ thread ]</a>
+              <a href="subject.html#733">[ subject ]</a>
+              <a href="author.html#733">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Apologies if this is a duplicate... gmail hick-up and I'm not actually
+sure the first one was sent.
+
+This is a re-submit of a previously rejected patch set.
+I've corrected formatting style to suit.
+
+This email includes both patches as attachments - I'll inline the two
+patches in following email.
+
+Unfortunately, I have yet to figure out how to inline patches thru
+gmail and keep &lt;tab&gt; chars.
+
+
+Patch 1 : Add new module entry points for configuration
+
+Add new module entry points.
+  &lt;module&gt;_lu_init(struct scsi_lu *lu) - called at setup time.
+  &lt;module&gt;_lu_exit(struct scsi_lu *lu) - called at shutdown time.
+  &lt;module&gt;_lu_config(struct scsi_lu *lu) - Any module unique configuration.
+
+Moved logical unit configuration from target -&gt; &lt;module&gt;
+  Along with above entry point &lt;module&gt;_lu_config(), will allow module
+  specific configuration.
+  No new functionality added yet.
+
+Add a dump_cdb(struct scsi_cmd *cmd) - Called from spc_illegal_op()
+
+Update - All modules use common INQUIRY routine.
+
+
+
+Patch 2 : Add ability to dynamically set SCSI Inquiry params
+
+Added support to configure:
+  Vendor Identification
+  Product Identification
+  Product Revision
+  Format of returned 'sense data'
+  Define if the lu is capable of supporting removable media
+  Define/set if the lu is online / offline.
+  Params are passed using the 'tgtadm' utility:
+
+  VendorIdent=&quot;string&quot;
+  ProductIdent=&quot;string&quot;
+  ProductRev=&quot;string&quot;
+  Removable=&lt;0|1&gt; - 0 == non-removable, 1 == removable media
+  SenseFormat=&lt;0|1&gt; - 0 == Clasic sense format, 1 == New sense format
+  Online=&lt;0|1&gt; - 0 == Unit offline, 1 == Unit Online
+
+e.g.
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+        --params VendorIdent=QUANTUM,ProductIdent=HD100,ProductRev=0010
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+        --params Removable=1,SenseFormat=1,Online=1
+
+Example script (scripts/tgt-core-test) to set up HDD &amp; CD device.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0001-Add-new-module-entry-points-for-configuration.patch
+Type: text/x-patch
+Size: 22153 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070601/515d9afd/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070601/515d9afd/attachment.bin</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0002-Add-ability-to-dynamically-set-SCSI-Inquiry-params.patch
+Type: text/x-patch
+Size: 5724 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070601/515d9afd/attachment-0001.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070601/515d9afd/attachment-0001.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000740.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#733">[ date ]</a>
+              <a href="thread.html#733">[ thread ]</a>
+              <a href="subject.html#733">[ subject ]</a>
+              <a href="author.html#733">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

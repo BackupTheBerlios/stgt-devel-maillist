@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] project status
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20project%20status&In-Reply-To=%3C1154615745.16121.27.camel%40trinity.ogc.int%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000296.html">
+   <LINK REL="Next"  HREF="000302.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] project status</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20project%20status&In-Reply-To=%3C1154615745.16121.27.camel%40trinity.ogc.int%3E"
+       TITLE="[Stgt-devel] project status">tom at opengridcomputing.com
+       </A><BR>
+    <I>Thu Aug  3 16:35:45 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000296.html">[Stgt-devel] project status
+</A></li>
+        <LI>Next message: <A HREF="000302.html">[Stgt-devel] project status
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#301">[ date ]</a>
+              <a href="thread.html#301">[ thread ]</a>
+              <a href="subject.html#301">[ subject ]</a>
+              <a href="author.html#301">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>[...snip...]
+&gt;<i> It turned out that we used netlink wrongly so we replaced netlink. We
+</I>&gt;<i> need bi-directional, high-speed interface between user and kernel
+</I>&gt;<i> space. Currently, there isn't such interface in mainline. So we use
+</I>&gt;<i> mapped ring buffer between kernel and user spaces by using own
+</I>&gt;<i> character device (I need to replace the very old way to create a
+</I>&gt;<i> character device). If we find something better, we will replace the
+</I>&gt;<i> current code (netdev guys seems to bring something promising for
+</I>&gt;<i> network AIO).
+</I>
+I just looked at this code and am somewhat confused. I understand that
+the write handler in the kernel has the user mode process context and
+therefore understands any uspace pointer contained in the event. 
+
+What puzzles me is that the write handler in the kernel doesn't use the
+passed in buffer, but instead takes the event from an mmaped ring
+buffer. It then passes the various fields in the event down to the
+handlers as parameters:
+
+	...
+		err = scsi_tgt_kspace_exec(ev-&gt;u.cmd_rsp.host_no,
+					   ev-&gt;u.cmd_rsp.cid,
+					   ev-&gt;u.cmd_rsp.result,
+					   ev-&gt;u.cmd_rsp.len,
+					   ev-&gt;u.cmd_rsp.uaddr,
+					   ev-&gt;u.cmd_rsp.rw);
+	...
+At this point, you don't need 'ev' anymore (the contents have been
+copied into registers as parameters), so I don't understand the need for
+the ring buffer. The user space caller could just as well have passed
+you a pointer to a local variable in the write system call. Wouldn't
+this avoid the complexity of the ring buffer altogether?
+	
+Are you just trying to avoid the copy_to_user of the ~32 bytes of the
+event itself? I'd be surprised if avoiding this copy beats the time
+spent managing the ring buffer. 
+
+Sorry if these are a dumb questions...
+
+Tom
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000296.html">[Stgt-devel] project status
+</A></li>
+	<LI>Next message: <A HREF="000302.html">[Stgt-devel] project status
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#301">[ date ]</a>
+              <a href="thread.html#301">[ thread ]</a>
+              <a href="subject.html#301">[ subject ]</a>
+              <a href="author.html#301">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

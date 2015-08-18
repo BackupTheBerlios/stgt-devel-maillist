@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 08/18] iser virtualize malloc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2008/18%5D%20iser%20virtualize%20malloc&In-Reply-To=%3C20070904200920.GL6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001014.html">
+   <LINK REL="Next"  HREF="001016.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 08/18] iser virtualize malloc</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2008/18%5D%20iser%20virtualize%20malloc&In-Reply-To=%3C20070904200920.GL6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 08/18] iser virtualize malloc">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:09:20 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001014.html">[Stgt-devel] [PATCH 07/18] iser virtualize event modify
+</A></li>
+        <LI>Next message: <A HREF="001016.html">[Stgt-devel] [PATCH 09/18] iser event handler to tcp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1015">[ date ]</a>
+              <a href="thread.html#1015">[ thread ]</a>
+              <a href="subject.html#1015">[ subject ]</a>
+              <a href="author.html#1015">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Virtualize malloc and free when dealing with memory that the
+transport will use.  It must be per-connection for RDMA.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_tcp.c |   14 ++++++++++++++
+ usr/iscsi/iscsid.c    |    8 ++++----
+ usr/iscsi/transport.h |    4 ++++
+ 3 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index c775594..0d189c7 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -241,6 +241,18 @@ void iscsi_event_modify(int fd, int events)
+ 		eprintf(&quot;tgt_event_modify failed\n&quot;);
+ }
+ 
++void *iscsi_tcp_malloc(struct iscsi_connection *conn __attribute__((unused)),
++		       size_t sz)
++{
++	return malloc(sz);
++}
++
++void iscsi_tcp_free(struct iscsi_connection *conn __attribute__((unused)),
++		    void *buf)
++{
++	free(buf);
++}
++
+ struct iscsi_transport iscsi_tcp = {
+ 	.name			= &quot;iscsi&quot;,
+ 	.rdma			= 0,
+@@ -251,4 +263,6 @@ struct iscsi_transport iscsi_tcp = {
+ 	.ep_close		= iscsi_tcp_close,
+ 	.ep_show		= iscsi_tcp_show,
+ 	.ep_event_modify	= iscsi_event_modify,
++	.ep_malloc		= iscsi_tcp_malloc,
++	.ep_free		= iscsi_tcp_free,
+ };
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 85d4c95..2d96930 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -971,7 +971,7 @@ iscsi_alloc_task(struct iscsi_connection *conn, int ext_len)
+ 	struct iscsi_hdr *req = (struct iscsi_hdr *) &amp;conn-&gt;req.bhs;
+ 	struct iscsi_task *task;
+ 
+-	task = malloc(sizeof(*task) + ext_len);
++	task = conn-&gt;tp-&gt;ep_malloc(conn, sizeof(*task) + ext_len);
+ 	if (!task)
+ 		return NULL;
+ 	memset(task, 0, sizeof(*task));
+@@ -993,8 +993,8 @@ void iscsi_free_task(struct iscsi_task *task)
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 
+ 	if (task-&gt;addr &amp;&amp; task-&gt;addr != (unsigned long) task-&gt;data)
+-		free((void *) (unsigned long) task-&gt;addr);
+-	free(task);
++		conn-&gt;tp-&gt;ep_free(conn, (void *) (unsigned long) task-&gt;addr);
++	conn-&gt;tp-&gt;ep_free(conn, task);
+ 	/* from alloc */
+ 	conn_put(conn);
+ }
+@@ -1133,7 +1133,7 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 			void *buf;
+ 
+ 			len = roundup(task-&gt;read_len, 4);
+-			buf = malloc(len);
++			buf = conn-&gt;tp-&gt;ep_malloc(conn, len);
+ 			if (!buf)
+ 				return -ENOMEM;
+ 			scmd-&gt;bidi_uaddr = (unsigned long) buf;
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index 9660396..c37d0da 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -1,6 +1,8 @@
+ #ifndef __TRANSPORT_H
+ #define __TRANSPORT_H
+ 
++struct iscsi_connection;
++
+ struct iscsi_transport {
+ 	const char *name;
+ 	int rdma;
+@@ -12,6 +14,8 @@ struct iscsi_transport {
+ 	size_t (*ep_close) (int ep);
+ 	int (*ep_show) (int ep, char *buf, int rest);
+ 	void (*ep_event_modify) (int ep, int events);
++	void *(*ep_malloc) (struct iscsi_connection *conn, size_t sz);
++	void (*ep_free) (struct iscsi_connection *conn, void *buf);
+ };
+ 
+ extern struct iscsi_transport iscsi_tcp;
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001014.html">[Stgt-devel] [PATCH 07/18] iser virtualize event modify
+</A></li>
+	<LI>Next message: <A HREF="001016.html">[Stgt-devel] [PATCH 09/18] iser event handler to tcp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1015">[ date ]</a>
+              <a href="thread.html#1015">[ thread ]</a>
+              <a href="subject.html#1015">[ subject ]</a>
+              <a href="author.html#1015">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%20Linux%20kernel&In-Reply-To=%3C47D8F74E.9090406%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001454.html">
+   <LINK REL="Next"  HREF="001459.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%20Linux%20kernel&In-Reply-To=%3C47D8F74E.9090406%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel">mangoo at wpkg.org
+       </A><BR>
+    <I>Thu Mar 13 10:43:42 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001454.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+        <LI>Next message: <A HREF="001459.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1457">[ date ]</a>
+              <a href="thread.html#1457">[ thread ]</a>
+              <a href="subject.html#1457">[ subject ]</a>
+              <a href="author.html#1457">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+
+&gt;<i> OK, can you try the following patch?
+</I>&gt;<i> 
+</I>&gt;<i> I've added 'system status':
+</I>&gt;<i> 
+</I>&gt;<i> rose:/home/fujita# ./tgt/usr/tgtadm --op show --mode sys
+</I>&gt;<i> System:
+</I>&gt;<i>     Status=offline
+</I>&gt;<i> iSNS:
+</I>&gt;<i>     iSNS=Off
+</I>&gt;<i>     iSNSServerIP=
+</I>&gt;<i>     iSNSServerPort=3205
+</I>&gt;<i>     iSNSAccessControl=Off
+</I>&gt;<i> 
+</I>&gt;<i> If the system status is 'offline', tgtd accepts a new connection and
+</I>&gt;<i> then close it.
+</I>&gt;<i> 
+</I>&gt;<i> rose:/home/fujita# ./tgt/usr/tgtadm --op update --mode sys -n state -v
+</I>&gt;<i> running
+</I>&gt;<i> 
+</I>&gt;<i> rose:/home/fujita# ./tgt/usr/tgtadm --op show --mode sys
+</I>&gt;<i> System:
+</I>&gt;<i>     Status=running
+</I>&gt;<i> iSNS:
+</I>&gt;<i>     iSNS=Off
+</I>&gt;<i>     iSNSServerIP=
+</I>&gt;<i>     iSNSServerPort=3205
+</I>&gt;<i>     iSNSAccessControl=Off
+</I>&gt;<i> 
+</I>&gt;<i> When you finish configuring targets, then change the state to
+</I>&gt;<i> 'running'.
+</I>&gt;<i> 
+</I>&gt;<i> The patch is hacky but if it works, I'll clean up and merge it.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> index 09ed0e5..c1f97b6 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> @@ -104,6 +104,9 @@ static void accept_connection(int afd, int events, void *data)
+</I>&gt;<i>  		return;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	if (!is_system_available())
+</I>&gt;<i> +		goto out;
+</I>&gt;<i> +
+</I>&gt;<i>  	ret = set_keepalive(fd);
+</I>&gt;<i>  	if (ret)
+</I>&gt;<i>  		goto out;
+</I>
+Where should I apply this patch? In today's git there is no such thing 
+as &quot;ret = set_keepalive(fd);&quot; in usr/iscsi/iscsi_tcp.c.
+
+The patch doesn't apply cleanly on tgt-20071227 (latest development 
+release found in <A HREF="http://stgt.berlios.de/releases">http://stgt.berlios.de/releases</A>).
+
+Perhaps I'm missing something?
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001454.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream Linux kernel
+</A></li>
+	<LI>Next message: <A HREF="001459.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1457">[ date ]</a>
+              <a href="thread.html#1457">[ thread ]</a>
+              <a href="subject.html#1457">[ subject ]</a>
+              <a href="author.html#1457">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/4] track target type
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/4%5D%20track%20target%20type&In-Reply-To=%3C20070122190334.GC1477%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000401.html">
+   <LINK REL="Next"  HREF="000390.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/4] track target type</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/4%5D%20track%20target%20type&In-Reply-To=%3C20070122190334.GC1477%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/4] track target type">pw at osc.edu
+       </A><BR>
+    <I>Mon Jan 22 20:03:34 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000401.html">[Stgt-devel] [PATCH 1/4] compile fixes
+</A></li>
+        <LI>Next message: <A HREF="000390.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#389">[ date ]</a>
+              <a href="thread.html#389">[ thread ]</a>
+              <a href="subject.html#389">[ subject ]</a>
+              <a href="author.html#389">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Track target type (block, mmc, osd, etc.) and pass it to
+scsi_cmd_perform.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/scsi.c   |    2 +-
+ usr/target.c |    7 +++++--
+ usr/target.h |    1 +
+ usr/tgtd.h   |   10 +++++++++-
+ 4 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/usr/scsi.c b/usr/scsi.c
+index e65e893..82ddb0d 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -482,7 +482,7 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
+ 		     int *len, uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 		     uint8_t *try_map, uint64_t *offset, uint8_t *lun_buf,
+ 		     struct tgt_device *dev, struct list_head *dev_list, int *async,
+-		     void *key, bkio_submit_t *submit)
++		     void *key, bkio_submit_t *submit, enum scsi_target_type target_type)
+ {
+ 	int result = SAM_STAT_GOOD;
+ 	uint8_t *data = NULL, *scb = pdu;
+diff --git a/usr/target.c b/usr/target.c
+index 93e7531..3d0f790 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -462,7 +462,8 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 					  &amp;uaddr, &amp;rw, &amp;mmapped, &amp;offset,
+ 					  lun, cmd-&gt;dev,
+ 					  &amp;target-&gt;device_list, &amp;async, (void *) cmd,
+-					  target-&gt;bdt-&gt;bd_cmd_submit);
++					  target-&gt;bdt-&gt;bd_cmd_submit,
++					  target-&gt;target_type);
+ 
+ 		cmd_post_perform(q, cmd, uaddr, len, mmapped);
+ 
+@@ -530,7 +531,8 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ 						  cmd-&gt;lun, cmd-&gt;dev,
+ 						  &amp;cmd-&gt;c_target-&gt;device_list,
+ 						  &amp;async, (void *) cmd,
+-						  cmd-&gt;c_target-&gt;bdt-&gt;bd_cmd_submit);
++						  cmd-&gt;c_target-&gt;bdt-&gt;bd_cmd_submit,
++						  cmd-&gt;c_target-&gt;target_type);
+ 			cmd-&gt;rw = rw;
+ 			cmd_post_perform(q, cmd, cmd-&gt;uaddr, len, mmapped);
+ 			set_cmd_processed(cmd);
+@@ -1275,6 +1277,7 @@ int tgt_target_create(int lld, int tid, char *args, int t_type, int bs_type)
+ 		target-&gt;bdt = tgt_drivers[lld]-&gt;default_bdt;
+ 	}
+ 
++	target-&gt;target_type = t_type;
+ 	target-&gt;target_state = SCSI_TARGET_RUNNING;
+ 	target-&gt;lid = lld;
+ 
+diff --git a/usr/target.h b/usr/target.h
+index 0cca55f..e19ca73 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -39,6 +39,7 @@ struct target {
+ 	int lid;
+ 
+ 	enum scsi_target_iotype target_iotype;
++	enum scsi_target_type target_type;
+ 	enum scsi_target_state target_state;
+ 
+ 	struct list_head target_siblings;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index ef046aa..090f84a 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -21,6 +21,13 @@ enum scsi_target_iotype {
+ 	SCSI_TARGET_RAWIO,
+ };
+ 
++enum scsi_target_type {
++	SCSI_TARGET_SBC, /* disk */
++	SCSI_TARGET_SSC, /* tape */
++	SCSI_TARGET_MMC, /* cdrom */
++	SCSI_TARGET_OSD, /* object storage device */
++};
++
+ enum scsi_target_state {
+ 	SCSI_TARGET_SUSPENDED = 1,
+ 	SCSI_TARGET_RUNNING,
+@@ -111,7 +118,8 @@ extern int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu, in
+ 			    uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 			    uint8_t *try_map, uint64_t *offset, uint8_t *lun,
+ 			    struct tgt_device *dev, struct list_head *dev_list,
+-			    int *async, void *key, bkio_submit_t *submit);
++			    int *async, void *key, bkio_submit_t *submit,
++			    enum scsi_target_type target_type);
+ 
+ extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 			    uint8_t ascode, uint8_t ascodeq);
+-- 
+1.4.4.2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000401.html">[Stgt-devel] [PATCH 1/4] compile fixes
+</A></li>
+	<LI>Next message: <A HREF="000390.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#389">[ date ]</a>
+              <a href="thread.html#389">[ thread ]</a>
+              <a href="subject.html#389">[ subject ]</a>
+              <a href="author.html#389">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

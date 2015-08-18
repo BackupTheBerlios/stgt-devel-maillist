@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154533161.11954.33.camel%40trinity.ogc.int%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000292.html">
+   <LINK REL="Next"  HREF="000295.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154533161.11954.33.camel%40trinity.ogc.int%3E"
+       TITLE="[Stgt-devel] User-mode iSER">tom at opengridcomputing.com
+       </A><BR>
+    <I>Wed Aug  2 17:39:21 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000292.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000295.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#293">[ date ]</a>
+              <a href="thread.html#293">[ thread ]</a>
+              <a href="subject.html#293">[ subject ]</a>
+              <a href="author.html#293">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 2006-08-02 at 17:59 +0300, Alexander Nezhinsky wrote:
+&gt;<i> Tom,
+</I>&gt;<i>  
+</I>&gt;<i> &gt; &gt; &gt; Attaches is a new picture with kernel/user boundaries. I think
+</I>&gt;<i> the
+</I>&gt;<i> &gt; &gt; &gt; boundary is somewhat fuzzy at the top and bottom due to the fact
+</I>&gt;<i> that
+</I>&gt;<i> &gt; &gt; &gt; the API is different for each target type and for each network
+</I>&gt;<i> provider 
+</I>&gt;<i> &gt; &gt; &gt; type. 
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; For example, the sd driver will use open /dev/sdN and submit
+</I>&gt;<i> ioctl to
+</I>&gt;<i> &gt; &gt; &gt; read/write the disk, whereas the file target will 
+</I>&gt;<i> &gt; &gt; &gt; open(&quot;/home/thisandthat&quot;, ...) and submit lseek/read/write to
+</I>&gt;<i> read/write &gt; &gt; &gt; the file.
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i>  
+</I>&gt;<i> Regarding your diagram. Boxes marked &quot;SCSI Disk Driver&quot;
+</I>&gt;<i> interfacing /dev/sdX and &quot;Block Device Driver&quot; interfacing /dev/mdX
+</I>&gt;<i> are probably using the same API. /dev/sdX are normalized to the same
+</I>&gt;<i> &quot;Block Device&quot; interface as /dev/mdX. So no ioctl calls, the
+</I>&gt;<i> same open/read/write. 
+</I>&gt;<i> Did you mean that the two need different management mechanisms which
+</I>&gt;<i> should be present in the corresponding user-space libraries? 
+</I>&gt;<i> I guess &quot;SCSI Disk Driver&quot; should interface /dev/sgX devices exported
+</I>&gt;<i> by sg driver and allowing direct access to a SCSI disk. sg uses ioctl
+</I>&gt;<i> calls where explicit scsi commands are passed. No cache will be used
+</I>&gt;<i> in this case, just as with direct IO through a block device. And the
+</I>&gt;<i> copy issue is to be addressed here too. 
+</I>
+Yes, this is what I meant. I'll fix the diagram.
+
+&gt;<i> 
+</I>&gt;<i>   
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; &gt; On the network side, the TCP provider would use socket, listen,
+</I>&gt;<i> accept,
+</I>&gt;<i> &gt; &gt; &gt; send, recv (at least initially), the RMDA provider would use
+</I>&gt;<i> &gt; &gt; &gt; rdma_resolve_addr, rdma_resolve_route, rdma_listen,
+</I>&gt;<i> rdma_accept, 
+</I>&gt;<i> &gt; &gt; &gt; rdma_create_qp, rdma_post_send, etc....
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; My only point is that the kernel/user interface is not a
+</I>&gt;<i> straight line
+</I>&gt;<i> &gt; &gt; &gt; since some of these interfaces are higher level than others. 
+</I>&gt;<i> As all transports interface &quot;Network interface layer&quot; using the same
+</I>&gt;<i> API, then all transports should have at least a user-space driver.
+</I>&gt;<i> While some should also have an in-kernel part (e.g. FCP whose driver
+</I>&gt;<i> may remain intact, plus perhaps a special adaptation driver to enable
+</I>&gt;<i> zero-copy operation), others may do without additional kernel modules
+</I>&gt;<i> ( e.g. iSER may use user-space IB verbs).  
+</I>&gt;<i> So the user-kernel line may remain where it is (under the user-space
+</I>&gt;<i> transport drivers) with a note that some transports may need
+</I>&gt;<i> additional boxes underneath as well.
+</I>
+Yes.
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000292.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000295.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#293">[ date ]</a>
+              <a href="thread.html#293">[ thread ]</a>
+              <a href="subject.html#293">[ subject ]</a>
+              <a href="author.html#293">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] No LUN option in target.c
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20No%20LUN%20option%20in%20target.c&In-Reply-To=%3C474ADDF1.5010101%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001169.html">
+   <LINK REL="Next"  HREF="001171.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] No LUN option in target.c</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20No%20LUN%20option%20in%20target.c&In-Reply-To=%3C474ADDF1.5010101%40wpkg.org%3E"
+       TITLE="[Stgt-devel] No LUN option in target.c">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Nov 26 15:53:37 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001169.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+        <LI>Next message: <A HREF="001171.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1170">[ date ]</a>
+              <a href="thread.html#1170">[ thread ]</a>
+              <a href="subject.html#1170">[ subject ]</a>
+              <a href="author.html#1170">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Mon, 26 Nov 2007 13:33:47 +0100
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;&gt;&gt;<i> On Mon, 26 Nov 2007 12:25:19 +0100
+</I>&gt;&gt;&gt;<i> Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+</I>&gt;&gt;&gt;&gt;<i> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> The patch didn't make a difference, sorry.
+</I>&gt;&gt;&gt;<i> The performances in the configuration don't matter much, but I just
+</I>&gt;&gt;&gt;<i> run initiator and target on the same machine:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> sens:/home/fujita# hdparm -t /dev/sdd
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> /dev/sdd:
+</I>&gt;&gt;&gt;<i>  Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+</I>&gt;&gt;<i> (...)
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> sens:/home/fujita# hdparm -t /dev/sdd
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> /dev/sdd:
+</I>&gt;&gt;&gt;<i>  Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Seems that haparm isn't an appropriate tool to meature performance but
+</I>&gt;&gt;&gt;<i> not bad performances.
+</I>&gt;&gt;<i> It is appropriate, when used appropriately.
+</I>&gt;<i> 
+</I>&gt;<i> Oops, I'm not talking about only cache.
+</I>&gt;<i> 
+</I>&gt;<i> hdparm seems to issue only one outstanding request, the duration is
+</I>&gt;<i> too short, etc. It's not designed for performance measurement.
+</I>
+True, hdparm is only a very basic tool for measuring performance.
+
+
+&gt;&gt;<i> If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+</I>&gt;<i> 
+</I>&gt;<i> Block devices always use page cache (unless you access to it via DIO).
+</I>
+Umm:
+
+
+# echo 3 &gt; /proc/sys/vm/drop_caches
+
+# free
+              total       used       free     shared    buffers     cached
+Mem:        512252      22152     490100          0         84       4320
+-/+ buffers/cache:      17748     494504
+Swap:            0          0          0
+
+# dd if=/dev/LVM2/swap of=/dev/null
+6291456+0 records in
+6291456+0 records out
+3221225472 bytes (3.2 GB) copied, 52.8739 seconds, 60.9 MB/s
+
+# free
+              total       used       free     shared    buffers     cached
+Mem:        512252      22760     489492          0        124       4708
+-/+ buffers/cache:      17928     494324
+Swap:            0          0          0
+
+So, nothing was cached.
+
+Now, let's use this volume:
+
+# swapon /dev/superthecus/swap
+
+# dd if=/dev/superthecus/swap of=/dev/null
+6291456+0 records in
+6291456+0 records out
+3221225472 bytes (3.2 GB) copied, 52.4117 seconds, 61.5 MB/s
+
+# free
+              total       used       free     shared    buffers     cached
+Mem:        512252     423212      89040          0     393836       4348
+-/+ buffers/cache:      25028     487224
+Swap:      3145720        112    3145608
+
+Plenty of cache was used.
+
+So, once dd accessed it via DIO, and once without DIO? I don't 
+understand it.
+
+
+&gt;<i> BTW, please let me know if you find that tgt's performance is still
+</I>&gt;<i> terrible as compared with IET.
+</I>
+Yes, I'll try to make some tests this week.
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001169.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+	<LI>Next message: <A HREF="001171.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1170">[ date ]</a>
+              <a href="thread.html#1170">[ thread ]</a>
+              <a href="subject.html#1170">[ subject ]</a>
+              <a href="author.html#1170">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch] Small problem in the logging code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Small%20problem%20in%20the%20logging%20code&In-Reply-To=%3C48905F20.6080003%40redhat.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001995.html">
+   <LINK REL="Next"  HREF="001986.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch] Small problem in the logging code</H1>
+    <B>Tomas Henzl</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Small%20problem%20in%20the%20logging%20code&In-Reply-To=%3C48905F20.6080003%40redhat.com%3E"
+       TITLE="[Stgt-devel] [Patch] Small problem in the logging code">thenzl at redhat.com
+       </A><BR>
+    <I>Wed Jul 30 14:31:28 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001995.html">[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+</A></li>
+        <LI>Next message: <A HREF="001986.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1981">[ date ]</a>
+              <a href="thread.html#1981">[ thread ]</a>
+              <a href="subject.html#1981">[ subject ]</a>
+              <a href="author.html#1981">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I have found what I think is a small problem in the log.c. I think that
+it is caused by the fact that we are using the same sembuf struct 
+in the semop function for acquiring and releasing the semaphore and this 
+structure is shared by all threads. 
+
+I believe that this can lead to either stopping the mechanism 
+(semop fails every time) or segfault when two threads are accessing 
+the log_enqueue at the same time.
+
+The attached patch should solve this.
+
+Tomas
+
+Signed-off-by: Tomas Henzl &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">thenzl at redhat.com</A>&gt;
+---
+diff -Naurp tgt/usr/log.c tgt2/usr/log.c
+--- tgt/usr/log.c	2008-07-28 12:37:20.000000000 +0200
++++ tgt2/usr/log.c	2008-07-30 13:48:25.000000000 +0200
+@@ -108,8 +108,13 @@ static int logarea_init (int size)
+ 		return 1;
+ 	}
+ 
+-	la-&gt;ops[0].sem_num = 0;
+-	la-&gt;ops[0].sem_flg = 0;
++	la-&gt;acquire.sem_num = 0;
++	la-&gt;acquire.sem_flg = 0;
++	la-&gt;acquire.sem_op  = -1;
++
++	la-&gt;release.sem_num = 0;
++	la-&gt;release.sem_flg = 0;
++	la-&gt;release.sem_op  = 1;
+ 
+ 	return 0;
+ }
+@@ -242,16 +248,14 @@ static void dolog(int prio, const char *
+ 		ts.tv_sec = 0;
+ 		ts.tv_nsec = 10000;
+ 
+-		la-&gt;ops[0].sem_op = -1;
+-		if (semtimedop(la-&gt;semid, la-&gt;ops, 1, &amp;ts) &lt; 0) {
++		if (semtimedop(la-&gt;semid, &amp;la-&gt;acquire, 1, &amp;ts) &lt; 0) {
+ 			syslog(LOG_ERR, &quot;semop up failed&quot;);
+ 			return;
+ 		}
+ 
+ 		log_enqueue(prio, fmt, ap);
+ 
+-		la-&gt;ops[0].sem_op = 1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
++		if (semop(la-&gt;semid, &amp;la-&gt;release, 1) &lt; 0) {
+ 			syslog(LOG_ERR, &quot;semop down failed&quot;);
+ 			return;
+ 		}
+@@ -292,14 +296,12 @@ void log_debug(const char *fmt, ...)
+ static void log_flush(void)
+ {
+ 	while (!la-&gt;empty) {
+-		la-&gt;ops[0].sem_op = -1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
++		if (semop(la-&gt;semid, &amp;la-&gt;acquire, 1) &lt; 0) {
+ 			syslog(LOG_ERR, &quot;semop up failed&quot;);
+ 			exit(1);
+ 		}
+ 		log_dequeue(la-&gt;buff);
+-		la-&gt;ops[0].sem_op = 1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
++		if (semop(la-&gt;semid, &amp;la-&gt;release, 1) &lt; 0) {
+ 			syslog(LOG_ERR, &quot;semop down failed&quot;);
+ 			exit(1);
+ 		}
+diff -Naurp tgt/usr/log.h tgt2/usr/log.h
+--- tgt/usr/log.h	2008-07-28 12:37:20.000000000 +0200
++++ tgt2/usr/log.h	2008-07-30 13:46:38.000000000 +0200
+@@ -55,7 +55,7 @@ struct logarea {
+ 	void *start;
+ 	void *end;
+ 	char *buff;
+-	struct sembuf ops[1];
++	struct sembuf acquire, release;
+ 	int semid;
+ 	union semun semarg;
+ };
+--
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001995.html">[Stgt-devel] [PATCH] improved delete option for removing targets in	tgt-admin
+</A></li>
+	<LI>Next message: <A HREF="001986.html">[Stgt-devel] Dealing with filemarks in SSC ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1981">[ date ]</a>
+              <a href="thread.html#1981">[ thread ]</a>
+              <a href="subject.html#1981">[ subject ]</a>
+              <a href="author.html#1981">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

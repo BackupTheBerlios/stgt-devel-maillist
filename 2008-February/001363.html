@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20iscsi%20tcp%20nodelay&In-Reply-To=%3C20080207181951.0573F8B7AE%40titan.sf.osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001369.html">
+   <LINK REL="Next"  HREF="001368.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20iscsi%20tcp%20nodelay&In-Reply-To=%3C20080207181951.0573F8B7AE%40titan.sf.osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay">pw at osc.edu
+       </A><BR>
+    <I>Thu Feb  7 19:17:13 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001369.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+        <LI>Next message: <A HREF="001368.html">[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1363">[ date ]</a>
+              <a href="thread.html#1363">[ thread ]</a>
+              <a href="subject.html#1363">[ subject ]</a>
+              <a href="author.html#1363">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Set TCP_NODELAY to avoid big latency between sending data-in and sending
+command response on reads, and to make sure the response goes out
+promptly for completed writes.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_tcp.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index c4d08a1..09ed0e5 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -78,6 +78,15 @@ static int set_keepalive(int fd)
+ 	return 0;
+ }
+ 
++static int set_nodelay(int fd)
++{
++	int ret, opt;
++
++	opt = 1;
++	ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &amp;opt, sizeof(opt));
++	return ret;
++}
++
+ static void accept_connection(int afd, int events, void *data)
+ {
+ 	struct sockaddr_storage from;
+@@ -99,6 +108,10 @@ static void accept_connection(int afd, int events, void *data)
+ 	if (ret)
+ 		goto out;
+ 
++	ret = set_nodelay(fd);
++	if (ret)
++		goto out;
++
+ 	tcp_conn = zalloc(sizeof(*tcp_conn));
+ 	if (!tcp_conn)
+ 		goto out;
+-- 
+1.5.3.8
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001369.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+	<LI>Next message: <A HREF="001368.html">[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1363">[ date ]</a>
+              <a href="thread.html#1363">[ thread ]</a>
+              <a href="subject.html#1363">[ subject ]</a>
+              <a href="author.html#1363">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

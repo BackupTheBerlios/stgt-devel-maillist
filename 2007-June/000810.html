@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/6] patch set rebuilt on to of latest 'git	head'
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/6%5D%20patch%20set%20rebuilt%20on%20to%20of%20latest%20%27git%0A%09head%27&In-Reply-To=%3C4678E61D.20803%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000817.html">
+   <LINK REL="Next"  HREF="000818.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/6] patch set rebuilt on to of latest 'git	head'</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/6%5D%20patch%20set%20rebuilt%20on%20to%20of%20latest%20%27git%0A%09head%27&In-Reply-To=%3C4678E61D.20803%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 0/6] patch set rebuilt on to of latest 'git	head'">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jun 20 10:32:29 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000817.html">[Stgt-devel] [Patch 6/6] Create mode page information at runtime
+</A></li>
+        <LI>Next message: <A HREF="000818.html">[Stgt-devel] getting started.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#810">[ date ]</a>
+              <a href="thread.html#810">[ thread ]</a>
+              <a href="subject.html#810">[ subject ]</a>
+              <a href="author.html#810">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Patches have bee re-formatted on top of latest git head
+  ============================
+commit 22b66b622433a6426514ca69063e0370f223f0e1
+Author: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Date:   Tue Jun 19 13:32:21 2007 +0900
+
+    update README.iSCSI for scc device
+   
+    Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+  ============================
+
+
+Patch 1:
+As far as I can see, if ibmvio ibmvio_inquiry() is called AND
+bits 1 &amp; 2 of sbc[1] are set, then spc_inquiry() will be called.
+
+data = valloc() will be called twice. Once in ibmvio_inquiry()
+and again in spc_inquiry()
+
+Fix: Only valloc() memory if spc_inquiry is not to be called.
+
+
+Patch 2:
+Remove an unnecessary test. SAM_STAT_GOOD is the only value possible.
+
+Note: Patch 1 &amp; 2 have NOT been tested as I don't have platform to test on.
+
+
+Patch 3:
+Update the 'tgt-core-test' script to handle new tgt lu setup.
+
+
+Patch 4:
+Instead of using numeric values for ASC &amp; ASCQ, I have defined most common
+values into a 16bit value.
+
+while there is no immediate advantage of these defines, the SMC &amp; SSC 
+modules make
+much greater use of sense codes and should make these modules more 
+'readable'
+
+Note: Due to the lack of any imagination on my behalf, the defines have 
+an 'E_'
+prefix. Suggestions for better prefix most welcome.
+
+
+Patch 5:
+While testing code for 'Patch 4', I noticed the spc_request_sense() returns
+0 bytes of data.
+Updated this SCSI OP code to at least return some data.
+Not perfect but at least no errors any more.
+
+I used the sg_requests command from sg3_utils package to test.
+
+
+Patch 6:
+SCSI OP code : MODE SENSE
+
+Implemented both 6 &amp; 10 byte MODE SENSE SCSI OP code.
+
+At logical unit setup time, each required mode page can be configured using
+tgtadm command.
+
+This results in more setup work for the user, however I would expect most
+people will setup up the creation of the stgt devices in a script.
+(sample tgt-core-test supplied)
+
+i.e. Offloading hard-coding mode page information to the user at lu 
+setup time.
+
+
+Thoughts &amp; suggestions always welcome.
+
+Mark Harvey
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000817.html">[Stgt-devel] [Patch 6/6] Create mode page information at runtime
+</A></li>
+	<LI>Next message: <A HREF="000818.html">[Stgt-devel] getting started.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#810">[ date ]</a>
+              <a href="thread.html#810">[ thread ]</a>
+              <a href="subject.html#810">[ subject ]</a>
+              <a href="author.html#810">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

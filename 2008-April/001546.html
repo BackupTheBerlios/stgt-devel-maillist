@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] target.c and tgtadm.c need some more consistency
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20target.c%20and%20tgtadm.c%20need%20some%20more%20consistency&In-Reply-To=%3Cb2919bc20804281246i4ff1851bvd1b39fa820277897%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001552.html">
+   <LINK REL="Next"  HREF="001555.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] target.c and tgtadm.c need some more consistency</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20target.c%20and%20tgtadm.c%20need%20some%20more%20consistency&In-Reply-To=%3Cb2919bc20804281246i4ff1851bvd1b39fa820277897%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] target.c and tgtadm.c need some more consistency">albert.pauw at gmail.com
+       </A><BR>
+    <I>Mon Apr 28 21:46:55 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001552.html">[Stgt-devel] Next tgt release?
+</A></li>
+        <LI>Next message: <A HREF="001555.html">[Stgt-devel] Unable to open RDMA device
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1546">[ date ]</a>
+              <a href="thread.html#1546">[ thread ]</a>
+              <a href="subject.html#1546">[ subject ]</a>
+              <a href="author.html#1546">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>In target.c the following list is defined:
+
+static struct {
+        int value;
+        char *name;
+} disk_type_names[] = {
+        {TYPE_DISK, &quot;disk&quot;},
+        {TYPE_TAPE, &quot;tape&quot;},
+        {TYPE_PRINTER, &quot;printer&quot;},
+        {TYPE_PROCESSOR, &quot;processor&quot;},
+        {TYPE_WORM, &quot;worm&quot;},
+        {TYPE_ROM, &quot;cd/dvd&quot;},
+        {TYPE_SCANNER, &quot;scanner&quot;},
+        {TYPE_MOD, &quot;optical&quot;},
+        {TYPE_MEDIUM_CHANGER, &quot;changer&quot;},
+        {TYPE_COMM, &quot;communication&quot;},
+        {TYPE_RAID, &quot;controller&quot;},
+        {TYPE_ENCLOSURE, &quot;enclosure&quot;},
+        {TYPE_RBC, &quot;rbc&quot;},
+        {TYPE_OSD, &quot;osd&quot;},
+        {TYPE_NO_LUN, &quot;No LUN&quot;}
+};
+
+In tgtadm.c the following function is defined:
+
+static int str_to_device_type(char *str)
+{
+        if (!strcmp(str, &quot;disk&quot;))
+                return TYPE_DISK;
+        else if (!strcmp(str, &quot;tape&quot;)) {
+                eprintf(&quot;type emulation isn't supported yet\n&quot;);
+                exit(EINVAL);
+        } else if (!strcmp(str, &quot;cd&quot;))
+                return TYPE_ROM;
+        else if (!strcmp(str, &quot;changer&quot;))
+                return TYPE_MEDIUM_CHANGER;
+        else if (!strcmp(str, &quot;osd&quot;))
+                return TYPE_OSD;
+        else if (!strcmp(str, &quot;pt&quot;))
+                return TYPE_SPT;
+        else {
+                eprintf(&quot;unknown target type: %s\n&quot;, str);
+                exit(EINVAL);
+        }
+}
+
+First, there is the difference  of defining &quot;cd/dvd&quot; (in target,c) and &quot;cd&quot;
+(in tgtadm.c).
+There is also the difference of &quot;printer&quot; (in target.c) and &quot;pt&quot; (tgtadm.c).
+
+Wouldn't it be better to define this in one of the header files (e.g.
+target.h) and include the
+header file in both files?
+
+Albert
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080428/0b4e94ae/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080428/0b4e94ae/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001552.html">[Stgt-devel] Next tgt release?
+</A></li>
+	<LI>Next message: <A HREF="001555.html">[Stgt-devel] Unable to open RDMA device
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1546">[ date ]</a>
+              <a href="thread.html#1546">[ thread ]</a>
+              <a href="subject.html#1546">[ subject ]</a>
+              <a href="author.html#1546">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

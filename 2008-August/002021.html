@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3Cc9a3e4540808071504t5ffa58bbm97a4d520234b7b7b%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002020.html">
+   <LINK REL="Next"  HREF="002022.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3Cc9a3e4540808071504t5ffa58bbm97a4d520234b7b7b%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Fri Aug  8 00:04:11 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002020.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+        <LI>Next message: <A HREF="002022.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2021">[ date ]</a>
+              <a href="thread.html#2021">[ thread ]</a>
+              <a href="subject.html#2021">[ subject ]</a>
+              <a href="author.html#2021">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, Aug 8, 2008 at 4:14 AM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Wed, 6 Aug 2008 18:06:26 +0300
+</I>&gt;<i> &quot;Alexander Nezhinsky&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;&gt;<i> On Wed, Jul 30, 2008 at 10:04 AM, FUJITA Tomonori
+</I>&gt;&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> &gt; the future... We have it just because Linux AIO is not good enough
+</I>&gt;&gt;<i> &gt; now.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Can you explain a bit what's wrong with the current Linux AIO implementation.
+</I>&gt;&gt;<i> Why bs_aio.c is implemented using syscall(__NR_io_*)?
+</I>&gt;&gt;<i> What is wrong with the aio_read/aio_write and friends?
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> I think that that's Posix AIO, which glibc implemented. It's slower
+</I>&gt;<i> than the kernel AIO support. A big problem about it for us is event
+</I>&gt;<i> notification. We can't get AIO completion events via a file descriptor
+</I>&gt;<i> (so that we can't use poll/epoll with it). How can we wait for both
+</I>&gt;<i> network events and AIO events at the same time?
+</I>
+What about setting up a pipe, forking, doing the the i/o in the child
+and then writing a byte of data to the pipe when the command completed.
+The parent can then &quot;wait for the 'AIO' to complete by waiting on a
+file descriptor&quot; like normal.
+
+forks are cheap under linux.
+
+I do this all the time in ctdb which is very hard real time and which
+can not ever call any function that may block from the main daemon.
+(== read/write/fcntl/waitpid,...)
+
+
+This is how samba 3 does AIO as well   since the real AIO layer on
+many distribution versions
+are &quot;suboptimal&quot;.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002020.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+	<LI>Next message: <A HREF="002022.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2021">[ date ]</a>
+              <a href="thread.html#2021">[ thread ]</a>
+              <a href="subject.html#2021">[ subject ]</a>
+              <a href="author.html#2021">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

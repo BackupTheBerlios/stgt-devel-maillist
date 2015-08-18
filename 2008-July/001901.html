@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Seeing weird problem with iscsiadmin logins	causing multuple nexuses to be created ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Seeing%20weird%20problem%20with%20iscsiadmin%20logins%0A%09causing%20multuple%20nexuses%20to%20be%20created%20...&In-Reply-To=%3C694d48600807270501o5b2ebbebx8a12d454ab283da5%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001868.html">
+   <LINK REL="Next"  HREF="001905.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Seeing weird problem with iscsiadmin logins	causing multuple nexuses to be created ...</H1>
+    <B>Eli Dorfman</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Seeing%20weird%20problem%20with%20iscsiadmin%20logins%0A%09causing%20multuple%20nexuses%20to%20be%20created%20...&In-Reply-To=%3C694d48600807270501o5b2ebbebx8a12d454ab283da5%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Seeing weird problem with iscsiadmin logins	causing multuple nexuses to be created ...">dorfman.eli at gmail.com
+       </A><BR>
+    <I>Sun Jul 27 14:01:16 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001868.html">[Stgt-devel] Seeing weird problem with iscsiadmin	logins	causing multuple nexuses to be created ...
+</A></li>
+        <LI>Next message: <A HREF="001905.html">[Stgt-devel] Seeing weird problem with iscsiadmin	logins	causing multuple nexuses to be created ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1901">[ date ]</a>
+              <a href="thread.html#1901">[ thread ]</a>
+              <a href="subject.html#1901">[ subject ]</a>
+              <a href="author.html#1901">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>l 24, 2008 at 3:59 PM, Richard Sharpe
+&gt;&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i> &gt; Hi,
+</I>&gt;&gt;<i> &gt;
+</I>&gt;&gt;<i> &gt; After I restarted my two servers (after setting the MTU to 9000 on
+</I>&gt;&gt;<i> &gt; each server) I am now getting weirdness when I try to reconnect my
+</I>&gt;&gt;<i> &gt; iSCSI connection (login) from the initiator ...
+</I>&gt;&gt;<i> &gt;
+</I>&gt;&gt;<i> &gt; Here is what I see on the target. There are two I_T nexuses, #21 and
+</I>&gt;&gt;<i> &gt; #28 ... weird ... perhaps it is time to break out wireshark.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Ethereal/wshark showed me that the switch was dropping jumbo frames. A
+</I>&gt;&gt;<i> check with the NetGear website told me how to configure it to handle
+</I>&gt;&gt;<i> them ...
+</I>&gt;<i>
+</I>&gt;<i> If an initiator properly close a connection, tgtd can't close a
+</I>&gt;<i> connection.
+</I>
+If initiator properly closed the connection, shouldn't tgt remove it
+from the list as well?
+
+Eli
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001868.html">[Stgt-devel] Seeing weird problem with iscsiadmin	logins	causing multuple nexuses to be created ...
+</A></li>
+	<LI>Next message: <A HREF="001905.html">[Stgt-devel] Seeing weird problem with iscsiadmin	logins	causing multuple nexuses to be created ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1901">[ date ]</a>
+              <a href="thread.html#1901">[ thread ]</a>
+              <a href="subject.html#1901">[ subject ]</a>
+              <a href="author.html#1901">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] PATCH 1 of 2 - Move dump_cdb out of spc_illegal_op to	its own subroutine.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%201%20of%202%20-%20Move%20dump_cdb%20out%20of%20spc_illegal_op%20to%0A%09its%20own%20subroutine.&In-Reply-To=%3Cf29db9a80705111912g4e3be2cbj8f55561d4847d37b%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000630.html">
+   <LINK REL="Next"  HREF="000632.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] PATCH 1 of 2 - Move dump_cdb out of spc_illegal_op to	its own subroutine.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%201%20of%202%20-%20Move%20dump_cdb%20out%20of%20spc_illegal_op%20to%0A%09its%20own%20subroutine.&In-Reply-To=%3Cf29db9a80705111912g4e3be2cbj8f55561d4847d37b%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] PATCH 1 of 2 - Move dump_cdb out of spc_illegal_op to	its own subroutine.">markh794 at gmail.com
+       </A><BR>
+    <I>Sat May 12 04:12:28 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000630.html">[Stgt-devel] PATCH 0 of 2
+</A></li>
+        <LI>Next message: <A HREF="000632.html">[Stgt-devel] PATCH 2 of 2 - Initial implementation of MOVE MEDIUM	op code.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#631">[ date ]</a>
+              <a href="thread.html#631">[ thread ]</a>
+              <a href="subject.html#631">[ subject ]</a>
+              <a href="author.html#631">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Undo an earlier patch to spc_illegal_op() to dump the SCSI op code.
+
+Moved the routine to dump_cdb(uint8_t * cdb) so it can still be called
+if required.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: move_cdb_dump.diff
+Type: text/x-patch
+Size: 2069 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070512/9913d629/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070512/9913d629/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000630.html">[Stgt-devel] PATCH 0 of 2
+</A></li>
+	<LI>Next message: <A HREF="000632.html">[Stgt-devel] PATCH 2 of 2 - Initial implementation of MOVE MEDIUM	op code.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#631">[ date ]</a>
+              <a href="thread.html#631">[ thread ]</a>
+              <a href="subject.html#631">[ subject ]</a>
+              <a href="author.html#631">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

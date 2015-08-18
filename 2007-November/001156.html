@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 10/20] iser connection transport data
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2010/20%5D%20iser%20connection%20transport%20data&In-Reply-To=%3C20071117104826M.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001149.html">
+   <LINK REL="Next"  HREF="001153.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 10/20] iser connection transport data</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2010/20%5D%20iser%20connection%20transport%20data&In-Reply-To=%3C20071117104826M.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH 10/20] iser connection transport data">tomof at acm.org
+       </A><BR>
+    <I>Sat Nov 17 02:46:49 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001149.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+        <LI>Next message: <A HREF="001153.html">[Stgt-devel] [PATCH 15/20] iser rounding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1156">[ date ]</a>
+              <a href="thread.html#1156">[ thread ]</a>
+              <a href="subject.html#1156">[ subject ]</a>
+              <a href="author.html#1156">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 14 Nov 2007 14:05:03 -0500
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Wed, 14 Nov 2007 23:33 +0900:
+</I>&gt;<i> &gt; Moving connection allocation to transport would work better for iSER?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; This patch is against the lastest git tree
+</I>&gt;<i> &gt; (09532079071d65ec62dae982324ab07a895e16f1).
+</I>&gt;<i> [..]
+</I>&gt;<i> &gt; -struct tcp_conn_info {
+</I>&gt;<i> &gt; +struct iscsi_tcp_connection {
+</I>&gt;<i> &gt;  	int fd;
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +	struct iscsi_connection iscsi_conn;
+</I>&gt;<i> &gt;  };
+</I>&gt;<i> 
+</I>&gt;<i> Sure, good idea.  It will create a bit of churn against the later
+</I>&gt;<i> patches but easily fixed.  Note that iser adds a task-&gt;trans_data
+</I>&gt;<i> too; you could treat it similarly.
+</I>
+How about this?
+
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 905ec4d..3cb5944 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -308,6 +308,21 @@ void iscsi_event_modify(struct iscsi_connection *conn, int events)
+ 		eprintf(&quot;tgt_event_modify failed\n&quot;);
+ }
+ 
++struct iscsi_task *iscsi_tcp_alloc_task(struct iscsi_connection *conn,
++					size_t ext_len)
++{
++	struct iscsi_task *task;
++
++	task = malloc(sizeof(*task) + ext_len);
++	if (task)
++		memset(task, 0, sizeof(*task) + ext_len);
++	return task;
++}
++void iscsi_tcp_free_task(struct iscsi_task *task)
++{
++	free(task);
++}
++
+ void *iscsi_tcp_alloc_data_buf(struct iscsi_connection *conn, size_t sz)
+ {
+ 	return valloc(sz);
+@@ -347,6 +362,8 @@ struct iscsi_transport iscsi_tcp = {
+ 	.ep_release		= iscsi_tcp_release,
+ 	.ep_show		= iscsi_tcp_show,
+ 	.ep_event_modify	= iscsi_event_modify,
++	.alloc_task		= iscsi_tcp_alloc_task,
++	.free_task		= iscsi_tcp_free_task,
+ 	.alloc_data_buf		= iscsi_tcp_alloc_data_buf,
+ 	.free_data_buf		= iscsi_tcp_free_data_buf,
+ 	.ep_getsockname		= iscsi_tcp_getsockname,
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 27a9a3d..9872f1b 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -997,15 +997,14 @@ static struct iscsi_task *iscsi_alloc_task(struct iscsi_connection *conn,
+ 	struct iscsi_task *task;
+ 	void *buf;
+ 
+-	task = malloc(sizeof(*task) + ext_len);
++	task = conn-&gt;tp-&gt;alloc_task(conn, ext_len);
+ 	if (!task)
+ 		return NULL;
+-	memset(task, 0, sizeof(*task) + ext_len);
+ 
+ 	if (data_len) {
+ 		buf = conn-&gt;tp-&gt;alloc_data_buf(conn, data_len);
+ 		if (!buf) {
+-			free(task);
++			conn-&gt;tp-&gt;free_task(task);
+ 			return NULL;
+ 		}
+ 		task-&gt;data = buf;
+@@ -1027,7 +1026,7 @@ void iscsi_free_task(struct iscsi_task *task)
+ 	conn-&gt;tp-&gt;free_data_buf(conn, scsi_get_in_buffer(&amp;task-&gt;scmd));
+ 	conn-&gt;tp-&gt;free_data_buf(conn, scsi_get_out_buffer(&amp;task-&gt;scmd));
+ 
+-	free(task);
++	conn-&gt;tp-&gt;free_task(task);
+ 	conn_put(conn);
+ }
+ 
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index e1b514d..e4997c4 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -4,6 +4,7 @@
+ #include &lt;sys/socket.h&gt;
+ 
+ struct iscsi_connection;
++struct iscsi_task;
+ 
+ struct iscsi_transport {
+ 	const char *name;
+@@ -18,9 +19,10 @@ struct iscsi_transport {
+ 	void (*ep_write_end)(struct iscsi_connection *conn);
+ 	size_t (*ep_close)(struct iscsi_connection *conn);
+ 	void (*ep_release)(struct iscsi_connection *conn);
+-
+ 	int (*ep_show)(struct iscsi_connection *conn, char *buf, int rest);
+ 	void (*ep_event_modify)(struct iscsi_connection *conn, int events);
++	struct iscsi_task *(*alloc_task)(struct iscsi_connection *conn, size_t ext_len);
++	void (*free_task)(struct iscsi_task *task);
+ 	void *(*alloc_data_buf)(struct iscsi_connection *conn, size_t sz);
+ 	void (*free_data_buf)(struct iscsi_connection *conn, void *buf);
+ 	int (*ep_getsockname)(struct iscsi_connection *conn,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001149.html">[Stgt-devel] [PATCH 10/20] iser connection transport data
+</A></li>
+	<LI>Next message: <A HREF="001153.html">[Stgt-devel] [PATCH 15/20] iser rounding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1156">[ date ]</a>
+              <a href="thread.html#1156">[ thread ]</a>
+              <a href="subject.html#1156">[ subject ]</a>
+              <a href="author.html#1156">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

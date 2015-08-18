@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] your recent sense checkin
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20your%20recent%20sense%20checkin&In-Reply-To=%3C20070302081840U.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000417.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] your recent sense checkin</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20your%20recent%20sense%20checkin&In-Reply-To=%3C20070302081840U.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] your recent sense checkin">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Mar  2 00:18:40 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000417.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#416">[ date ]</a>
+              <a href="thread.html#416">[ thread ]</a>
+              <a href="subject.html#416">[ subject ]</a>
+              <a href="author.html#416">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: [Stgt-devel] your recent sense checkin
+Date: Wed, 28 Feb 2007 15:13:23 -0500
+
+&gt;<i> I took a look at your SVN and rebased my patches on top of it.
+</I>
+Oh, thanks a lot. I can take care of you patches. I need to clean up
+something before merging them.
+
+
+&gt;<i>  One thing to point out: it should be possible for a target to send
+</I>&gt;<i> back both data-in bytes as the result of a command, and status bytes
+</I>&gt;<i> in the response.  Your use of task-&gt;addr to get the status bytes
+</I>&gt;<i> appears to make that impossible.  I had added extra task-&gt;sense and
+</I>&gt;<i> task-&gt;senselen to accommodate this usage.
+</I>
+Yeah. We've been fixing sense issues in tgt in-kernel component.
+
+You add:
+
+@@ -94,6 +94,8 @@ struct scsi_cmd {
+
+ 	unsigned char sense_buffer[SCSI_SENSE_BUFFERSIZE];
++	uint8_t *sense;    /* output values from target */
+
+scsi_cmd structure has two sense_buffer. one is for some lld and one
+is a pointer for odd llds.
+
+Then, you add super long sense buffer to struct iscsi_connection:
+
+@@ -146,6 +148,7 @@ struct iscsi_connection {
+ 	struct iscsi_pdu req;
+ 	void *req_buffer;
+ 	struct iscsi_pdu rsp;
++	uint8_t sense_buffer[252];  /* architectural limit */
+
+
+I just want to have one sense_buffer in scsi_cmd even even if it's
+large.
+
+The problem is that tgt in-kernel component can't accept unaligned
+buffer for sense (and as you pointed out, we wrongly use uaddr and len
+fields in cmd_rsp struct for sense). I've been testing the patches.
+When I finish it, I can fix tgtd.
+
+
+&gt;<i> Regarding the &quot;Need to clean up this mess&quot; comment in
+</I>&gt;<i> iscsi_scsi_cmd_tx_start:  it gets worse once we mix in the
+</I>&gt;<i> bidirectional.  There you cannot do a phase collapse on the final
+</I>&gt;<i> data packet, so it becomes even more of a mess.
+</I>
+Nice.
+
+
+&gt;<i> I have cleaned most of that mess up, perhaps, as part of getting
+</I>&gt;<i> bidirectional transfers to work, but the patches are not ready for
+</I>&gt;<i> submission to stgt because they depend on AHS structures defined
+</I>&gt;<i> only in non-mainline kernel patches.  If you are willing to remove
+</I>&gt;<i> the dependency on kernel headers by copying the relevant bits into
+</I>&gt;<i> stgt, we can avoid that problem.
+</I>
+I'm ok with using the nice header instead of upstream header files.
+
+
+&gt;<i> Note the duplication in iscsi_cmd_rsp_build and
+</I>&gt;<i> iscsi_sense_rsp_build; wouldn't it be better to have a single
+</I>&gt;<i> function with &quot;if (task-&gt;result != 0) {...}&quot; to return status?
+</I>
+Probabaly.
+
+
+&gt;<i> Here they are, fyi.  Let me know if you have suggestions on how I
+</I>&gt;<i> can help you get more of this merged.
+</I>
+Sorry for taking so long to merge your patches. Surely, I'll merge
+your patches.
+
+I'll try to finish multiple device support sutff this weekend. Yeah, I
+did last week and fixed AIO stuff instead. tgtd works with any
+upstream kernels. It's as neat as multiple device support, isn't it ;)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000417.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#416">[ date ]</a>
+              <a href="thread.html#416">[ thread ]</a>
+              <a href="subject.html#416">[ subject ]</a>
+              <a href="author.html#416">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

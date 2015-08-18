@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070304215800.GA22985%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000417.html">
+   <LINK REL="Next"  HREF="000419.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070304215800.GA22985%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">pw at osc.edu
+       </A><BR>
+    <I>Sun Mar  4 22:58:00 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000417.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000419.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#418">[ date ]</a>
+              <a href="thread.html#418">[ thread ]</a>
+              <a href="subject.html#418">[ subject ]</a>
+              <a href="author.html#418">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Mon, 05 Mar 2007 00:12 +0900:
+&gt;<i> I've merged it though there are still many things to clean up.
+</I>&gt;<i> 
+</I>&gt;<i> I added the virtual cd patch that Ming wrote for IET as an
+</I>&gt;<i> example. You can export iso files as a cd drive. An initiator can see
+</I>&gt;<i> a cd drive, but it can't read the iso file. So there must be bugs,
+</I>&gt;<i> however I've not dig into it. Patches are welcome :)
+</I>&gt;<i> 
+</I>&gt;<i> You can export iso files in the following way:
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.tulip.sys1.xyz --target-type cd
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 0 -b /home/fujita/debian-31r5-i386-businesscard.iso
+</I>&gt;<i> tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Pete, I found that you don't put a license in osd.c. GPL2 or GPL2 or
+</I>&gt;<i> any later version? Let me know. I'll update and merge it.
+</I>
+Great!  Thanks for doing all this.  It will take me some time for me
+to catch up and see how things are integrated now.
+
+Please add license GPL2 exact.  I forgot.
+
+If you generate SVN checkin emails, I would be happy to be added to
+that list.
+
+&gt;<i> I added sgv3 pass through support. By default, tgt is compiled with
+</I>&gt;<i> sgv3 support instead of sgv4.
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.tulip.sys1.xyz --target-type pt
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 0 -b /dev/sg0
+</I>&gt;<i> tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+</I>&gt;<i> 
+</I>&gt;<i> Note that I'll change the interface not to use /dev/sgX directly.
+</I>&gt;<i> 
+</I>&gt;<i> I can export a disk drive with sgv3 support. But it doesn't work
+</I>&gt;<i> fully. I'll fix it someday, but the next thing I'll do is adding
+</I>&gt;<i> bi-directional support.
+</I>
+This is a nice addition.  But I'll probably not try it in the near
+term.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000417.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000419.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#418">[ date ]</a>
+              <a href="thread.html#418">[ thread ]</a>
+              <a href="subject.html#418">[ subject ]</a>
+              <a href="author.html#418">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

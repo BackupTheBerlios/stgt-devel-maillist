@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20A%20curious%20observation%20with%20iSCSI%20and%20SCSI%20tgt%20...&In-Reply-To=%3C46b8a8850807251146k517f20a3nf40991cbec6f5045%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001736.html">
+   <LINK REL="Next"  HREF="001885.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20A%20curious%20observation%20with%20iSCSI%20and%20SCSI%20tgt%20...&In-Reply-To=%3C46b8a8850807251146k517f20a3nf40991cbec6f5045%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Fri Jul 25 20:46:14 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001736.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+        <LI>Next message: <A HREF="001885.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1884">[ date ]</a>
+              <a href="thread.html#1884">[ thread ]</a>
+              <a href="subject.html#1884">[ subject ]</a>
+              <a href="author.html#1884">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, Jul 2, 2008 at 2:01 PM, Richard Sharpe
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+&gt;<i> Hi,
+</I>&gt;<i>
+</I>&gt;<i> I am testing some configurations I have laying around here at work while
+</I>&gt;<i> waiting for our new hardware to arrive.
+</I>&gt;<i>
+</I>&gt;<i> I set up one system, a 1U with 2GB of memory and a Xeon (speed not really
+</I>&gt;<i> relevant to this) and GigE as a target and set up a virtual disk via iSCSI.
+</I>&gt;<i>
+</I>&gt;<i> Then on another system, an old DELL, I set up the initiator, and ran:
+</I>&gt;<i>
+</I>&gt;<i>    dd if=/dev/zero of=/dev/sda1 bs=1024 count=1000000
+</I>&gt;<i>
+</I>&gt;<i> and I got a throughput of 10.5-10.8MB/a while consuming around 10-12% of the
+</I>&gt;<i> CPU on the target (shown via top).
+</I>
+OK, I have shifted to faster machines (a couple of 1U Tyan B5211s with
+Quad core Xeon X3230  @ 2.66GHz and jumbo frames ...)
+
+I get around 58.6MB/s with 819MB but it drops to 44-45MB/s with 8GB
+files (with a variety of block sizes (4096, 8192, 16384).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001736.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+	<LI>Next message: <A HREF="001885.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1884">[ date ]</a>
+              <a href="thread.html#1884">[ thread ]</a>
+              <a href="subject.html#1884">[ subject ]</a>
+              <a href="author.html#1884">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

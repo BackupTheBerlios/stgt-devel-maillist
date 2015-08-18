@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Errors in fsck with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Errors%20in%20fsck%20with%20iSER&In-Reply-To=%3C47669B8F.9050205%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001214.html">
+   <LINK REL="Next"  HREF="001216.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Errors in fsck with iSER</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Errors%20in%20fsck%20with%20iSER&In-Reply-To=%3C47669B8F.9050205%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Errors in fsck with iSER">dorons at Voltaire.COM
+       </A><BR>
+    <I>Mon Dec 17 16:53:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001214.html">[Stgt-devel] Errors in fsck with iSER (was: iSER patches,	third release)
+</A></li>
+        <LI>Next message: <A HREF="001216.html">[Stgt-devel] Errors in fsck with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1215">[ date ]</a>
+              <a href="thread.html#1215">[ thread ]</a>
+              <a href="subject.html#1215">[ subject ]</a>
+              <a href="author.html#1215">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+
+FUJITA Tomonori wrote:
+&gt;<i> On Mon, 17 Dec 2007 15:17:16 +0200
+</I>&gt;<i> Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;&gt;<i>     
+</I>&gt;&gt;&gt;<i> On Mon, 10 Dec 2007 10:03:25 -0500
+</I>&gt;&gt;&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;&gt;&gt;<i> This is the third major release of support for iSCSI Extensions
+</I>&gt;&gt;&gt;&gt;<i> for RDMA (iSER) to the existing TGT user space SCSI target.  It
+</I>&gt;&gt;&gt;&gt;<i> uses OpenFabrics libraries and kernel drivers to act as a SCSI
+</I>&gt;&gt;&gt;&gt;<i> target over RDMA-capable devices.  The code has been tested
+</I>&gt;&gt;&gt;&gt;<i> against the existing Linux iSER initiator over InfiniBand cards,
+</I>&gt;&gt;&gt;&gt;<i> but should be specification compliant and work generally.
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> A bit of documentation is included, and a short technical report is
+</I>&gt;&gt;&gt;&gt;<i> available at <A HREF="http://www.osc.edu/~pw/papers/iser-snapi07.pdf">http://www.osc.edu/~pw/papers/iser-snapi07.pdf</A> with
+</I>&gt;&gt;&gt;&gt;<i> slides from a presentation at
+</I>&gt;&gt;&gt;&gt;<i> <A HREF="http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf">http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf</A> .
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> The iSER patches can be downloaded from:
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i>         <A HREF="git://git.osc.edu/tgt">git://git.osc.edu/tgt</A>
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> or browsed at:
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i>         <A HREF="http://git.osc.edu/?p=tgt.git;a=summary">http://git.osc.edu/?p=tgt.git;a=summary</A>
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Changes since previous series are as follows.
+</I>&gt;&gt;&gt;&gt;<i>     
+</I>&gt;&gt;&gt;&gt;<i>         
+</I>&gt;&gt;&gt;<i> I merged all the patches. Now mainline tgt supports iSER. Thanks!
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> I also applied some patches that could break iSER support. iSER
+</I>&gt;&gt;&gt;<i> people, please test the latest tree.
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;<i> We ran some tests on it. Most of them are ok except for fsck. We ran it
+</I>&gt;&gt;<i> in the following way:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> seed5:/tmp/regtest # parted -s /dev/sdb mkpart primary 0 8500
+</I>&gt;&gt;<i> seed5:/tmp/regtest # for ((i=1;i&lt;=1000;i++)) do mkfs -t ext2 -q
+</I>&gt;&gt;<i> /dev/sdb1; fsck -y -ft ext2 /dev/sdb1; echo iteration $i is done; done
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> fsck is ok most of the time, but once in a while it looks like this
+</I>&gt;&gt;<i> (after ~300 iterations):
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> fsck 1.38 (30-Jun-2005)
+</I>&gt;&gt;<i> e2fsck 1.38 (30-Jun-2005)
+</I>&gt;&gt;<i> Pass 1: Checking inodes, blocks, and sizes
+</I>&gt;&gt;<i> Pass 2: Checking directory structure
+</I>&gt;&gt;<i> Pass 3: Checking directory connectivity
+</I>&gt;&gt;<i> Pass 4: Checking reference counts
+</I>&gt;&gt;<i> Pass 5: Checking group summary information
+</I>&gt;&gt;<i> /dev/sdb1: 11/1038336 files (0.0% non-contiguous), 32599/2075195 blocks
+</I>&gt;&gt;<i> seed5:/tmp/regtest # mkfs -t ext2 -q /dev/sdb1
+</I>&gt;&gt;<i> seed5:/tmp/regtest # fsck -y -ft ext2 /dev/sdb1
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Sounds like data corruption. Do you see the same problem with IPoIB?
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>   
+</I>Hi,
+I'm working with Erez and I tried this with tcp session and there 
+weren't any problems.
+
+Thanks,
+Doron
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001214.html">[Stgt-devel] Errors in fsck with iSER (was: iSER patches,	third release)
+</A></li>
+	<LI>Next message: <A HREF="001216.html">[Stgt-devel] Errors in fsck with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1215">[ date ]</a>
+              <a href="thread.html#1215">[ thread ]</a>
+              <a href="subject.html#1215">[ subject ]</a>
+              <a href="author.html#1215">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

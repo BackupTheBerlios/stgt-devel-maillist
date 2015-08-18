@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] uSpace Transport Patch
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C1156259829.31370.34.camel%40trinity.ogc.int%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000331.html">
+   <LINK REL="Next"  HREF="000333.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] uSpace Transport Patch</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C1156259829.31370.34.camel%40trinity.ogc.int%3E"
+       TITLE="[Stgt-devel] uSpace Transport Patch">tom at opengridcomputing.com
+       </A><BR>
+    <I>Tue Aug 22 17:17:09 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000331.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+        <LI>Next message: <A HREF="000333.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#332">[ date ]</a>
+              <a href="thread.html#332">[ thread ]</a>
+              <a href="subject.html#332">[ subject ]</a>
+              <a href="author.html#332">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> &gt; 
+</I>[...snip...]
+&gt;<i> &gt; Yes, I'm working on that now, I just didn't want to get too far down a
+</I>&gt;<i> &gt; road that lead somewhere we didn't want to go. Basically, the iSER code
+</I>&gt;<i> &gt; is implemented in the kernel. The user-mode interface is a file
+</I>&gt;<i> &gt; descriptor (used for polling), and a either a) set of methods
+</I>&gt;<i> &gt; implemented via read/write for listening for, accepting and
+</I>&gt;<i> &gt; send/receiving, or b) using the netlink interface. I'm leaning towards
+</I>&gt;<i> &gt; the former actually.
+</I>&gt;<i> 
+</I>&gt;<i> The previous patch uses the latter approach (similar to open-iscsi),
+</I>&gt;<i> right? So, could you explain the formaer approach a bit further?
+</I>
+- The existing netlink messages stay the way they are. That is, we don't
+add any new ones.
+
+- The iSER kernel driver has a character device file in 
+  /sys/class/iscsi_transport/iscsi_iser_tgt/listen. When the client
+  (istgt) opens this file, it receives a file descriptor that refers 
+  to an in-kernel rdma connection id. The iut binds to a specific
+  address and port by write-ing the desired sockaddr and port number. 
+  The return  value from the write is the result of the bind.
+
+- A poll of this file descriptor will return an revent when there is an 
+  inbound connection request.
+
+- The iut_ reads from the listen_fd to receive the fd for the 
+  new connection along with the local and remote sockaddr and len.
+
+- The iut continues with login by calling 'read' and 'write' on the new
+  fd to send and receive data login messages. Likewise, a poll of the
+  fd will return an revent when there is data to read and/or can-write-more.
+
+- The iut moves the transport to the kernel just like it does today by
+  sending a netlink message to the transport.
+
+This approach allows us to leverage the open/read/write/poll semantics of 
+an fd without muxing it all over a netlink socket.
+
+Tom
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000331.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+	<LI>Next message: <A HREF="000333.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#332">[ date ]</a>
+              <a href="thread.html#332">[ thread ]</a>
+              <a href="subject.html#332">[ subject ]</a>
+              <a href="author.html#332">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,1094 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] uSpace Transport Patch
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C1156195780.7484.16.camel%40trinity.ogc.int%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000330.html">
+   <LINK REL="Next"  HREF="000326.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] uSpace Transport Patch</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C1156195780.7484.16.camel%40trinity.ogc.int%3E"
+       TITLE="[Stgt-devel] uSpace Transport Patch">tom at opengridcomputing.com
+       </A><BR>
+    <I>Mon Aug 21 23:29:40 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000330.html">[Stgt-devel] session tsih
+</A></li>
+        <LI>Next message: <A HREF="000326.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#324">[ date ]</a>
+              <a href="thread.html#324">[ thread ]</a>
+              <a href="subject.html#324">[ subject ]</a>
+              <a href="author.html#324">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tomo:
+
+Enclosed is a patch that allows you to plug in multiple transports. It
+has a few benefits over the last approach:
+
+1. The TCP side can remain exactly the same. i.e. user-mode connection
+management and login send/recv.
+
+2. The stgtd implementation still uses pollfd to receive I/O events. The
+   iser side will provide an fd that can be polled.
+
+
+I have built and run this patch with the current code and connected with
+a iscsi initiator over TCP. I did encounter problems, however, trying to
+do disk i/o.
+
+This is not done, it is a proof-of-concept/design proposal. The netlink
+stuff will obviously change as I flesh out the iSER side. Please let me
+know what you think, I'd like your opinion before I get to far down this
+road.
+
+Thanks, 
+Tom
+
+Index: usr/iscsi/session.c
+===================================================================
+--- usr/iscsi/session.c	(revision 532)
++++ usr/iscsi/session.c	(working copy)
+@@ -112,12 +112,13 @@
+ 
+ 	log_debug(&quot;session_create: %#&quot; PRIx64, sid);
+ 
+-	ki-&gt;create_session(thandle, conn-&gt;exp_cmd_sn, &amp;session-&gt;ksid,
++	ki-&gt;create_session(conn-&gt;kth, conn-&gt;exp_cmd_sn, &amp;session-&gt;ksid,
+ 			   &amp;session-&gt;hostno);
+ 
+ 	list_add(&amp;session-&gt;hlist, &amp;sessions_list);
+ }
+ 
++#if 0
+ void session_remove(struct session *session)
+ {
+ 	uint64_t sid = sid64(session-&gt;isid, session-&gt;tsih);
+@@ -140,3 +141,4 @@
+ 	free(session-&gt;initiator);
+ 	free(session);
+ }
++#endif
+Index: usr/iscsi/iscsid.h
+===================================================================
+--- usr/iscsi/iscsid.h	(revision 532)
++++ usr/iscsi/iscsid.h	(working copy)
+@@ -9,13 +9,14 @@
+ 
+ #include &lt;sys/types.h&gt;
+ #include &lt;linux/types.h&gt;
+-
++#include &lt;sys/socket.h&gt;
++#include &lt;linux/socket.h&gt;
+ #include &quot;types.h&quot;
+ #include &quot;iscsi_if.h&quot;
+ #include &quot;list.h&quot;
+ #include &quot;param.h&quot;
+ #include &quot;log.h&quot;
+-
++#include &quot;iscsi_uspace_transport.h&quot;
+ #include &lt;scsi/iscsi_proto.h&gt;
+ 
+ #define ISCSI_NAME_LEN 255
+@@ -25,7 +26,6 @@
+ #define DIGEST_NONE		(1 &lt;&lt; 0)
+ #define DIGEST_CRC32C           (1 &lt;&lt; 1)
+ 
+-extern uint64_t thandle;
+ extern int nl_fd;
+ 
+ #define sid64(isid, tsih)					\
+@@ -69,6 +69,7 @@
+ 	int state;
+ 	int iostate;
+ 	int fd;
++	uint64_t kth;
+ 
+ 	struct list_head clist;
+ 	struct session *session;
+Index: usr/iscsi/iscsi_uspace_transport.c
+===================================================================
+--- usr/iscsi/iscsi_uspace_transport.c	(revision 0)
++++ usr/iscsi/iscsi_uspace_transport.c	(revision 0)
+@@ -0,0 +1,118 @@
++#include &lt;stdio.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;stddef.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;errno.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;iscsi_uspace_transport.h&quot;
++
++struct iut_el {
++	struct list_head list;
++	struct iut *transport;
++};
++
++static LIST_HEAD(iscsi_transport_list);
++
++extern struct iut iscsi_tcp;
++
++#if 0
++struct iut iscsi_iser = {
++	.name = &quot;iser&quot;,
++	.rdma = 1,
++	.init = iser_transport_init,
++	.poll_init = iser_poll_init,
++	.ep_accept = iser_ep_accept,
++	.ep_close = iser_ep_close,
++};
++#endif
++
++void iut_init(void)
++{
++	struct iut_el *el;
++
++	el = malloc(sizeof(*el));
++	el-&gt;transport = &amp;iscsi_tcp;
++	list_add(&amp;(el-&gt;list),  &amp;iscsi_transport_list);
++#if 0
++	el = malloc(sizeof(*el));
++	el-&gt;transport = &amp;iscsi_iser;
++	list_add(&amp;(el-&gt;list),  &amp;iscsi_transport_list);
++#endif
++	list_for_each_entry(el, &amp;iscsi_transport_list, list)
++		el-&gt;transport-&gt;init(el-&gt;transport);
++}
++
++int iut_lookup_handles(int fd, 
++		       iut_handle_t *pth,
++		       iut_ep_handle_t* peh)
++{
++	struct iut_el *el;
++	iut_ep_handle_t eh;
++	int found = 0;
++
++	list_for_each_entry(el, &amp;iscsi_transport_list, list) {
++		eh = iut_ep_lookup(el-&gt;transport, fd);
++		if (eh) {
++			dprintf(&quot;found handle = %p for fd = %d\n&quot;, 
++				eh, fd);
++			*pth = el-&gt;transport;
++			*peh = eh;
++			found = 1;
++			break;
++		}
++	}
++
++	return found;
++}
++
++int iut_poll_init(struct pollfd *pfds, int listen_max)
++{
++	struct iut_el *el;
++	int listen_count = 0;
++
++	list_for_each_entry(el, &amp;iscsi_transport_list, list) 
++		listen_count += el-&gt;transport-&gt;poll_init(el-&gt;transport, 
++							 pfds + listen_count, 
++							 listen_max - listen_count);
++
++	return listen_count;
++}
++
++int iut_ep_close(iut_handle_t th, iut_ep_handle_t ep_h)
++{
++	return th-&gt;ep_close(th, ep_h);
++}
++
++int iut_ep_accept(iut_handle_t th, iut_ep_handle_t ep_h,
++			 iut_ep_handle_t *new_ep_h,
++			 struct sockaddr *addr, socklen_t *addrlen)
++{
++	return th-&gt;ep_accept(th, ep_h, new_ep_h, addr, addrlen);
++}
++
++iut_ep_handle_t iut_ep_lookup(iut_handle_t th, int fd)
++{
++	return th-&gt;ep_lookup(th, fd);
++}
++
++int iut_fd_write(int fd, const void *buf, int buflen, int cork)
++{
++	iut_handle_t th;
++	iut_ep_handle_t ep_h;
++	if (iut_lookup_handles(fd, &amp;th, &amp;ep_h))
++		return th-&gt;ep_write(th, ep_h, buf, buflen, cork);
++
++	return -ENOENT;
++}
++
++int iut_fd_read(int fd, void *buf, int buflen)
++{
++	iut_handle_t th;
++	iut_ep_handle_t ep_h;
++	if (iut_lookup_handles(fd, &amp;th, &amp;ep_h))
++		return th-&gt;ep_read(th, ep_h, buf, buflen);
++
++	return -ENOENT;
++}
++
+Index: usr/iscsi/istgt.c
+===================================================================
+--- usr/iscsi/istgt.c	(revision 532)
++++ usr/iscsi/istgt.c	(working copy)
+@@ -33,9 +33,8 @@
+ #include &lt;arpa/inet.h&gt;
+ 
+ #include &quot;iscsid.h&quot;
++#include &quot;iscsi_uspace_transport.h&quot;
+ 
+-#define ISCSI_LISTEN_PORT	3260
+-
+ #define LISTEN_MAX	4
+ #define INCOMING_MAX	32
+ 
+@@ -47,92 +46,29 @@
+ };
+ 
+ static struct connection *incoming[INCOMING_MAX];
+-uint64_t thandle;
+ int nl_fd;
+ 
+-static void set_non_blocking(int fd)
+-{
+-	int res = fcntl(fd, F_GETFL);
+-
+-	if (res != -1) {
+-		res = fcntl(fd, F_SETFL, res | O_NONBLOCK);
+-		if (res)
+-			dprintf(&quot;unable to set fd flags (%s)!\n&quot;, strerror(errno));
+-	} else
+-		dprintf(&quot;unable to get fd flags (%s)!\n&quot;, strerror(errno));
+-}
+-
+-static void listen_socket_create(struct pollfd *pfds)
+-{
+-	struct addrinfo hints, *res, *res0;
+-	char servname[64];
+-	int i, sock, opt;
+-
+-	memset(servname, 0, sizeof(servname));
+-	snprintf(servname, sizeof(servname), &quot;%d&quot;, ISCSI_LISTEN_PORT);
+-
+-	memset(&amp;hints, 0, sizeof(hints));
+-	hints.ai_socktype = SOCK_STREAM;
+-	hints.ai_flags = AI_PASSIVE;
+-
+-	if (getaddrinfo(NULL, servname, &amp;hints, &amp;res0)) {
+-		eprintf(&quot;unable to get address info (%s)!\n&quot;, strerror(errno));
+-		exit(1);
+-	}
+-
+-	for (i = 0, res = res0; res &amp;&amp; i &lt; LISTEN_MAX; i++, res = res-&gt;ai_next) {
+-		sock = socket(res-&gt;ai_family, res-&gt;ai_socktype, res-&gt;ai_protocol);
+-		if (sock &lt; 0) {
+-			eprintf(&quot;unable to create server socket (%s) %d %d %d!\n&quot;,
+-				  strerror(errno), res-&gt;ai_family,
+-				  res-&gt;ai_socktype, res-&gt;ai_protocol);
+-			continue;
+-		}
+-
+-		opt = 1;
+-		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt)))
+-			dprintf(&quot;unable to set SO_REUSEADDR on server socket (%s)!\n&quot;,
+-				    strerror(errno));
+-		opt = 1;
+-		if (res-&gt;ai_family == AF_INET6 &amp;&amp;
+-		    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &amp;opt, sizeof(opt)))
+-			continue;
+-
+-		if (bind(sock, res-&gt;ai_addr, res-&gt;ai_addrlen)) {
+-			eprintf(&quot;unable to bind server socket (%s)!\n&quot;, strerror(errno));
+-			continue;
+-		}
+-
+-		if (listen(sock, INCOMING_MAX)) {
+-			eprintf(&quot;unable to listen to server socket (%s)!\n&quot;, strerror(errno));
+-			continue;
+-		}
+-
+-		set_non_blocking(sock);
+-
+-		pfds[i].fd = sock;
+-		pfds[i].events = POLLIN;
+-	}
+-
+-	freeaddrinfo(res0);
+-}
+-
+ static void accept_connection(struct pollfd *pfds, int afd)
+ {
+-	struct sockaddr_storage from;
+-	socklen_t namesize;
+-	struct pollfd *pfd;
++	struct sockaddr addr;
++	socklen_t addrlen;
++	iut_handle_t th;
++	iut_ep_handle_t l_eh;
++	iut_ep_handle_t new_eh;
+ 	struct connection *conn;
+-	int fd, i;
++	struct pollfd *pfd;
++	int i, fd;
++	
++	if (!iut_lookup_handles(afd, &amp;th, &amp;l_eh)) {
++		eprintf(&quot;could not find transport handles &quot;
++			&quot;for specified fd=%d\n&quot;,
++		       afd);
++		return;
++	}
+ 
+-	eprintf(&quot;%d\n&quot;, afd);
+-
+-	namesize = sizeof(from);
+-	if ((fd = accept(afd, (struct sockaddr *) &amp;from, &amp;namesize)) &lt; 0) {
+-		if (errno != EINTR &amp;&amp; errno != EAGAIN) {
+-			eprintf(&quot;accept(incoming_socket)\n&quot;);
+-			exit(1);
+-		}
++	fd = iut_ep_accept(th, l_eh, &amp;new_eh, &amp;addr, &amp;addrlen); 
++	if (fd &lt; 0) {
++		printf(&quot;failed to accept incoming connection request\n&quot;);
+ 		return;
+ 	}
+ 
+@@ -150,11 +86,11 @@
+ 		eprintf(&quot;fail to allocate conn\n&quot;);
+ 		goto out;
+ 	}
++	conn-&gt;kth = th-&gt;kernel_handle;
+ 	conn-&gt;fd = fd;
+ 	incoming[i] = conn;
+ 	conn_read_pdu(conn);
+ 
+-	set_non_blocking(fd);
+ 	pfd = &amp;pfds[POLL_INCOMING + i];
+ 	pfd-&gt;fd = fd;
+ 	pfd-&gt;events = POLLIN;
+@@ -162,7 +98,7 @@
+ 
+ 	return;
+ out:
+-	close(fd);
++	iut_ep_close(th, new_eh);
+ 	return;
+ }
+ 
+@@ -170,7 +106,7 @@
+ {
+ 	struct connection *conn;
+ 	struct pollfd *pfd;
+-	int i, res, opt;
++	int i, res;
+ 
+ 	for (i = 0; i &lt; LISTEN_MAX; i++) {
+ 		if (pfds[POLL_LISTEN + i].revents)
+@@ -189,14 +125,15 @@
+ 		case IOSTATE_READ_BHS:
+ 		case IOSTATE_READ_AHS_DATA:
+ 		read_again:
+-			res = read(pfd-&gt;fd, conn-&gt;buffer, conn-&gt;rwsize);
++			res = iut_fd_read(pfd-&gt;fd, conn-&gt;buffer, conn-&gt;rwsize);
+ 			if (res &lt;= 0) {
+ 				if (res == 0 || (errno != EINTR &amp;&amp; errno != EAGAIN))
+ 					conn-&gt;state = STATE_CLOSE;
+ 				else if (errno == EINTR)
+ 					goto read_again;
+ 				break;
+-			}
++			} else
++				printf(&quot;read %d bytes: \&quot;%s\&quot;\n&quot;, res, conn-&gt;buffer);
+ 			conn-&gt;rwsize -= res;
+ 			conn-&gt;buffer += res;
+ 			if (conn-&gt;rwsize)
+@@ -233,9 +170,8 @@
+ 		case IOSTATE_WRITE_AHS:
+ 		case IOSTATE_WRITE_DATA:
+ 		write_again:
+-			opt = 1;
+-			setsockopt(pfd-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
+-			res = write(pfd-&gt;fd, conn-&gt;buffer, conn-&gt;rwsize);
++			res = iut_fd_write(pfd-&gt;fd, conn-&gt;buffer, conn-&gt;rwsize, 1);
++			printf(&quot;wrote %d bytes: \&quot;%s\&quot;\n&quot;, conn-&gt;rwsize, conn-&gt;buffer);
+ 			if (res &lt; 0) {
+ 				if (errno != EINTR &amp;&amp; errno != EAGAIN)
+ 					conn-&gt;state = STATE_CLOSE;
+@@ -272,8 +208,7 @@
+ 					goto write_again;
+ 				}
+ 			case IOSTATE_WRITE_DATA:
+-				opt = 0;
+-				setsockopt(pfd-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
++				iut_fd_write(pfd-&gt;fd, NULL, 0, 0);
+ 				cmnd_finish(conn);
+ 
+ 				switch (conn-&gt;state) {
+@@ -312,11 +247,13 @@
+ int iscsi_poll_init(struct pollfd *pfd)
+ {
+ 	int i;
++	int listeners;
+ 
+ 	pfd[POLL_NL].fd = nl_fd;
+ 	pfd[POLL_NL].events = POLLIN;
+ 
+-	listen_socket_create(pfd + POLL_LISTEN);
++	listeners = iut_poll_init(pfd + POLL_LISTEN, LISTEN_MAX);
++	dprintf(&quot;%d listeners\n&quot;, listeners);
+ 
+ 	for (i = 0; i &lt; INCOMING_MAX; i++) {
+ 		pfd[POLL_INCOMING + i].fd = -1;
+@@ -332,5 +269,7 @@
+ 	iscsi_nl_init();
+ 	*npfd = POLL_MAX;
+ 
++	iut_init();
++
+ 	return 0;
+ }
+Index: usr/iscsi/iscsi_uspace_transport.h
+===================================================================
+--- usr/iscsi/iscsi_uspace_transport.h	(revision 0)
++++ usr/iscsi/iscsi_uspace_transport.h	(revision 0)
+@@ -0,0 +1,60 @@
++#ifndef __ISCSI_USPACE_TRANSPORT_H
++#define __ISCSI_USPACE_TRANSPORT_H
++
++#include &lt;sys/poll.h&gt;
++#include &lt;sys/socket.h&gt;
++#include &quot;list.h&quot;
++
++#define ISCSI_LISTEN_PORT	3260
++
++typedef struct iut_ep_handle {
++	uint64_t kernel_handle;
++	struct iut *transport;
++} *iut_ep_handle_t;
++
++typedef struct iut *iut_handle_t;
++struct iut {
++	uint64_t kernel_handle;
++	const char *name;
++	int rdma;
++
++	int (*init)(iut_handle_t);
++	int (*poll_init)(iut_handle_t th, struct pollfd *, int listen_max);
++	int (*ep_close)(iut_handle_t th, iut_ep_handle_t ep_h);
++	int (*ep_accept)(iut_handle_t th, iut_ep_handle_t ep_h,
++			 iut_ep_handle_t *new_ep_h,
++			 struct sockaddr *addr, socklen_t *addrlen);
++	iut_ep_handle_t (*ep_lookup)(iut_handle_t th, int fd);
++	int (*ep_write)(iut_handle_t th, iut_ep_handle_t ep_h,
++			const void *buf, int buflen, int cork);
++	int (*ep_read)(iut_handle_t th, iut_ep_handle_t ep_h,
++		       void *buf, int buflen);
++};
++
++/* Transport independent functions */
++extern int iut_poll_init(struct pollfd *pfds, int);
++extern void iut_init(void);
++extern int iut_lookup_handles(int fd, iut_handle_t *th, iut_ep_handle_t *eh);
++extern int iut_ep_close(iut_handle_t th, iut_ep_handle_t ep_h);
++extern int iut_ep_accept(iut_handle_t th, iut_ep_handle_t ep_h,
++			 iut_ep_handle_t *new_ep_h,
++			 struct sockaddr *addr, socklen_t *addrlen);
++extern iut_ep_handle_t iut_ep_lookup(iut_handle_t th, int fd);
++extern int iut_fd_write(int fd, const void *buf, int buflen, int cork);
++extern int iut_fd_read(int fd, void *buf, int buflen);
++
++/* TCP Transport Functions */
++int tcp_transport_init(iut_handle_t th);
++int tcp_poll_init(iut_handle_t, struct pollfd *, int listen_max);
++int tcp_get_poll_fd(iut_handle_t th, iut_ep_handle_t ep_h);
++int tcp_ep_close(iut_handle_t th, iut_ep_handle_t ep_h);
++int tcp_ep_accept(iut_handle_t th, iut_ep_handle_t ep_h,
++		  iut_ep_handle_t *new_ep_h,
++		  struct sockaddr *addr, socklen_t *addrlen);
++iut_ep_handle_t tcp_ep_lookup(iut_handle_t th, int fd);
++int tcp_ep_write(iut_handle_t th, iut_ep_handle_t ep_h,
++		 const void *buf, int buflen, int cork);
++int tcp_ep_read(iut_handle_t th, iut_ep_handle_t ep_h,
++		void *buf, int buflen);
++
++#endif
+Index: usr/iscsi/iscsi_transport_tcp.c
+===================================================================
+--- usr/iscsi/iscsi_transport_tcp.c	(revision 0)
++++ usr/iscsi/iscsi_transport_tcp.c	(revision 0)
+@@ -0,0 +1,281 @@
++#include &lt;ctype.h&gt;
++#include &lt;errno.h&gt;
++#include &lt;fcntl.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;getopt.h&gt;
++#include &lt;netdb.h&gt;
++
++#include &lt;sys/poll.h&gt;
++#include &lt;sys/socket.h&gt;
++#include &lt;sys/stat.h&gt;
++#include &lt;sys/types.h&gt;
++#include &lt;sys/un.h&gt;
++
++#include &lt;netinet/in.h&gt;
++#include &lt;netinet/tcp.h&gt;
++#include &lt;netinet/ip.h&gt;
++#include &lt;arpa/inet.h&gt;
++
++#include &quot;iscsid.h&quot;
++#include &quot;list.h&quot;
++#include &quot;iscsi_uspace_transport.h&quot;
++
++struct iut iscsi_tcp = {
++	.name = &quot;tcp&quot;,
++	.rdma = 0,
++	.init = tcp_transport_init,
++	.poll_init = tcp_poll_init,
++	.ep_lookup = tcp_ep_lookup,
++	.ep_accept = tcp_ep_accept,
++	.ep_close = tcp_ep_close,
++	.ep_write = tcp_ep_write,
++	.ep_read = tcp_ep_read,
++};
++
++struct tcp_ep_dir {
++	int size;
++	iut_ep_handle_t dir[0];
++};
++static struct tcp_ep_dir *tcp_ep_dir;
++
++static iut_ep_handle_t tcp_ep_create(int fd);
++static void tcp_ep_destroy(iut_ep_handle_t ep);
++
++#define TCP_EP_DIR_INITIAL_SIZE 256
++#define TCP_EP_DIR_BUMP		16
++static struct tcp_ep_dir* tcp_create_ep_dir(int size)
++{
++	struct tcp_ep_dir* dir;
++	int i;
++
++	dir = malloc(sizeof(struct tcp_ep_dir) + (sizeof(iut_ep_handle_t)*size));
++	if (!dir)
++		return NULL;
++
++	dir-&gt;size = size;
++	for (i=0; i &lt; size; i++)
++		dir-&gt;dir[i] = NULL;
++
++	return dir;
++}		
++
++static void tcp_copy_ep_dir(struct tcp_ep_dir *src, struct tcp_ep_dir *dest)
++{
++	int i;
++	for (i=0; i &lt; dest-&gt;size; i++)
++		if (i &lt; src-&gt;size)
++			dest-&gt;dir[i] = src-&gt;dir[i];
++}		
++
++static void tcp_destroy_ep_dir(struct tcp_ep_dir *dir)
++{
++	free(dir);
++}		
++
++static struct tcp_ep_dir* tcp_resize_ep_dir(struct tcp_ep_dir* old_dir, int size)
++{
++	struct tcp_ep_dir* new_dir;
++
++	new_dir = tcp_create_ep_dir(size);
++	if (!new_dir)
++		return NULL;
++
++	tcp_copy_ep_dir(old_dir, new_dir);
++	tcp_destroy_ep_dir(old_dir);
++	return new_dir;
++}		
++
++int tcp_transport_init(iut_handle_t t)
++{
++	int fd, err;
++	char buf[64];
++	uint64_t thandle;
++
++	/* Initialize the endpoint mapping cache */
++	tcp_ep_dir = tcp_create_ep_dir(TCP_EP_DIR_INITIAL_SIZE);
++
++	/* Get the tcp kernel driver's handle */
++	fd = open(&quot;/sys/class/iscsi_transport/iscsi_tcp_tgt/handle&quot;, O_RDONLY);
++	if (fd &lt; 0)
++		return fd;
++	err = read(fd, buf, sizeof(buf));
++	if (err &lt; 0)
++		goto out;
++	thandle = strtoull(buf, NULL, 10);
++	iscsi_tcp.kernel_handle = thandle;
++	printf(&quot;%s: transport handle = %&quot; PRIx64 &quot;\n&quot;, __FUNCTION__, thandle);
++	err = 0;
++out:
++	close(fd);
++	return err;
++}
++
++static void set_non_blocking(int fd)
++{
++	int res = fcntl(fd, F_GETFL);
++
++	if (res != -1) {
++		res = fcntl(fd, F_SETFL, res | O_NONBLOCK);
++		if (res)
++			dprintf(&quot;unable to set fd flags (%s)!\n&quot;, strerror(errno));
++	} else
++		dprintf(&quot;unable to get fd flags (%s)!\n&quot;, strerror(errno));
++}
++
++int tcp_poll_init(iut_handle_t th, struct pollfd *pfds, int listen_max)
++{
++	struct addrinfo hints, *res, *res0;
++	char servname[64];
++	int i, sock, opt;
++
++	memset(servname, 0, sizeof(servname));
++	snprintf(servname, sizeof(servname), &quot;%d&quot;, ISCSI_LISTEN_PORT);
++
++	memset(&amp;hints, 0, sizeof(hints));
++	hints.ai_socktype = SOCK_STREAM;
++	hints.ai_flags = AI_PASSIVE;
++
++	if (getaddrinfo(NULL, servname, &amp;hints, &amp;res0)) {
++		eprintf(&quot;unable to get address info (%s)!\n&quot;, strerror(errno));
++		exit(1);
++	}
++
++	for (i = 0, res = res0; res &amp;&amp; i &lt; listen_max; res = res-&gt;ai_next) {
++		sock = socket(res-&gt;ai_family, res-&gt;ai_socktype, res-&gt;ai_protocol);
++		if (sock &lt; 0) {
++			eprintf(&quot;unable to create server socket (%s) %d %d %d!\n&quot;,
++				  strerror(errno), res-&gt;ai_family,
++				  res-&gt;ai_socktype, res-&gt;ai_protocol);
++			continue;
++		}
++
++		opt = 1;
++		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt)))
++			dprintf(&quot;unable to set SO_REUSEADDR on server socket (%s)!\n&quot;,
++				    strerror(errno));
++		opt = 1;
++		if (res-&gt;ai_family == AF_INET6 &amp;&amp;
++		    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &amp;opt, sizeof(opt)))
++			continue;
++
++		if (bind(sock, res-&gt;ai_addr, res-&gt;ai_addrlen)) {
++			eprintf(&quot;unable to bind server socket (%s)!\n&quot;, strerror(errno));
++			continue;
++		}
++
++		if (listen(sock, 10)) {
++			eprintf(&quot;unable to listen to server socket (%s)!\n&quot;, strerror(errno));
++			continue;
++		}
++
++		set_non_blocking(sock);
++
++		(void)tcp_ep_create(sock);
++
++		pfds[i].fd = sock;
++		pfds[i].events = POLLIN;
++		i++;
++	}
++
++	freeaddrinfo(res0);
++	return i;
++}
++
++int tcp_get_poll_fd(iut_handle_t th, 
++			   iut_ep_handle_t ep_h)
++{
++	return (int)(ep_h-&gt;kernel_handle);
++}
++
++int tcp_ep_close(iut_handle_t th, iut_ep_handle_t ep_h)
++{
++	int fd = (int)ep_h-&gt;kernel_handle;
++	tcp_ep_destroy(ep_h);
++	return close(fd);
++}
++
++int tcp_ep_write(iut_handle_t th, iut_ep_handle_t ep_h, const void *buf, int len, int cork)
++{
++	int rc = 0;
++	int opt = cork;
++	setsockopt((int)ep_h-&gt;kernel_handle, SOL_TCP, TCP_CORK, 
++		   &amp;opt, sizeof(opt));
++
++	if (len)
++		rc = write((int)ep_h-&gt;kernel_handle, buf, len);
++
++	return rc;
++}
++
++int tcp_ep_read(iut_handle_t th, iut_ep_handle_t ep_h, void *buf, int len)
++{
++	return read((int)ep_h-&gt;kernel_handle, buf, len);
++}
++
++iut_ep_handle_t tcp_ep_lookup(iut_handle_t th, int fd)
++{
++	iut_ep_handle_t eh;
++	if (fd &gt; tcp_ep_dir-&gt;size)
++		return NULL;
++
++	eh = tcp_ep_dir-&gt;dir[fd];
++	return eh;
++}
++
++static iut_ep_handle_t tcp_ep_create(int fd)
++{
++	iut_ep_handle_t ep = malloc(sizeof(*ep));
++	if (!ep)
++		return NULL;
++
++	if (fd &gt;= tcp_ep_dir-&gt;size) {
++		struct tcp_ep_dir* new_dir;
++		new_dir = tcp_resize_ep_dir(tcp_ep_dir, 
++					    tcp_ep_dir-&gt;size+TCP_EP_DIR_BUMP);
++		if (new_dir == NULL) {
++			printf(&quot;Failure expanding size of TCP endpoint directory\n&quot;);
++			free(ep);
++			return NULL;
++		}
++		tcp_ep_dir = new_dir;
++	}
++
++	ep-&gt;kernel_handle = (uint64_t)fd;
++	ep-&gt;transport = &amp;iscsi_tcp;
++	tcp_ep_dir-&gt;dir[fd] = ep;
++
++	return ep;
++}
++
++static void tcp_ep_destroy(iut_ep_handle_t ep)
++{
++	tcp_ep_dir-&gt;dir[(int)ep-&gt;kernel_handle] = NULL;
++	free(ep);
++}
++
++int tcp_ep_accept(iut_handle_t th, iut_ep_handle_t ep_h, 
++		  iut_ep_handle_t *new_ep_h,
++		  struct sockaddr *addr, socklen_t *addrlen)
++{
++	iut_ep_handle_t new_h;
++	int new_fd = accept((int)ep_h-&gt;kernel_handle, 
++			    addr, addrlen);
++
++	if (new_fd &lt; 0) 
++		return new_fd;
++
++	new_h = tcp_ep_create(new_fd);
++	if (!new_h) {
++		close(new_fd);
++		return -ENOMEM;
++	}
++			
++	*new_ep_h = new_h;
++	return new_fd;
++}
++
++
++
+Index: usr/iscsi/Makefile
+===================================================================
+--- usr/iscsi/Makefile	(revision 532)
++++ usr/iscsi/Makefile	(working copy)
+@@ -2,7 +2,7 @@
+ LIBS = -lcrypto
+ DAEMON = iscsi.o
+ 
+-$(DAEMON): istgt.o conn.o param.o session.o iscsid.o target.o chap.o netlink.o
++$(DAEMON): istgt.o conn.o param.o session.o iscsid.o target.o chap.o netlink.o iscsi_uspace_transport.o iscsi_transport_tcp.o 
+ 	$(CC) -o $@ $^ $(LIBS)
+ 
+ clean:
+Index: usr/iscsi/conn.c
+===================================================================
+--- usr/iscsi/conn.c	(revision 532)
++++ usr/iscsi/conn.c	(working copy)
+@@ -11,7 +11,6 @@
+ #include &lt;string.h&gt;
+ #include &lt;errno.h&gt;
+ #include &lt;sys/stat.h&gt;
+-
+ #include &quot;iscsid.h&quot;
+ 
+ #define ISCSI_CONN_NEW		1
+@@ -74,7 +73,7 @@
+ 
+ 	conn-&gt;session-&gt;conn_cnt++;
+ 
+-	err = ki-&gt;create_conn(thandle, conn-&gt;session-&gt;ksid, conn-&gt;kcid,
++	err = ki-&gt;create_conn(conn-&gt;kth, conn-&gt;session-&gt;ksid, conn-&gt;kcid,
+ 			      &amp;conn-&gt;kcid);
+ 	if (err) {
+ 		eprintf(&quot;%d %d %u %u %u %&quot; PRIx64,
+@@ -86,20 +85,20 @@
+ 		/* FIXME */
+ 		if (i == ISCSI_PARAM_DATADGST_EN || i == ISCSI_PARAM_HDRDGST_EN)
+ 			continue;
+-		if (ki-&gt;set_param(thandle, conn-&gt;session-&gt;ksid, conn-&gt;kcid, i,
++		if (ki-&gt;set_param(conn-&gt;kth, conn-&gt;session-&gt;ksid, conn-&gt;kcid, i,
+ 				  &amp;conn-&gt;session_param[i].val,
+ 				  sizeof(uint32_t), &amp;err) || err) {
+ 			break;
+ 		}
+ 	}
+ 
+-	if (ki-&gt;bind_conn(thandle, conn-&gt;session-&gt;ksid, conn-&gt;kcid, fd, 1, &amp;err) || err) {
++	if (ki-&gt;bind_conn(conn-&gt;kth, conn-&gt;session-&gt;ksid, conn-&gt;kcid, fd, 1, &amp;err) || err) {
+ 		eprintf(&quot;%d %d %u %u %u %&quot; PRIx64,
+ 			fd, err, conn-&gt;cid, conn-&gt;stat_sn, conn-&gt;exp_stat_sn, sid);
+ 		goto out;
+ 	}
+ 
+-	if (ki-&gt;start_conn(thandle, conn-&gt;session-&gt;ksid, conn-&gt;kcid, &amp;err) || err) {
++	if (ki-&gt;start_conn(conn-&gt;kth, conn-&gt;session-&gt;ksid, conn-&gt;kcid, &amp;err) || err) {
+ 		eprintf(&quot;%d %d %u %u %u %&quot; PRIx64,
+ 			fd, err, conn-&gt;cid, conn-&gt;stat_sn, conn-&gt;exp_stat_sn, sid);
+ 		goto out;
+Index: usr/Makefile
+===================================================================
+--- usr/Makefile	(revision 532)
++++ usr/Makefile	(working copy)
+@@ -1,4 +1,4 @@
+-CFLAGS += -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC -I$(KERNELSRC)/include -I../istgt/include -I../include -I. -D_LARGEFILE64_SOURCE
++CFLAGS += -g -fno-inline -Wall -Wstrict-prototypes -fPIC -I$(KERNELSRC)/include -I../istgt/include -I../include -I. -D_LARGEFILE64_SOURCE
+ PROGRAMS = tgtd tgtadm
+ TGTD_OBJS = tgtd.o tgtif.o mgmt.o target.o scsi.o log.o driver.o util.o
+ 
+@@ -9,7 +9,7 @@
+ 
+ ifneq ($(ISCSI),)
+ CFLAGS += -DISCSI
+-TGTD_OBJS += $(addprefix iscsi/, istgt.o conn.o param.o session.o iscsid.o target.o chap.o netlink.o)
++TGTD_OBJS += $(addprefix iscsi/, istgt.o conn.o param.o session.o iscsid.o target.o chap.o netlink.o iscsi_uspace_transport.o iscsi_transport_tcp.o)
+ LIBS = -lcrypto
+ endif
+ 
+Index: istgt/include/iscsi_if.h
+===================================================================
+--- istgt/include/iscsi_if.h	(revision 532)
++++ istgt/include/iscsi_if.h	(working copy)
+@@ -46,11 +46,14 @@
+ 	ISCSI_UEVENT_TRANSPORT_EP_CONNECT	= UEVENT_BASE + 12,
+ 	ISCSI_UEVENT_TRANSPORT_EP_POLL		= UEVENT_BASE + 13,
+ 	ISCSI_UEVENT_TRANSPORT_EP_DISCONNECT	= UEVENT_BASE + 14,
++	ISCSI_UEVENT_TRANSPORT_CREATE_LISTEN	= UEVENT_BASE + 15,
++	ISCSI_UEVENT_TRANSPORT_DESTROY_LISTEN	= UEVENT_BASE + 16,
+ 
+ 	/* up events */
+ 	ISCSI_KEVENT_RECV_PDU		= KEVENT_BASE + 1,
+ 	ISCSI_KEVENT_CONN_ERROR		= KEVENT_BASE + 2,
+ 	ISCSI_KEVENT_IF_ERROR		= KEVENT_BASE + 3,
++	ISCSI_KEVENT_NEW_CONN		= KEVENT_BASE + 4,
+ };
+ 
+ struct iscsi_uevent {
+@@ -116,6 +119,14 @@
+ 		struct msg_transport_disconnect {
+ 			uint64_t	ep_handle;
+ 		} ep_disconnect;
++		struct msg_create_listen {
++			uint32_t	backlog;
++			struct sockaddr local_addr;
++			int		local_addr_len;
++		} c_listen;
++		struct msg_destroy_listen {
++			uint32_t	ep_handle;
++		} d_listen;
+ 	} u;
+ 	union {
+ 		/* messages k -&gt; u */
+@@ -141,6 +152,16 @@
+ 		struct msg_transport_connect_ret {
+ 			uint64_t	handle;
+ 		} ep_connect_ret;
++		struct msg_ep_new_conn {
++			uint64_t	ep_handle;
++			struct sockaddr	local_addr;
++			int local_addr_len;
++			struct sockaddr	remote_addr;
++			int remote_addr_len;
++		} ep_new_conn;
++		struct msg_create_listen_ret {
++			uint64_t	ep_handle;
++		} c_listen_ret;
+ 	} r;
+ } __attribute__ ((aligned (sizeof(uint64_t))));
+ 
+Index: usr/iscsi/netlink.c
+===================================================================
+--- usr/iscsi/netlink.c	(revision 532)
++++ usr/iscsi/netlink.c	(working copy)
+@@ -298,6 +298,7 @@
+ 	return 0;
+ }
+ 
++#if 0
+ static int transport_handle_init(void)
+ {
+ 	int fd, err;
+@@ -316,15 +317,17 @@
+ 	close(fd);
+ 	return err;
+ }
++#endif
+ 
+ int iscsi_nl_init(void)
+ {
+ 	int err, rsize = 256 * 1024;
+ 
++#if 0
+ 	err = transport_handle_init();
+ 	if (err)
+ 		return err;
+-
++#endif
+ 	nl_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_ISCSI);
+ 	if (nl_fd &lt; 0) {
+ 		eprintf(&quot;Fail to create the netlink socket %d\n&quot;, errno);
+@@ -358,6 +361,93 @@
+ 	return err;
+ }
+ 
++int ktransport_create_listen(uint64_t transport_handle, 
++			     uint64_t user_context,
++			     struct sockaddr *sa, int backlog,
++			     uint64_t *out_ep_handle)
++{
++	int rc;
++	struct iscsi_uevent ev;
++
++	dprintf(&quot;%&quot;PRIx64 &quot; %p %p %d\n&quot;,
++		transport_handle, out_ep_handle, sa, backlog);
++
++	ev.type = ISCSI_UEVENT_TRANSPORT_CREATE_LISTEN;
++	ev.transport_handle = transport_handle;
++	// ev.u.c_listen.user_context = user_context;
++	ev.u.c_listen.backlog = backlog;
++	ev.u.c_listen.local_addr = *sa;
++
++	if ((rc = __kipc_call(&amp;ev, sizeof(ev))) &lt; 0) {
++		return rc;
++	}
++
++	*out_ep_handle = ev.r.c_listen_ret.ep_handle;
++
++	return ev.r.retcode;
++}
++
++int ktransport_destroy_listen(uint64_t transport_handle, uint64_t ep_handle)
++{
++	int rc;
++	struct iscsi_uevent ev;
++
++	dprintf(&quot;%&quot; PRIx64 &quot; %&quot; PRIx64 &quot;\n&quot;,
++		transport_handle, ep_handle);
++
++	ev.type = ISCSI_UEVENT_TRANSPORT_DESTROY_LISTEN;
++	ev.transport_handle = transport_handle;
++	ev.u.d_listen.ep_handle = ep_handle;
++
++	if ((rc = __kipc_call(&amp;ev, sizeof(ev))) &lt; 0) {
++		return rc;
++	}
++
++	return ev.r.retcode;
++}
++
++#if 0
++static int ktransport_accept(uint64_t transport_handle, 
++		   uint64_t ep_handle, uint64_t ep_context)
++{
++	int rc;
++	struct iscsi_uevent ev;
++
++	dprintf(&quot;%&quot; PRIx64 &quot; %&quot; PRIx64 &quot; %&quot; PRIx64 &quot;\n&quot;,
++		transport_handle, ep_handle, ep_context);
++
++	ev.type = ISCSI_UEVENT_EP_ACCEPT;
++	ev.transport_handle = transport_handle;
++	ev.u.ep_accept.ep_handle = ep_handle;
++	ev.u.ep_accept.ep_context = ep_context;
++
++	if ((rc = __kipc_call(&amp;ev, sizeof(ev))) &lt; 0) {
++		return rc;
++	}
++
++	return ev.r.retcode;
++}
++
++static int ktransport_reject(uint64_t transport_handle, uint64_t ep_handle)
++{
++	int rc;
++	struct iscsi_uevent ev;
++
++	dprintf(&quot;%&quot; PRIx64 &quot; %&quot; PRIx64 &quot;\n&quot;,
++		transport_handle, ep_handle);
++
++	ev.type = ISCSI_UEVENT_EP_REJECT;
++	ev.transport_handle = transport_handle;
++	ev.u.ep_reject.ep_handle = ep_handle;
++
++	if ((rc = __kipc_call(&amp;ev, sizeof(ev))) &lt; 0) {
++		return rc;
++	}
++
++	return ev.r.retcode;
++}
++#endif
++
+ struct iscsi_kernel_interface nl_ki = {
+ 	.create_session		= kcreate_session,
+ 	.destroy_session	= kdestroy_session,
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000330.html">[Stgt-devel] session tsih
+</A></li>
+	<LI>Next message: <A HREF="000326.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#324">[ date ]</a>
+              <a href="thread.html#324">[ thread ]</a>
+              <a href="subject.html#324">[ subject ]</a>
+              <a href="author.html#324">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

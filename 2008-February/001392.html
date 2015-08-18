@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47B16FB3.2010202%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001385.html">
+   <LINK REL="Next"  HREF="001393.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47B16FB3.2010202%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">erezz at Voltaire.COM
+       </A><BR>
+    <I>Tue Feb 12 11:06:43 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001385.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001393.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1392">[ date ]</a>
+              <a href="thread.html#1392">[ thread ]</a>
+              <a href="subject.html#1392">[ subject ]</a>
+              <a href="author.html#1392">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Bart Van Assche wrote:
+&gt;<i> On Feb 11, 2008 6:59 AM, Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt; wrote:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> I'm not talking about running the initiator &amp; the target from the same
+</I>&gt;&gt;<i> machine. What I said is that if you're running the initiator on machine
+</I>&gt;&gt;<i> 'A' and the target on machine 'B', I see the following behavior:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>     * running sgp_dd directly from the target machine - 400 MB/sec
+</I>&gt;&gt;<i>       (which is the throughput of the LUN)
+</I>&gt;&gt;<i>     * running sgp_dd from the initiator on the same LUN - 240 MB/sec
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> If you get better numbers, I'm interested to know if you're using the
+</I>&gt;&gt;<i> default config or anything else.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> The results I obtained with STGT over iSER on an SDR network are as
+</I>&gt;<i> follows (direct I/O with  xdd):
+</I>&gt;<i> * 7.4 MB/s for reading data in blocks of 512 bytes and 8.9 MB/s for writing.
+</I>&gt;<i> * 363 MB/s for reading data in blocks of 65536 bytes and 346 MB/s for writing.
+</I>&gt;<i> * 890 MB/s for reading data in blocks of 10 MB and 900 MB/s for writing.
+</I>&gt;<i>
+</I>&gt;<i> Please keep in mind that when running a filesystem on top of iSCSI
+</I>&gt;<i> that all transfers happen in units of 64 KB or less.
+</I>&gt;<i>
+</I>&gt;<i> Bart Van Assche.
+</I>&gt;<i>   
+</I>
+Can you send more details about your configuration?
+
+    * stgt version
+    * initiator version
+    * Which distro do you use for the initiator/target?
+    * Which benchmark do you use? What are the parameters?
+    * What are the results if you run the same benchmark directly from
+      the target machine (i.e. no iSCSI &amp; iSER involved)?
+    * Are you using the default config for the initiator/target?
+
+Here's my config:
+
+    * target:
+          o
+
+            tgt-20071227 (actually, I use the RPM that I uploaded to OpenFabrics, which is almost identical to tgt-20071227)
+
+          o SLES 10
+          o default stgt config
+    * initiator:
+          o OFED 1.3 rc4
+          o SLES 10 sp1
+          o default open-iscsi config
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001385.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001393.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1392">[ date ]</a>
+              <a href="thread.html#1392">[ thread ]</a>
+              <a href="subject.html#1392">[ subject ]</a>
+              <a href="author.html#1392">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

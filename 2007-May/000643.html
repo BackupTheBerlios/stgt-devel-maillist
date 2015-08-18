@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS op	code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%206%20of%206%20-%20Implement%20READ%20ELEMENT%20STATUS%20op%0A%09code&In-Reply-To=%3Cf29db9a80705112002w5e9f6039yc1c8c6f027ee7580%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000642.html">
+   <LINK REL="Next"  HREF="000628.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS op	code</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%206%20of%206%20-%20Implement%20READ%20ELEMENT%20STATUS%20op%0A%09code&In-Reply-To=%3Cf29db9a80705112002w5e9f6039yc1c8c6f027ee7580%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS op	code">markh794 at gmail.com
+       </A><BR>
+    <I>Sat May 12 05:02:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000642.html">[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS	op	code
+</A></li>
+        <LI>Next message: <A HREF="000628.html">[Stgt-devel] [PATCH] replace valloc and fix memory leak
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#643">[ date ]</a>
+              <a href="thread.html#643">[ thread ]</a>
+              <a href="subject.html#643">[ subject ]</a>
+              <a href="author.html#643">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 5/12/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+&gt;<i> On Sat, 2007-05-12 at 12:47 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; On 5/12/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; On Sat, 2007-05-12 at 12:36 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; &gt; &gt; On 5/12/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; On Fri, 2007-05-11 at 13:23 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; SMC module is now useful enough to return a list of 'barcode' media in
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; the changer.
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; one potential issue for this command is the data can be larger than 1
+</I>&gt;<i> &gt; &gt; &gt; &gt; page if it is a large tl with thousands of elements. pls double check it
+</I>&gt;<i> &gt; &gt; &gt; &gt; is handled.
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; You are correct.
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; Initially, I attempted to estimate at the amount of memory required
+</I>&gt;<i> &gt; &gt; &gt; (based on the number of slots * max record size), however I kept
+</I>&gt;<i> &gt; &gt; &gt; getting a core dump and eventually tracked it down to the following
+</I>&gt;<i> &gt; &gt; &gt; routine in iscsid.c
+</I>&gt;<i> &gt; &gt; &gt;    ======================================
+</I>&gt;<i> &gt; &gt; &gt; static void iscsi_free_cmd_task(struct iscsi_task *task)
+</I>&gt;<i> &gt; &gt; &gt; {
+</I>&gt;<i> &gt; &gt; &gt;         target_cmd_done(&amp;task-&gt;scmd);
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt;         list_del(&amp;task-&gt;c_hlist);
+</I>&gt;<i> &gt; &gt; &gt;         if (task-&gt;data) {
+</I>&gt;<i> &gt; &gt; &gt;                 if ((unsigned long) task-&gt;data != task-&gt;addr)
+</I>&gt;<i> &gt; &gt; &gt;                         free((void *) (unsigned long) task-&gt;addr);
+</I>&gt;<i> &gt; &gt; &gt;         }
+</I>&gt;<i> &gt; &gt; &gt;         iscsi_free_task(task);
+</I>&gt;<i> &gt; &gt; &gt; }
+</I>&gt;<i> &gt; &gt; &gt;    ======================================
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; I keept getting a glibc double free error and was not quite sure where
+</I>&gt;<i> &gt; &gt; &gt; to go from here.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; if u like, u can get it implemented in the right way and i can help u on
+</I>&gt;<i> &gt; &gt; the crash.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Many thanks.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I will take you up on this offer.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I most likely won't have any 'spare' time to work on this over the
+</I>&gt;<i> &gt; weekend but will forward the patch on ASAP.
+</I>&gt;<i>
+</I>&gt;<i> sure. no problem. hope u patch can be merged soon, patch one by one is
+</I>&gt;<i> pretty painful. ;)
+</I>&gt;<i>
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; BTW: I sort of check for an overflow. I first check to see it the
+</I>&gt;<i> &gt; initiator has allocated more memory then the 'pagesize' and fail the
+</I>&gt;<i> &gt; command. This check will not catch the case where the initiator does
+</I>&gt;<i> &gt; not know how much space to allocate and makes the initial call just to
+</I>&gt;<i> &gt; see what size is returned by the target.
+</I>&gt;<i> &gt;
+</I>&gt;<i>
+</I>&gt;<i> maybe u can have a look at how report luns get done. it has same issue.
+</I>&gt;<i>
+</I>
+spc_report_luns() {
+[snip]
+        data = valloc(pagesize);
+[snip]
+                if (!(alen -= 8))
+                        overflow = 1;
+                if (!(rbuflen -= 8)) {
+                        fprintf(stderr, &quot;FIXME: too many luns\n&quot;);
+                        exit(-1);
+                }
+[snip]
+
+OK this adds another op code that needs to be fixed once a valid
+solution is identified...
+
+&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; This was to be the subject of another email I had not written as yet,
+</I>&gt;<i> &gt; &gt; &gt; but since you brought it up :)
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; Can't move them about yet. That will be next op code to be implemented.
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; _______________________________________________
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; Stgt-devel mailing list
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000642.html">[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS	op	code
+</A></li>
+	<LI>Next message: <A HREF="000628.html">[Stgt-devel] [PATCH] replace valloc and fix memory leak
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#643">[ date ]</a>
+              <a href="thread.html#643">[ thread ]</a>
+              <a href="subject.html#643">[ subject ]</a>
+              <a href="author.html#643">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

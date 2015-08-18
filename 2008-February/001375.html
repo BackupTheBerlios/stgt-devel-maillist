@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER multiple readers
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080209163904.GA16930%40porcupine.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001372.html">
+   <LINK REL="Next"  HREF="001379.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER multiple readers</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080209163904.GA16930%40porcupine.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER multiple readers">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Sat Feb  9 17:39:04 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001372.html">[Stgt-devel] iSER multiple readers
+</A></li>
+        <LI>Next message: <A HREF="001379.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1375">[ date ]</a>
+              <a href="thread.html#1375">[ thread ]</a>
+              <a href="subject.html#1375">[ subject ]</a>
+              <a href="author.html#1375">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, Feb 08, 2008 at 02:11:33PM -0500, Pete Wyckoff wrote:
+&gt;<i><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Thu, 07 Feb 2008 21:07 -0500:
+</I>&gt;&gt;<i> I think I'm seeing iSER read corruption problems.
+</I>&gt;&gt;<i> a) in stock centos5.1 when not using kernel 2.6.22.6 I get read
+</I>&gt;&gt;<i>    corruption with just a single reader
+</I>&gt;&gt;<i> b) every kernel/OS/ofed combination that I've tried when there are
+</I>&gt;&gt;<i>    multiple simultaneous readers
+</I>...
+&gt;&gt;<i> the easiest way I can reproduce it is:
+</I>&gt;&gt;<i>  initiator side - write data:
+</I>&gt;&gt;<i>    lmdd if=internal of=/dev/sdc opat=1 bs=1M count=1000
+</I>&gt;&gt;<i>  target side - check that the file is ok (it is):
+</I>&gt;&gt;<i>    lmdd of=internal if=/mnt/ramdisk/file ipat=1 bs=1M count=1000 mismatch=1
+</I>&gt;&gt;<i>  initiator side - read and check data (is sometimes ok):
+</I>&gt;&gt;<i>    lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1
+</I>&gt;&gt;<i>  initiator side - read data with 2 processes at once (always fails):
+</I>&gt;&gt;<i>    lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1 &amp;
+</I>&gt;&gt;<i>    lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1 &amp;
+</I>&gt;&gt;<i> 
+</I>&gt;&gt;<i> I'm using the kernel git tree of stgt.
+</I>&gt;&gt;<i> I don't see any problems when using TCP IPoIB.
+</I>&gt;<i>
+</I>&gt;<i>I've tried this and a few variations but can't find any problems.
+</I>&gt;<i>That's unfortunate.  To debug it, perhaps you can investigate the
+</I>&gt;<i>mismatched data that comes back and see if you can discern a
+</I>&gt;<i>pattern.  Like if it is always at 4k boundaries, or always at 512k
+</I>&gt;<i>boundaries, that could help us to narrow it down.
+</I>
+a few of these
+  lmdd of=internal if=/dev/sdc bs=1M count=7000 ipat=1 mismatch=1
+gives:
+ off=116000000 want=6f80000 got=6fa1000
+ off=518000000 want=1eec0000 got=1eee1000
+ off=12000000 want=c40000 got=c5d000
+ off=627000000 want=256e0000 got=256ee000
+ off=344000000 want=148b6000 got=148c0000
+ off=163000000 want=9c40000 got=9c5b000
+ off=11000000 want=b40000 got=b47000
+ off=514000000 want=1eb20000 got=1eb21000
+ off=28000000 want=1b80000 got=1b93000
+ off=78000000 want=4b3d000 got=4b41000
+ off=70000000 want=4360000 got=4381000
+ off=0 want=e0000 got=fb000
+ off=20000000 want=13e0000 got=13fa000
+so always on MB boundaries?
+
+a few tests show that it's pretty hard to get mismatches with ~ bs=384
+and below.
+
+with bs=512
+  lmdd of=internal if=/dev/sdc bs=512 count=7000000 ipat=1 mismatch=1
+I get
+ off=1010024448 want=3c33c000 got=3c350000
+ off=1693302784 want=64edc000 got=64eea000
+ off=45203456 want=2b1c000 got=2b27000
+ off=289783808 want=1145c000 got=11460000
+ off=507494400 want=1e3fc000 got=1e40f000
+ off=282181632 want=10d1c000 got=10d30000
+ off=334217216 want=13ebc000 got=13ebe000
+
+&gt;<i>You had another corruption issue a long time ago that I thought was
+</I>&gt;<i>related to the response message getting in front of the RDMA.  But
+</I>&gt;<i>IB guys insist that this is not possible.  I had a patch that I very
+</I>&gt;<i>much did not like that delayed the final response message until the
+</I>&gt;<i>target saw the local completions for its RDMAs.  This never went in.
+</I>&gt;<i>It is dated 16 oct 2007.  In case your notes or mail archives lead
+</I>&gt;<i>you to believe this current read corruption is similar.
+</I>
+as always, thanks for looking into this so quickly!
+
+so with ye olde
+  [PATCH 20/20] iser wait for rdma completion
+applied, now single and multiple readers with stock centos5.1 kernels
+and userland work ok. odd.
+
+is there any way to check more definitively whether the ordering is
+getting messed up with my hardware/OS/OFED combo? perhaps some sort of
+a micro-verbs/rdma benchmark that would convice the IB guys one way or
+the other?
+
+I've attached an updated version of the patch that applies to the
+current tree.
+
+cheers,
+robin
+-------------- next part --------------
+--- tgt/usr/iscsi/iscsi_rdma.c	2008-01-23 12:50:27.000000000 +1100
++++ tgt+iserCompletePatch/usr/iscsi/iscsi_rdma.c	2008-02-10 02:17:06.000000000 +1100
+@@ -94,6 +94,7 @@
+ 	struct ibv_send_wr wr;
+ 	struct list_head list;
+ 	struct iscsi_task *task;  /* to get iser_task for remote stag and va */
++	int final_rdma;
+ };
+ 
+ /*
+@@ -938,6 +939,14 @@
+ 
+ 		iscsi_rdma_event_modify(conn, EPOLLIN | EPOLLOUT);
+ 		list_add(&amp;rdmal-&gt;list, &amp;ci-&gt;rdmal);
++
++		/* now let it transmit the final response, as we know
++		 * the RDMAs have completed */
++		if (rdmal-&gt;final_rdma) {
++			struct iscsi_task *task = rdmal-&gt;task;
++			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
++		}
++
+ 		if (waiting_rdma_slot) {
+ 			waiting_rdma_slot = 0;
+ 			num_tx_ready = 1;
+@@ -1408,7 +1417,8 @@
+  */
+ static int iser_post_rdma_wr(struct conn_info *ci, struct iscsi_task *task,
+ 			     void *buf, ssize_t size, int op,
+-			     uint64_t remote_va, uint32_t remote_rkey)
++			     uint64_t remote_va, uint32_t remote_rkey,
++			     int final_rdma)
+ {
+ 	int ret;
+ 	struct rdmalist *rdmal;
+@@ -1429,6 +1439,8 @@
+ 	rdmal-&gt;wr.wr.rdma.remote_addr = remote_va;
+ 	rdmal-&gt;wr.wr.rdma.rkey = remote_rkey;
+ 
++	rdmal-&gt;final_rdma = final_rdma;
++
+ 	ret = ibv_post_send(ci-&gt;qp_hndl, &amp;rdmal-&gt;wr, &amp;bad_wr);
+ 	if (ret)
+ 		eprintf(&quot;ibv_post_send ret %d\n&quot;, ret);
+@@ -1457,7 +1469,7 @@
+ 		(unsigned long long) itask-&gt;rem_write_va);
+ 
+ 	ret = iser_post_rdma_wr(ci, task, buf, len, IBV_WR_RDMA_READ,
+-				itask-&gt;rem_write_va, itask-&gt;rem_write_stag);
++				itask-&gt;rem_write_va, itask-&gt;rem_write_stag, 0);
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
+@@ -1482,6 +1494,7 @@
+ 	struct iser_task *itask = ISER_TASK(task);
+ 	struct iscsi_pdu *rsp = &amp;conn-&gt;rsp;
+ 	struct iscsi_data_rsp *datain = (struct iscsi_data_rsp *) &amp;rsp-&gt;bhs;
++	int final_rdma = (task-&gt;offset == task-&gt;len);
+ 	uint32_t offset;
+ 	int ret;
+ 
+@@ -1492,7 +1505,7 @@
+ 
+ 	ret = iser_post_rdma_wr(ci, task, rsp-&gt;data, rsp-&gt;datasize,
+ 				IBV_WR_RDMA_WRITE, itask-&gt;rem_read_va + offset,
+-				itask-&gt;rem_read_stag);
++				itask-&gt;rem_read_stag, final_rdma);
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
+@@ -1501,7 +1514,7 @@
+ 	 * rdma to finish before sending the completion.  Then we'll stick
+ 	 * ourselves back on the list.
+ 	 */
+-	if (task-&gt;offset == task-&gt;len) {
++	if (final_rdma) {
+ 		iscsi_rdma_event_modify(conn, EPOLLIN);
+ 	} else {
+ 		/* poke ourselves to do the next rdma */
+--- tgt/usr/iscsi/iscsid.c	2008-01-23 12:50:27.000000000 +1100
++++ tgt+iserCompletePatch/usr/iscsi/iscsid.c	2008-02-10 02:47:18.000000000 +1100
+@@ -1700,14 +1700,20 @@
+ 	case ISCSI_OP_R2T:
+ 		break;
+ 	case ISCSI_OP_SCSI_DATA_IN:
+-		if (task-&gt;offset &lt; task-&gt;len ||
+-		    scsi_get_result(&amp;task-&gt;scmd) != SAM_STAT_GOOD ||
+-		    scsi_get_data_dir(&amp;task-&gt;scmd) == DATA_BIDIRECTIONAL ||
+-		    conn-&gt;tp-&gt;rdma) {
+-			dprintf(&quot;more data or sense or bidir %x\n&quot;, hdr-&gt;itt);
+-			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-			return 0;
+-		}
++ 		if (conn-&gt;tp-&gt;rdma) {
++ 			/* keep sending RDMA writes, but wait until they
++ 			 * are done before sending final response */
++ 			if (task-&gt;offset &lt; task-&gt;len)
++ 			    list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
++ 		} else {
++			if (task-&gt;offset &lt; task-&gt;len ||
++			    scsi_get_result(&amp;task-&gt;scmd) != SAM_STAT_GOOD ||
++			    scsi_get_data_dir(&amp;task-&gt;scmd) == DATA_BIDIRECTIONAL ) {
++				dprintf(&quot;more data or sense or bidir %x\n&quot;, hdr-&gt;itt);
++				list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
++			}
++  		}
++ 		break;
+ 	case ISCSI_OP_SCSI_CMD_RSP:
+ 		iscsi_free_cmd_task(task);
+ 		break;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001372.html">[Stgt-devel] iSER multiple readers
+</A></li>
+	<LI>Next message: <A HREF="001379.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1375">[ date ]</a>
+              <a href="thread.html#1375">[ thread ]</a>
+              <a href="subject.html#1375">[ subject ]</a>
+              <a href="author.html#1375">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

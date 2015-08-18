@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER multiple readers
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080210125335.GA6966%40porcupine.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001379.html">
+   <LINK REL="Next"  HREF="001365.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER multiple readers</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080210125335.GA6966%40porcupine.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER multiple readers">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Sun Feb 10 13:53:35 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001379.html">[Stgt-devel] iSER multiple readers
+</A></li>
+        <LI>Next message: <A HREF="001365.html">[Stgt-devel] [PATCH 1/2] iSER throttling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1381">[ date ]</a>
+              <a href="thread.html#1381">[ thread ]</a>
+              <a href="subject.html#1381">[ subject ]</a>
+              <a href="author.html#1381">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, Feb 09, 2008 at 01:18:58PM -0500, Pete Wyckoff wrote:
+&gt;<i><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Sat, 09 Feb 2008 11:39 -0500:
+</I>&gt;&gt;<i> a few of these
+</I>&gt;&gt;<i>   lmdd of=internal if=/dev/sdc bs=1M count=7000 ipat=1 mismatch=1
+</I>&gt;&gt;<i> gives:
+</I>&gt;&gt;<i>  off=116000000 want=6f80000 got=6fa1000
+</I>&gt;&gt;<i>  off=518000000 want=1eec0000 got=1eee1000
+</I>&gt;&gt;<i>  off=12000000 want=c40000 got=c5d000
+</I>&gt;&gt;<i>  off=627000000 want=256e0000 got=256ee000
+</I>&gt;&gt;<i>  off=344000000 want=148b6000 got=148c0000
+</I>&gt;&gt;<i>  off=163000000 want=9c40000 got=9c5b000
+</I>&gt;&gt;<i>  off=11000000 want=b40000 got=b47000
+</I>&gt;&gt;<i>  off=514000000 want=1eb20000 got=1eb21000
+</I>&gt;&gt;<i>  off=28000000 want=1b80000 got=1b93000
+</I>&gt;&gt;<i>  off=78000000 want=4b3d000 got=4b41000
+</I>&gt;&gt;<i>  off=70000000 want=4360000 got=4381000
+</I>&gt;&gt;<i>  off=0 want=e0000 got=fb000
+</I>&gt;&gt;<i>  off=20000000 want=13e0000 got=13fa000
+</I>&gt;&gt;<i> so always on MB boundaries?
+</I>&gt;<i>....
+</I>&gt;<i>
+</I>&gt;<i>I was going to complain about the non-power-of-2 reads, but in this
+</I>&gt;<i>case, I think it confirms what we suspected, that the problem is in
+</I>&gt;<i>page mapping somewhere, either initiator or target, and not in say
+</I>&gt;<i>bs_rdwr.  That code just does pread, which is pretty unlikely to be
+</I>&gt;<i>broken, and it does it to non-page boundaries in the mempool buffer
+</I>&gt;<i>provided by iser.
+</I>&gt;<i>
+</I>&gt;<i>Here's the list of (decimal) page offsets for the above:
+</I>&gt;<i>
+</I>&gt;<i>    33 33 29 14 10 27 7 1 19 4 33 27 26
+</I>&gt;<i>
+</I>&gt;<i>Doesn't tell me much.
+</I>&gt;<i>
+</I>&gt;<i>Did you modify your lmdd only to show the first error on a transfer?
+</I>
+'mismatch=1' tells lmdd to just print the first error.
+
+&gt;&gt;<i> a few tests show that it's pretty hard to get mismatches with ~ bs=384
+</I>&gt;&gt;<i> and below.
+</I>&gt;&gt;<i> 
+</I>&gt;&gt;<i> with bs=512
+</I>&gt;&gt;<i>   lmdd of=internal if=/dev/sdc bs=512 count=7000000 ipat=1 mismatch=1
+</I>&gt;&gt;<i> I get
+</I>&gt;&gt;<i>  off=1010024448 want=3c33c000 got=3c350000
+</I>&gt;&gt;<i>  off=1693302784 want=64edc000 got=64eea000
+</I>&gt;&gt;<i>  off=45203456 want=2b1c000 got=2b27000
+</I>&gt;&gt;<i>  off=289783808 want=1145c000 got=11460000
+</I>&gt;&gt;<i>  off=507494400 want=1e3fc000 got=1e40f000
+</I>&gt;&gt;<i>  off=282181632 want=10d1c000 got=10d30000
+</I>&gt;&gt;<i>  off=334217216 want=13ebc000 got=13ebe000
+</I>&gt;<i>
+</I>&gt;<i>Again, page offsets:  20 14 11 4 19 20 2
+</I>&gt;<i>
+</I>&gt;<i>The offsets are always positive, which fits in with the theory that
+</I>&gt;<i>future RDMAs are overwriting earlier ones.  This goes against the
+</I>&gt;<i>theory in your (my) patch, which guesses that the SCSI response
+</I>&gt;<i>message is sneaking ahead of RDMA operations.
+</I>
+ok.
+
+&gt;<i>lmdd is just doing reads of 1.0e6 byte size, into a valloc-ed (so
+</I>&gt;<i>page aligned) buffer.  It just memcpys from the page cache into this
+</I>&gt;<i>buf.  We don't see non-4k-aligned errors there, so the problem has
+</I>&gt;<i>to be in the page cache or below.  Just like it can't be in the
+</I>&gt;<i>mempool handling, or we'd see non-4k-aligned issues.
+</I>
+ok.
+
+&gt;&gt;<i> so with ye olde
+</I>&gt;&gt;<i>   [PATCH 20/20] iser wait for rdma completion
+</I>&gt;&gt;<i> applied, now single and multiple readers with stock centos5.1 kernels
+</I>&gt;&gt;<i> and userland work ok. odd.
+</I>&gt;<i>Ugh.  I hate that patch.  All it does is to slow things down,
+</I>&gt;<i>effectively.
+</I>
+:<i>-/
+</I>
+&gt;&gt;<i> is there any way to check more definitively whether the ordering is
+</I>&gt;&gt;<i> getting messed up with my hardware/OS/OFED combo? perhaps some sort of
+</I>&gt;&gt;<i> a micro-verbs/rdma benchmark that would convice the IB guys one way or
+</I>&gt;&gt;<i> the other?
+</I>&gt;<i>I'm pretty sold on the idea that ye olde 20/20 is not the problem.
+</I>&gt;<i>I'm leaning towards something with FMR in the iser initiator.  It's
+</I>&gt;<i>the only place we get page size operations.  The target-side mapping
+</I>&gt;<i>is one contiguous 192 * 512 kB chunk with a single MR.
+</I>&gt;<i>
+</I>&gt;<i>We could write a verbs benchmark that just sends data, but I fear
+</I>&gt;<i>the interaction is with memory registration handling either on the
+</I>&gt;<i>initiator or the target, so we may miss the problem.
+</I>&gt;<i>
+</I>&gt;<i>You're using oldish 2.6.18 and 2.6.22, both of which now show this
+</I>&gt;<i>issue.  I don't suppose you'd be willing to test a more recent
+</I>&gt;<i>kernel initiatior?  In the mean time, I'll go take a look at the
+</I>&gt;<i>iser fmr code, comparing it to srp's fmr code.
+</I>
+how about 2.6.24 at both ends? below are several runs of:
+  lmdd of=internal if=/dev/sdc bs=1M count=7000 ipat=1 mismatch=10
+
+off=608000000 want=2445ca00 got=2447ca00
+off=608000000 want=2445ca04 got=2447ca04
+off=608000000 want=2445ca08 got=2447ca08
+off=608000000 want=2445ca0c got=2447ca0c
+off=608000000 want=2445ca10 got=2447ca10
+off=608000000 want=2445ca14 got=2447ca14
+off=608000000 want=2445ca18 got=2447ca18
+off=608000000 want=2445ca1c got=2447ca1c
+off=608000000 want=2445ca20 got=2447ca20
+off=608000000 want=2445ca24 got=2447ca24
+608.0000 MB in 1.5089 secs, 402.9511 MB/sec
+
+off=9000000 want=89d000 got=8a1000
+off=9000000 want=89d004 got=8a1004
+off=9000000 want=89d008 got=8a1008
+off=9000000 want=89d00c got=8a100c
+off=9000000 want=89d010 got=8a1010
+off=9000000 want=89d014 got=8a1014
+off=9000000 want=89d018 got=8a1018
+off=9000000 want=89d01c got=8a101c
+off=9000000 want=89d020 got=8a1020
+off=9000000 want=89d024 got=8a1024
+9.0000 MB in 0.0272 secs, 331.2477 MB/sec
+
+off=355000000 want=15296200 got=152b6200
+off=355000000 want=15296204 got=152b6204
+off=355000000 want=15296208 got=152b6208
+off=355000000 want=1529620c got=152b620c
+off=355000000 want=15296210 got=152b6210
+off=355000000 want=15296214 got=152b6214
+off=355000000 want=15296218 got=152b6218
+off=355000000 want=1529621c got=152b621c
+off=355000000 want=15296220 got=152b6220
+off=355000000 want=15296224 got=152b6224
+355.0000 MB in 0.8903 secs, 398.7272 MB/sec
+
+&gt;<i>Another possibility.  Change /sys/block/.../max_sectors_kb to 8 or
+</I>&gt;<i>less so that each initiator request will fit in a page, disabling
+</I>&gt;<i>FMR.  Not sure exactly how this works.  May need some debugging to
+</I>&gt;<i>verify.  Could be too slow to provoke the problem.
+</I>
+ok - I changed max_sectors_kb to 8 on the initiator side (was 512) and
+it seemed to work slightly better, but repeated runs still fail eg.
+
+off=264032704 want=fbe0000 got=fbe8000
+off=264032704 want=fbe0004 got=fbe8004
+off=264032704 want=fbe0008 got=fbe8008
+off=264032704 want=fbe000c got=fbe800c
+off=264032704 want=fbe0010 got=fbe8010
+off=264032704 want=fbe0014 got=fbe8014
+off=264032704 want=fbe0018 got=fbe8018
+off=264032704 want=fbe001c got=fbe801c
+off=264032704 want=fbe0020 got=fbe8020
+off=264032704 want=fbe0024 got=fbe8024
+4559.0000 MB in 16.8547 secs, 270.4877 MB/sec
+
+changing max_sectors_kb to 4:
+
+off=4113000000 want=f5284c00 got=f5288c00
+off=4113000000 want=f5284c04 got=f5288c04
+off=4113000000 want=f5284c08 got=f5288c08
+off=4113000000 want=f5284c0c got=f5288c0c
+off=4113000000 want=f5284c10 got=f5288c10
+off=4113000000 want=f5284c14 got=f5288c14
+off=4113000000 want=f5284c18 got=f5288c18
+off=4113000000 want=f5284c1c got=f5288c1c
+off=4113000000 want=f5284c20 got=f5288c20
+off=4113000000 want=f5284c24 got=f5288c24
+4113.0000 MB in 27.6913 secs, 148.5305 MB/sec
+
+I'll be travelling the next few days so will be in contact only
+intermittently, so apologies in advance for any slow replies.
+an account for you on the cluster would be possible if that would
+help.
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001379.html">[Stgt-devel] iSER multiple readers
+</A></li>
+	<LI>Next message: <A HREF="001365.html">[Stgt-devel] [PATCH 1/2] iSER throttling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1381">[ date ]</a>
+              <a href="thread.html#1381">[ thread ]</a>
+              <a href="subject.html#1381">[ subject ]</a>
+              <a href="author.html#1381">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

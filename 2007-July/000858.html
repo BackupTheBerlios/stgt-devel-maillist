@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSCSI digest offload
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSCSI%20digest%20offload&In-Reply-To=%3C20070703085728Q.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000859.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSCSI digest offload</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSCSI%20digest%20offload&In-Reply-To=%3C20070703085728Q.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] iSCSI digest offload">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Jul  3 01:57:28 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000859.html">[Stgt-devel] [Patch 1/1] Merge sense_codes.h into scsi.h
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#858">[ date ]</a>
+              <a href="thread.html#858">[ thread ]</a>
+              <a href="subject.html#858">[ subject ]</a>
+              <a href="author.html#858">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Greg Law &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">glaw at solarflare.com</A>&gt;
+Subject: [Stgt-devel] iSCSI digest offload
+Date: Fri, 29 Jun 2007 14:29:32 +0100
+
+&gt;<i> My company, Solarflare, makes 10gig NICs.  We don't do full TCP offload, 
+</I>&gt;<i> but we do have support on the card for iSCSI digest offload. Essentially 
+</I>&gt;<i> this means that if your packets are conveniently formatted, you can have 
+</I>&gt;<i> iSCSI digests with a very small performance penalty (in terms of both 
+</I>&gt;<i> throughput and CPU hit).  I say &quot;if your packets are conveniently 
+</I>&gt;<i> formatted&quot; because the NIC can only offload the digest if an Ethernet 
+</I>&gt;<i> frame contains exactly one iSCSI PDU in exactly one TCP segment. 
+</I>&gt;<i> However, providing you use a MaxRecvDataSegmentLength of &lt;= MSS (less 
+</I>&gt;<i> headers) our experiments show this is almost always the case.
+</I>&gt;<i> 
+</I>&gt;<i> We've implemented our own iSCSI initiator stack on Linux as a 
+</I>&gt;<i> proof-of-concept, and it gives the performance wins we'd hoped for.  Now 
+</I>&gt;<i> we want to patch the open-source stacks (target and initiator) to take 
+</I>&gt;<i> advantage of this feature.  We will also need to patch the Linux TCP 
+</I>&gt;<i> stack so that (a) we can pass meta data down (to tell the NIC to compute 
+</I>&gt;<i> and insert digests on tx) and pass meta data back up (to tell the iSCSI 
+</I>&gt;<i> stack whether the digests computed ok on rx); and (b) to make sure we 
+</I>&gt;<i> can handle edge-cases such as routing changes etc.
+</I>&gt;<i> 
+</I>&gt;<i> We expect the patch to be quite small - both the TCP and iSCSI parts. We 
+</I>&gt;<i> plan to do the target first, and follow up with the initiator.
+</I>&gt;<i> 
+</I>&gt;<i> I'd be really interested to hear the list's views on this.  Have you 
+</I>&gt;<i> heard of anything similar before?  Does it sound like a patch that you 
+</I>&gt;<i> might be interested in merging (of course, I'm not looking for a 
+</I>&gt;<i> definitive answer here, just a &quot;could be interesting, providing ....&quot;.)
+</I>&gt;<i> 
+</I>&gt;<i> Also, do the tgt and open-iscsi share any code for the iSCSI protocol 
+</I>&gt;<i> processing?  If not, are there any plans to do so?
+</I>
+tgt's iscsi code runs in user space unlike IET.
+
+I tried to convert open-iscsi code (libiscsi and the transport class)
+to work for the target mode (you can find the patchset in linux-scsi
+mailing list) and wrote the target mode code for it. But the mainline
+people don't want iSCSI target code in kernel space.
+
+We can put some iSCSI target code for some iSCSI hardware like qla4xxx
+(which can process iSCSI protocol fully or partially). But if your
+hardware can offload only iSCSI digests only when packets are
+conveniently formatted, we must put full-iscsi-target processing code
+in kernel. I tried it twice with IET and tgt, and both failed.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000859.html">[Stgt-devel] [Patch 1/1] Merge sense_codes.h into scsi.h
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#858">[ date ]</a>
+              <a href="thread.html#858">[ thread ]</a>
+              <a href="subject.html#858">[ subject ]</a>
+              <a href="author.html#858">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

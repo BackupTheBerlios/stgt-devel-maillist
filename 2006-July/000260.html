@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Linux Kernel Version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Linux%20Kernel%20Version&In-Reply-To=%3C20060714023901A.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000259.html">
+   <LINK REL="Next"  HREF="000256.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Linux Kernel Version</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Linux%20Kernel%20Version&In-Reply-To=%3C20060714023901A.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Linux Kernel Version">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jul 13 19:39:01 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000259.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+        <LI>Next message: <A HREF="000256.html">[Stgt-devel] Re: Linux Kernel Version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#260">[ date ]</a>
+              <a href="thread.html#260">[ thread ]</a>
+              <a href="subject.html#260">[ subject ]</a>
+              <a href="author.html#260">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+Subject: Re: [Stgt-devel] Linux Kernel Version
+Date: Thu, 13 Jul 2006 10:00:33 -0500
+
+&gt;<i> &gt; As you said, it's complicated to run tgt right now. I've been working
+</I>&gt;<i> &gt; on it because some people might be interested in tgt after OLS. I want
+</I>&gt;<i> &gt; to make sure that everyone can run tgt without effort. I'm in the
+</I>&gt;<i> &gt; middle of large user-space rewrite (I've commited some last night).
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Sorry for delay about iSER tgt stuff. I will work on it after OLS. 
+</I>&gt;<i> 
+</I>&gt;<i> The biggest thing I'd like some guidance on is how we want to plug into
+</I>&gt;<i> the transport switch. If connection management (not LOGIN, just the 
+</I>&gt;<i> listen/accept paths), is pushed into the kernel, then the user-mode
+</I>&gt;<i> code is insulated from the transport switch. This requires pushing the 
+</I>&gt;<i> current TCP connection management into the kernel though and adding netlink 
+</I>&gt;<i> messages for listen/accept. 
+</I>&gt;<i> 
+</I>&gt;<i> Otherwise, we need to replicate the switch in user-mode. The TCP tgt can
+</I>&gt;<i> still use sockets in user mode, but he RDMA side will need to have the 
+</I>&gt;<i> netlink messages anyway. The issue is that unlike a socket, the RDMA 
+</I>&gt;<i> user-mode CM doesn't have the ability to have user-mode code and 
+</I>&gt;<i> kernel-mode code both doing I/O on the transport like a socket. 
+</I>&gt;<i> 
+</I>&gt;<i> I've coded up the kernel-only approach, but haven't gotten much feedback 
+</I>&gt;<i> on it, so I'm assuming that it's not the preferred method ;-)
+</I>
+I guess that you are doing something like open-iscsi iSER code (the
+user-space daemon asks the kernel module to do transport staff, called
+endpoint in open-iscsi). It is fine by me. I will read your patch
+(really sorry about delay again) and merge it.
+
+
+&gt;<i> &gt; If
+</I>&gt;<i> &gt; you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+</I>&gt;<i> &gt; right after OLS. :)
+</I>&gt;<i> 
+</I>&gt;<i> Here's a How-To on bringing up the Chelsio code for RDMA
+</I>
+Looks really helpful. Thanks. I'll try after OLS.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000259.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+	<LI>Next message: <A HREF="000256.html">[Stgt-devel] Re: Linux Kernel Version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#260">[ date ]</a>
+              <a href="thread.html#260">[ thread ]</a>
+              <a href="subject.html#260">[ subject ]</a>
+              <a href="author.html#260">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

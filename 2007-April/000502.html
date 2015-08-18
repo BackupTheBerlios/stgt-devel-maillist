@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio - rdma error
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070404182753.GA25247%40wavehammer.waldi.eu.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000500.html">
+   <LINK REL="Next"  HREF="000503.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio - rdma error</H1>
+    <B>Bastian Blank</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070404182753.GA25247%40wavehammer.waldi.eu.org%3E"
+       TITLE="[Stgt-devel] ibmvio - rdma error">waldi at berlios.de
+       </A><BR>
+    <I>Wed Apr  4 20:27:53 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000500.html">[Stgt-devel] license problems
+</A></li>
+        <LI>Next message: <A HREF="000503.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#502">[ date ]</a>
+              <a href="thread.html#502">[ thread ]</a>
+              <a href="subject.html#502">[ subject ]</a>
+              <a href="author.html#502">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi folks
+
+I tried the ibmvscsi support today. I use linux-2.6-target.git and the
+tools trunk.
+
+My test system did not even survive a bonnie call. I got many errors
+like the followin:
+|<i> ibmvstgt_rdma(251) rdma error 1 135168
+</I>|<i> ibmvstgt_rdma(251) rdma error 1 135168
+</I>|<i> ibmvstgt_rdma(251) rdma error 1 139264
+</I>|<i> ibmvstgt_rdma(251) rdma error 1 135168
+</I>
+After some time, ext3 reported a journal abort. So it gets garbage
+instead of the real data. The filesystem is broken after that.
+
+I'd unload anything and did a new try and got this:
+|<i> Unregister IBM virtual SCSI driver
+</I>|<i> IBM eServer i/pSeries Virtual SCSI Target Driver
+</I>|<i> scsi7 : ibmvstgt
+</I>|<i> scsi8 : ibmvstgt
+</I>|<i> ibmvstgt_rdma(251) rdma error 2 262144
+</I>|<i> ibmvstgt_rdma(251) rdma error 2 262144
+</I>|<i> ibmvstgt_rdma(251) rdma error 2 262144
+</I>|<i> ibmvstgt_rdma(251) rdma error 2 262144
+</I>
+Bastian
+
+-- 
+	&quot;That unit is a woman.&quot;
+	&quot;A mass of conflicting impulses.&quot;
+		-- Spock and Nomad, &quot;The Changeling&quot;, stardate 3541.9
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: signature.asc
+Type: application/pgp-signature
+Size: 197 bytes
+Desc: Digital signature
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070404/ce58a061/attachment.pgp">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070404/ce58a061/attachment.pgp</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000500.html">[Stgt-devel] license problems
+</A></li>
+	<LI>Next message: <A HREF="000503.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#502">[ date ]</a>
+              <a href="thread.html#502">[ thread ]</a>
+              <a href="subject.html#502">[ subject ]</a>
+              <a href="author.html#502">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

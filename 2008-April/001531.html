@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%0A%09DVD%2BR%09implementation&In-Reply-To=%3C200804260809.m3Q89iBG023789%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001529.html">
+   <LINK REL="Next"  HREF="001541.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%0A%09DVD%2BR%09implementation&In-Reply-To=%3C200804260809.m3Q89iBG023789%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation">tomof at acm.org
+       </A><BR>
+    <I>Sat Apr 26 10:09:42 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001529.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+        <LI>Next message: <A HREF="001541.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1531">[ date ]</a>
+              <a href="thread.html#1531">[ thread ]</a>
+              <a href="subject.html#1531">[ subject ]</a>
+              <a href="author.html#1531">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+Date: Mon, 21 Apr 2008 16:15:23 +1000
+
+&gt;<i> Thanks for looking at this.
+</I>&gt;<i> 
+</I>&gt;<i> Your plan sounds great to me. Once implemented, Ill modify the mmc
+</I>&gt;<i> emulation to hook into the new methods in
+</I>&gt;<i> the template.
+</I>
+You can create a new logical unit without a backing store file:
+
+tgtadm --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+tgtadm --op new --mode logicalunit --tid 1 --lun 1 -Y cd
+tgtadm --op bind --mode target --tid 1 -I ALL
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: No
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: cd/dvd
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 0 MB
+            Online: No
+            Removable media: Yes
+            Backing store: No backing store
+    Account information:
+    ACL information:
+        ALL
+
+You can update the backing store file:
+
+tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name path --value /var/tmp/debian-40r1-amd64-netinst.iso
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: No
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: cd/dvd
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 156 MB
+            Online: Yes
+            Removable media: Yes
+            Backing store: /var/tmp/debian-40r1-amd64-netinst.iso
+    Account information:
+    ACL information:
+        ALL
+
+You can replace the backing store file with new one:
+
+tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name online --value No
+tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name path --value /var/tmp/debian-40r1-sparc-netinst.iso
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: No
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: cd/dvd
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 148 MB
+            Online: Yes
+            Removable media: Yes
+            Backing store: /var/tmp/debian-40r1-sparc-netinst.iso
+    Account information:
+    ACL information:
+        ALL
+
+
+I've not implemented this feature fully yet. If you replace a backing
+store while the logical unit has outstanding commands, tgtd
+crashes. But it would be good enough for you to see how new code works
+well with your mmc emulation code, I think.
+
+
+Yeah, again, I know that tgt's user interface is pretty inconsistent
+so I'll clean up it.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001529.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+	<LI>Next message: <A HREF="001541.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1531">[ date ]</a>
+              <a href="thread.html#1531">[ thread ]</a>
+              <a href="subject.html#1531">[ subject ]</a>
+              <a href="author.html#1531">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3COF4EFAAB9E.A8AA546E-ONC125707A.004CCD38%40capvert.ins%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000053.html">
+   <LINK REL="Next"  HREF="000070.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>johan at capvert.se</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3COF4EFAAB9E.A8AA546E-ONC125707A.004CCD38%40capvert.ins%3E"
+       TITLE="Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example">johan at capvert.se
+       </A><BR>
+    <I>Mon Sep 12 16:04:11 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000053.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+        <LI>Next message: <A HREF="000070.html">Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>                                               Hi!
+
+
+ I&#180;m new to this list, but has been in the IET since the beginning. Where
+can I read something about the ideas behind this project? Is the idea to
+become a midlevel scsi target driver, that handles ALL the scsi specific
+commands, to be used of ANY target driver that uses scsi commands, like Fc
+or iScsi? If so, I would give my full support for it.
+
+               Best regards from/Med v&#228;nliga h&#228;lsningar fr&#229;n
+
+                                 Johan Kragsterman
+
+                               <A HREF="http://www.capvert.se">http://www.capvert.se</A>
+
+
+                                                                                                                          
+                    FUJITA Tomonori                                                                                       
+                    &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.</A>       Till:   <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>                                              
+                    ntt.co.jp&gt;                  Kopia:  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>                                       
+                    S&#228;nt av:                    &#196;rende: Re: [Stgt-devel] [PATCH] add stgt_device_template example         
+                    <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-admin at berl</A>                                                                                 
+                    ios.de                                                                                                
+                                                                                                                          
+                                                                                                                          
+                    2005-09-12 16:12                                                                                      
+                                                                                                                          
+                                                                                                                          
+
+
+
+
+From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+
+&gt;<i> &gt; I'll try to see how to integrate target driver daemons to stgtd. For
+</I>&gt;<i> &gt; that, ietd daemon needs to do all kernel-user space communication
+</I>&gt;<i> &gt; through stgt netlink. Thus, we need to add some iSCSI specific
+</I>&gt;<i> &gt; callbacks (like conn_create/destroy). Is it OK? Or is implementing
+</I>&gt;<i>
+</I>&gt;<i> I do not think we want to do that since we would have stgt_core doing
+</I>&gt;<i> lower level transport stuff and as we add many the callouts for them
+</I>&gt;<i> could get out of hand.
+</I>&gt;<i>
+</I>&gt;<i> &gt; more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+</I>&gt;<i> &gt; target driver specific tasks better?
+</I>&gt;<i>
+</I>&gt;<i> Yeah, maybe a generic event like that. Where if stgt doe not know how to
+</I>&gt;<i> handle the event it passes it to the protocol or target driver or
+</I>&gt;<i> transport. Or maybe it can flow downwards. For what we have now:
+</I>&gt;<i>
+</I>&gt;<i> STGT_UEVENT_SEND_MESSAGE-&gt;stgt (if not mine pass down) -&gt;protocol (pass
+</I>&gt;<i> down if not mine) -&gt;target_driver (fail if not my message)
+</I>
+Mike, can you tell me the details of your design (or commit the
+initial code)? I don't get a clear idea of how this part should be
+implemented yet.
+_______________________________________________
+Stgt-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+<A HREF="http://lists.berlios.de/mailman/listinfo/stgt-devel">http://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000053.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+	<LI>Next message: <A HREF="000070.html">Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20some%20simple%20tgt%20/%20iSCSI-SCST%0A%09performance%20tests&In-Reply-To=%3C4762B8BD.6040001%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001211.html">
+   <LINK REL="Next"  HREF="001217.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20some%20simple%20tgt%20/%20iSCSI-SCST%0A%09performance%20tests&In-Reply-To=%3C4762B8BD.6040001%40vlnb.net%3E"
+       TITLE="[Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests">vst at vlnb.net
+       </A><BR>
+    <I>Fri Dec 14 18:09:17 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001211.html">[Stgt-devel] some simple tgt / iSCSI-SCST performance tests
+</A></li>
+        <LI>Next message: <A HREF="001217.html">[Stgt-devel] iSER - one too many rubber duckies in the mempool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1212">[ date ]</a>
+              <a href="thread.html#1212">[ thread ]</a>
+              <a href="subject.html#1212">[ subject ]</a>
+              <a href="author.html#1212">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tomasz Chmielewski wrote:
+&gt;<i> I made some simple performance tests of tgt and iSCSI-SCST.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Reading the array on a target machine to /dev/null gives me ~70 MB/s.
+</I>&gt;<i> 
+</I>&gt;<i> When I read the same array on the initiator with tgt as a target, it 
+</I>&gt;<i> gives me ~25 MB/s.
+</I>&gt;<i> 
+</I>&gt;<i> With iSCSI-SCST, I get ~35 MB/s (although I think I maxed out the PCI at 
+</I>&gt;<i> this point; on something more modern it could be better).
+</I>
+Tomasz meant here that on his target both network and backstorage 
+hardware sit on the same 32-bit 33MHz PCI and share its bandwidth, which 
+is less, than 100MB/s. I.e. he can at max get ~40MB/s (since his array 
+has 70MB/s) + sharing overhead.
+
+&gt;<i> I dropped caches before each test.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Also, CPU load is slightly bigger when tgtd is used as a target, 
+</I>&gt;<i> although I didn't do any precise measurements here. With tgt, both CPU 
+</I>&gt;<i> usage was more or less settled at the same level; with SCST CPU0 usage 
+</I>&gt;<i> jumped up and down by +/- 20%; CPU1 usage for SCST was more or less at 
+</I>&gt;<i> the same level.
+</I>&gt;<i> It would be nice to know more on the nature of these CPU usage spikes 
+</I>&gt;<i> for SCST (and possibly, how it could affect i.e. reading from an 
+</I>&gt;<i> encrypted device-mapper volume).
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> tgt-git:
+</I>&gt;<i> CPU0: ~30%
+</I>&gt;<i> CPU1: ~90%
+</I>&gt;<i> 
+</I>&gt;<i> SCST-r234:
+</I>&gt;<i> CPU0: ~30%
+</I>&gt;<i> CPU1: ~80%
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Read on the target:
+</I>&gt;<i> 
+</I>&gt;<i> # dd if=/dev/sda of=/dev/null bs=64k count=50000
+</I>&gt;<i> 50000+0 records in
+</I>&gt;<i> 50000+0 records out
+</I>&gt;<i> 3276800000 bytes (3.3 GB) copied, 45.9789 seconds, 71.3 MB/s
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> SCST-r234:
+</I>&gt;<i> 
+</I>&gt;<i> # dd if=/dev/sdba of=/dev/null bs=64k count=50000
+</I>&gt;<i> 50000+0 records in
+</I>&gt;<i> 50000+0 records out
+</I>&gt;<i> 3276800000 bytes (3.3 GB) copied, 90.817 seconds, 36.1 MB/s
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> tgt-git:
+</I>&gt;<i> 
+</I>&gt;<i> # dd if=/dev/sday of=/dev/null bs=64k count=50000
+</I>&gt;<i> 50000+0 records in
+</I>&gt;<i> 50000+0 records out
+</I>&gt;<i> 3276800000 bytes (3.3 GB) copied, 140.123 seconds, 23.4 MB/s
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> tgt-20071014:
+</I>&gt;<i> 
+</I>&gt;<i> # dd if=/dev/sday of=/dev/null bs=64k count=50000
+</I>&gt;<i> 50000+0 records in
+</I>&gt;<i> 50000+0 records out
+</I>&gt;<i> 3276800000 bytes (3.3 GB) copied, 138.754 seconds, 23.6 MB/s
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> BTW, is it possible to do a nullio test with tgt target?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001211.html">[Stgt-devel] some simple tgt / iSCSI-SCST performance tests
+</A></li>
+	<LI>Next message: <A HREF="001217.html">[Stgt-devel] iSER - one too many rubber duckies in the mempool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1212">[ date ]</a>
+              <a href="thread.html#1212">[ thread ]</a>
+              <a href="subject.html#1212">[ subject ]</a>
+              <a href="author.html#1212">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

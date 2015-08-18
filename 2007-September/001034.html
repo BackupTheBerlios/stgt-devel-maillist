@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER patches, second release
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070908190235.GC20397%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001033.html">
+   <LINK REL="Next"  HREF="001037.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER patches, second release</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070908190235.GC20397%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER patches, second release">pw at osc.edu
+       </A><BR>
+    <I>Sat Sep  8 21:02:35 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001033.html">[Stgt-devel] iSER patches, second release
+</A></li>
+        <LI>Next message: <A HREF="001037.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1034">[ date ]</a>
+              <a href="thread.html#1034">[ thread ]</a>
+              <a href="subject.html#1034">[ subject ]</a>
+              <a href="author.html#1034">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A> wrote on Sat, 08 Sep 2007 13:49 +0200:
+&gt;<i> Thus, to minimize changes in the existing code, i'd suggest doing
+</I>&gt;<i> something in the middle:
+</I>&gt;<i> defining a per-transport method, which corresponds more or less to
+</I>&gt;<i> what the function do_recv() does today.
+</I>&gt;<i> 
+</I>&gt;<i> That is, the RX state machine code still asks to read the PDUs by chunks,
+</I>&gt;<i> but these chunks are requested by type, not merely by size.
+</I>&gt;<i> This way, tcp will read bytes from the stream, while iser will only
+</I>&gt;<i> manipulate pointers, setting them to the correct locations within the
+</I>&gt;<i> receive buffer. We retain the RX state-machine code almost as is.
+</I>&gt;<i> The only changes necessary there are related to the pointers like
+</I>&gt;<i> conn-&gt;rx_buffer, which  probably  should be moved into the tcp
+</I>&gt;<i> realization of .do_read. Perhaps, bhs may be also referenced by pointer.
+</I>&gt;<i> But this is it, more or less.
+</I>
+I agree with your analysis.  This does seem like the right
+compromise between totally rewriting the state machine and doing the
+byte-wise copy in iser we do now.  Conceptually to iscsid, the
+difference is that do_read (please rename) can return more than you
+asked for.  In iser, we'll hang the recv pdu on the task, in-place, and
+adjust ahs, data pointers into it.  For tcp, we'll alloc new space
+for ahs and data then call do_read more to copy the bytes in.
+Hopefully this can all be abstracted out nicely.
+
+As a side note, I could almost be convinced that having an iser-only
+rx state machine would be appropriate.  6 of the 11 states have to
+do with digests, which we will never see in iser.  And iser doesn't
+need to track rx_iostate at all:  it gets all bhs, ahs, immed data
+in one go.  Similar arguments for the tx state machine.  In case you
+change your mind about keeping the current state machines, once you
+get into the actual implementation.
+
+&gt;<i> Another example of making a coarse-grain separation is allocation &amp; release
+</I>&gt;<i> of iscsi tasks. I wanted to write a separate mail about it but this fits the
+</I>&gt;<i> current discussion.
+</I>&gt;<i> 
+</I>&gt;<i> Function conn-&gt;tp-&gt;ep_free() gets called only in iscsi_free_task(), separately
+</I>&gt;<i> for the data and the descriptor. Because the data buffer has no identification
+</I>&gt;<i> attached, it must be looked for through the list of the buffers, for iser.
+</I>&gt;<i> 
+</I>&gt;<i> If we make task_free() a transport-specific pointer, instead, no
+</I>&gt;<i> overhead is incurred.
+</I>&gt;<i> iscsi will use free(), while iser will return the buffer to the list
+</I>&gt;<i> without searching.
+</I>&gt;<i> Of course task_alloc() should also be turned into a per-transport method,
+</I>&gt;<i> after it is called some basic initializations are done on the common level,
+</I>&gt;<i> in iscsid.c. It looks that if done this way, there is no need for
+</I>&gt;<i> ep_free/ep_maloc
+</I>&gt;<i> anymore.
+</I>
+I like your idea about getting rid of ep_malloc and ep_free.  That
+is the wrong level to do the abstraction.  But watch out for
+bidi_uaddr.  You don't know the size of the read buffer in a
+bidirectional command until the AHS has been processed.  This comes
+after task alloc in the current code, hence the second call to
+malloc.  In iser this should be a pre-registered buffer, while for
+tcp we can get away with normal malloc.  Maybe this issue goes away
+if you do task_alloc differently.
+
+&gt;<i> I do want to contribute, both with the PDU queuing and with implementing
+</I>&gt;<i> my suggestion above, if we agree on it or on another alternative.
+</I>
+I'm all for it.  It's clear to me that your read_pdu and task_alloc
+abstraction points are better than the existing ep_read and
+ep_malloc ones.
+
+Let me know if you have questions on any aspects of the current
+code.  It's not very heavily commented.  I'll test your patches when
+they're ready.
+
+		-- Pete
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001033.html">[Stgt-devel] iSER patches, second release
+</A></li>
+	<LI>Next message: <A HREF="001037.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1034">[ date ]</a>
+              <a href="thread.html#1034">[ thread ]</a>
+              <a href="subject.html#1034">[ subject ]</a>
+              <a href="author.html#1034">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

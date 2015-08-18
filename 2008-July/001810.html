@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Bug report - create a file on mounted FS (ext3) with	dd fails
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bug%20report%20-%20create%20a%20file%20on%20mounted%20FS%20%28ext3%29%20with%0A%09dd%20fails&In-Reply-To=%3C694d48600807210028x4c83f706x202f7f85f7176025%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001806.html">
+   <LINK REL="Next"  HREF="001812.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Bug report - create a file on mounted FS (ext3) with	dd fails</H1>
+    <B>Eli Dorfman</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bug%20report%20-%20create%20a%20file%20on%20mounted%20FS%20%28ext3%29%20with%0A%09dd%20fails&In-Reply-To=%3C694d48600807210028x4c83f706x202f7f85f7176025%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Bug report - create a file on mounted FS (ext3) with	dd fails">dorfman.eli at gmail.com
+       </A><BR>
+    <I>Mon Jul 21 09:28:24 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001806.html">[Stgt-devel] redhat initd script
+</A></li>
+        <LI>Next message: <A HREF="001812.html">[Stgt-devel] Bug report - create a file on mounted FS	(ext3)	with dd fails
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1810">[ date ]</a>
+              <a href="thread.html#1810">[ thread ]</a>
+              <a href="subject.html#1810">[ subject ]</a>
+              <a href="author.html#1810">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I have the following test environment:
+Initiator: RH4.4 with OFED1.3.1
+Target: RH5.1 with Stgt latest snapshot 20080715
+I'm using iser transport
+
+I created an ext3 FS on the device
+#mkfs.ext3 /dev/sdc
+
+mounted the device
+# mount /dev/sdc /mnt/sdc
+
+Trying to create a file on the mounted FS
+# dd if=/dev/zero of=/mnt/sdc/tempfile bs=1k count=40M
+
+I got the following error on the initiator:
+
+dd: writing `/mnt/sdc/tempfile': Read-only file system
+1489+0 records in
+1488+0 records out
+
+And the following messages on the target:
+tgtd: iser_rx_progress(1101) entry
+tgtd: handle_wc(880) outgoing rsp complete
+tgtd: handle_wc(880) outgoing rsp complete
+tgtd: iser_rx_progress(1101) entry
+bs_rdwr_request(121) io done 0x546df8 2a 4096 4096
+tgtd: bs_thread_ack_fn(82) found 0x546df8
+tgtd: bs_thread_request_done(122) back to tgtd, 0x546df8
+tgtd: iscsi_rdma_event_modify(1628) tx ready adding 0x5327e0
+tgtd: iser_tx_progress(1017) entry
+tgtd: iser_tx_progress(1028) trying tx
+tgtd: iscsi_task_tx_start(1745) found a task 7b 4096 0 0
+tgtd: iscsi_iser_write_begin(1352) new sendl 0x2aaaba9fd090 len 48
+tgtd: iscsi_iser_write_end(1387) sendl 0x2aaaba9fd090 len 76
+tgtd: iscsi_iser_write_end(1402) inc progress to finish cmd
+tgtd: __cmd_done(894) 8 0x2aaaac22c000 (nil) 4096 0 0
+tgtd: iscsi_rdma_free_data_buf(1678) free 0x2aaaac22c000
+tgtd: iser_tx_progress(1028) trying tx
+tgtd: iscsi_task_tx_start(1770) no more data
+tgtd: iscsi_rdma_event_modify(1633) tx ready removing 0x5327e0
+tgtd: iser_tx_progress(1017) entry
+tgtd: iser_rx_progress(1101) entry
+tgtd: handle_wc(880) outgoing rsp complete
+
+Please advise.
+
+Thanks,
+Eli
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001806.html">[Stgt-devel] redhat initd script
+</A></li>
+	<LI>Next message: <A HREF="001812.html">[Stgt-devel] Bug report - create a file on mounted FS	(ext3)	with dd fails
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1810">[ date ]</a>
+              <a href="thread.html#1810">[ thread ]</a>
+              <a href="subject.html#1810">[ subject ]</a>
+              <a href="author.html#1810">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

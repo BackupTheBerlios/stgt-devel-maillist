@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vtl patch.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3C1175736234.3622.10.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000506.html">
+   <LINK REL="Next"  HREF="000508.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vtl patch.</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vtl%20patch.&In-Reply-To=%3C1175736234.3622.10.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] vtl patch.">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu Apr  5 03:23:54 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000506.html">[Stgt-devel] vtl patch.
+</A></li>
+        <LI>Next message: <A HREF="000508.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#507">[ date ]</a>
+              <a href="thread.html#507">[ thread ]</a>
+              <a href="subject.html#507">[ subject ]</a>
+              <a href="author.html#507">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-04-05 at 09:56 +1000, Mark Harvey wrote:
+&gt;<i> +
+</I>&gt;<i> +static int
+</I>&gt;<i> +process_arg(char *key, char *value, struct scsi_lu *lu) {
+</I>&gt;<i> +       struct smc_info *smc = (struct smc_info *)lu-&gt;priv_p;
+</I>&gt;<i> +       int err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> +
+</I>&gt;<i> +       if(!strcmp(key, &quot;VendorIdent&quot;)) {
+</I>&gt;<i> +               strncpy(smc-&gt;phy-&gt;VendorIdent, value,
+</I>&gt;<i> +                                               sizeof(smc-&gt;phy-&gt;VendorIdent));
+</I>&gt;<i> +               err = 0;
+</I>&gt;<i> +       }
+</I>
+
+can we use strcasecmp here so be case insensitive?
+
+
+&gt;<i> +       if(!strcmp(key, &quot;ProductIdent&quot;)) {
+</I>&gt;<i> +               strncpy(smc-&gt;phy-&gt;ProductIdent, value,
+</I>&gt;<i> +                                       sizeof(smc-&gt;phy-&gt;ProductIdent));
+</I>&gt;<i> +               err = 0;
+</I>&gt;<i> +       }
+</I>&gt;<i> +       if(!strcmp(key, &quot;ProductRev&quot;)) {
+</I>&gt;<i> +               strncpy(smc-&gt;phy-&gt;ProductRev, value,
+</I>&gt;<i> +                                       sizeof(smc-&gt;phy-&gt;ProductRev));
+</I>&gt;<i> +               err = 0;
+</I>&gt;<i> +       }
+</I>&gt;<i> +       if(!strcmp(key, &quot;SerialNumber&quot;)) {
+</I>&gt;<i> +               strncpy(smc-&gt;phy-&gt;SerialNumber, value,
+</I>&gt;<i> +                                       sizeof(smc-&gt;phy-&gt;SerialNumber));
+</I>&gt;<i> +               strncpy(lu-&gt;scsi_sn, value, SCSI_SN_LEN - 1);
+</I>&gt;<i> +//             strncpy(lu-&gt;scsi_sn, value,
+</I>&gt;<i> +//                             min((int)SCSI_SN_LEN - 1,
+</I>&gt;<i> (int)strlen(value)));
+</I>&gt;<i> +               err = 0;
+</I>&gt;<i> +       }
+</I>&gt;<i> +       dprintf(&quot;name: %s, Value: %s, return val: %d&quot;, key, value,
+</I>&gt;<i> err);
+</I>&gt;<i> +       return err;
+</I>&gt;<i> +} 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000506.html">[Stgt-devel] vtl patch.
+</A></li>
+	<LI>Next message: <A HREF="000508.html">[Stgt-devel] vtl patch.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#507">[ date ]</a>
+              <a href="thread.html#507">[ thread ]</a>
+              <a href="subject.html#507">[ subject ]</a>
+              <a href="author.html#507">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

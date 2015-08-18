@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C200509111436.j8BEaqkg022217%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000062.html">
+   <LINK REL="Next"  HREF="000064.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C200509111436.j8BEaqkg022217%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun Sep 11 16:36:51 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000062.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+        <LI>Next message: <A HREF="000064.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#63">[ date ]</a>
+              <a href="thread.html#63">[ thread ]</a>
+              <a href="subject.html#63">[ subject ]</a>
+              <a href="author.html#63">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt;
+Subject: Re: [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+Date: Sun, 11 Sep 2005 09:39:18 -0400
+
+&gt;<i> &gt; &gt; &gt; I'm not sure because we'll support multiple iSCSI target drivers.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; there are mpt, qla. maybe we use IETTGT to indicate it is originated
+</I>&gt;<i> &gt; &gt; from iet?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; This implementation is a new project. It is a fork of IET. I think
+</I>&gt;<i> &gt; that calling two different implementations a same name causes
+</I>&gt;<i> &gt; unnecessary confusion (e.g. sfnet and open-iscsi).
+</I>&gt;<i> 
+</I>&gt;<i> my understanding is when tgt get matured, IET will be merged here soon.
+</I>&gt;<i> iet always wants to have a better layer split and now tgt comes. so iet
+</I>&gt;<i> of course will follow this path. i do not think we need to maintain 2
+</I>&gt;<i> open source iscsi software target code. 
+</I>
+It's not about only using the tgt framework. There are many other
+issues.
+
+Hopefully, the tgt framework will be merged into mainline. After that,
+I'll rewrite the large portion of IET. The iSCSI target implementation
+for tgt will be completely different from IET.
+
+If I successfully make the new iSCSI implementation as stable as the
+current IET code, I'll stop maintaining IET.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000062.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+	<LI>Next message: <A HREF="000064.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#63">[ date ]</a>
+              <a href="thread.html#63">[ thread ]</a>
+              <a href="subject.html#63">[ subject ]</a>
+              <a href="author.html#63">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] No LUN option in target.c
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20No%20LUN%20option%20in%20target.c&In-Reply-To=%3C20071126180908N.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001161.html">
+   <LINK REL="Next"  HREF="001163.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] No LUN option in target.c</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20No%20LUN%20option%20in%20target.c&In-Reply-To=%3C20071126180908N.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] No LUN option in target.c">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Nov 26 10:09:08 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001161.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+        <LI>Next message: <A HREF="001163.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1162">[ date ]</a>
+              <a href="thread.html#1162">[ thread ]</a>
+              <a href="subject.html#1162">[ subject ]</a>
+              <a href="author.html#1162">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 26 Nov 2007 09:53:38 +0100
+Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">apauw at inter.nl.net</A>&gt; wrote:
+
+&gt;<i> Just reminded myself to compare apples with apples, not pears ;-)
+</I>&gt;<i> 
+</I>&gt;<i> So I ran the tests again, both type of targets (iet, tgt) with the same 
+</I>&gt;<i> settings
+</I>&gt;<i> (MaxBurstLength, DataSegmentLenghts, Digests).
+</I>&gt;<i> 
+</I>&gt;<i> I see a six fold difference in performance, I don't see iet starting low 
+</I>&gt;<i> (twice the performance of tgt)
+</I>
+So IET is still faster?
+
+If so, very wired. I just run open-iscsi and IET/tgt with two boxes
+connected via a GbE switch with the same iSCSI parameter
+
+sens:/home/fujita# ./ltp-full-20061222/testcases/kernel/io/disktest/disktest -PT -T30 -h1 -K8 -B32768 -pL -ID /dev/sdd
+
+- tgt
+
+|<i> 2007/11/26-17:39:24 | STAT  | 2184 | v1.2.8 | /dev/sdd | Read throughput: 53706752.0B/s (51.22MB/s), IOPS 1647.0/s.
+</I>
+- IET
+
+|<i> 2007/11/26-17:44:21 | STAT  | 2248 | v1.2.8 | /dev/sdd | Read throughput: 42860544.0B/s (40.88MB/s), IOPS 1316.0/s.
+</I>
+
+BTW, you need to change several parameter with tgt since the tgt
+default paramaters are different from the IET paramaters.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001161.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+	<LI>Next message: <A HREF="001163.html">[Stgt-devel] No LUN option in target.c
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1162">[ date ]</a>
+              <a href="thread.html#1162">[ thread ]</a>
+              <a href="subject.html#1162">[ subject ]</a>
+              <a href="author.html#1162">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/20%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C20071027212947.GA30638%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001117.html">
+   <LINK REL="Next"  HREF="001128.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/20%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C20071027212947.GA30638%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf">pw at osc.edu
+       </A><BR>
+    <I>Sat Oct 27 23:29:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001117.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+        <LI>Next message: <A HREF="001128.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1125">[ date ]</a>
+              <a href="thread.html#1125">[ thread ]</a>
+              <a href="subject.html#1125">[ subject ]</a>
+              <a href="author.html#1125">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Sat, 27 Oct 2007 23:56 +0900:
+&gt;<i> On Tue, 16 Oct 2007 11:19:03 -0400
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Allocate the read buffer for bidirectional commands in the transport to
+</I>&gt;<i> &gt; pass down to devices.  A device can fill and return this buffer in
+</I>&gt;<i> &gt; task-&gt;uaddr, and thus choose to do the read or write processing in any
+</I>&gt;<i> 
+</I>&gt;<i> Where do you free bidi buffer?
+</I>
+The bs sets cmd-&gt;uaddr to be the data-in buffer (from initiator
+point of view) as it returns.  iscsi puts this in task-&gt;addr then
+later frees it if (task-&gt;addr != task-&gt;data).  Yeah, kind of
+complex.
+
+Write command:  single allocation: task plus data-out all in one go.
+    bs is given task-&gt;data, does not change cmd-&gt;uaddr.  Single free
+    of task releases it.
+
+Read command:  single alloction:  task plus expected data-in size.
+    bs is given task-&gt;data, fills it, does not change cmd-&gt;uaddr.
+    Single free.
+
+(Inquiry etc look like read, and used to return a new cmd-&gt;uaddr,
+    requiring a second free.  But now use given task-&gt;data after
+    iser-transport-buf is applied.)
+
+Bidi command:  two allocations: task plus data-out, expected
+    data-in.  bs is given task-&gt;data as cmd-&gt;uaddr, and the
+    buffer for the data-in as cmd-&gt;bidi_uaddr.  It sets cmd-&gt;uaddr
+    to cmd-&gt;bidi_uaddr as it finishes, then iscsi frees that and
+    the task.
+
+Before this patch, bidi started out like write, but then the bs
+would malloc a new buffer for the read result and return that in
+cmd-&gt;uaddr.  iscsi_free_task() sees task-&gt;addr != task-&gt;data and
+frees that as well as task, just like old inquiry implementation.
+Change here is to make sure we can use a preallocated buffer from
+the transport if one is given.
+
+&gt;<i> Please don't forget that bidi support isn't only for iSER. everyone
+</I>&gt;<i> needs it.
+</I>
+Yes, we got bidi working back in March 2007 and use it every day,
+without iSER.  Unfortunately the only bidi user is in our
+out-of-tree OSD code.  We're releasing the software OSD target
+library soon, then could add the backing store code to stgt,
+dependent on the presence of that library.
+
+&gt;<i> The current buffer management is not clean so feel free to rewrite it
+</I>&gt;<i> before iSER if you want.
+</I>
+I would be willing to do this, but don't have a better suggestion
+yet.  Any ideas welcome.  Difficulty is supporting both bidi-aware
+and non-aware bs, and pre-malloc and non-pre-malloc transports.  All
+while minimizing the number of malloc operations per command.
+
+&gt;<i> &gt; order.  Unfortunately, this allocation can not be combined with the task
+</I>&gt;<i> &gt; and task-&gt;data allocation as the bidi read size is not known until after
+</I>&gt;<i> &gt; AHS processing.
+</I>&gt;<i> 
+</I>&gt;<i> We need to change task-&gt;data allocation since we need aligned buffer
+</I>&gt;<i> for DIO. The iSCSI driver uses page cache buf IET experience tells
+</I>&gt;<i> me that we need to support DIO too.
+</I>
+As in bs_xen?  Do you think the DIO alignment needs could fit into
+the framework described above?  Or does the BS somehow need to tell
+the transport what to allocate, to get alignment space?  That would
+definitely affect any proposed buffer mgmt rewrite.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001117.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+	<LI>Next message: <A HREF="001128.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1125">[ date ]</a>
+              <a href="thread.html#1125">[ thread ]</a>
+              <a href="subject.html#1125">[ subject ]</a>
+              <a href="author.html#1125">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 5/6] Update spc_request_sense() to return some	sense data.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%205/6%5D%20Update%20spc_request_sense%28%29%20to%20return%20some%0A%09sense%20data.&In-Reply-To=%3C4678E04E.5020707%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000826.html">
+   <LINK REL="Next"  HREF="000809.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 5/6] Update spc_request_sense() to return some	sense data.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%205/6%5D%20Update%20spc_request_sense%28%29%20to%20return%20some%0A%09sense%20data.&In-Reply-To=%3C4678E04E.5020707%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 5/6] Update spc_request_sense() to return some	sense data.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jun 20 10:07:42 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000826.html">[Stgt-devel] [Patch 4/6] Use mnemonic value for ASC/ASCQ values
+</A></li>
+        <LI>Next message: <A HREF="000809.html">[Stgt-devel] [Patch 6/6] Create mode page information at runtime
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#808">[ date ]</a>
+              <a href="thread.html#808">[ thread ]</a>
+              <a href="subject.html#808">[ subject ]</a>
+              <a href="author.html#808">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From ff2ab514b13173c6e6fc515c2b3a7bf10b100feb Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Wed, 20 Jun 2007 17:49:33 +1000
+Subject: update spc_request_sense() to return some sort of sense data.
+
+Updated spc_request_sense() so it returns some data.
+- spc_request_sense() needs more investigation as:
+   sg_requests /dev/sgX =&gt; returns old (SCSI-1) sense.
+   At least it no longer returns an error.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/spc.c |   31 +++++++++++++++++++++++++++++--
+ 1 files changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/usr/spc.c b/usr/spc.c
+index 6dbe013..6530e73 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -233,9 +233,36 @@ int spc_test_unit(int host_no, struct scsi_cmd *cmd)
+ 
+ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+ {
+-	cmd-&gt;len = 0;
+-	sense_data_build(cmd, NO_SENSE, NO_ADDITIONAL_SENSE);
++	uint8_t *data;
++	uint8_t key = NO_SENSE;
++	uint16_t asc = NO_ADDITIONAL_SENSE;
++
++	data = valloc(pagesize);
++	if (!data) {
++		key = HARDWARE_ERROR;
++		asc = E_INTERNAL_TGT_FAILURE;
++		goto sense;
++	}
++	memset(data, 0, pagesize);
++
++	/* SPC4: 6.28 - Check if we support the DESC bit */
++	if (cmd-&gt;scb[1] &amp;&amp; 1) {
++		if (!cmd-&gt;dev-&gt;attrs.sense_format) {
++			key = ILLEGAL_REQUEST;
++			asc = E_INVALID_FIELD_IN_CDB;
++			goto sense;
++		}
++	}
++
++	sense_data_build(cmd, key, asc);
++	cmd-&gt;len = cmd-&gt;sense_len;
++	memcpy(data, cmd-&gt;sense_buffer, cmd-&gt;sense_len);
+ 	return SAM_STAT_GOOD;
++
++sense:
++	cmd-&gt;len = 0;
++	sense_data_build(cmd, key, asc);
++	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+ void dump_cdb(struct scsi_cmd *cmd)
+-- 
+1.5.2.1
+
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000826.html">[Stgt-devel] [Patch 4/6] Use mnemonic value for ASC/ASCQ values
+</A></li>
+	<LI>Next message: <A HREF="000809.html">[Stgt-devel] [Patch 6/6] Create mode page information at runtime
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#808">[ date ]</a>
+              <a href="thread.html#808">[ thread ]</a>
+              <a href="subject.html#808">[ subject ]</a>
+              <a href="author.html#808">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch] Segmentation fault in conn_close
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Segmentation%20fault%20in%20conn_close&In-Reply-To=%3C488DA56F.8020106%40redhat.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001879.html">
+   <LINK REL="Next"  HREF="001880.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch] Segmentation fault in conn_close</H1>
+    <B>Tomas Henzl</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Segmentation%20fault%20in%20conn_close&In-Reply-To=%3C488DA56F.8020106%40redhat.com%3E"
+       TITLE="[Stgt-devel] [Patch] Segmentation fault in conn_close">thenzl at redhat.com
+       </A><BR>
+    <I>Mon Jul 28 12:54:39 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001879.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+        <LI>Next message: <A HREF="001880.html">[Stgt-devel] [PATCH] add dumping current tgtd configuration in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1920">[ date ]</a>
+              <a href="thread.html#1920">[ thread ]</a>
+              <a href="subject.html#1920">[ subject ]</a>
+              <a href="author.html#1920">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: Tomas Henzl &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">thenzl at redhat.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] [Patch] Segmentation fault in conn_close
+</I>&gt;<i> Date: Fri, 25 Jul 2008 14:56:22 +0200
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i> Hi,
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I noticed a segfault which is probably caused by the patch 
+</I>&gt;&gt;<i> &quot;iscsi: needs to call iscsi_free_cmd_task for commands in tx_clist&quot;
+</I>&gt;&gt;<i> b723430058dcbe3b201a2a2c38ce114217dc5273
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> it looks like that for some reason iscsi_free_cmd_task(task); gets called  with
+</I>&gt;&gt;<i> appropriate scmd zeroed out (not initialized ?) and then it causes a segfault
+</I>&gt;&gt;<i> in list_del.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I don't know how could it happen that this structure (scmd) is empty. The patch 
+</I>&gt;&gt;<i> below solves my problem - it restores the old behaviour if the scmd is empty
+</I>&gt;&gt;<i> as it was before the patch mentioned above.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> I think that this bug was fixed by:
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> commit 73c6fab9f7f9e34aa14c359413b467be5e0ce0dc
+</I>&gt;<i> Author: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+</I>&gt;<i> Date:   Sat Jul 12 15:47:38 2008 +0900
+</I>&gt;<i>
+</I>&gt;<i>     iscsi: fix conn_close() segfaults
+</I>&gt;<i>
+</I>&gt;<i>     The problem is that conn_close() calls iscsi_free_cmd_task against
+</I>&gt;<i>     tasks in conn-&gt;tx_clist. But we could have non SCSI command tasks in
+</I>&gt;<i>     conn-&gt;tx_clist (such as NOOP). We can't call cmd_hlist_remove for such
+</I>&gt;<i>     tasks.
+</I>&gt;<i>
+</I>&gt;<i>     Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> As the commit log says, non SCSI command tasks don't initialize scmd.
+</I>&gt;<i>   
+</I>Yes thanks, it looks correct now. My fault I should have downloaded the
+latest
+sources after vacation.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001879.html">[Stgt-devel] [Patch] Segmentation fault in conn_close
+</A></li>
+	<LI>Next message: <A HREF="001880.html">[Stgt-devel] [PATCH] add dumping current tgtd configuration in	tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1920">[ date ]</a>
+              <a href="thread.html#1920">[ thread ]</a>
+              <a href="subject.html#1920">[ subject ]</a>
+              <a href="author.html#1920">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Can't compile the git version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Can%27t%20compile%20the%20git%20version&In-Reply-To=%3C46D91903.80409%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000996.html">
+   <LINK REL="Next"  HREF="000994.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Can't compile the git version</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Can%27t%20compile%20the%20git%20version&In-Reply-To=%3C46D91903.80409%40gmail.com%3E"
+       TITLE="[Stgt-devel] Can't compile the git version">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Sep  1 09:47:15 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000996.html">[Stgt-devel] raw/pass-through support?
+</A></li>
+        <LI>Next message: <A HREF="000994.html">[Stgt-devel] close completes before synchronize cache response
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#993">[ date ]</a>
+              <a href="thread.html#993">[ thread ]</a>
+              <a href="subject.html#993">[ subject ]</a>
+              <a href="author.html#993">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Sorry about the html part.
+
+This fixed my compile thanks.
+
+Albert
+&gt;<i> Sorry, I messed up when I added fc target mode support. Please try
+</I>&gt;<i> this patch.
+</I>&gt;<i>
+</I>&gt;<i> BTW, please use a plain-text mail format. I ignore html mails unless I
+</I>&gt;<i> find an important subject.
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/usr/Makefile b/usr/Makefile
+</I>&gt;<i> index 43565df..4c918d4 100644
+</I>&gt;<i> --- a/usr/Makefile
+</I>&gt;<i> +++ b/usr/Makefile
+</I>&gt;<i> @@ -39,8 +39,8 @@ TGTD_OBJS += bs_sync.o
+</I>&gt;<i>  LIBS += -lcrypto -lpthread
+</I>&gt;<i>  endif
+</I>&gt;<i>  
+</I>&gt;<i> -ifneq ($(FC),)
+</I>&gt;<i> -CFLAGS += -DFC -DUSE_KERNEL
+</I>&gt;<i> +ifneq ($(FCP),)
+</I>&gt;<i> +CFLAGS += -DFCP -DUSE_KERNEL
+</I>&gt;<i>  TGTD_OBJS += $(addprefix fc/, fc.o)
+</I>&gt;<i>  TGTD_OBJS += bs_mmap.o tgtif.o
+</I>&gt;<i>  endif
+</I>&gt;<i> diff --git a/usr/driver.c b/usr/driver.c
+</I>&gt;<i> index 2f6e154..068b410 100644
+</I>&gt;<i> --- a/usr/driver.c
+</I>&gt;<i> +++ b/usr/driver.c
+</I>&gt;<i> @@ -39,7 +39,7 @@ struct tgt_driver *tgt_drivers[] = {
+</I>&gt;<i>  #ifdef XEN
+</I>&gt;<i>  	&amp;xen,
+</I>&gt;<i>  #endif
+</I>&gt;<i> -#ifdef FC
+</I>&gt;<i> +#ifdef FCP
+</I>&gt;<i>  	&amp;fc,
+</I>&gt;<i>  #endif
+</I>&gt;<i>  	NULL,
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000996.html">[Stgt-devel] raw/pass-through support?
+</A></li>
+	<LI>Next message: <A HREF="000994.html">[Stgt-devel] close completes before synchronize cache response
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#993">[ date ]</a>
+              <a href="thread.html#993">[ thread ]</a>
+              <a href="subject.html#993">[ subject ]</a>
+              <a href="author.html#993">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

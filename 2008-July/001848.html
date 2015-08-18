@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Allow --help when there is no config file	...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Allow%20--help%20when%20there%20is%20no%20config%20file%0A%09...&In-Reply-To=%3C46b8a8850807231653u2b59a681qd1b2202365d564d9%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001847.html">
+   <LINK REL="Next"  HREF="001849.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Allow --help when there is no config file	...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Allow%20--help%20when%20there%20is%20no%20config%20file%0A%09...&In-Reply-To=%3C46b8a8850807231653u2b59a681qd1b2202365d564d9%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Allow --help when there is no config file	...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Thu Jul 24 01:53:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001847.html">[Stgt-devel] [PATCH] Allow --help when there is no config file ...
+</A></li>
+        <LI>Next message: <A HREF="001849.html">[Stgt-devel] [PATCH] Allow --help when there is no config	file	...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1848">[ date ]</a>
+              <a href="thread.html#1848">[ thread ]</a>
+              <a href="subject.html#1848">[ subject ]</a>
+              <a href="author.html#1848">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Resending this as an attachment to avoid gmail trashing it ...
+
+On Wed, Jul 23, 2008 at 2:23 PM, Richard Sharpe
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+&gt;<i> Signed-off-by: Richard Sharpe (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>)
+</I>&gt;<i>
+</I>&gt;<i> From dec198acbd1e723f110c8f04316c28b953bee26e Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;<i> Date: Wed, 23 Jul 2008 14:18:59 -0700
+</I>&gt;<i> Subject: [PATCH] Allow --help when there is no config file ...
+</I>&gt;<i>
+</I>&gt;<i> ---
+</I>&gt;<i>  scripts/tgt-admin |    5 ++---
+</I>&gt;<i>  1 files changed, 2 insertions(+), 3 deletions(-)
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+</I>&gt;<i> index 05ed2d8..1ec67bb 100755
+</I>&gt;<i> --- a/scripts/tgt-admin
+</I>&gt;<i> +++ b/scripts/tgt-admin
+</I>&gt;<i> @@ -17,9 +17,6 @@ use Getopt::Long;
+</I>&gt;<i>  # Our config file
+</I>&gt;<i>  my $configfile = &quot;/etc/tgt/targets.conf&quot;;
+</I>&gt;<i>
+</I>&gt;<i> -# Parse the config file with Config::General
+</I>&gt;<i> -my %conf = ParseConfig(-ConfigFile =&gt; &quot;$configfile&quot;, -UseApacheInclude =&gt; 1, -I
+</I>&gt;<i> ncludeGlob =&gt; 1,);
+</I>&gt;<i> -
+</I>&gt;<i>  sub usage {
+</I>&gt;<i>        print &lt;&lt;EOF;
+</I>&gt;<i>  Usage:
+</I>&gt;<i> @@ -56,6 +53,8 @@ if (($help == 1) || ($param eq undef)) {
+</I>&gt;<i>        &amp;usage
+</I>&gt;<i>  }
+</I>&gt;<i>
+</I>&gt;<i> +# Parse the config file with Config::General
+</I>&gt;<i> +my %conf = ParseConfig(-ConfigFile =&gt; &quot;$configfile&quot;, -UseApacheInclude =&gt; 1, -I
+</I>&gt;<i> ncludeGlob =&gt; 1,);
+</I>&gt;<i>
+</I>&gt;<i>  # Some variables/arrays/hashes we will use globally
+</I>&gt;<i>  my %tgtadm_output;
+</I>&gt;<i> --
+</I>&gt;<i> 1.5.5.1
+</I>&gt;<i>
+</I>-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0001-Allow-help-when-there-is-no-config-file.patch
+Type: application/octet-stream
+Size: 1028 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080723/a6c7c87e/attachment.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080723/a6c7c87e/attachment.obj</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001847.html">[Stgt-devel] [PATCH] Allow --help when there is no config file ...
+</A></li>
+	<LI>Next message: <A HREF="001849.html">[Stgt-devel] [PATCH] Allow --help when there is no config	file	...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1848">[ date ]</a>
+              <a href="thread.html#1848">[ thread ]</a>
+              <a href="subject.html#1848">[ subject ]</a>
+              <a href="author.html#1848">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

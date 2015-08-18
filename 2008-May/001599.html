@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Store persistent media data in extended attributes?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Store%20persistent%20media%20data%20in%20extended%20attributes%3F&In-Reply-To=%3C20080506135937D.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001592.html">
+   <LINK REL="Next"  HREF="001601.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Store persistent media data in extended attributes?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Store%20persistent%20media%20data%20in%20extended%20attributes%3F&In-Reply-To=%3C20080506135937D.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] Store persistent media data in extended attributes?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue May  6 06:59:54 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001592.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+        <LI>Next message: <A HREF="001601.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1599">[ date ]</a>
+              <a href="thread.html#1599">[ thread ]</a>
+              <a href="subject.html#1599">[ subject ]</a>
+              <a href="author.html#1599">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, 3 May 2008 16:23:56 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> Cool.
+</I>&gt;<i> 
+</I>&gt;<i> How far is you ssc?  can one do basic i/o with say mt with it?
+</I>&gt;<i> 
+</I>&gt;<i> While SSC is very different,
+</I>&gt;<i> in MMC I would like to be able to store things like a barcode,
+</I>&gt;<i> serialnumber, and other MAM and MAM-like data  attached to the backing
+</I>&gt;<i> store file.
+</I>&gt;<i> I want it to be stored in a was so that this data is &quot;attached&quot; to the
+</I>&gt;<i> file that contains the actual image of the media.
+</I>&gt;<i> I dont want to use separate files to store the metadata, so extended
+</I>&gt;<i> attributes would be a nice way to associate the metadata with the
+</I>&gt;<i> actual data.
+</I>&gt;<i> 
+</I>&gt;<i> In MMC I think it would also have value if the actual file itself,
+</I>&gt;<i> reading all data from position 0 to the end of file would be an
+</I>&gt;<i> identical image of the data
+</I>&gt;<i> of the disk itself.  I.e. the file content IS the actual .ISO of the
+</I>&gt;<i> disk.  Which would allow such files holding a STGT MMC backingstore
+</I>&gt;<i> to be mountable as
+</I>&gt;<i> a ISO9660 filesystem through loopback   and also be immediately
+</I>&gt;<i> compatible and work with the myriad of &quot;Virtual/Phantom DVD Drive&quot;
+</I>&gt;<i> applications
+</I>&gt;<i> and drivers on other systems.
+</I>&gt;<i> This compatibility would fail for me if I store metadata at the
+</I>&gt;<i> beginning of the file.
+</I>&gt;<i> (Yeah, you can mount the file as an .ISO   but you have to strip off
+</I>&gt;<i> the first xMByte of the file first :-(   compared to &quot;the file is just
+</I>&gt;<i> a normal .ISO image so its compatible with anything under the sun (but
+</I>&gt;<i> it also has some invisible extra metadata stored at the side)&quot;. )
+</I>
+As you said, we need to consider both the pros and cons of using
+metadata. People are happy to give up the compatibily and use virtual
+disk images (like QCOW, VMDK, and VHD) for snapshot. I think that just
+for something trivial like serial number is not a good idea. Does the
+metadata give something huge for mmc and ssc (like snapshot for sbc)?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001592.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+	<LI>Next message: <A HREF="001601.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1599">[ date ]</a>
+              <a href="thread.html#1599">[ thread ]</a>
+              <a href="subject.html#1599">[ subject ]</a>
+              <a href="author.html#1599">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

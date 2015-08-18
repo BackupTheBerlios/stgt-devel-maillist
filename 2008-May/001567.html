@@ -1,0 +1,1464 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540805011324r25536056v5c4496e3717584aa%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001566.html">
+   <LINK REL="Next"  HREF="001568.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540805011324r25536056v5c4496e3717584aa%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Thu May  1 22:24:44 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001566.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+        <LI>Next message: <A HREF="001568.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1567">[ date ]</a>
+              <a href="thread.html#1567">[ thread ]</a>
+              <a href="subject.html#1567">[ subject ]</a>
+              <a href="author.html#1567">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+That looks good to me.   please push that patchset and I will re-sync
+and start adding RESERVE/RELEASE to all commands.
+
+
+
+On Fri, May 2, 2008 at 12:54 AM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Tue, 29 Apr 2008 16:31:19 +1000
+</I>&gt;<i>
+</I>&gt;<i> &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt; Ok, thanks.
+</I>&gt;<i>  &gt;
+</I>&gt;<i>  &gt; I redid the patches as you requested but I cant send SMTP mails from
+</I>&gt;<i>  &gt; my home machines
+</I>&gt;<i>  &gt; so hence git-send-email didnt work. :-(
+</I>&gt;<i>  &gt;
+</I>&gt;<i>  &gt; I have attached a tgz that contains the patch series created by
+</I>&gt;<i>  &gt; git-format-patch instead.
+</I>&gt;<i>  &gt; Please apply.
+</I>&gt;<i>
+</I>&gt;<i>  Thanks a lot,
+</I>&gt;<i>
+</I>&gt;<i>  There are the style problems. I fixed them this time but please use
+</I>&gt;<i>  checkpatch.pl before submitting patches next time.
+</I>&gt;<i>
+</I>&gt;<i>  Here's a patch to fix the style problems (can be applied after
+</I>&gt;<i>  applying all your patches). If nothing is wrong, I'll push your
+</I>&gt;<i>  patchset. Please check the attached patch.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>  diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i>  index 37c51cf..6c0dcac 100644
+</I>&gt;<i>  --- a/usr/mmc.c
+</I>&gt;<i>  +++ b/usr/mmc.c
+</I>&gt;<i>  @@ -56,7 +56,6 @@ struct mmc_info {
+</I>&gt;<i>         int current_profile;
+</I>&gt;<i>   };
+</I>&gt;<i>
+</I>&gt;<i>  -
+</I>&gt;<i>   static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>  @@ -71,24 +70,26 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>
+</I>&gt;<i>         switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_ROM:
+</I>&gt;<i>  -               switch(cmd-&gt;scb[0]) {
+</I>&gt;<i>  +               switch (cmd-&gt;scb[0]) {
+</I>&gt;<i>                 case WRITE_6:
+</I>&gt;<i>                 case WRITE_10:
+</I>&gt;<i>                 case WRITE_12:
+</I>&gt;<i>                 case WRITE_16:
+</I>&gt;<i>                         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>  -                       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INCOMPATIBLE_FORMAT);
+</I>&gt;<i>  +                       sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;<i>  +                                        ASC_INCOMPATIBLE_FORMAT);
+</I>&gt;<i>                         return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>                 }
+</I>&gt;<i>                 break;
+</I>&gt;<i>         case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>  -               switch(cmd-&gt;scb[0]) {
+</I>&gt;<i>  +               switch (cmd-&gt;scb[0]) {
+</I>&gt;<i>                 case READ_6:
+</I>&gt;<i>                 case READ_10:
+</I>&gt;<i>                 case READ_12:
+</I>&gt;<i>                 case READ_16:
+</I>&gt;<i>                         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>  -                       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_LBA_OUT_OF_RANGE);
+</I>&gt;<i>  +                       sense_data_build(cmd, ILLEGAL_REQUEST,
+</I>&gt;<i>  +                                        ASC_LBA_OUT_OF_RANGE);
+</I>&gt;<i>                         return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>                 }
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -99,10 +100,10 @@ static int mmc_rw(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         cmd-&gt;offset = (scsi_rw_offset(cmd-&gt;scb) &lt;&lt; MMC_BLK_SHIFT);
+</I>&gt;<i>
+</I>&gt;<i>         /* update the size of the device */
+</I>&gt;<i>  -       end_offset = cmd-&gt;offset + (((uint64_t)scsi_rw_count(cmd-&gt;scb)) &lt;&lt; MMC_BLK_SHIFT);
+</I>&gt;<i>  -       if (end_offset &gt; cmd-&gt;dev-&gt;size) {
+</I>&gt;<i>  +       end_offset = cmd-&gt;offset +
+</I>&gt;<i>  +               (((uint64_t)scsi_rw_count(cmd-&gt;scb)) &lt;&lt; MMC_BLK_SHIFT);
+</I>&gt;<i>  +       if (end_offset &gt; cmd-&gt;dev-&gt;size)
+</I>&gt;<i>                 cmd-&gt;dev-&gt;size = end_offset;
+</I>&gt;<i>  -       }
+</I>&gt;<i>
+</I>&gt;<i>         ret = cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
+</I>&gt;<i>         if (ret) {
+</I>&gt;<i>  @@ -139,14 +140,13 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         data = scsi_get_in_buffer(cmd);
+</I>&gt;<i>         size = cmd-&gt;dev-&gt;size &gt;&gt; MMC_BLK_SHIFT;
+</I>&gt;<i>
+</I>&gt;<i>  -       if (size == 0) {
+</I>&gt;<i>  -               data[0] = 0; /* A blank DVD */
+</I>&gt;<i>  -       } else {
+</I>&gt;<i>  +       if (size)
+</I>&gt;<i>                 data[0] = (size &gt;&gt; 32) ?
+</I>&gt;<i>                         __cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
+</I>&gt;<i>  -       }
+</I>&gt;<i>  -       data[1] = __cpu_to_be32(1U &lt;&lt; MMC_BLK_SHIFT);
+</I>&gt;<i>  +       else
+</I>&gt;<i>  +               data[0] = 0; /* A blank DVD */
+</I>&gt;<i>
+</I>&gt;<i>  +       data[1] = __cpu_to_be32(1U &lt;&lt; MMC_BLK_SHIFT);
+</I>&gt;<i>   overflow:
+</I>&gt;<i>         scsi_set_in_resid_by_actual(cmd, 8);
+</I>&gt;<i>         return SAM_STAT_GOOD;
+</I>&gt;<i>  @@ -173,28 +173,28 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                 return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       toc_time   = cmd-&gt;scb[1] &amp; 0x02;
+</I>&gt;<i>  +       toc_time = cmd-&gt;scb[1] &amp; 0x02;
+</I>&gt;<i>         toc_format = cmd-&gt;scb[2] &amp; 0x0f;
+</I>&gt;<i>  -       toc_track  = cmd-&gt;scb[6];
+</I>&gt;<i>  +       toc_track = cmd-&gt;scb[6];
+</I>&gt;<i>
+</I>&gt;<i>         memset(buf, 0, sizeof(buf));
+</I>&gt;<i>         data = buf;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         switch (toc_format) {
+</I>&gt;<i>         case 0: /* formatted toc */
+</I>&gt;<i>  -               if (toc_track != 0) {
+</I>&gt;<i>  +               if (toc_track) {
+</I>&gt;<i>                         /* we only do single session data disks so only
+</I>&gt;<i>                            track 0 is valid */
+</I>&gt;<i>                         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>  -                       sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>  +                       sense_data_build(cmd, NOT_READY,
+</I>&gt;<i>  +                                        ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>                         return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>                 }
+</I>&gt;<i>
+</I>&gt;<i>  -               if (toc_time) {
+</I>&gt;<i>  +               if (toc_time)
+</I>&gt;<i>                         tsa = 0x00ff3b4a;
+</I>&gt;<i>  -               } else {
+</I>&gt;<i>  +               else
+</I>&gt;<i>                         tsa = cmd-&gt;dev-&gt;size &gt;&gt; MMC_BLK_SHIFT; /* lba */
+</I>&gt;<i>  -               }
+</I>&gt;<i>
+</I>&gt;<i>                 /* size of return data */
+</I>&gt;<i>                 data[0] = 0;
+</I>&gt;<i>  @@ -204,28 +204,27 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                 data[3] = 1;    /* last track */
+</I>&gt;<i>
+</I>&gt;<i>                 /* data track */
+</I>&gt;<i>  -               data[ 4] = 0;           /* reserved */
+</I>&gt;<i>  -               data[ 5] = 0x14;
+</I>&gt;<i>  -               data[ 6] = 1;           /* track number */
+</I>&gt;<i>  -               data[ 7] = 0;           /* reserved */
+</I>&gt;<i>  -               data[ 8] = 0;           /* track start address : 0 */
+</I>&gt;<i>  -               data[ 9] = 0;
+</I>&gt;<i>  -               if (toc_time) {
+</I>&gt;<i>  +               data[4] = 0;            /* reserved */
+</I>&gt;<i>  +               data[5] = 0x14;
+</I>&gt;<i>  +               data[6] = 1;            /* track number */
+</I>&gt;<i>  +               data[7] = 0;            /* reserved */
+</I>&gt;<i>  +               data[8] = 0;            /* track start address : 0 */
+</I>&gt;<i>  +               data[9] = 0;
+</I>&gt;<i>  +               if (toc_time)
+</I>&gt;<i>                         data[10] = 2;   /* time 00:00:02:00 */
+</I>&gt;<i>  -               } else {
+</I>&gt;<i>  +               else
+</I>&gt;<i>                         data[10] = 0;
+</I>&gt;<i>  -               }
+</I>&gt;<i>                 data[11] = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 /* leadout track */
+</I>&gt;<i>  -               data[12] = 0;           /* reserved */
+</I>&gt;<i>  +               data[12] = 0;           /* reserved */
+</I>&gt;<i>                 data[13] = 0x14;
+</I>&gt;<i>                 data[14] = 0xaa;        /* track number */
+</I>&gt;<i>                 data[15] = 0;           /* reserved */
+</I>&gt;<i>  -               data[16] = (tsa&gt;&gt;24)&amp;0xff;/* track start address */
+</I>&gt;<i>  -               data[17] = (tsa&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               data[18] = (tsa&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               data[19] = (tsa    )&amp;0xff;
+</I>&gt;<i>  +               data[16] = (tsa &gt;&gt; 24) &amp; 0xff;/* track start address */
+</I>&gt;<i>  +               data[17] = (tsa &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               data[18] = (tsa &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               data[19] = tsa &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>                 break;
+</I>&gt;<i>         case 1: /* multi session info */
+</I>&gt;<i>  @@ -237,17 +236,16 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                 data[3] = 1;    /* last session */
+</I>&gt;<i>
+</I>&gt;<i>                 /* data track */
+</I>&gt;<i>  -               data[ 4] = 0;           /* reserved */
+</I>&gt;<i>  -               data[ 5] = 0x14;
+</I>&gt;<i>  -               data[ 6] = 1;           /* track number */
+</I>&gt;<i>  -               data[ 7] = 0;           /* reserved */
+</I>&gt;<i>  -               data[ 8] = 0;           /* track start address : 0 */
+</I>&gt;<i>  -               data[ 9] = 0;
+</I>&gt;<i>  -               if (toc_time) {
+</I>&gt;<i>  +               data[4] = 0;            /* reserved */
+</I>&gt;<i>  +               data[5] = 0x14;
+</I>&gt;<i>  +               data[6] = 1;            /* track number */
+</I>&gt;<i>  +               data[7] = 0;            /* reserved */
+</I>&gt;<i>  +               data[8] = 0;            /* track start address : 0 */
+</I>&gt;<i>  +               data[9] = 0;
+</I>&gt;<i>  +               if (toc_time)
+</I>&gt;<i>                         data[10] = 2;   /* time 00:00:02:00 */
+</I>&gt;<i>  -               } else {
+</I>&gt;<i>  +               else
+</I>&gt;<i>                         data[10] = 0;
+</I>&gt;<i>  -               }
+</I>&gt;<i>                 data[11] = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -295,15 +293,18 @@ static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>
+</I>&gt;<i>         memset(buf, 0, sizeof(buf));
+</I>&gt;<i>
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_ROM:
+</I>&gt;<i>                 /* disk information length */
+</I>&gt;<i>                 buf[0] = 0x00;
+</I>&gt;<i>                 buf[1] = 0x20;
+</I>&gt;<i>
+</I>&gt;<i>  -               /* erasable:0 state of last session:complete disc status:finalized */
+</I>&gt;<i>  +               /*
+</I>&gt;<i>  +                * erasable:0 state of last session:complete disc
+</I>&gt;<i>  +                * status:finalized
+</I>&gt;<i>  +                */
+</I>&gt;<i>                 buf[2] = 0x0e;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>                 /* number of first track on disk */
+</I>&gt;<i>                 buf[3] = 1;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -373,7 +374,7 @@ static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>
+</I>&gt;<i>                 /* erasable:0 state of last session:empty disc status:empty */
+</I>&gt;<i>                 buf[2] = 0;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>                 /* number of first track on disk */
+</I>&gt;<i>                 buf[3] = 1;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -434,7 +435,6 @@ static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>
+</I>&gt;<i>                 /* number of opc tables */
+</I>&gt;<i>                 buf[33] = 0;
+</I>&gt;<i>  -
+</I>&gt;<i>                 break;
+</I>&gt;<i>         default:
+</I>&gt;<i>                 /* we do not understand/support this command for this profile */
+</I>&gt;<i>  @@ -444,12 +444,11 @@ static int mmc_read_disc_information(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>         memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i>  -               min(scsi_get_in_length(cmd),
+</I>&gt;<i>  -                       (uint32_t) sizeof(buf)));
+</I>&gt;<i>  +              min_t(uint32_t, scsi_get_in_length(cmd), sizeof(buf)));
+</I>&gt;<i>         return SAM_STAT_GOOD;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+</I>&gt;<i>  +static void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -458,17 +457,16 @@ void profile_dvd_rom(struct scsi_cmd *cmd, char *data)
+</I>&gt;<i>         *data++ = 0x10;
+</I>&gt;<i>
+</I>&gt;<i>         /* current ? */
+</I>&gt;<i>  -       if (mmc-&gt;current_profile == PROFILE_DVD_ROM) {
+</I>&gt;<i>  +       if (mmc-&gt;current_profile == PROFILE_DVD_ROM)
+</I>&gt;<i>                 *data++ = 0x01;
+</I>&gt;<i>  -       } else {
+</I>&gt;<i>  +       else
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>  -       }
+</I>&gt;<i>
+</I>&gt;<i>         /* reserved */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+</I>&gt;<i>  +static void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -477,11 +475,10 @@ void profile_dvd_plus_r(struct scsi_cmd *cmd, char *data)
+</I>&gt;<i>         *data++ = 0x1b;
+</I>&gt;<i>
+</I>&gt;<i>         /* current ? */
+</I>&gt;<i>  -       if (mmc-&gt;current_profile == PROFILE_DVD_PLUS_R) {
+</I>&gt;<i>  +       if (mmc-&gt;current_profile == PROFILE_DVD_PLUS_R)
+</I>&gt;<i>                 *data++ = 0x01;
+</I>&gt;<i>  -       } else {
+</I>&gt;<i>  +       else
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>  -       }
+</I>&gt;<i>
+</I>&gt;<i>         /* reserved */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -497,34 +494,37 @@ struct profile_descriptor profiles[] = {
+</I>&gt;<i>         {0, NULL}
+</I>&gt;<i>   };
+</I>&gt;<i>
+</I>&gt;<i>  -/* these features are mandatory for profile DVD_ROM
+</I>&gt;<i>  -       FEATURE_PROFILE_LIST
+</I>&gt;<i>  -       FEATURE_CORE
+</I>&gt;<i>  -       FEATURE_MORHPING
+</I>&gt;<i>  -       FEATURE_REMOVABLE_MEDIUM
+</I>&gt;<i>  -       FEATURE_RANDOM_READABLE
+</I>&gt;<i>  -       FEATURE_DVD_READ
+</I>&gt;<i>  -       FEATURE_POWER_MANAGEMENT
+</I>&gt;<i>  -       FEATURE_TIMEOUT
+</I>&gt;<i>  -       FEATURE_REAL_TIME_STREAMING
+</I>&gt;<i>  -   these features are mandatory for profile DVD+R
+</I>&gt;<i>  -       FEATURE_PROFILE_LIST
+</I>&gt;<i>  -       FEATURE_CORE
+</I>&gt;<i>  -       FEATURE_MORHPING
+</I>&gt;<i>  -       FEATURE_REMOVABLE_MEDIUM
+</I>&gt;<i>  -       FEATURE_RANDOM_READABLE
+</I>&gt;<i>  -       FEATURE_DVD_READ
+</I>&gt;<i>  -       FEATURE_DVD_PLUS_R
+</I>&gt;<i>  -       FEATURE_POWER_MANAGEMENT
+</I>&gt;<i>  -       FEATURE_TIMEOUT
+</I>&gt;<i>  -       FEATURE_REAL_TIME_STREAMING
+</I>&gt;<i>  -       FEATURE_DCBS
+</I>&gt;<i>  -   additional features
+</I>&gt;<i>  -       FEATURE_MULIT_READ
+</I>&gt;<i>  -       FEATURE_LUN_SERIAL_NO
+</I>&gt;<i>  -*/
+</I>&gt;<i>  -
+</I>&gt;<i>  -char *feature_profile_list(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +/*
+</I>&gt;<i>  + * these features are mandatory for profile DVD_ROM
+</I>&gt;<i>  + * FEATURE_PROFILE_LIST
+</I>&gt;<i>  + * FEATURE_CORE
+</I>&gt;<i>  + * FEATURE_MORHPING
+</I>&gt;<i>  + * FEATURE_REMOVABLE_MEDIUM
+</I>&gt;<i>  + * FEATURE_RANDOM_READABLE
+</I>&gt;<i>  + * FEATURE_DVD_READ
+</I>&gt;<i>  + * FEATURE_POWER_MANAGEMENT
+</I>&gt;<i>  + * FEATURE_TIMEOUT
+</I>&gt;<i>  + * FEATURE_REAL_TIME_STREAMING
+</I>&gt;<i>  + *
+</I>&gt;<i>  + * these features are mandatory for profile DVD+R
+</I>&gt;<i>  + * FEATURE_PROFILE_LIST
+</I>&gt;<i>  + * FEATURE_CORE
+</I>&gt;<i>  + * FEATURE_MORHPING
+</I>&gt;<i>  + * FEATURE_REMOVABLE_MEDIUM
+</I>&gt;<i>  + * FEATURE_RANDOM_READABLE
+</I>&gt;<i>  + * FEATURE_DVD_READ
+</I>&gt;<i>  + * FEATURE_DVD_PLUS_R
+</I>&gt;<i>  + * FEATURE_POWER_MANAGEMENT
+</I>&gt;<i>  + * FEATURE_TIMEOUT
+</I>&gt;<i>  + * FEATURE_REAL_TIME_STREAMING
+</I>&gt;<i>  + * FEATURE_DCBS
+</I>&gt;<i>  + *
+</I>&gt;<i>  + * additional features
+</I>&gt;<i>  + * FEATURE_MULIT_READ
+</I>&gt;<i>  + * FEATURE_LUN_SERIAL_NO
+</I>&gt;<i>  + */
+</I>&gt;<i>  +static char *feature_profile_list(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                                 int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct profile_descriptor *p;
+</I>&gt;<i>         char *additional;
+</I>&gt;<i>  @@ -535,22 +535,22 @@ char *feature_profile_list(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>
+</I>&gt;<i>         /* version 0  always persistent, always current */
+</I>&gt;<i>         *data++ = 0x03;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         /* additional length start at 0*/
+</I>&gt;<i>         additional = data++;
+</I>&gt;<i>         *additional = 0;
+</I>&gt;<i>
+</I>&gt;<i>         /* all all profiles we support */
+</I>&gt;<i>  -       for (p=profiles;p-&gt;func;p++) {
+</I>&gt;<i>  +       for (p = profiles; p-&gt;func; p++) {
+</I>&gt;<i>                 p-&gt;func(cmd, data);
+</I>&gt;<i>                 *additional = (*additional) + 4;
+</I>&gt;<i>  -               data+=4;
+</I>&gt;<i>  +               data += 4;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_core(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_core(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -558,7 +558,7 @@ char *feature_core(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>
+</I>&gt;<i>         /* version 0  always persistent, always current */
+</I>&gt;<i>         *data++ = 0x03;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         /* additional length */
+</I>&gt;<i>         *data++ = 4;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -571,7 +571,8 @@ char *feature_core(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_morphing(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_morphing(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                             int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -583,16 +584,17 @@ char *feature_morphing(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         /* additional length */
+</I>&gt;<i>         *data++ = 4;
+</I>&gt;<i>
+</I>&gt;<i>  -       /* dont support ocevent or async */
+</I>&gt;<i>  +       /* dont support ocevent or async */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>         return data;
+</I>&gt;<i>  -}
+</I>&gt;<i>  +}
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_removable_medium(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_removable_medium(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                                     int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -605,9 +607,9 @@ char *feature_removable_medium(struct scsi_cmd *cmd, char *data, int only_curren
+</I>&gt;<i>         *data++ = 4;
+</I>&gt;<i>
+</I>&gt;<i>         /* loading mechanism:tray
+</I>&gt;<i>  -          ejectable through STARTSTOPUNIT loej
+</I>&gt;<i>  -          pvnt : PREVENTALLOWMEDIUMREMOVAL supported
+</I>&gt;<i>  -          lock : medium can be locked
+</I>&gt;<i>  +        * ejectable through STARTSTOPUNIT loej
+</I>&gt;<i>  +        * vnt : PREVENTALLOWMEDIUMREMOVAL supported
+</I>&gt;<i>  +        * lock : medium can be locked
+</I>&gt;<i>         */
+</I>&gt;<i>         *data++ = 0x29;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -619,13 +621,14 @@ char *feature_removable_medium(struct scsi_cmd *cmd, char *data, int only_curren
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_random_readable(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_random_readable(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                                    int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         int is_current;
+</I>&gt;<i>
+</I>&gt;<i>         /* this feature is only current in DVD_ROM */
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_ROM:
+</I>&gt;<i>                 is_current = 1;
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -633,9 +636,8 @@ char *feature_random_readable(struct scsi_cmd *cmd, char *data, int only_current
+</I>&gt;<i>                 is_current = 0;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (only_current)
+</I>&gt;<i>  -               if (!is_current)
+</I>&gt;<i>  -                       return data;
+</I>&gt;<i>  +       if (only_current &amp;&amp; !is_current)
+</I>&gt;<i>  +               return data;
+</I>&gt;<i>
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -655,11 +657,11 @@ char *feature_random_readable(struct scsi_cmd *cmd, char *data, int only_current
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 8;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         /* blocking is always 0x10 for dvd devices */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0x10;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         /* pp is supported */
+</I>&gt;<i>         *data++ = 0x01;
+</I>&gt;<i>
+</I>&gt;<i>  @@ -669,13 +671,14 @@ char *feature_random_readable(struct scsi_cmd *cmd, char *data, int only_current
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_dvd_read(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_dvd_read(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                             int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         int is_current;
+</I>&gt;<i>
+</I>&gt;<i>         /* this feature is only current in DVD_ROM */
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_ROM:
+</I>&gt;<i>                 is_current = 1;
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -683,9 +686,8 @@ char *feature_dvd_read(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>                 is_current = 0;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (only_current)
+</I>&gt;<i>  -               if (!is_current)
+</I>&gt;<i>  -                       return data;
+</I>&gt;<i>  +       if (only_current &amp;&amp; !is_current)
+</I>&gt;<i>  +               return data;
+</I>&gt;<i>
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -703,7 +705,8 @@ char *feature_dvd_read(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_power_management(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_power_management(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                                     int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0x01;
+</I>&gt;<i>  @@ -718,7 +721,7 @@ char *feature_power_management(struct scsi_cmd *cmd, char *data, int only_curren
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_timeout(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_timeout(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0x01;
+</I>&gt;<i>  @@ -733,13 +736,14 @@ char *feature_timeout(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                                        int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         int is_current;
+</I>&gt;<i>
+</I>&gt;<i>         /* this feature is only current in DVD_ROM */
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_ROM:
+</I>&gt;<i>                 is_current = 1;
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -747,9 +751,8 @@ char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data, int only_cur
+</I>&gt;<i>                 is_current = 0;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (only_current)
+</I>&gt;<i>  -               if (!is_current)
+</I>&gt;<i>  -                       return data;
+</I>&gt;<i>  +       if (only_current &amp;&amp; !is_current)
+</I>&gt;<i>  +               return data;
+</I>&gt;<i>
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0x01;
+</I>&gt;<i>  @@ -767,7 +770,7 @@ char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data, int only_cur
+</I>&gt;<i>         /* flags */
+</I>&gt;<i>         *data++ = 0x1f;
+</I>&gt;<i>
+</I>&gt;<i>  -       /* reserved */
+</I>&gt;<i>  +       /* reserved */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -775,13 +778,14 @@ char *feature_real_time_streaming(struct scsi_cmd *cmd, char *data, int only_cur
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                               int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         int is_current;
+</I>&gt;<i>
+</I>&gt;<i>         /* this feature is only current in DVD+R */
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>                 is_current = 1;
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -789,9 +793,8 @@ char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>                 is_current = 0;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (only_current)
+</I>&gt;<i>  -               if (!is_current)
+</I>&gt;<i>  -                       return data;
+</I>&gt;<i>  +       if (only_current &amp;&amp; !is_current)
+</I>&gt;<i>  +               return data;
+</I>&gt;<i>
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -817,7 +820,8 @@ char *feature_dvd_plus_r(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_lun_serial_no(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_lun_serial_no(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                                  int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0x01;
+</I>&gt;<i>  @@ -842,7 +846,8 @@ char *feature_lun_serial_no(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_multi_read(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_multi_read(struct scsi_cmd *cmd, char *data,
+</I>&gt;<i>  +                               int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -857,13 +862,13 @@ char *feature_multi_read(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -char *feature_dcbs(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>  +static char *feature_dcbs(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         int is_current;
+</I>&gt;<i>
+</I>&gt;<i>         /* this feature is only current in DVD+R */
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>                 is_current = 1;
+</I>&gt;<i>                 break;
+</I>&gt;<i>  @@ -871,9 +876,8 @@ char *feature_dcbs(struct scsi_cmd *cmd, char *data, int only_current)
+</I>&gt;<i>                 is_current = 0;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (only_current)
+</I>&gt;<i>  -               if (!is_current)
+</I>&gt;<i>  -                       return data;
+</I>&gt;<i>  +       if (only_current &amp;&amp; !is_current)
+</I>&gt;<i>  +               return data;
+</I>&gt;<i>
+</I>&gt;<i>         /* feature code */
+</I>&gt;<i>         *data++ = 0x01;
+</I>&gt;<i>  @@ -956,7 +960,7 @@ static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         rt = cmd-&gt;scb[1] &amp; 0x03;
+</I>&gt;<i>
+</I>&gt;<i>         start = cmd-&gt;scb[2];
+</I>&gt;<i>  -       start = (start&lt;&lt;8) | cmd-&gt;scb[3];
+</I>&gt;<i>  +       start = (start &lt;&lt; 8) | cmd-&gt;scb[3];
+</I>&gt;<i>
+</I>&gt;<i>         memset(buf, 0, sizeof(buf));
+</I>&gt;<i>         data = buf;
+</I>&gt;<i>  @@ -964,46 +968,48 @@ static int mmc_get_configuration(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         data += 4;
+</I>&gt;<i>
+</I>&gt;<i>         /* reserved */
+</I>&gt;<i>  -       *data++ = 0;
+</I>&gt;<i>  -       *data++ = 0;
+</I>&gt;<i>  +       *data++ = 0;
+</I>&gt;<i>  +       *data++ = 0;
+</I>&gt;<i>         /* current profile */
+</I>&gt;<i>  -       *data++ = (mmc-&gt;current_profile&gt;&gt;8)&amp;0xff;
+</I>&gt;<i>  -       *data++ = (mmc-&gt;current_profile   )&amp;0xff;
+</I>&gt;<i>  +       *data++ = (mmc-&gt;current_profile &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +       *data++ = mmc-&gt;current_profile &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>         /* add the features */
+</I>&gt;<i>  -       for (f=features;f-&gt;func;f++) {
+</I>&gt;<i>  +       for (f = features; f-&gt;func; f++) {
+</I>&gt;<i>                 /* only return features &gt;= the start feature */
+</I>&gt;<i>                 if (f-&gt;feature &lt; start)
+</I>&gt;<i>                         continue;
+</I>&gt;<i>                 /* if rt==2 we skip all other features except start */
+</I>&gt;<i>  -               if ( (rt==2) &amp;&amp; (f-&gt;feature!=start) )
+</I>&gt;<i>  +               if (rt == 2 &amp;&amp; f-&gt;feature != start)
+</I>&gt;<i>                         continue;
+</I>&gt;<i>
+</I>&gt;<i>  -               data = f-&gt;func(cmd, data, (rt==1)?1:0 );
+</I>&gt;<i>  +               data = f-&gt;func(cmd, data, rt == 1);
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>         tmp = data-buf;
+</I>&gt;<i>         tmp -= 4;
+</I>&gt;<i>
+</I>&gt;<i>  -       buf[0] = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -       buf[1] = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -       buf[2] = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -       buf[3] = (tmp    )&amp;0xff;
+</I>&gt;<i>  +       buf[0] = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +       buf[1] = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +       buf[2] = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +       buf[3] = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>         tmp = data-buf;
+</I>&gt;<i>
+</I>&gt;<i>         memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i>  -              min(scsi_get_in_length(cmd), (uint32_t) sizeof(buf)));
+</I>&gt;<i>  +              min_t(uint32_t, scsi_get_in_length(cmd), sizeof(buf)));
+</I>&gt;<i>
+</I>&gt;<i>         /* dont report overflow/underflow for GET CONFIGURATION */
+</I>&gt;<i>         return SAM_STAT_GOOD;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data, unsigned int lba)
+</I>&gt;<i>  +static unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>  +                                    unsigned int lba)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         unsigned long tmp;
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>                 /* track number LSB */
+</I>&gt;<i>                 *data++ = 1;
+</I>&gt;<i>  @@ -1014,7 +1020,7 @@ unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data, unsigne
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>  -               /* damage:0 copy:0 track_mode:DVD+R */
+</I>&gt;<i>  +               /* damage:0 copy:0 track_mode:DVD+R */
+</I>&gt;<i>                 *data++ = 0x07;
+</I>&gt;<i>
+</I>&gt;<i>                 /* rt:0 blank:1 packet/inc:0 fp:0 data mode:1 */
+</I>&gt;<i>  @@ -1066,7 +1072,7 @@ unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data, unsigne
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=2;
+</I>&gt;<i>  +               data += 2;
+</I>&gt;<i>
+</I>&gt;<i>                 /* read compat lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1085,7 +1091,7 @@ unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data, unsigne
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>  -               /* damage:0 copy:0 track_mode:other media */
+</I>&gt;<i>  +               /* damage:0 copy:0 track_mode:other media */
+</I>&gt;<i>                 *data++ = 0x04;
+</I>&gt;<i>
+</I>&gt;<i>                 /* rt:0 blank:0 packet/inc:0 fp:0 data mode:1 */
+</I>&gt;<i>  @@ -1120,17 +1126,17 @@ unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data, unsigne
+</I>&gt;<i>
+</I>&gt;<i>                 /* track size */
+</I>&gt;<i>                 tmp = cmd-&gt;dev-&gt;size &gt;&gt; MMC_BLK_SHIFT;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>                 /* last recorded address */
+</I>&gt;<i>                 tmp--;  /* one less */
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>                 /* track number MSB */
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>  @@ -1139,27 +1145,29 @@ unsigned char *track_type_lba(struct scsi_cmd *cmd, unsigned char *data, unsigne
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=2;
+</I>&gt;<i>  +               data += 2;
+</I>&gt;<i>
+</I>&gt;<i>                 return data;
+</I>&gt;<i>         }
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         /* we do not understand/support this profile */
+</I>&gt;<i>         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>         sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>         return NULL;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsigned int lba)
+</I>&gt;<i>  +static unsigned char *track_type_track(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                      unsigned char *data, unsigned int lba)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         unsigned long tmp;
+</I>&gt;<i>
+</I>&gt;<i>  -       switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +       switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>  -               if (lba == 0) {
+</I>&gt;<i>  +               if (!lba) {
+</I>&gt;<i>                         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>  -                       sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>  +                       sense_data_build(cmd, NOT_READY,
+</I>&gt;<i>  +                                        ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>                         return NULL;
+</I>&gt;<i>                 }
+</I>&gt;<i>
+</I>&gt;<i>  @@ -1172,7 +1180,7 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>  -               /* damage:0 copy:0 track_mode:DVD+R */
+</I>&gt;<i>  +               /* damage:0 copy:0 track_mode:DVD+R */
+</I>&gt;<i>                 *data++ = 0x07;
+</I>&gt;<i>
+</I>&gt;<i>                 /* rt:0 blank:1 packet/inc:0 fp:0 data mode:1 */
+</I>&gt;<i>  @@ -1224,7 +1232,7 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=2;
+</I>&gt;<i>  +               data += 2;
+</I>&gt;<i>
+</I>&gt;<i>                 /* read compat lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1237,7 +1245,8 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>                 /* we only have one track */
+</I>&gt;<i>                 if (lba != 1) {
+</I>&gt;<i>                         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>  -                       sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>  +                       sense_data_build(cmd, NOT_READY,
+</I>&gt;<i>  +                                        ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>                         return NULL;
+</I>&gt;<i>                 }
+</I>&gt;<i>
+</I>&gt;<i>  @@ -1250,7 +1259,7 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>  -               /* damage:0 copy:0 track_mode:other media */
+</I>&gt;<i>  +               /* damage:0 copy:0 track_mode:other media */
+</I>&gt;<i>                 *data++ = 0x04;
+</I>&gt;<i>
+</I>&gt;<i>                 /* rt:0 blank:0 packet/inc:0 fp:0 data mode:1 */
+</I>&gt;<i>  @@ -1285,17 +1294,17 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>
+</I>&gt;<i>                 /* track size */
+</I>&gt;<i>                 tmp = cmd-&gt;dev-&gt;size &gt;&gt; MMC_BLK_SHIFT;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>                 /* last recorded address */
+</I>&gt;<i>                 tmp--;  /* one less */
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               *data++ = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               *data++ = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>                 /* track number MSB */
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>  @@ -1304,11 +1313,11 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=2;
+</I>&gt;<i>  +               data += 2;
+</I>&gt;<i>
+</I>&gt;<i>                 return data;
+</I>&gt;<i>         }
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         /* we do not understand/support this profile */
+</I>&gt;<i>         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>         sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>  @@ -1321,7 +1330,8 @@ unsigned char *track_type_track(struct scsi_cmd *cmd, unsigned char *data, unsig
+</I>&gt;<i>
+</I>&gt;<i>   struct track_type {
+</I>&gt;<i>         int type;
+</I>&gt;<i>  -       unsigned char *(*func)(struct scsi_cmd *cmd, unsigned char *data, unsigned int lba);
+</I>&gt;<i>  +       unsigned char *(*func)(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>  +                              unsigned int lba);
+</I>&gt;<i>   };
+</I>&gt;<i>   struct track_type track_types[] = {
+</I>&gt;<i>         {TRACK_INFO_LBA,     track_type_lba},
+</I>&gt;<i>  @@ -1354,23 +1364,22 @@ static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         memset(buf, 0, sizeof(buf));
+</I>&gt;<i>         data = &amp;buf[2];
+</I>&gt;<i>
+</I>&gt;<i>  -       for(t=track_types;t-&gt;func;t++){
+</I>&gt;<i>  +       for (t = track_types; t-&gt;func; t++) {
+</I>&gt;<i>                 int tmp;
+</I>&gt;<i>
+</I>&gt;<i>  -               if (t-&gt;type != type) {
+</I>&gt;<i>  +               if (t-&gt;type != type)
+</I>&gt;<i>                         continue;
+</I>&gt;<i>  -               }
+</I>&gt;<i>  +
+</I>&gt;<i>                 data = t-&gt;func(cmd, data, lba);
+</I>&gt;<i>  -               if (data == NULL) {
+</I>&gt;<i>  +
+</I>&gt;<i>  +               if (!data)
+</I>&gt;<i>                         return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  -               }
+</I>&gt;<i>
+</I>&gt;<i>                 tmp = data-&amp;buf[2];
+</I>&gt;<i>  -               buf[0] = (tmp&gt;&gt;8)&amp;0xff;
+</I>&gt;<i>  -               buf[1] = (tmp   )&amp;0xff;
+</I>&gt;<i>  +               buf[0] = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               buf[1] = tmp &amp; 0xff;
+</I>&gt;<i>                 memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i>  -                       min(scsi_get_in_length(cmd),
+</I>&gt;<i>  -                               (uint32_t) sizeof(buf)));
+</I>&gt;<i>  +                      min_t(uint32_t, scsi_get_in_length(cmd), sizeof(buf)));
+</I>&gt;<i>                 return SAM_STAT_GOOD;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  @@ -1379,7 +1388,7 @@ static int mmc_read_track_information(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>         return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>   }
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>   static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>  @@ -1403,7 +1412,7 @@ static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                 /* data length */
+</I>&gt;<i>                 buf[0] = 0x00;
+</I>&gt;<i>                 buf[1] = 0x0a;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>                 /* 4096 blocks */
+</I>&gt;<i>                 tmp = 0x1000;
+</I>&gt;<i>                 if (!blocks) {
+</I>&gt;<i>  @@ -1412,21 +1421,21 @@ static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                 }
+</I>&gt;<i>
+</I>&gt;<i>                 /* length of buffer */
+</I>&gt;<i>  -               buf[4]  = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               buf[5]  = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               buf[6] = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               buf[7] = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               buf[4] = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               buf[5] = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               buf[6] = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               buf[7] = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>                 /* available length of buffer (always half) */
+</I>&gt;<i>                 tmp = tmp &gt;&gt; 1;
+</I>&gt;<i>  -               buf[8]  = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               buf[9]  = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               buf[10] = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               buf[11] = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               buf[8]  = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               buf[9]  = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               buf[10] = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               buf[11] = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>  -               memcpy(scsi_get_in_buffer(cmd), &amp;buf[0],
+</I>&gt;<i>  +               memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i>                        min(scsi_get_in_length(cmd), (uint32_t) sizeof(buf)));
+</I>&gt;<i>  -               scsi_set_in_resid_by_actual(cmd, buf[1]+2);
+</I>&gt;<i>  +               scsi_set_in_resid_by_actual(cmd, buf[1] + 2);
+</I>&gt;<i>                 return SAM_STAT_GOOD;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  @@ -1438,7 +1447,7 @@ static int mmc_read_buffer_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>   static int mmc_synchronize_cache(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         if (mmc-&gt;current_profile == PROFILE_NO_PROFILE) {
+</I>&gt;<i>                 scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>                 sense_data_build(cmd, NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+</I>&gt;<i>  @@ -1448,14 +1457,17 @@ static int mmc_synchronize_cache(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         return SAM_STAT_GOOD;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data, unsigned int type, unsigned int data_type)
+</I>&gt;<i>  +static unsigned char *perf_type_write_speed(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                           unsigned char *data,
+</I>&gt;<i>  +                                           unsigned int type,
+</I>&gt;<i>  +                                           unsigned int data_type)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>
+</I>&gt;<i>         /* write/except */
+</I>&gt;<i>         *data++ = 0x00;
+</I>&gt;<i>
+</I>&gt;<i>  -       data+=3;
+</I>&gt;<i>  +       data += 3;
+</I>&gt;<i>
+</I>&gt;<i>         switch (mmc-&gt;current_profile) {
+</I>&gt;<i>         case PROFILE_NO_PROFILE:
+</I>&gt;<i>  @@ -1464,7 +1476,7 @@ unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=3;
+</I>&gt;<i>  +               data += 3;
+</I>&gt;<i>
+</I>&gt;<i>                 /* end lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1489,7 +1501,7 @@ unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=3;
+</I>&gt;<i>  +               data += 3;
+</I>&gt;<i>
+</I>&gt;<i>                 /* end lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1517,7 +1529,7 @@ unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>                 *data++ = 0x01;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=3;
+</I>&gt;<i>  +               data += 3;
+</I>&gt;<i>
+</I>&gt;<i>                 /* end lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1545,7 +1557,7 @@ unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=3;
+</I>&gt;<i>  +               data += 3;
+</I>&gt;<i>
+</I>&gt;<i>                 /* end lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1570,7 +1582,7 @@ unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=3;
+</I>&gt;<i>  +               data += 3;
+</I>&gt;<i>
+</I>&gt;<i>                 /* end lba */
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  @@ -1600,7 +1612,10 @@ unsigned char *perf_type_write_speed(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>         return NULL;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *perf_type_perf_data(struct scsi_cmd *cmd, unsigned char *data, unsigned int type, unsigned int data_type)
+</I>&gt;<i>  +static unsigned char *perf_type_perf_data(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                         unsigned char *data,
+</I>&gt;<i>  +                                         unsigned int type,
+</I>&gt;<i>  +                                         unsigned int data_type)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         int tolerance;
+</I>&gt;<i>  @@ -1608,9 +1623,9 @@ unsigned char *perf_type_perf_data(struct scsi_cmd *cmd, unsigned char *data, un
+</I>&gt;<i>         int except;
+</I>&gt;<i>         long tmp;
+</I>&gt;<i>
+</I>&gt;<i>  -       tolerance  = (data_type&gt;&gt;3)&amp;0x03;
+</I>&gt;<i>  -       write_flag = (data_type&gt;&gt;2)&amp;0x01;
+</I>&gt;<i>  -       except     = data_type&amp;0x03;
+</I>&gt;<i>  +       tolerance  = (data_type &gt;&gt; 3) &amp; 0x03;
+</I>&gt;<i>  +       write_flag = (data_type &gt;&gt; 2) &amp; 0x01;
+</I>&gt;<i>  +       except = data_type &amp; 0x03;
+</I>&gt;<i>
+</I>&gt;<i>         /* all other values for tolerance are reserved */
+</I>&gt;<i>         if (tolerance != 0x02) {
+</I>&gt;<i>  @@ -1619,14 +1634,14 @@ unsigned char *perf_type_perf_data(struct scsi_cmd *cmd, unsigned char *data, un
+</I>&gt;<i>                 return NULL;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       switch(except){
+</I>&gt;<i>  +       switch (except) {
+</I>&gt;<i>         case 1:
+</I>&gt;<i>         case 2:
+</I>&gt;<i>                 /* write/except */
+</I>&gt;<i>                 *data++ = 0x01;
+</I>&gt;<i>
+</I>&gt;<i>                 /* reserved */
+</I>&gt;<i>  -               data+=3;
+</I>&gt;<i>  +               data += 3;
+</I>&gt;<i>
+</I>&gt;<i>                 /* no actual descriptor returned here */
+</I>&gt;<i>                 return data;
+</I>&gt;<i>  @@ -1638,14 +1653,13 @@ unsigned char *perf_type_perf_data(struct scsi_cmd *cmd, unsigned char *data, un
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>         /* write/except */
+</I>&gt;<i>  -       if (write_flag) {
+</I>&gt;<i>  +       if (write_flag)
+</I>&gt;<i>                 *data++ = 0x02;
+</I>&gt;<i>  -       } else {
+</I>&gt;<i>  +       else
+</I>&gt;<i>                 *data++ = 0x00;
+</I>&gt;<i>  -       }
+</I>&gt;<i>
+</I>&gt;<i>         /* reserved */
+</I>&gt;<i>  -       data+=3;
+</I>&gt;<i>  +       data += 3;
+</I>&gt;<i>
+</I>&gt;<i>         /* start lba */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  @@ -1666,11 +1680,12 @@ unsigned char *perf_type_perf_data(struct scsi_cmd *cmd, unsigned char *data, un
+</I>&gt;<i>                 break;
+</I>&gt;<i>         default:
+</I>&gt;<i>                 tmp = 0x23053f;
+</I>&gt;<i>  -       }
+</I>&gt;<i>  -       *data++ = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -       *data++ = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -       *data++ = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -       *data++ = (tmp    )&amp;0xff;
+</I>&gt;<i>  +       }
+</I>&gt;<i>  +
+</I>&gt;<i>  +       *data++ = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +       *data++ = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +       *data++ = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +       *data++ = tmp &amp; 0xff;
+</I>&gt;<i>
+</I>&gt;<i>         /* end performance */
+</I>&gt;<i>         *data++ = 0x00;
+</I>&gt;<i>  @@ -1685,7 +1700,8 @@ unsigned char *perf_type_perf_data(struct scsi_cmd *cmd, unsigned char *data, un
+</I>&gt;<i>   #define PERF_TYPE_WRITE_SPEED          0x03
+</I>&gt;<i>   struct perf_type {
+</I>&gt;<i>         int type;
+</I>&gt;<i>  -       unsigned char *(*func)(struct scsi_cmd *cmd, unsigned char *data, unsigned int type, unsigned int data_type);
+</I>&gt;<i>  +       unsigned char *(*func)(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>  +                              unsigned int type, unsigned int data_type);
+</I>&gt;<i>   };
+</I>&gt;<i>   struct perf_type perf_types[] = {
+</I>&gt;<i>         {PERF_TYPE_PERF_DATA, perf_type_perf_data},
+</I>&gt;<i>  @@ -1718,25 +1734,23 @@ static int mmc_get_performance(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>
+</I>&gt;<i>         type = cmd-&gt;scb[10];
+</I>&gt;<i>
+</I>&gt;<i>  -       for (p=perf_types;p-&gt;func;p++) {
+</I>&gt;<i>  +       for (p = perf_types; p-&gt;func; p++) {
+</I>&gt;<i>                 int tmp;
+</I>&gt;<i>
+</I>&gt;<i>  -               if (p-&gt;type != type) {
+</I>&gt;<i>  +               if (p-&gt;type != type)
+</I>&gt;<i>                         continue;
+</I>&gt;<i>  -               }
+</I>&gt;<i>  +
+</I>&gt;<i>                 data = p-&gt;func(cmd, data, type, data_type);
+</I>&gt;<i>  -               if (data == NULL) {
+</I>&gt;<i>  +               if (!data)
+</I>&gt;<i>                         return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  -               }
+</I>&gt;<i>
+</I>&gt;<i>                 tmp = data-&amp;buf[4];
+</I>&gt;<i>  -               buf[0] = (tmp&gt;&gt;24)&amp;0xff;
+</I>&gt;<i>  -               buf[1] = (tmp&gt;&gt;16)&amp;0xff;
+</I>&gt;<i>  -               buf[2] = (tmp&gt;&gt; 8)&amp;0xff;
+</I>&gt;<i>  -               buf[3] = (tmp    )&amp;0xff;
+</I>&gt;<i>  +               buf[0] = (tmp &gt;&gt; 24) &amp; 0xff;
+</I>&gt;<i>  +               buf[1] = (tmp &gt;&gt; 16) &amp; 0xff;
+</I>&gt;<i>  +               buf[2] = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +               buf[3] = tmp &amp; 0xff;
+</I>&gt;<i>                 memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i>  -                       min(scsi_get_in_length(cmd),
+</I>&gt;<i>  -                               (uint32_t) sizeof(buf)));
+</I>&gt;<i>  +                      min_t(uint32_t, scsi_get_in_length(cmd), sizeof(buf)));
+</I>&gt;<i>                 return SAM_STAT_GOOD;
+</I>&gt;<i>
+</I>&gt;<i>         }
+</I>&gt;<i>  @@ -1752,14 +1766,14 @@ static int mmc_set_streaming(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         return SAM_STAT_GOOD;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -
+</I>&gt;<i>   #define DVD_FORMAT_PHYS_INFO           0x00
+</I>&gt;<i>   #define DVD_FORMAT_DVD_COPYRIGHT_INFO  0x01
+</I>&gt;<i>   #define DVD_FORMAT_ADIP_INFO           0x11
+</I>&gt;<i>   #define DVD_FORMAT_DVD_STRUCTURE_LIST  0xff
+</I>&gt;<i>
+</I>&gt;<i>  -
+</I>&gt;<i>  -unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd, unsigned char *data, int format, int layer, int write_header)
+</I>&gt;<i>  +static unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                          unsigned char *data, int format,
+</I>&gt;<i>  +                                          int layer, int write_header)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>         unsigned char *old_data;
+</I>&gt;<i>  @@ -1772,7 +1786,7 @@ unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd, unsigned char *data, i
+</I>&gt;<i>                 return data;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (layer != 0) {
+</I>&gt;<i>  +       if (layer) {
+</I>&gt;<i>                 /* we only support single layer disks */
+</I>&gt;<i>                 scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>                 sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>  @@ -1816,8 +1830,7 @@ unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd, unsigned char *data, i
+</I>&gt;<i>                 *data++ = 0;
+</I>&gt;<i>
+</I>&gt;<i>                 /* just leave the media specific area as 0 */
+</I>&gt;<i>  -               data+=2031;
+</I>&gt;<i>  -
+</I>&gt;<i>  +               data += 2031;
+</I>&gt;<i>                 break;
+</I>&gt;<i>         case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>                 /* book type DVD+R, part version */
+</I>&gt;<i>  @@ -1897,7 +1910,7 @@ unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd, unsigned char *data, i
+</I>&gt;<i>                 *data++ = 0x00; *data++ = 0x00; *data++ = 0x00; *data++ = 0x00;
+</I>&gt;<i>                 *data++ = 0x00; *data++ = 0x00; *data++ = 0x00;
+</I>&gt;<i>
+</I>&gt;<i>  -               data=old_data+2031;
+</I>&gt;<i>  +               data = old_data + 2031;
+</I>&gt;<i>
+</I>&gt;<i>                 break;
+</I>&gt;<i>         default:
+</I>&gt;<i>  @@ -1909,13 +1922,15 @@ unsigned char *dvd_format_phys_info(struct scsi_cmd *cmd, unsigned char *data, i
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *dvd_format_adip_info(struct scsi_cmd *cmd, unsigned char *data, int format, int layer, int write_header)
+</I>&gt;<i>  +static unsigned char *dvd_format_adip_info(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                          unsigned char *data, int format,
+</I>&gt;<i>  +                                          int layer, int write_header)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct mmc_info *mmc = (struct mmc_info *)cmd-&gt;dev-&gt;mmc_p;
+</I>&gt;<i>
+</I>&gt;<i>         if (write_header) {
+</I>&gt;<i>                 *data++ = DVD_FORMAT_ADIP_INFO;
+</I>&gt;<i>  -               switch(mmc-&gt;current_profile){
+</I>&gt;<i>  +               switch (mmc-&gt;current_profile) {
+</I>&gt;<i>                 case PROFILE_DVD_PLUS_R:
+</I>&gt;<i>                         *data++ = 0x40; /* readable */
+</I>&gt;<i>                         break;
+</I>&gt;<i>  @@ -2006,7 +2021,10 @@ unsigned char *dvd_format_adip_info(struct scsi_cmd *cmd, unsigned char *data, i
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *dvd_format_copyright_info(struct scsi_cmd *cmd, unsigned char *data, int format, int layer, int write_header)
+</I>&gt;<i>  +static unsigned char *dvd_format_copyright_info(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                               unsigned char *data,
+</I>&gt;<i>  +                                               int format, int layer,
+</I>&gt;<i>  +                                               int write_header)
+</I>&gt;<i>   {
+</I>&gt;<i>         if (write_header) {
+</I>&gt;<i>                 *data++ = DVD_FORMAT_DVD_COPYRIGHT_INFO;
+</I>&gt;<i>  @@ -2016,7 +2034,7 @@ unsigned char *dvd_format_copyright_info(struct scsi_cmd *cmd, unsigned char *da
+</I>&gt;<i>                 return data;
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>  -       if (layer != 0) {
+</I>&gt;<i>  +       if (layer) {
+</I>&gt;<i>                 /* we only support single layer disks */
+</I>&gt;<i>                 scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>                 sense_data_build(cmd, NOT_READY, ASC_INVALID_FIELD_IN_CDB);
+</I>&gt;<i>  @@ -2032,16 +2050,21 @@ unsigned char *dvd_format_copyright_info(struct scsi_cmd *cmd, unsigned char *da
+</I>&gt;<i>         /* reserved */
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>         *data++ = 0;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         return data;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *dvd_format_dvd_structure_list(struct scsi_cmd *cmd, unsigned char *data, int format, int layer, int write_header);
+</I>&gt;<i>  -
+</I>&gt;<i>  +static unsigned char *dvd_format_dvd_structure_list(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                                   unsigned char *data,
+</I>&gt;<i>  +                                                   int format,
+</I>&gt;<i>  +                                                   int layer,
+</I>&gt;<i>  +                                                   int write_header);
+</I>&gt;<i>   struct dvd_format {
+</I>&gt;<i>         int format;
+</I>&gt;<i>  -       unsigned char *(*func)(struct scsi_cmd *cmd, unsigned char *data, int format, int layer, int write_header);
+</I>&gt;<i>  +       unsigned char *(*func)(struct scsi_cmd *cmd, unsigned char *data,
+</I>&gt;<i>  +                              int format, int layer, int write_header);
+</I>&gt;<i>   };
+</I>&gt;<i>  +
+</I>&gt;<i>   struct dvd_format dvd_formats[] = {
+</I>&gt;<i>         {DVD_FORMAT_PHYS_INFO,          dvd_format_phys_info},
+</I>&gt;<i>         {DVD_FORMAT_DVD_COPYRIGHT_INFO, dvd_format_copyright_info},
+</I>&gt;<i>  @@ -2050,20 +2073,22 @@ struct dvd_format dvd_formats[] = {
+</I>&gt;<i>         {0, NULL}
+</I>&gt;<i>   };
+</I>&gt;<i>
+</I>&gt;<i>  -unsigned char *dvd_format_dvd_structure_list(struct scsi_cmd *cmd, unsigned char *data, int format, int layer, int write_header)
+</I>&gt;<i>  +static unsigned char *dvd_format_dvd_structure_list(struct scsi_cmd *cmd,
+</I>&gt;<i>  +                                                   unsigned char *data,
+</I>&gt;<i>  +                                                   int format,
+</I>&gt;<i>  +                                                   int layer, int write_header)
+</I>&gt;<i>   {
+</I>&gt;<i>         struct dvd_format *f;
+</I>&gt;<i>
+</I>&gt;<i>         /* list all format headers */
+</I>&gt;<i>  -       for (f=dvd_formats;f-&gt;func;f++) {
+</I>&gt;<i>  +       for (f = dvd_formats; f-&gt;func; f++) {
+</I>&gt;<i>                 /* we dont report ourself back in the format list */
+</I>&gt;<i>                 if (f-&gt;format == 0xff)
+</I>&gt;<i>                         continue;
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>                 data = f-&gt;func(cmd, data, format, layer, 1);
+</I>&gt;<i>  -               if (data == NULL) {
+</I>&gt;<i>  +               if (!data)
+</I>&gt;<i>                         return NULL;
+</I>&gt;<i>  -               }
+</I>&gt;<i>         }
+</I>&gt;<i>
+</I>&gt;<i>         return data;
+</I>&gt;<i>  @@ -2094,24 +2119,23 @@ static int mmc_read_dvd_structure(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>         memset(buf, 0, sizeof(buf));
+</I>&gt;<i>         data = &amp;buf[4];
+</I>&gt;<i>
+</I>&gt;<i>  -       for (f=dvd_formats;f-&gt;func;f++) {
+</I>&gt;<i>  +       for (f = dvd_formats; f-&gt;func; f++) {
+</I>&gt;<i>                 if (f-&gt;format == format) {
+</I>&gt;<i>                         int tmp;
+</I>&gt;<i>
+</I>&gt;<i>                         data = f-&gt;func(cmd, data, format, layer, 0);
+</I>&gt;<i>  -                       if (data == NULL) {
+</I>&gt;<i>  +                       if (!data)
+</I>&gt;<i>                                 return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  -                       }
+</I>&gt;<i>
+</I>&gt;<i>  -                       tmp = data-buf;
+</I>&gt;<i>  +                       tmp = data - buf;
+</I>&gt;<i>                         tmp -= 2;
+</I>&gt;<i>  -                       buf[0] = (tmp&gt;&gt;8)&amp;0xff;
+</I>&gt;<i>  -                       buf[1] = (tmp   )&amp;0xff;
+</I>&gt;<i>  +                       buf[0] = (tmp &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i>  +                       buf[1] = tmp &amp; 0xff;
+</I>&gt;<i>                         buf[2] = 0;
+</I>&gt;<i>                         buf[3] = 0;
+</I>&gt;<i>                         memcpy(scsi_get_in_buffer(cmd), buf,
+</I>&gt;<i>  -                               min(scsi_get_in_length(cmd),
+</I>&gt;<i>  -                                       (uint32_t) sizeof(buf)));
+</I>&gt;<i>  +                              min_t(uint32_t,
+</I>&gt;<i>  +                                    scsi_get_in_length(cmd), sizeof(buf)));
+</I>&gt;<i>                         return SAM_STAT_GOOD;
+</I>&gt;<i>                 }
+</I>&gt;<i>         }
+</I>&gt;<i>  @@ -2137,7 +2161,7 @@ static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i>         struct mmc_info *mmc;
+</I>&gt;<i>
+</I>&gt;<i>         mmc = zalloc(sizeof(struct mmc_info));
+</I>&gt;<i>  -       if (mmc == NULL)
+</I>&gt;<i>  +       if (!mmc)
+</I>&gt;<i>                 return -ENOMEM;
+</I>&gt;<i>
+</I>&gt;<i>         lu-&gt;mmc_p = mmc;
+</I>&gt;<i>  @@ -2153,7 +2177,8 @@ static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i>         }
+</I>&gt;<i>         lu-&gt;bst = bst;
+</I>&gt;<i>
+</I>&gt;<i>  -       strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CDROM&quot;, sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i>  +       strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CDROM&quot;,
+</I>&gt;<i>  +               sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i>         lu-&gt;attrs.sense_format = 0;
+</I>&gt;<i>         lu-&gt;attrs.version_desc[0] = 0x02A0; /* MMC3, no version claimed */
+</I>&gt;<i>         lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+</I>&gt;<i>  @@ -2198,23 +2223,21 @@ static int mmc_lu_online(struct scsi_lu *lu)
+</I>&gt;<i>
+</I>&gt;<i>         mmc-&gt;current_profile = PROFILE_NO_PROFILE;
+</I>&gt;<i>
+</I>&gt;<i>  -       if (lu-&gt;fd == -1) {
+</I>&gt;<i>  +       if (lu-&gt;fd == -1)
+</I>&gt;<i>                 return TGTADM_INVALID_REQUEST;
+</I>&gt;<i>  -       }
+</I>&gt;<i>
+</I>&gt;<i>         lu-&gt;attrs.online = 1;
+</I>&gt;<i>
+</I>&gt;<i>  -       if (stat(lu-&gt;path, &amp;st) != 0) {
+</I>&gt;<i>  +       if (stat(lu-&gt;path, &amp;st)) {
+</I>&gt;<i>                 mmc-&gt;current_profile = PROFILE_NO_PROFILE;
+</I>&gt;<i>                 lu-&gt;attrs.online = 0;
+</I>&gt;<i>         } else {
+</I>&gt;<i>  -               if (st.st_size == 0) {
+</I>&gt;<i>  +               if (!st.st_size)
+</I>&gt;<i>                         mmc-&gt;current_profile = PROFILE_DVD_PLUS_R;
+</I>&gt;<i>  -               } else {
+</I>&gt;<i>  +               else
+</I>&gt;<i>                         mmc-&gt;current_profile = PROFILE_DVD_ROM;
+</I>&gt;<i>  -               }
+</I>&gt;<i>         }
+</I>&gt;<i>  -
+</I>&gt;<i>  +
+</I>&gt;<i>         return 0;
+</I>&gt;<i>   }
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001566.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+	<LI>Next message: <A HREF="001568.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable	DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1567">[ date ]</a>
+              <a href="thread.html#1567">[ thread ]</a>
+              <a href="subject.html#1567">[ subject ]</a>
+              <a href="author.html#1567">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

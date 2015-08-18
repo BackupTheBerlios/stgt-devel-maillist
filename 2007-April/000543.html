@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio - rdma error
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070407013857S.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000542.html">
+   <LINK REL="Next"  HREF="000544.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio - rdma error</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070407013857S.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] ibmvio - rdma error">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Apr  6 18:38:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000542.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+        <LI>Next message: <A HREF="000544.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#543">[ date ]</a>
+              <a href="thread.html#543">[ thread ]</a>
+              <a href="subject.html#543">[ subject ]</a>
+              <a href="author.html#543">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">waldi at berlios.de</A>&gt;
+Subject: Re: [Stgt-devel] ibmvio - rdma error
+Date: Fri, 6 Apr 2007 18:13:05 +0200
+
+&gt;<i> On Sat, Apr 07, 2007 at 12:36:04AM +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; diff --git a/drivers/scsi/ibmvscsi/ibmvstgt.c b/drivers/scsi/ibmvscsi/ibmvstgt.c
+</I>&gt;<i> &gt; index a7fbd10..46f9ca1 100644
+</I>&gt;<i> &gt; --- a/drivers/scsi/ibmvscsi/ibmvstgt.c
+</I>&gt;<i> &gt; +++ b/drivers/scsi/ibmvscsi/ibmvstgt.c
+</I>&gt;<i> &gt; @@ -35,7 +35,7 @@
+</I>&gt;<i> &gt;  #include &quot;ibmvscsi.h&quot;
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt;  #define	INITIAL_SRP_LIMIT	16
+</I>&gt;<i> &gt; -#define	DEFAULT_MAX_SECTORS	512
+</I>&gt;<i> &gt; +#define	DEFAULT_MAX_SECTORS	128
+</I>&gt;<i> 
+</I>&gt;<i> 256, not 128.
+</I>
+Are you sure 256 should work though it seems to work? We know 128
+works. If you definitely sure (e.g. you read the IBM document), I'm
+happy to use 256.
+
+
+&gt;<i> &gt; -	if (sc-&gt;result != SAM_STAT_GOOD) {
+</I>&gt;<i> &gt; +	if (err|| sc-&gt;result != SAM_STAT_GOOD) {
+</I>&gt;<i> 
+</I>&gt;<i> coding style?
+</I>&gt;<i> 
+</I>&gt;<i> &gt; @@ -508,7 +509,6 @@ static void process_iu(struct viosrp_crq *crq, struct srp_target *target)
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt;  	if (err != H_SUCCESS) {
+</I>&gt;<i> &gt;  		eprintk(&quot;%ld transferring data error %p\n&quot;, err, iue);
+</I>&gt;<i> &gt; -		done = 1;
+</I>&gt;<i> &gt;  		goto out;
+</I>&gt;<i> &gt;  	}
+</I>&gt;<i> 
+</I>&gt;<i> Replace that with:
+</I>&gt;<i>         if (err != H_SUCCESS) 
+</I>&gt;<i>                 eprintk(&quot;%ld transferring data error %p\n&quot;, err, iue);
+</I>&gt;<i>         else if (crq-&gt;format == VIOSRP_MAD_FORMAT)
+</I>&gt;<i>                 done = process_mad_iu(iue);
+</I>&gt;<i>         else
+</I>&gt;<i>                 done = process_srp_iu(iue);
+</I>&gt;<i> 
+</I>&gt;<i>         if (done)
+</I>&gt;<i>                 srp_iu_put(iue);
+</I>&gt;<i> 
+</I>&gt;<i> No more goto.
+</I>
+I think that using goto for an error path is common in Linux kernel
+(and simple).
+
+
+&gt;<i> Revised patch attached.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bastian at waldi.eu.org</A>&gt;
+</I>
+OK, thanks.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000542.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+	<LI>Next message: <A HREF="000544.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#543">[ date ]</a>
+              <a href="thread.html#543">[ thread ]</a>
+              <a href="subject.html#543">[ subject ]</a>
+              <a href="author.html#543">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

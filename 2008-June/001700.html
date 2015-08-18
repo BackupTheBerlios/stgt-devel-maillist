@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disabling write cache?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disabling%20write%20cache%3F&In-Reply-To=%3Cf29db9a80806242104o1554f9ffw794a3ee56b125482%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001699.html">
+   <LINK REL="Next"  HREF="001701.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disabling write cache?</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disabling%20write%20cache%3F&In-Reply-To=%3Cf29db9a80806242104o1554f9ffw794a3ee56b125482%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] disabling write cache?">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jun 25 06:04:53 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001699.html">[Stgt-devel] disabling write cache?
+</A></li>
+        <LI>Next message: <A HREF="001701.html">[Stgt-devel] disabling write cache?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1700">[ date ]</a>
+              <a href="thread.html#1700">[ thread ]</a>
+              <a href="subject.html#1700">[ subject ]</a>
+              <a href="author.html#1700">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Re: <A HREF="http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch">http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch</A>
+
+So thats where it is...
+
+I've been scratching my head over this for ages.
+This (sending sense data on SAM_STAT_GOOD)
+
+On Wed, Jun 25, 2008 at 12:10 PM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Thu, 19 Jun 2008 13:54:15 +0200
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;&gt;<i> Is there a way to disable write caching when using tgtd as a target?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Right now, it seems to be impossible (at least I didn't find an option
+</I>&gt;&gt;<i> in documentation nor sources) and setting it on the initiator fails:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> initiator# sdparm /dev/sda
+</I>&gt;&gt;<i>      /dev/sda: IET       VIRTUAL-DISK  0001
+</I>&gt;&gt;<i> Caching (SBC) mode page:
+</I>&gt;&gt;<i>    WCE         1  [cha: y, def:  1, sav:  1]
+</I>&gt;&gt;<i>    RCD         0  [cha: n, def:  0, sav:  0]
+</I>&gt;&gt;<i> (...)
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> initiator# sdparm --set WCE=0 /dev/sda
+</I>&gt;&gt;<i>      /dev/sda: IET       VIRTUAL-DISK  0001
+</I>&gt;&gt;<i> change_mode_page: failed setting page: Caching (SBC)
+</I>&gt;<i>
+</I>&gt;<i> I've uploaded two patches:
+</I>&gt;<i>
+</I>&gt;<i> <A HREF="http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch">http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch</A>
+</I>&gt;<i> <A HREF="http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch">http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch</A>
+</I>&gt;<i>
+</I>&gt;<i> With the patches, you can disable write caching in the following way:
+</I>&gt;<i>
+</I>&gt;<i> tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+</I>&gt;<i>
+</I>&gt;<i> Note that you need to modify tid and lun in your environment.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Shortly, I'll let you control write caching via sdparm too.
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001699.html">[Stgt-devel] disabling write cache?
+</A></li>
+	<LI>Next message: <A HREF="001701.html">[Stgt-devel] disabling write cache?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1700">[ date ]</a>
+              <a href="thread.html#1700">[ thread ]</a>
+              <a href="subject.html#1700">[ subject ]</a>
+              <a href="author.html#1700">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

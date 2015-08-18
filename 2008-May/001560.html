@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Ips] [ofa-general] Re: Calculating the	VA	iniSER	header
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIps%5D%20%5Bofa-general%5D%20Re%3A%20Calculating%20the%0A%09VA%09iniSER%09header&In-Reply-To=%3CBLU117-W9F1A35C1D34824D30AA0DD7DB0%40phx.gbl%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001562.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Ips] [ofa-general] Re: Calculating the	VA	iniSER	header</H1>
+    <B>Ken Sandars</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIps%5D%20%5Bofa-general%5D%20Re%3A%20Calculating%20the%0A%09VA%09iniSER%09header&In-Reply-To=%3CBLU117-W9F1A35C1D34824D30AA0DD7DB0%40phx.gbl%3E"
+       TITLE="[Stgt-devel] [Ips] [ofa-general] Re: Calculating the	VA	iniSER	header">kensandars at hotmail.com
+       </A><BR>
+    <I>Thu May  1 10:24:15 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001562.html">[Stgt-devel] [Ips] [ofa-general] Re: Calculating the VA iniSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1560">[ date ]</a>
+              <a href="thread.html#1560">[ thread ]</a>
+              <a href="subject.html#1560">[ subject ]</a>
+              <a href="author.html#1560">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;&gt;<i> [Ken] It appears the current Linux iSER initiator does not send the HELLO message when
+</I>&gt;&gt;<i> the connection transits to full feature phase. The stgt target also ignores this
+</I>&gt;&gt;<i> message (if it were to appear). 
+</I>[Ken] The IBTA document does not mention the HELLO/HELLOREPLY messages.
+Implementing this message exchange gives a distinction between the current implementations
+and those that will correctly calculate the write_va (as per Pete Wyckoff's option 3).
+
+&gt;&gt;<i> [Ken] Both of these implementations use a non-conformant iSER header (they add
+</I>&gt;&gt;<i> write_va and read_va fields, which incidentally do not appear to be used). Are
+</I>&gt;&gt;<i> these changes documented anywhere in the IB domain, or are these variations
+</I>&gt;&gt;<i> needed for another reason?
+</I>&gt;<i>
+</I>&gt;<i> [Erez] Take a look at the iSER for IB annex:
+</I>&gt;<i> <A HREF="http://www.infinibandta.org/members/spec/Annex_iSER.PDF">http://www.infinibandta.org/members/spec/Annex_iSER.PDF</A>
+</I>
+[Ken] Ouch. That link requires a username/password. Looks like it is only available to members
+of the Infiniband Trade Association. Fortunately I gained access to it with username &quot;open&quot; and
+password &quot;standard&quot;. ;-)
+
+[Ken] Neither of these implementations send or examine the iSER CM REQ/REP message private
+data. The document doesn't define what action to take when this message is absent. Interestingly,
+when the target reports that &quot;ZBVA shall be used for this connection&quot; and &quot;the target shall issue
+Send with Invalidate as needed&quot; then it appears the iSER header specified in RFC5046 should be
+used for control-type PDUs. Is there any plan to conform with the list of requirements for IBTA
+compliance?
+
+
+Cheers,
+Ken
+
+_________________________________________________________________
+Never miss another e-mail with Hotmail on your mobile.
+<A HREF="http://www.livelife.ninemsn.com.au/article.aspx?id=343869">http://www.livelife.ninemsn.com.au/article.aspx?id=343869</A>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080501/260f357e/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080501/260f357e/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001562.html">[Stgt-devel] [Ips] [ofa-general] Re: Calculating the VA iniSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1560">[ date ]</a>
+              <a href="thread.html#1560">[ thread ]</a>
+              <a href="subject.html#1560">[ subject ]</a>
+              <a href="author.html#1560">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

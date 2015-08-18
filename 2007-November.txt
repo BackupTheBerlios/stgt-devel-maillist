@@ -1,0 +1,3133 @@
+From albert.pauw at gmail.com  Sat Nov  3 10:35:45 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Sat, 03 Nov 2007 10:35:45 +0100
+Subject: [Stgt-devel] Ideas on more flexible cd handling
+Message-ID: <472C40F1.5090906@gmail.com>
+
+At the moment it is possible to export a CD iso through tgt but it is 
+not very flexible.
+
+What I would like to see is that an eject command on the initiator side
+"ejects" the iso image on the tgt side, effectively replacing the cd iso 
+image by /dev/null or /dev/zero on the backing store. On the initiator 
+side it looks like no cd is inserted now. When, at the target side, I 
+add again a backing store (a new iso cd image) to the cd LUN it will 
+send a CD inserted message up to the initiator.
+
+The same can be used for the virtual tapes as it has the same principle 
+(tape ejected/tape inserted).
+
+This could then be tied into a cd/tape changer device which could manage 
+a directory containing iso/tape images.
+
+In fact you can argue the same for disks, albeit not a standard way of 
+using them, but it would have the same result of inserting a new 
+(SATA/SAS/SCSI) disk to a controller with hotplug insertion.
+
+So what do people think of this idea?
+
+Albert
+
+
+From albert.pauw at gmail.com  Sat Nov  3 18:23:32 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Sat, 03 Nov 2007 18:23:32 +0100
+Subject: [Stgt-devel] tgt disk and cd target with Microsoft initiator
+Message-ID: <472CAE94.3010305@gmail.com>
+
+I have two targets using tgt, a disk target, and a cd target, both are 
+configured as LUN 1 on their target. The controller takes LUN 0.
+
+When I log into only one of them everything works, I either see a disk 
+or a cd depending on which I log into.
+The only problem is that I am bugged by this pesky controller (LUN 0) 
+for which there is no Microsoft driver of course, but
+Windows (XP in my case) wants this driver. So I let it ignore the 
+problem with no proper driver (the controllers has the yellow question 
+mark in the device manager).
+Apart from that it works.
+
+However, when I log into the disk target first, and then the CD target, 
+the disk disappears in the hardware manager under Windows,
+and the CD drive appears. Clicking on My Computer I see the CD coming 
+and going every second.
+
+So it looks like the two targets are mixed in some way.
+
+Can anyone confirm this behaviour?
+And is there a simple way to get rid of the controller LUN 0?
+
+Albert
+
+
+From markh794 at gmail.com  Mon Nov  5 02:44:51 2007
+From: markh794 at gmail.com (Mark Harvey)
+Date: Sun, 4 Nov 2007 20:44:51 -0500
+Subject: [Stgt-devel] Ideas on more flexible cd handling
+In-Reply-To: <472C40F1.5090906@gmail.com>
+References: <472C40F1.5090906@gmail.com>
+Message-ID: <f29db9a80711041744t460798adqdae322e29fe7c75a@mail.gmail.com>
+
+Hi Albert,
+
+As far as I can remember, I have already added this support for to MMC device.
+
+You need to make sure you set the MMC device as 'removable'
+
+i.e. By combining the SMC with the MMC module, you can have a workable
+CD jukebox within the SCSI target framework.
+
+I'm been busy for the last couple of months with work related issues
+and have not really visited the code lately.
+
+Cheers
+Mark
+On Nov 3, 2007 4:35 AM, Albert Pauw <albert.pauw at gmail.com> wrote:
+> At the moment it is possible to export a CD iso through tgt but it is
+> not very flexible.
+>
+> What I would like to see is that an eject command on the initiator side
+> "ejects" the iso image on the tgt side, effectively replacing the cd iso
+> image by /dev/null or /dev/zero on the backing store. On the initiator
+> side it looks like no cd is inserted now. When, at the target side, I
+> add again a backing store (a new iso cd image) to the cd LUN it will
+> send a CD inserted message up to the initiator.
+>
+> The same can be used for the virtual tapes as it has the same principle
+> (tape ejected/tape inserted).
+>
+> This could then be tied into a cd/tape changer device which could manage
+> a directory containing iso/tape images.
+>
+> In fact you can argue the same for disks, albeit not a standard way of
+> using them, but it would have the same result of inserting a new
+> (SATA/SAS/SCSI) disk to a controller with hotplug insertion.
+>
+> So what do people think of this idea?
+>
+> Albert
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>
+
+
+From albert.pauw at gmail.com  Mon Nov  5 05:39:39 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Mon, 05 Nov 2007 05:39:39 +0100
+Subject: [Stgt-devel] Ideas on more flexible cd handling
+In-Reply-To: <f29db9a80711041744t460798adqdae322e29fe7c75a@mail.gmail.com>
+References: <472C40F1.5090906@gmail.com>
+	<f29db9a80711041744t460798adqdae322e29fe7c75a@mail.gmail.com>
+Message-ID: <472E9E8B.9030201@gmail.com>
+
+Mark Harvey wrote:
+> Hi Albert,
+> 
+> As far as I can remember, I have already added this support for to MMC device.
+> 
+> You need to make sure you set the MMC device as 'removable'
+> 
+> i.e. By combining the SMC with the MMC module, you can have a workable
+> CD jukebox within the SCSI target framework.
+> 
+> I'm been busy for the last couple of months with work related issues
+> and have not really visited the code lately.
+> 
+> Cheers
+> Mark
+
+Hi Mark,
+
+it is set to removable, but I don't see the backing store change from 
+the iso image to <null> or something. I'll have a look tonight to see 
+what's happening using wireshark.
+
+Albert
+
+
+From blackmagic02881 at gmail.com  Mon Nov  5 15:58:54 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 05 Nov 2007 09:58:54 -0500
+Subject: [Stgt-devel] Ideas on more flexible cd handling
+In-Reply-To: <472E9E8B.9030201@gmail.com>
+References: <472C40F1.5090906@gmail.com>
+	<f29db9a80711041744t460798adqdae322e29fe7c75a@mail.gmail.com>
+	<472E9E8B.9030201@gmail.com>
+Message-ID: <1194274734.4095.9.camel@dhcp-117.ibrix.com>
+
+On Mon, 2007-11-05 at 05:39 +0100, Albert Pauw wrote:
+> Mark Harvey wrote:
+> > Hi Albert,
+> > 
+> > As far as I can remember, I have already added this support for to MMC device.
+> > 
+> > You need to make sure you set the MMC device as 'removable'
+> > 
+> > i.e. By combining the SMC with the MMC module, you can have a workable
+> > CD jukebox within the SCSI target framework.
+> > 
+> > I'm been busy for the last couple of months with work related issues
+> > and have not really visited the code lately.
+> > 
+> > Cheers
+> > Mark
+> 
+> Hi Mark,
+> 
+> it is set to removable, but I don't see the backing store change from 
+> the iso image to <null> or something. I'll have a look tonight to see 
+> what's happening using wireshark.
+
+mark as removable is first step. extra scsi commands need to be
+implemented to support eject/insert.
+
+
+> 
+> Albert
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+-- 
+Ming Zhang
+
+
+@#$%^ purging memory... (*!%
+http://blackmagic02881.wordpress.com/
+http://www.linkedin.com/in/blackmagic02881
+--------------------------------------------
+
+
+
+From tomof at acm.org  Mon Nov  5 17:27:10 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Tue, 6 Nov 2007 01:27:10 +0900
+Subject: [Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+In-Reply-To: <20071023211400.GA6091@linux.vnet.ibm.com>
+References: <20071023211400.GA6091@linux.vnet.ibm.com>
+Message-ID: <20071106012928S.tomof@acm.org>
+
+Sorry about the delay.
+
+On Tue, 23 Oct 2007 16:14:01 -0500
+Robert Jennings <rcj at linux.vnet.ibm.com> wrote:
+
+> A little threading work like we have in bs_sync for bs_mmap.  The mmap
+> can be taken care of with a small pool of worker threads this way.
+> 
+> After the mmap the completed commands enter back into the main tgtd
+> thread and would be sent to the kernel for in-kernel drivers through
+> kreq_send.  Unfortunately kreq_send can sleep in blk_rq_map_user or
+> scsi_map_user_pages and hold up processing in tgtd.  So kreq_send can
+> add the command to a list and hand it off to a small thread pool to
+> process sending the replies to the kernel.
+
+tgtd is blocked when the data of a file isn't in page cache. So how
+about worker threads does access to the data before tgtd calls
+kreq_send? It works like the flush web server.
+
+Another possible improvement is avoiding mmap per command. Seems that
+with some distributions for POWER (at least debian), it's easy to
+build 64-bit binary. So we don't need to call mmap per command.
+
+
+From erezz at voltaire.com  Sun Nov 11 10:32:11 2007
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 11 Nov 2007 11:32:11 +0200
+Subject: [Stgt-devel] What is the status of iSER patches?
+Message-ID: <4736CC1B.6020505@voltaire.com>
+
+I saw that some of the patches were merged into stgt. What about the
+rest of the patches?
+
+
+Thanks,
+
+-- 
+
+____________________________________________________________
+
+Erez Zilber | 972-9-971-7689
+
+Software Engineer, Storage Solutions
+
+Voltaire ? _The Grid Backbone_
+
+__
+
+www.voltaire.com <http://www.voltaire.com/>
+
+
+
+
+
+From tomof at acm.org  Mon Nov 12 15:14:33 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Mon, 12 Nov 2007 23:14:33 +0900
+Subject: [Stgt-devel] [PATCH 03/20] iser transport buf
+In-Reply-To: <f17443cbe8da015aee7d63a04e7f4ee6094cc831.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<f17443cbe8da015aee7d63a04e7f4ee6094cc831.1192554396.git.pw@osc.edu>
+Message-ID: <20071112230252F.tomof@acm.org>
+
+On Tue, 16 Oct 2007 11:18:57 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> For RDMA, it is often nice to use data from a pool of pre-registered
+> buffers.  To do this, the transport allocates memory for a response and
+> passes it down to the devices to fill.  Some operations, though,
+> allocate their own buffers and return that new memory instead.  These
+> are usually small and the allocation is just done for convenience to
+> avoid length bounds checking.  Copy the data into the provided transport
+> buffer instead.
+
+I killed memory allocation in scsi device code (spc, mmc, sbc, smc)
+and kill all the hacky memory management code. Now LLDs allocate and
+free buffer for data transfer.
+
+scsi device code just uses buffer that iSER passes to.
+
+TODO: add length checking to scsi device code and kill hack in
+iscsi_scsi_cmd_rx_start.
+
+
+From tomof at acm.org  Mon Nov 12 15:14:34 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Mon, 12 Nov 2007 23:14:34 +0900
+Subject: [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+In-Reply-To: <fbce48d03005d95a2bdd5de062bbf5595cc75f85.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<fbce48d03005d95a2bdd5de062bbf5595cc75f85.1192554396.git.pw@osc.edu>
+Message-ID: <20071112230815F.tomof@acm.org>
+
+On Tue, 16 Oct 2007 11:19:03 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> Allocate the read buffer for bidirectional commands in the transport to
+> pass down to devices.  A device can fill and return this buffer in
+> task->uaddr, and thus choose to do the read or write processing in any
+> order.  Unfortunately, this allocation can not be combined with the task
+> and task->data allocation as the bidi read size is not known until after
+> AHS processing.
+
+I've been cleaning up the code in preparation for bidi. For exmaple,
+moving bidi stuff in iscsi_task (read_len, write_len, and
+data_direction) to scsi_cmd so that everyone can use bidi.
+
+I'll add bidi support like this when I finish the preparation.
+
+
+From tomof at acm.org  Mon Nov 12 15:35:25 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Mon, 12 Nov 2007 23:35:25 +0900
+Subject: [Stgt-devel] What is the status of iSER patches?
+In-Reply-To: <4736CC1B.6020505@voltaire.com>
+References: <4736CC1B.6020505@voltaire.com>
+Message-ID: <20071112233749L.tomof@acm.org>
+
+On Sun, 11 Nov 2007 11:32:11 +0200
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> I saw that some of the patches were merged into stgt. What about the
+> rest of the patches?
+
+There are 20 patches:
+
+1. Just document, I'll merge this when everything is ready
+
+2. merged.
+
+3. Not necessary any more since I reimplemented buffer management.
+
+4. I'll add bidi support like this when I finished the preparation.
+
+5. merged.
+
+6. merged.
+
+7. merged.
+
+8. modified and merged.
+
+9. merged.
+
+10. Looks ok. I need to rebase it after finishing #4 patch.
+
+11. ditto.
+
+12. looks hacky but need to look at the details.
+
+13. looks ok but I guess it depends on some of the previous patches.
+
+14. looks hacky but need to look at the details.
+
+15. looks ok but I guess it depends on some of the previous patches.
+
+16. looks ok but I guess it depends on some of the previous patches.
+
+17. looks hacky but need to look at the details.
+
+18. I don't care much about iSER part so I'll merge this when
+everything is ready.
+
+19. ditto.
+
+20. ditto.
+
+
+From tomof at acm.org  Mon Nov 12 15:14:35 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Mon, 12 Nov 2007 23:14:35 +0900
+Subject: [Stgt-devel] [PATCH 08/20] iser virtualize malloc
+In-Reply-To: <8d2b6cf668663c5ea180d67c60c865cf3fa249de.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<8d2b6cf668663c5ea180d67c60c865cf3fa249de.1192554396.git.pw@osc.edu>
+Message-ID: <20071112231205A.tomof@acm.org>
+
+On Tue, 16 Oct 2007 11:20:21 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> Virtualize malloc and free when dealing with memory that the
+> transport will use.  It must be per-connection for RDMA.
+
+I modified and merged this.
+
+As I said, we need aligned buffer for data transfer so I added
+alloc/free_data_buf to iscsi_transport.
+
+If you need pre-registered buffer for iscsi_task too (for sense, I
+guess), you can add alloc/free_task to iscsi_transport. But I think
+that you don't need to use pre-registered buffer for sense and you can
+register sense buffer when you need it.
+
+
+From albert.pauw at gmail.com  Tue Nov 13 10:11:49 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Tue, 13 Nov 2007 10:11:49 +0100
+Subject: [Stgt-devel] tgt disk and cd target with Microsoft initiator
+In-Reply-To: <200710171554.l9HFsNCp011911@hunnerberg.nijmegen.internl.net>
+References: <200710171554.l9HFsNCp011911@hunnerberg.nijmegen.internl.net>
+Message-ID: <47396A55.3040001@gmail.com>
+
+> I have two targets using tgt, a disk target, and a cd target, both are 
+> configured as LUN 1 on their target. The controller takes LUN 0.
+
+> When I log into only one of them everything works, I either see a disk 
+> or a cd depending on which I log into.
+> The only problem is that I am bugged by this pesky controller (LUN 0) 
+> for which there is no Microsoft driver of course, but
+> Windows (XP in my case) wants this driver. So I let it ignore the 
+> problem with no proper driver (the controllers has the yellow question 
+> mark in the device manager).
+> Apart from that it works.
+
+> However, when I log into the disk target first, and then the CD target, 
+> the disk disappears in the hardware manager under Windows,
+> and the CD drive appears. Clicking on My Computer I see the CD coming 
+> and going every second.
+
+> So it looks like the two targets are mixed in some way.
+
+I get the impression it's because both targets have a (for Windows 
+unrecognisable) controller which looks to Windows the same controller.
+
+> Can anyone confirm this behaviour?
+> And is there a simple way to get rid of the controller LUN 0?
+
+Maybe a 'hide' switch? This would make Windows a lot happier without 
+asking for an unknow controller (ie. IET). With a bit of luck the weird 
+behavior with the two targets mentioned above may be fixed as well.
+
+
+> Albert
+
+
+
+
+From tomof at acm.org  Tue Nov 13 16:14:33 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 14 Nov 2007 00:14:33 +0900
+Subject: [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+In-Reply-To: <20071112230815F.tomof@acm.org>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<fbce48d03005d95a2bdd5de062bbf5595cc75f85.1192554396.git.pw@osc.edu>
+	<20071112230815F.tomof@acm.org>
+Message-ID: <20071114001652R.tomof@acm.org>
+
+On Mon, 12 Nov 2007 23:14:34 +0900
+FUJITA Tomonori <tomof at acm.org> wrote:
+
+> On Tue, 16 Oct 2007 11:19:03 -0400
+> Pete Wyckoff <pw at osc.edu> wrote:
+> 
+> > Allocate the read buffer for bidirectional commands in the transport to
+> > pass down to devices.  A device can fill and return this buffer in
+> > task->uaddr, and thus choose to do the read or write processing in any
+> > order.  Unfortunately, this allocation can not be combined with the task
+> > and task->data allocation as the bidi read size is not known until after
+> > AHS processing.
+> 
+> I've been cleaning up the code in preparation for bidi. For exmaple,
+> moving bidi stuff in iscsi_task (read_len, write_len, and
+> data_direction) to scsi_cmd so that everyone can use bidi.
+> 
+> I'll add bidi support like this when I finish the preparation.
+
+I've not added bidi support to iSCSI but the core SCSI code should be
+ready for bidi.
+
+I killed data like uaddr and len, which work only for uni, and
+added scsi_data_buffer structure like this:
+
+struct scsi_data_buffer {
+	int resid;
+	uint32_t length;
+	uint64_t buffer;
+};
+
+struct scsi_cmd {
+	enum data_direction data_dir;
+	struct scsi_data_buffer in_sdb;
+	struct scsi_data_buffer out_sdb;
+
+
+As I explained yesterday, scsi device code (like sbc) doesn't allocate
+or free buffer for data transfer any more. LLDs do.
+
+For uni, LLDs are expected to allocate buffer and use a pair of
+scsi_set_in_buffer and scsi_set_in_length for reads or a pair of
+scsi_set_out_buffer and scsi_set_out_length for writes. For bidi, LLDs
+use both pairs. It's pretty straightforward.
+
+
+From pw at osc.edu  Wed Nov 14 01:36:05 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Tue, 13 Nov 2007 19:36:05 -0500
+Subject: [Stgt-devel] [PATCH 03/20] iser transport buf
+In-Reply-To: <20071112230252F.tomof@acm.org>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<f17443cbe8da015aee7d63a04e7f4ee6094cc831.1192554396.git.pw@osc.edu>
+	<20071112230252F.tomof@acm.org>
+Message-ID: <20071114003605.GA27114@osc.edu>
+
+tomof at acm.org wrote on Mon, 12 Nov 2007 23:14 +0900:
+> On Tue, 16 Oct 2007 11:18:57 -0400
+> Pete Wyckoff <pw at osc.edu> wrote:
+> 
+> > For RDMA, it is often nice to use data from a pool of pre-registered
+> > buffers.  To do this, the transport allocates memory for a response and
+> > passes it down to the devices to fill.  Some operations, though,
+> > allocate their own buffers and return that new memory instead.  These
+> > are usually small and the allocation is just done for convenience to
+> > avoid length bounds checking.  Copy the data into the provided transport
+> > buffer instead.
+> 
+> I killed memory allocation in scsi device code (spc, mmc, sbc, smc)
+> and kill all the hacky memory management code. Now LLDs allocate and
+> free buffer for data transfer.
+
+But now you need two mallocs per command:  one for the task and one
+for the (aligned) data.  Bidi needs three.  This will show up in
+iser performance, but might be a worthwhile trade-off.  Maybe we
+could add slabs for common sizes (ick).
+
+I have a lot of rebasing to do after all your bidi buffer work.  It
+looks like good changes so far, but I have a couple of concerns from
+a brief peruse of the changes in git.
+
+Zeroing out the data chunk for non-READ/WRITE commands.  There are
+lots of OSD commands hidden inside the 0x7f extended format, and
+other non-OSD non-SBC commands too.  Can we just move the zeroing to
+where it is needed?  Like in each of the inquiry, etc.  This zeroing
+was a major performance problem for iser.
+
+Accessor and setter functions for scmd.  I don't see what value they
+add.  Except maybe for the "(void*)(unsigned long)" ones.  Also,
+building functions using cpp to glue names together breaks things
+like ctags, cscope, and diff -p.  Curious to hear why you like them.
+
+Thanks for working on this.  Bidi handling in bs_* will be much
+cleaner now.  I'll be away from email until 25 nov, but will look at
+your changes in detail and rebase iser after.
+
+		-- Pete
+
+
+From tomof at acm.org  Wed Nov 14 08:33:32 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 14 Nov 2007 16:33:32 +0900
+Subject: [Stgt-devel] [PATCH 03/20] iser transport buf
+In-Reply-To: <20071114003605.GA27114@osc.edu>
+References: <f17443cbe8da015aee7d63a04e7f4ee6094cc831.1192554396.git.pw@osc.edu>
+	<20071112230252F.tomof@acm.org> <20071114003605.GA27114@osc.edu>
+Message-ID: <20071114163555X.tomof@acm.org>
+
+On Tue, 13 Nov 2007 19:36:05 -0500
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> tomof at acm.org wrote on Mon, 12 Nov 2007 23:14 +0900:
+> > On Tue, 16 Oct 2007 11:18:57 -0400
+> > Pete Wyckoff <pw at osc.edu> wrote:
+> > 
+> > > For RDMA, it is often nice to use data from a pool of pre-registered
+> > > buffers.  To do this, the transport allocates memory for a response and
+> > > passes it down to the devices to fill.  Some operations, though,
+> > > allocate their own buffers and return that new memory instead.  These
+> > > are usually small and the allocation is just done for convenience to
+> > > avoid length bounds checking.  Copy the data into the provided transport
+> > > buffer instead.
+> > 
+> > I killed memory allocation in scsi device code (spc, mmc, sbc, smc)
+> > and kill all the hacky memory management code. Now LLDs allocate and
+> > free buffer for data transfer.
+> 
+> But now you need two mallocs per command:  one for the task and one
+> for the (aligned) data.  Bidi needs three.  This will show up in
+> iser performance, but might be a worthwhile trade-off.  Maybe we
+> could add slabs for common sizes (ick).
+
+I thought that iSER code already does something like that since you
+use pre-registered buffer again and again.
+
+glib also does something like that. So I don't think that this change
+will effect performance much.
+
+
+> I have a lot of rebasing to do after all your bidi buffer work.  It
+> looks like good changes so far, but I have a couple of concerns from
+> a brief peruse of the changes in git.
+> 
+> Zeroing out the data chunk for non-READ/WRITE commands.  There are
+> lots of OSD commands hidden inside the 0x7f extended format, and
+> other non-OSD non-SBC commands too.  Can we just move the zeroing to
+> where it is needed?  Like in each of the inquiry, etc.  This zeroing
+> was a major performance problem for iser.
+
+Yeah, I added that hack because device type code is broken (assumes
+that buffer is large enough and zero'ed out). We need to fix device
+type code.
+
+
+> Accessor and setter functions for scmd.  I don't see what value they
+> add.  Except maybe for the "(void*)(unsigned long)" ones.
+
+I want to insulate LLDs from scsi_cmd internals like Linux scsi-ml
+does. It enables us to change the structure freely in the future
+without caring about device type code and llds.
+
+
+> Also, building functions using cpp to glue names together breaks
+> things like ctags, cscope, and diff -p.  Curious to hear why you
+> like them.
+
+Yeah, there are the pros and cons of using cpp magic. I prefer using
+cpp magic than defining lots of similar functions. And I think that
+linux scsi developers are already familiar with that (see the
+transport classes).
+
+
+> Thanks for working on this.  Bidi handling in bs_* will be much
+> cleaner now.
+
+No problem. I wanted this cleanups before the code becomes bigger by
+adding iSER, FCoE, etc.
+
+
+>  I'll be away from email until 25 nov, but will look at
+> your changes in detail and rebase iser after.
+
+Thanks. Until 25, I try to merge some of your iSER patches that
+haven't been merged yet.
+
+
+From tomof at acm.org  Wed Nov 14 15:21:12 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 14 Nov 2007 23:21:12 +0900
+Subject: [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+In-Reply-To: <20071112230815F.tomof@acm.org>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<fbce48d03005d95a2bdd5de062bbf5595cc75f85.1192554396.git.pw@osc.edu>
+	<20071112230815F.tomof@acm.org>
+Message-ID: <200711141504.lAEF4akJ027279@mbox.iij4u.or.jp>
+
+From: FUJITA Tomonori <tomof at acm.org>
+Subject: Re: [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+Date: Mon, 12 Nov 2007 23:14:34 +0900
+
+> On Tue, 16 Oct 2007 11:19:03 -0400
+> Pete Wyckoff <pw at osc.edu> wrote:
+> 
+> > Allocate the read buffer for bidirectional commands in the transport to
+> > pass down to devices.  A device can fill and return this buffer in
+> > task->uaddr, and thus choose to do the read or write processing in any
+> > order.  Unfortunately, this allocation can not be combined with the task
+> > and task->data allocation as the bidi read size is not known until after
+> > AHS processing.
+> 
+> I've been cleaning up the code in preparation for bidi. For exmaple,
+> moving bidi stuff in iscsi_task (read_len, write_len, and
+> data_direction) to scsi_cmd so that everyone can use bidi.
+> 
+> I'll add bidi support like this when I finish the preparation.
+
+I merged this:
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 9bcd6df..e227cb2 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -269,7 +269,8 @@ void *iscsi_tcp_alloc_data_buf(struct iscsi_connection *conn, size_t sz)
+ 
+ void iscsi_tcp_free_data_buf(struct iscsi_connection *conn, void *buf)
+ {
+-	free(buf);
++	if (buf)
++		free(buf);
+ }
+ 
+ struct iscsi_transport iscsi_tcp = {
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 1db41b7..8d8cdab 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1000,10 +1000,10 @@ void iscsi_free_task(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task->conn;
+ 
+-	if (task->data)
+-		conn->tp->free_data_buf(conn, task->data);
++	conn->tp->free_data_buf(conn, scsi_get_in_buffer(&task->scmd));
++	conn->tp->free_data_buf(conn, scsi_get_out_buffer(&task->scmd));
++
+ 	free(task);
+-	/* from alloc */
+ 	conn_put(conn);
+ }
+ 
+@@ -1134,9 +1134,21 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 	if (dir == DATA_BIDIRECTIONAL && ahslen >= 8) {
+ 		struct iscsi_rlength_ahdr *ahs_bidi = (void *) ahs;
+ 		if (ahs_bidi->ahstype == ISCSI_AHSTYPE_RLENGTH) {
+-			scsi_set_in_length(scmd, ntohl(ahs_bidi->read_length));
+-			dprintf("bidi read len %u\n",
+-				ntohl(ahs_bidi->read_length));
++			uint32_t in_length = ntohl(ahs_bidi->read_length);
++
++			dprintf("bidi read len %u\n", in_length);
++
++			if (in_length) {
++				void *buf;
++
++				in_length = roundup(in_length, 4);
++				buf = conn->tp->alloc_data_buf(conn, in_length);
++				if (!buf)
++					return -ENOMEM;
++
++				scsi_set_in_buffer(scmd, buf);
++				scsi_set_in_length(scmd, in_length);
++			}
+ 		}
+ 	}
+ 
+-- 
+1.5.3.4
+
+
+
+From tomof at acm.org  Wed Nov 14 15:33:27 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 14 Nov 2007 23:33:27 +0900
+Subject: [Stgt-devel] [PATCH 10/20] iser connection transport data
+In-Reply-To: <29cd088b80c82ce8b050b01e22d1e54121024f68.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<29cd088b80c82ce8b050b01e22d1e54121024f68.1192554396.git.pw@osc.edu>
+Message-ID: <200711141504.lAEF4akL027279@mbox.iij4u.or.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] [PATCH 10/20] iser connection transport data
+Date: Tue, 16 Oct 2007 11:20:44 -0400
+
+> Add a private data field to iscsi_connection to hold state for the
+> transport, and allocate room for it at connection allocation time.
+> 
+> Move the TCP socket fd from generic code into this private data region.
+> 
+> Also virtualize getsockname and getpeername as TCP and RDMA determine
+> those IP addresses differently.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/iscsi/conn.c      |   21 +++++++-------
+>  usr/iscsi/iscsi_tcp.c |   72 ++++++++++++++++++++++++++++++++++++------------
+>  usr/iscsi/iscsid.c    |   58 +++++++++++++++++++-------------------
+>  usr/iscsi/iscsid.h    |   14 +++++-----
+>  usr/iscsi/session.c   |    2 +-
+>  usr/iscsi/target.c    |   10 +++---
+>  usr/iscsi/transport.h |   20 +++++++++----
+>  7 files changed, 120 insertions(+), 77 deletions(-)
+
+Merged, thanks.
+
+Moving connection allocation to transport would work better for iSER?
+
+This patch is against the lastest git tree
+(09532079071d65ec62dae982324ab07a895e16f1).
+
+=
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Date: Wed, 14 Nov 2007 20:31:33 +0900
+Subject: [PATCH] move connection allocation to transport
+
+Signed-off-by: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+---
+ usr/iscsi/conn.c      |   31 +++++-------------
+ usr/iscsi/iscsi_tcp.c |   80 +++++++++++++++++++++++++++++++-----------------
+ usr/iscsi/iscsid.h    |    4 +-
+ usr/iscsi/transport.h |    2 +
+ 4 files changed, 65 insertions(+), 52 deletions(-)
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index 1e9dace..e131549 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -42,24 +42,16 @@ void conn_add_to_session(struct iscsi_connection *conn, struct iscsi_session *se
+ 	list_add(&conn->clist, &session->conn_list);
+ }
+ 
+-struct iscsi_connection *conn_alloc(unsigned int trans_len)
++int conn_init(struct iscsi_connection *conn)
+ {
+-	struct iscsi_connection *conn;
+-
+-	conn = zalloc(sizeof(*conn) + trans_len);
+-	if (!conn)
+-		return NULL;
+-
+ 	conn->req_buffer = malloc(INCOMING_BUFSIZE);
+-	if (!conn->req_buffer) {
+-		free(conn);
+-		return NULL;
+-	}
++	if (!conn->req_buffer)
++		return -ENOMEM;
++
+ 	conn->rsp_buffer = malloc(INCOMING_BUFSIZE);
+ 	if (!conn->rsp_buffer) {
+ 		free(conn->req_buffer);
+-		free(conn);
+-		return NULL;
++		return -ENOMEM;
+ 	}
+ 
+ 	conn->refcount = 1;
+@@ -69,22 +61,17 @@ struct iscsi_connection *conn_alloc(unsigned int trans_len)
+ 	INIT_LIST_HEAD(&conn->clist);
+ 	INIT_LIST_HEAD(&conn->tx_clist);
+ 
+-	if (trans_len)
+-		conn->trans_data = &conn[1];
+-
+-	return conn;
++	return 0;
+ }
+ 
+-static void conn_free(struct iscsi_connection *conn)
++void conn_exit(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_session *session = conn->session;
+ 
+-	dprintf("freeing connection\n");
+ 	list_del(&conn->clist);
+ 	free(conn->req_buffer);
+ 	free(conn->rsp_buffer);
+ 	free(conn->initiator);
+-	free(conn);
+ 
+ 	if (session)
+ 		session_put(session);
+@@ -145,8 +132,8 @@ done:
+ void conn_put(struct iscsi_connection *conn)
+ {
+ 	conn->refcount--;
+-	if (conn->refcount == 0)
+-		conn_free(conn);
++	if (!conn->refcount)
++		conn->tp->ep_release(conn);
+ }
+ 
+ int conn_get(struct iscsi_connection *conn)
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 31e7b29..b3f730d 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -42,10 +42,17 @@
+ 
+ static void iscsi_tcp_event_handler(int fd, int events, void *data);
+ 
+-struct tcp_conn_info {
++struct iscsi_tcp_connection {
+ 	int fd;
++
++	struct iscsi_connection iscsi_conn;
+ };
+ 
++static inline struct iscsi_tcp_connection *TCP_CONN(struct iscsi_connection *conn)
++{
++	return container_of(conn, struct iscsi_tcp_connection, iscsi_conn);
++}
++
+ static int set_keepalive(int fd)
+ {
+ 	int ret, opt;
+@@ -78,7 +85,7 @@ static void accept_connection(int afd, int events, void *data)
+ 	struct sockaddr_storage from;
+ 	socklen_t namesize;
+ 	struct iscsi_connection *conn;
+-	struct tcp_conn_info *tci;
++	struct iscsi_tcp_connection *tcp_conn;
+ 	int fd, err;
+ 
+ 	dprintf("%d\n", afd);
+@@ -94,24 +101,32 @@ static void accept_connection(int afd, int events, void *data)
+ 	if (err)
+ 		goto out;
+ 
+-	conn = conn_alloc(sizeof(*tci));
+-	if (!conn)
++	tcp_conn = zalloc(sizeof(*tcp_conn));
++	if (!tcp_conn)
+ 		goto out;
+ 
+-	tci = conn->trans_data;
+-	tci->fd = fd;
++	conn = &tcp_conn->iscsi_conn;
++
++	err = conn_init(conn);
++	if (err) {
++		free(tcp_conn);
++		goto out;
++	}
++
++	tcp_conn->fd = fd;
+ 	conn->tp = &iscsi_tcp;
+ 
+ 	conn_read_pdu(conn);
+ 	set_non_blocking(fd);
+ 
+ 	err = tgt_event_add(fd, EPOLLIN, iscsi_tcp_event_handler, conn);
+-	if (err)
+-		goto free_conn;
++	if (err) {
++		conn_exit(conn);
++		free(tcp_conn);
++		goto out;
++	}
+ 
+ 	return;
+-free_conn:
+-	free(conn);
+ out:
+ 	close(fd);
+ 	return;
+@@ -213,46 +228,54 @@ static int iscsi_tcp_init(void)
+ static size_t iscsi_tcp_read(struct iscsi_connection *conn, void *buf,
+ 			     size_t nbytes)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
+-	return read(tci->fd, buf, nbytes);
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
++	return read(tcp_conn->fd, buf, nbytes);
+ }
+ 
+ static size_t iscsi_tcp_write_begin(struct iscsi_connection *conn, void *buf,
+ 				    size_t nbytes)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int opt = 1;
+ 
+-	setsockopt(tci->fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+-	return write(tci->fd, buf, nbytes);
++	setsockopt(tcp_conn->fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
++	return write(tcp_conn->fd, buf, nbytes);
+ }
+ 
+ static void iscsi_tcp_write_end(struct iscsi_connection *conn)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int opt = 0;
+ 
+-	setsockopt(tci->fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
++	setsockopt(tcp_conn->fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+ }
+ 
+ static size_t iscsi_tcp_close(struct iscsi_connection *conn)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
++
++	tgt_event_del(tcp_conn->fd);
++	return close(tcp_conn->fd);
++}
++
++static void iscsi_tcp_release(struct iscsi_connection *conn)
++{
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 
+-	tgt_event_del(tci->fd);
+-	return close(tci->fd);
++	conn_exit(conn);
++	free(tcp_conn);
+ }
+ 
+ static int iscsi_tcp_show(struct iscsi_connection *conn, char *buf, int rest)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int err, total = 0;
+ 	socklen_t slen;
+ 	char dst[INET6_ADDRSTRLEN];
+ 	struct sockaddr_storage from;
+ 
+ 	slen = sizeof(from);
+-	err = getpeername(tci->fd, (struct sockaddr *) &from, &slen);
++	err = getpeername(tcp_conn->fd, (struct sockaddr *) &from, &slen);
+ 	if (err < 0) {
+ 		eprintf("%m\n");
+ 		return 0;
+@@ -272,10 +295,10 @@ static int iscsi_tcp_show(struct iscsi_connection *conn, char *buf, int rest)
+ 
+ void iscsi_event_modify(struct iscsi_connection *conn, int events)
+ {
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 	int ret;
+-	struct tcp_conn_info *tci = conn->trans_data;
+ 
+-	ret = tgt_event_modify(tci->fd, events);
++	ret = tgt_event_modify(tcp_conn->fd, events);
+ 	if (ret)
+ 		eprintf("tgt_event_modify failed\n");
+ }
+@@ -294,17 +317,17 @@ void iscsi_tcp_free_data_buf(struct iscsi_connection *conn, void *buf)
+ int iscsi_tcp_getsockname(struct iscsi_connection *conn, struct sockaddr *sa,
+ 			  socklen_t *len)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 
+-	return getsockname(tci->fd, sa, len);
++	return getsockname(tcp_conn->fd, sa, len);
+ }
+ 
+ int iscsi_tcp_getpeername(struct iscsi_connection *conn, struct sockaddr *sa,
+ 			  socklen_t *len)
+ {
+-	struct tcp_conn_info *tci = conn->trans_data;
++	struct iscsi_tcp_connection *tcp_conn = TCP_CONN(conn);
+ 
+-	return getpeername(tci->fd, sa, len);
++	return getpeername(tcp_conn->fd, sa, len);
+ }
+ 
+ struct iscsi_transport iscsi_tcp = {
+@@ -315,6 +338,7 @@ struct iscsi_transport iscsi_tcp = {
+ 	.ep_write_begin		= iscsi_tcp_write_begin,
+ 	.ep_write_end		= iscsi_tcp_write_end,
+ 	.ep_close		= iscsi_tcp_close,
++	.ep_release		= iscsi_tcp_release,
+ 	.ep_show		= iscsi_tcp_show,
+ 	.ep_event_modify	= iscsi_event_modify,
+ 	.alloc_data_buf		= iscsi_tcp_alloc_data_buf,
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index fe4c556..e5a7f2c 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -179,7 +179,6 @@ struct iscsi_connection {
+ 	} auth;
+ 
+ 	struct iscsi_transport *tp;
+-	void *trans_data;   /* transport specific data */
+ };
+ 
+ #define STATE_FREE		0
+@@ -245,7 +244,8 @@ extern struct list_head iscsi_targets_list;
+ extern int cmnd_exec_auth_chap(struct iscsi_connection *conn);
+ 
+ /* conn.c */
+-extern struct iscsi_connection *conn_alloc(unsigned int trans_len);
++extern int conn_init(struct iscsi_connection *conn);
++extern void conn_exit(struct iscsi_connection *conn);
+ extern void conn_close(struct iscsi_connection *conn);
+ extern void conn_put(struct iscsi_connection *conn);
+ extern int conn_get(struct iscsi_connection *conn);
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index 788fa41..f7239c7 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -16,6 +16,8 @@ struct iscsi_transport {
+ 				 size_t nbytes);
+ 	void (*ep_write_end)(struct iscsi_connection *conn);
+ 	size_t (*ep_close)(struct iscsi_connection *conn);
++	void (*ep_release)(struct iscsi_connection *conn);
++
+ 	int (*ep_show)(struct iscsi_connection *conn, char *buf, int rest);
+ 	void (*ep_event_modify)(struct iscsi_connection *conn, int events);
+ 	void *(*alloc_data_buf)(struct iscsi_connection *conn, size_t sz);
+-- 
+1.5.3.4
+
+
+
+From pw at osc.edu  Wed Nov 14 20:05:03 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Wed, 14 Nov 2007 14:05:03 -0500
+Subject: [Stgt-devel] [PATCH 10/20] iser connection transport data
+In-Reply-To: <200711141504.lAEF4akL027279@mbox.iij4u.or.jp>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<29cd088b80c82ce8b050b01e22d1e54121024f68.1192554396.git.pw@osc.edu>
+	<200711141504.lAEF4akL027279@mbox.iij4u.or.jp>
+Message-ID: <20071114190503.GA584@osc.edu>
+
+tomof at acm.org wrote on Wed, 14 Nov 2007 23:33 +0900:
+> Moving connection allocation to transport would work better for iSER?
+> 
+> This patch is against the lastest git tree
+> (09532079071d65ec62dae982324ab07a895e16f1).
+[..]
+> -struct tcp_conn_info {
+> +struct iscsi_tcp_connection {
+>  	int fd;
+> +
+> +	struct iscsi_connection iscsi_conn;
+>  };
+
+Sure, good idea.  It will create a bit of churn against the later
+patches but easily fixed.  Note that iser adds a task->trans_data
+too; you could treat it similarly.
+
+Also note the ep_conn_init() we need.  It is called _after_ login
+negotiation, not at allocation time, unlike your new conn_init().
+May want to change the name so people aren't confused about this.
+
+ep_task_init() is okay; it is called at task allocation time.
+
+		-- Pete
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 00:49:09 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 08:49:09 +0900
+Subject: [Stgt-devel] [PATCH 10/20] iser connection transport data
+In-Reply-To: <20071114190503.GA584@osc.edu>
+References: <29cd088b80c82ce8b050b01e22d1e54121024f68.1192554396.git.pw@osc.edu>
+	<200711141504.lAEF4akL027279@mbox.iij4u.or.jp>
+	<20071114190503.GA584@osc.edu>
+Message-ID: <20071115084909P.fujita.tomonori@lab.ntt.co.jp>
+
+On Wed, 14 Nov 2007 14:05:03 -0500
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> tomof at acm.org wrote on Wed, 14 Nov 2007 23:33 +0900:
+> > Moving connection allocation to transport would work better for iSER?
+> > 
+> > This patch is against the lastest git tree
+> > (09532079071d65ec62dae982324ab07a895e16f1).
+> [..]
+> > -struct tcp_conn_info {
+> > +struct iscsi_tcp_connection {
+> >  	int fd;
+> > +
+> > +	struct iscsi_connection iscsi_conn;
+> >  };
+> 
+> Sure, good idea.  It will create a bit of churn against the later
+> patches but easily fixed.  Note that iser adds a task->trans_data
+> too; you could treat it similarly.
+
+Yeah, I think that moving task allocation to transport would simplify
+the code too.
+
+
+> Also note the ep_conn_init() we need.  It is called _after_ login
+> negotiation, not at allocation time, unlike your new conn_init().
+
+OK, iSER seems to allocate something based on the negotiated
+parameters.
+
+
+> May want to change the name so people aren't confused about this.
+
+Yeah, we use init_* for allocation time, so I prefer to have a new
+name for a hook called after login negotiation.
+
+BTW, I don't intend to add ep_ to all the hooks in iscsi_transport. I
+just copied 'end point' name from open-iscsi. I have to rename some of
+them (like ep_init).
+
+
+> ep_task_init() is okay; it is called at task allocation time.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 03:20:56 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 11:20:56 +0900
+Subject: [Stgt-devel] [PATCH 13/20] iser close free
+In-Reply-To: <c55f7b196b716514adc886ae99f0042ef5ee81f1.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<c55f7b196b716514adc886ae99f0042ef5ee81f1.1192554396.git.pw@osc.edu>
+Message-ID: <20071115112056I.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 16 Oct 2007 11:21:22 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> Separate transport close operation from the free operation, as RDMA will
+> initiate a close, but must not free resources until all references to
+> the connection have gone away.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/iscsi/conn.c      |    3 ++-
+>  usr/iscsi/iscsi_tcp.c |   12 +++++++++---
+>  usr/iscsi/transport.h |    3 ++-
+>  3 files changed, 13 insertions(+), 5 deletions(-)
+
+I think that this isn't necessary any more because of commit
+a718768930f8d5cdd0f648b1050b13a3d5c65ecd.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 03:20:59 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 11:20:59 +0900
+Subject: [Stgt-devel] [PATCH 11/20] iser connection init
+In-Reply-To: <b05bdb66b7262eb86d1b956ba4fc2dda46f8e2b6.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<b05bdb66b7262eb86d1b956ba4fc2dda46f8e2b6.1192554396.git.pw@osc.edu>
+Message-ID: <20071115112059V.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 16 Oct 2007 11:21:20 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> After successful negotiation, call into the transport to allocate resources
+> or otherwise ready the switch to full feature mode.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/iscsi/iscsi_tcp.c |    6 ++++++
+>  usr/iscsi/iscsid.c    |   19 ++++++++++++++++++-
+>  usr/iscsi/transport.h |    1 +
+>  3 files changed, 25 insertions(+), 1 deletions(-)
+> 
+> diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+> index 33cd6f8..566dd9e 100644
+> --- a/usr/iscsi/iscsi_tcp.c
+> +++ b/usr/iscsi/iscsi_tcp.c
+> @@ -210,6 +210,11 @@ static int iscsi_tcp_init(void)
+>  	return !nr_sock;
+>  }
+>  
+> +static int iscsi_tcp_conn_init(struct iscsi_connection *conn)
+> +{
+> +	return 0;
+> +}
+> +
+>  static size_t iscsi_tcp_read(struct iscsi_connection *conn, void *buf,
+>  			     size_t nbytes)
+>  {
+> @@ -312,6 +317,7 @@ struct iscsi_transport iscsi_tcp = {
+>  	.name			= "iscsi",
+>  	.rdma			= 0,
+>  	.ep_init		= iscsi_tcp_init,
+> +	.ep_conn_init		= iscsi_tcp_conn_init,
+>  	.ep_read		= iscsi_tcp_read,
+>  	.ep_write_begin		= iscsi_tcp_write_begin,
+>  	.ep_write_end		= iscsi_tcp_write_end,
+> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+> index 51d9bd9..27b17f4 100644
+> --- a/usr/iscsi/iscsid.c
+> +++ b/usr/iscsi/iscsid.c
+> @@ -469,8 +469,22 @@ static void login_start(struct iscsi_connection *conn)
+>  
+>  static void login_finish(struct iscsi_connection *conn)
+>  {
+> +	struct iscsi_login_rsp *rsp = (struct iscsi_login_rsp *) &conn->rsp.bhs;
+> +	int ret;
+> +
+>  	switch (conn->session_type) {
+>  	case SESSION_NORMAL:
+> +		/*
+> +		 * Allocate transport resources for this connection.
+> +		 */
+> +		ret = conn->tp->ep_conn_init(conn);
+> +		if (ret) {
+> +			rsp->flags = 0;
+> +			rsp->status_class = ISCSI_STATUS_CLS_TARGET_ERR;
+> +			rsp->status_detail = ISCSI_LOGIN_STATUS_NO_RESOURCES;
+> +			conn->state = STATE_EXIT;
+> +			break;
+> +		}
+>  		if (!conn->session)
+>  			session_create(conn);
+>  		memcpy(conn->isid, conn->session->isid, sizeof(conn->isid));
+> @@ -637,8 +651,11 @@ static void cmnd_exec_login(struct iscsi_connection *conn)
+>  			default:
+>  				goto init_err;
+>  			}
+> -			if (!stay && !nsg_disagree)
+> +			if (!stay && !nsg_disagree) {
+>  				login_finish(conn);
+> +				if (rsp->status_class)
+> +					return;
+> +			}
+>  			break;
+>  		default:
+>  			goto init_err;
+
+I renamed ep_conn_init ep_login_complete and merged this though I like
+to have error handling in cmnd_exec_login instead of login_finish but
+cmnd_exec_login needs some cleanups before that.
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 03:24:45 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 11:24:45 +0900
+Subject: [Stgt-devel] [PATCH 16/20] iser params
+In-Reply-To: <f95af5713c1de674b0792b7742c6babe91c7be83.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<f95af5713c1de674b0792b7742c6babe91c7be83.1192554396.git.pw@osc.edu>
+Message-ID: <20071115112445G.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 16 Oct 2007 11:21:24 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> Add iSCSI parameters as defined in the draft iSER specification.
+> Handle special parameter cases for RDMA:
+> 
+>     - no digests
+>     - do not offer iSER parameters unless initiator requests them
+>     - do not offer MRDSL (use [IT]RDSL instead)
+> 
+> Except do not advertise MaxOutstandingUnexpectedPDUs just yet, as
+> the open-iscsi initiatior does not understand it.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/iscsi/iscsi_if.h |    5 +++++
+>  usr/iscsi/iscsid.c   |   21 ++++++++++++++++++++-
+>  usr/iscsi/param.c    |   38 ++++++++++++++++++++++++++++++++++++++
+>  usr/iscsi/target.c   |    8 ++++++++
+>  4 files changed, 71 insertions(+), 1 deletions(-)
+> 
+> diff --git a/usr/iscsi/iscsi_if.h b/usr/iscsi/iscsi_if.h
+> index 58a76a2..b4f1e04 100644
+> --- a/usr/iscsi/iscsi_if.h
+> +++ b/usr/iscsi/iscsi_if.h
+> @@ -215,6 +215,11 @@ enum iscsi_param {
+>  	ISCSI_PARAM_OFMARKINT,
+>  	ISCSI_PARAM_IFMARKINT,
+>  	ISCSI_PARAM_MAXCONNECTIONS,
+> +	/* iSER draft */
+> +	ISCSI_PARAM_RDMA_EXTENSIONS,
+> +	ISCSI_PARAM_TARGET_RDSL,
+> +	ISCSI_PARAM_INITIATOR_RDSL,
+> +	ISCSI_PARAM_MAX_OUTST_PDU,
+>  	/* must always be last */
+>  	ISCSI_PARAM_MAX,
+>  };
+> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+> index 6d5471e..d7c7128 100644
+> --- a/usr/iscsi/iscsid.c
+> +++ b/usr/iscsi/iscsid.c
+> @@ -270,7 +270,7 @@ static void login_security_done(struct iscsi_connection *conn)
+>  static void text_scan_login(struct iscsi_connection *conn)
+>  {
+>  	char *key, *value, *data;
+> -	int datasize, idx;
+> +	int datasize, idx, is_rdma = 0;
+>  	struct iscsi_login_rsp *rsp = (struct iscsi_login_rsp *)&conn->rsp.bhs;
+>  
+>  	data = conn->req.data;
+> @@ -289,6 +289,9 @@ static void text_scan_login(struct iscsi_connection *conn)
+>  			if (idx == ISCSI_PARAM_MAX_RECV_DLENGTH)
+>  				idx = ISCSI_PARAM_MAX_XMIT_DLENGTH;
+>  
+> +			if (idx == ISCSI_PARAM_RDMA_EXTENSIONS)
+> +				is_rdma = 1;
+> +
+>  			if (param_str_to_val(session_keys, idx, value, &val) < 0) {
+>  				if (conn->session_param[idx].state
+>  				    == KEY_STATE_START) {
+> @@ -335,6 +338,15 @@ static void text_scan_login(struct iscsi_connection *conn)
+>  			text_key_add(conn, key, "NotUnderstood");
+>  	}
+>  
+> +	if (is_rdma) {
+> +		/* do not try to do digests, not supported in iser */
+> +		conn->session_param[ISCSI_PARAM_HDRDGST_EN].val = DIGEST_NONE;
+> +		conn->session_param[ISCSI_PARAM_DATADGST_EN].val = DIGEST_NONE;
+> +	} else {
+> +		/* do not offer RDMA, initiator must explicitly request */
+> +		conn->session_param[ISCSI_PARAM_RDMA_EXTENSIONS].val = 0;
+> +	}
+> +
+>  out:
+>  	return;
+>  }
+> @@ -354,6 +366,13 @@ static int text_check_param(struct iscsi_connection *conn)
+>  					p[i].state = KEY_STATE_DONE;
+>  					continue;
+>  				}
+> +				if (p[ISCSI_PARAM_RDMA_EXTENSIONS].val == 1) {
+> +					if (i == ISCSI_PARAM_MAX_RECV_DLENGTH)
+> +						continue;
+> +				} else {
+> +					if (i >= ISCSI_PARAM_RDMA_EXTENSIONS)
+> +						continue;
+> +				}
+>  				memset(buf, 0, sizeof(buf));
+>  				param_val_to_str(session_keys, i, p[i].val,
+>  						 buf);
+> diff --git a/usr/iscsi/param.c b/usr/iscsi/param.c
+> index 9eac62c..76236d1 100644
+> --- a/usr/iscsi/param.c
+> +++ b/usr/iscsi/param.c
+> @@ -118,6 +118,18 @@ static int minimum_check_val(struct iscsi_key *key, unsigned int *val)
+>  	return 0;
+>  }
+>  
+> +static int min_or_zero_check_val(struct iscsi_key *key, unsigned int *val)
+> +{
+> +	int err = 0;
+> +
+> +	if (*val != 0 && (*val < key->min || key->max < *val)) {
+> +		*val = key->min;
+> +		err = -EINVAL;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+>  static int maximum_check_val(struct iscsi_key *key, unsigned int *val)
+>  {
+>  	int err = 0;
+> @@ -140,6 +152,16 @@ static int minimum_set_val(struct param *param, int idx, unsigned int *val)
+>  	return 0;
+>  }
+>  
+> +static int min_or_zero_set_val(struct param *param, int idx, unsigned int *val)
+> +{
+> +	if (*val > param[idx].val || *val == 0)
+> +		*val = param[idx].val;
+> +	else
+> +		param[idx].val = *val;
+> +
+> +	return 0;
+> +}
+> +
+>  static int maximum_set_val(struct param *param, int idx, unsigned int *val)
+>  {
+>  	if (param[idx].val > *val)
+> @@ -265,6 +287,13 @@ static struct iscsi_key_ops minimum_ops = {
+>  	.set_val = minimum_set_val,
+>  };
+>  
+> +static struct iscsi_key_ops min_or_zero_ops = {
+> +	.val_to_str = range_val_to_str,
+> +	.str_to_val = range_str_to_val,
+> +	.check_val = min_or_zero_check_val,
+> +	.set_val = min_or_zero_set_val,
+> +};
+> +
+>  static struct iscsi_key_ops maximum_ops = {
+>  	.val_to_str = range_val_to_str,
+>  	.str_to_val = range_str_to_val,
+> @@ -345,6 +374,15 @@ struct iscsi_key session_keys[] = {
+>  	{"IFMarkInt", 2048, 1, 65535, &marker_ops},
+>  	[ISCSI_PARAM_MAXCONNECTIONS] =
+>  	{"MaxConnections", 1, 1, 65535, &minimum_ops},
+> +	/* iSER draft */
+> +	[ISCSI_PARAM_RDMA_EXTENSIONS] =
+> +	{"RDMAExtensions", 0, 0, 1, &and_ops},
+> +	[ISCSI_PARAM_TARGET_RDSL] =
+> +	{"TargetRecvDataSegmentLength", 8192, 512, 16777215, &minimum_ops},
+> +	[ISCSI_PARAM_INITIATOR_RDSL] =
+> +	{"InitiatorRecvDataSegmentLength", 8192, 512, 16777215, &minimum_ops},
+> +	[ISCSI_PARAM_MAX_OUTST_PDU] =
+> +	{"MaxOutstandingUnexpectedPDUs", 0, 2, 4294967295U, &min_or_zero_ops},
+>  	[ISCSI_PARAM_MAX] =
+>  	{NULL,},
+>  };
+> diff --git a/usr/iscsi/target.c b/usr/iscsi/target.c
+> index ab0685f..d7c1d57 100644
+> --- a/usr/iscsi/target.c
+> +++ b/usr/iscsi/target.c
+> @@ -283,6 +283,14 @@ int iscsi_target_create(struct target *t)
+>  		[ISCSI_PARAM_OFMARKINT] = {0, 2048},
+>  		[ISCSI_PARAM_IFMARKINT] = {0, 2048},
+>  		[ISCSI_PARAM_MAXCONNECTIONS] = {0, 1},
+> +#ifdef ISCSI_RDMA
+> +		[ISCSI_PARAM_RDMA_EXTENSIONS] = {0, 1},
+> +#else
+> +		[ISCSI_PARAM_RDMA_EXTENSIONS] = {0, 0},
+> +#endif
+> +		[ISCSI_PARAM_TARGET_RDSL] = {0, 262144},
+> +		[ISCSI_PARAM_INITIATOR_RDSL] = {0, 262144},
+> +		[ISCSI_PARAM_MAX_OUTST_PDU] =  {0, 0},  /* not in open-iscsi */
+>  	};
+
+Can we avoid adding another #ifdef?
+
+I really like to remove the existing #ifdef.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 03:20:52 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 11:20:52 +0900
+Subject: [Stgt-devel] [PATCH 15/20] iser rounding
+In-Reply-To: <6dae60a5f3d8f3947bceeb57f3c7c4bcead8fadb.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<6dae60a5f3d8f3947bceeb57f3c7c4bcead8fadb.1192554396.git.pw@osc.edu>
+Message-ID: <20071115112052Z.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 16 Oct 2007 11:21:23 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> RDMA data packets are not padded up to 4 byte boundaries, unlike TCP.
+> Reasons for this can be found in doc/README.iser.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/iscsi/iscsid.c |   24 +++++++++++++++++-------
+>  1 files changed, 17 insertions(+), 7 deletions(-)
+> 
+> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+> index 8b7b48e..6d5471e 100644
+> --- a/usr/iscsi/iscsid.c
+> +++ b/usr/iscsi/iscsid.c
+> @@ -1157,7 +1157,9 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+>  			uint32_t len;
+>  			void *buf;
+>  
+> -			len = roundup(task->read_len, 4);
+> +			len = task->read_len;
+> +			if (!conn->tp->rdma)
+> +				len = roundup(len, 4);
+
+I want to avoid doing something like this:
+
+if (conn->tp->rdma)
+	do iser
+else
+	do tcp
+
+
+Can you add 'pad_len' to iscsi_transport struct and do something like:
+
+len = roundup(task->read_len, conn->tp->pad_len);
+
+
+tcp sets it to PAD_WORD_LEN and iser sets it to 1.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 04:45:27 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 12:45:27 +0900
+Subject: [Stgt-devel] [PATCH 03/20] iser transport buf
+In-Reply-To: <20071114163555X.tomof@acm.org>
+References: <20071112230252F.tomof@acm.org> <20071114003605.GA27114@osc.edu>
+	<20071114163555X.tomof@acm.org>
+Message-ID: <20071115124527L.fujita.tomonori@lab.ntt.co.jp>
+
+On Wed, 14 Nov 2007 16:33:32 +0900
+FUJITA Tomonori <tomof at acm.org> wrote:
+
+> On Tue, 13 Nov 2007 19:36:05 -0500
+> Pete Wyckoff <pw at osc.edu> wrote:
+> 
+> > tomof at acm.org wrote on Mon, 12 Nov 2007 23:14 +0900:
+> > > On Tue, 16 Oct 2007 11:18:57 -0400
+> > > Pete Wyckoff <pw at osc.edu> wrote:
+> > > 
+> > > > For RDMA, it is often nice to use data from a pool of pre-registered
+> > > > buffers.  To do this, the transport allocates memory for a response and
+> > > > passes it down to the devices to fill.  Some operations, though,
+> > > > allocate their own buffers and return that new memory instead.  These
+> > > > are usually small and the allocation is just done for convenience to
+> > > > avoid length bounds checking.  Copy the data into the provided transport
+> > > > buffer instead.
+> > > 
+> > > I killed memory allocation in scsi device code (spc, mmc, sbc, smc)
+> > > and kill all the hacky memory management code. Now LLDs allocate and
+> > > free buffer for data transfer.
+> > 
+> > But now you need two mallocs per command:  one for the task and one
+> > for the (aligned) data.  Bidi needs three.  This will show up in
+> > iser performance, but might be a worthwhile trade-off.  Maybe we
+> > could add slabs for common sizes (ick).
+> 
+> I thought that iSER code already does something like that since you
+> use pre-registered buffer again and again.
+> 
+> glib also does something like that. So I don't think that this change
+> will effect performance much.
+> 
+> 
+> > I have a lot of rebasing to do after all your bidi buffer work.  It
+> > looks like good changes so far, but I have a couple of concerns from
+> > a brief peruse of the changes in git.
+> > 
+> > Zeroing out the data chunk for non-READ/WRITE commands.  There are
+> > lots of OSD commands hidden inside the 0x7f extended format, and
+> > other non-OSD non-SBC commands too.  Can we just move the zeroing to
+> > where it is needed?  Like in each of the inquiry, etc.  This zeroing
+> > was a major performance problem for iser.
+> 
+> Yeah, I added that hack because device type code is broken (assumes
+> that buffer is large enough and zero'ed out). We need to fix device
+> type code.
+> 
+> 
+> > Accessor and setter functions for scmd.  I don't see what value they
+> > add.  Except maybe for the "(void*)(unsigned long)" ones.
+> 
+> I want to insulate LLDs from scsi_cmd internals like Linux scsi-ml
+> does. It enables us to change the structure freely in the future
+> without caring about device type code and llds.
+> 
+> 
+> > Also, building functions using cpp to glue names together breaks
+> > things like ctags, cscope, and diff -p.  Curious to hear why you
+> > like them.
+> 
+> Yeah, there are the pros and cons of using cpp magic. I prefer using
+> cpp magic than defining lots of similar functions. And I think that
+> linux scsi developers are already familiar with that (see the
+> transport classes).
+> 
+> 
+> > Thanks for working on this.  Bidi handling in bs_* will be much
+> > cleaner now.
+> 
+> No problem. I wanted this cleanups before the code becomes bigger by
+> adding iSER, FCoE, etc.
+> 
+> 
+> >  I'll be away from email until 25 nov, but will look at
+> > your changes in detail and rebase iser after.
+> 
+> Thanks. Until 25, I try to merge some of your iSER patches that
+> haven't been merged yet.
+
+I think that I've merged all the patches that I can merge. I wait for
+your third submission.
+
+Thanks,
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Nov 15 04:42:19 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 15 Nov 2007 12:42:19 +0900
+Subject: [Stgt-devel] [PATCH 14/20] iser transport mxdsl
+In-Reply-To: <005fd62cf055ec62b662d6de8491d54325917476.1192554396.git.pw@osc.edu>
+References: <2beef6fd41305fae52a1692d649646f3a0e05cf9.1192554396.git.pw@osc.edu>
+	<005fd62cf055ec62b662d6de8491d54325917476.1192554396.git.pw@osc.edu>
+Message-ID: <20071115124219O.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 16 Oct 2007 11:21:23 -0400
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> The RDMA transport chooses the size for data-in and data-out
+> transfers, as these operations are not visible to the initiator.
+> MaxXmitDataSegmentLength applies only to control-type PDUs, not
+> to RDMA data transfers.  Add a per-connection parameter to hold
+> the data transfer size chosen by the transport, with the proper
+> default for TCP.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/iscsi/conn.c   |    2 ++
+>  usr/iscsi/iscsid.c |   16 ++++++++++------
+>  usr/iscsi/iscsid.h |    1 +
+>  3 files changed, 13 insertions(+), 6 deletions(-)
+
+Merged, thanks.
+
+I renamed data_inout_max_size data_inout_max_length.
+
+
+From tomof at acm.org  Sat Nov 17 02:46:49 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sat, 17 Nov 2007 10:46:49 +0900
+Subject: [Stgt-devel] [PATCH 10/20] iser connection transport data
+In-Reply-To: <20071114190503.GA584@osc.edu>
+References: <29cd088b80c82ce8b050b01e22d1e54121024f68.1192554396.git.pw@osc.edu>
+	<200711141504.lAEF4akL027279@mbox.iij4u.or.jp>
+	<20071114190503.GA584@osc.edu>
+Message-ID: <20071117104826M.tomof@acm.org>
+
+On Wed, 14 Nov 2007 14:05:03 -0500
+Pete Wyckoff <pw at osc.edu> wrote:
+
+> tomof at acm.org wrote on Wed, 14 Nov 2007 23:33 +0900:
+> > Moving connection allocation to transport would work better for iSER?
+> > 
+> > This patch is against the lastest git tree
+> > (09532079071d65ec62dae982324ab07a895e16f1).
+> [..]
+> > -struct tcp_conn_info {
+> > +struct iscsi_tcp_connection {
+> >  	int fd;
+> > +
+> > +	struct iscsi_connection iscsi_conn;
+> >  };
+> 
+> Sure, good idea.  It will create a bit of churn against the later
+> patches but easily fixed.  Note that iser adds a task->trans_data
+> too; you could treat it similarly.
+
+How about this?
+
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 905ec4d..3cb5944 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -308,6 +308,21 @@ void iscsi_event_modify(struct iscsi_connection *conn, int events)
+ 		eprintf("tgt_event_modify failed\n");
+ }
+ 
++struct iscsi_task *iscsi_tcp_alloc_task(struct iscsi_connection *conn,
++					size_t ext_len)
++{
++	struct iscsi_task *task;
++
++	task = malloc(sizeof(*task) + ext_len);
++	if (task)
++		memset(task, 0, sizeof(*task) + ext_len);
++	return task;
++}
++void iscsi_tcp_free_task(struct iscsi_task *task)
++{
++	free(task);
++}
++
+ void *iscsi_tcp_alloc_data_buf(struct iscsi_connection *conn, size_t sz)
+ {
+ 	return valloc(sz);
+@@ -347,6 +362,8 @@ struct iscsi_transport iscsi_tcp = {
+ 	.ep_release		= iscsi_tcp_release,
+ 	.ep_show		= iscsi_tcp_show,
+ 	.ep_event_modify	= iscsi_event_modify,
++	.alloc_task		= iscsi_tcp_alloc_task,
++	.free_task		= iscsi_tcp_free_task,
+ 	.alloc_data_buf		= iscsi_tcp_alloc_data_buf,
+ 	.free_data_buf		= iscsi_tcp_free_data_buf,
+ 	.ep_getsockname		= iscsi_tcp_getsockname,
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 27a9a3d..9872f1b 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -997,15 +997,14 @@ static struct iscsi_task *iscsi_alloc_task(struct iscsi_connection *conn,
+ 	struct iscsi_task *task;
+ 	void *buf;
+ 
+-	task = malloc(sizeof(*task) + ext_len);
++	task = conn->tp->alloc_task(conn, ext_len);
+ 	if (!task)
+ 		return NULL;
+-	memset(task, 0, sizeof(*task) + ext_len);
+ 
+ 	if (data_len) {
+ 		buf = conn->tp->alloc_data_buf(conn, data_len);
+ 		if (!buf) {
+-			free(task);
++			conn->tp->free_task(task);
+ 			return NULL;
+ 		}
+ 		task->data = buf;
+@@ -1027,7 +1026,7 @@ void iscsi_free_task(struct iscsi_task *task)
+ 	conn->tp->free_data_buf(conn, scsi_get_in_buffer(&task->scmd));
+ 	conn->tp->free_data_buf(conn, scsi_get_out_buffer(&task->scmd));
+ 
+-	free(task);
++	conn->tp->free_task(task);
+ 	conn_put(conn);
+ }
+ 
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index e1b514d..e4997c4 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -4,6 +4,7 @@
+ #include <sys/socket.h>
+ 
+ struct iscsi_connection;
++struct iscsi_task;
+ 
+ struct iscsi_transport {
+ 	const char *name;
+@@ -18,9 +19,10 @@ struct iscsi_transport {
+ 	void (*ep_write_end)(struct iscsi_connection *conn);
+ 	size_t (*ep_close)(struct iscsi_connection *conn);
+ 	void (*ep_release)(struct iscsi_connection *conn);
+-
+ 	int (*ep_show)(struct iscsi_connection *conn, char *buf, int rest);
+ 	void (*ep_event_modify)(struct iscsi_connection *conn, int events);
++	struct iscsi_task *(*alloc_task)(struct iscsi_connection *conn, size_t ext_len);
++	void (*free_task)(struct iscsi_task *task);
+ 	void *(*alloc_data_buf)(struct iscsi_connection *conn, size_t sz);
+ 	void (*free_data_buf)(struct iscsi_connection *conn, void *buf);
+ 	int (*ep_getsockname)(struct iscsi_connection *conn,
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Nov 16 10:33:59 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 16 Nov 2007 18:33:59 +0900
+Subject: [Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+In-Reply-To: <20071106012928S.tomof@acm.org>
+References: <20071023211400.GA6091@linux.vnet.ibm.com>
+	<20071106012928S.tomof@acm.org>
+Message-ID: <20071116183359J.fujita.tomonori@lab.ntt.co.jp>
+
+On Tue, 6 Nov 2007 01:27:10 +0900
+FUJITA Tomonori <tomof at acm.org> wrote:
+
+> Sorry about the delay.
+> 
+> On Tue, 23 Oct 2007 16:14:01 -0500
+> Robert Jennings <rcj at linux.vnet.ibm.com> wrote:
+> 
+> > A little threading work like we have in bs_sync for bs_mmap.  The mmap
+> > can be taken care of with a small pool of worker threads this way.
+> > 
+> > After the mmap the completed commands enter back into the main tgtd
+> > thread and would be sent to the kernel for in-kernel drivers through
+> > kreq_send.  Unfortunately kreq_send can sleep in blk_rq_map_user or
+> > scsi_map_user_pages and hold up processing in tgtd.  So kreq_send can
+> > add the command to a list and hand it off to a small thread pool to
+> > process sending the replies to the kernel.
+> 
+> tgtd is blocked when the data of a file isn't in page cache. So how
+> about worker threads does access to the data before tgtd calls
+> kreq_send? It works like the flush web server.
+
+Have you measured the performance with your patch?
+
+I tried the worker thread idea, but the performance drops (probabaly
+due to pipe notification overveheads).
+
+
+diff --git a/usr/Makefile b/usr/Makefile
+index addf5be..7339dfc 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -29,6 +29,7 @@ ifneq ($(IBMVIO),)
+ CFLAGS += -DIBMVIO -DUSE_KERNEL
+ TGTD_OBJS += $(addprefix ibmvio/, ibmvio.o)
+ TGTD_OBJS += bs_mmap.o tgtif.o
++LIBS += -lpthread
+ endif
+ 
+ ifneq ($(ISCSI),)
+diff --git a/usr/bs_mmap.c b/usr/bs_mmap.c
+index ad1bb4f..e4c0b86 100644
+--- a/usr/bs_mmap.c
++++ b/usr/bs_mmap.c
+@@ -26,59 +26,277 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <pthread.h>
+ #include <sys/mman.h>
++#include <sys/epoll.h>
+ 
+ #include "list.h"
+ #include "util.h"
+ #include "tgtd.h"
+ #include "scsi.h"
+ 
+-static int bs_mmap_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+-{
+-	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
++#define NR_WORKER_THREADS	4
+ 
+-	return *fd >= 0 ? 0 : *fd;
+-}
++struct bs_mmap_info {
++	pthread_t ack_thread;
++	pthread_t worker_thread[NR_WORKER_THREADS];
+ 
+-static void bs_mmap_close(struct scsi_lu *lu)
++	/* protected by pipe */
++	struct list_head ack_list;
++
++	pthread_cond_t finished_cond;
++	pthread_mutex_t finished_lock;
++	struct list_head finished_list;
++
++	/* wokers sleep on this and signaled by tgtd */
++	pthread_cond_t pending_cond;
++	/* locked by tgtd and workers */
++	pthread_mutex_t pending_lock;
++	/* protected by pending_lock */
++	struct list_head pending_list;
++
++	int command_fd[2];
++	int done_fd[2];
++
++	int stop;
++};
++
++static void *bs_mmap_ack_fn(void *arg)
+ {
+-	close(lu->fd);
++	struct bs_mmap_info *info = arg;
++	int command, ret, nr;
++	struct scsi_cmd *cmd;
++
++retry:
++	ret = read(info->command_fd[0], &command, sizeof(command));
++	if (ret < 0) {
++		eprintf("ack pthread will be dead, %m\n");
++		if (errno == EAGAIN || errno == EINTR)
++			goto retry;
++
++		goto out;
++	}
++
++	pthread_mutex_lock(&info->finished_lock);
++retest:
++	if (list_empty(&info->finished_list)) {
++		pthread_cond_wait(&info->finished_cond, &info->finished_lock);
++		goto retest;
++	}
++
++	while (!list_empty(&info->finished_list)) {
++		cmd = list_entry(info->finished_list.next,
++				 struct scsi_cmd, bs_list);
++
++		dprintf("found %p\n", cmd);
++
++		list_del(&cmd->bs_list);
++		list_add(&cmd->bs_list, &info->ack_list);
++	}
++
++	pthread_mutex_unlock(&info->finished_lock);
++
++	nr = 1;
++rewrite:
++	ret = write(info->done_fd[1], &nr, sizeof(nr));
++	if (ret < 0) {
++		eprintf("can't ack tgtd, %m\n");
++		if (errno == EAGAIN || errno == EINTR)
++			goto rewrite;
++
++		goto out;
++	}
++
++	goto retry;
++out:
++	return NULL;
+ }
+ 
+ #define pgcnt(size, offset)	((((size) + ((offset) & (pagesize - 1))) + (pagesize - 1)) >> pageshift)
+ 
+-static int bs_mmap_cmd_submit(struct scsi_cmd *cmd)
++static void *bs_mmap_worker_fn(void *arg)
+ {
+-	int fd = cmd->dev->fd, ret = 0;
+-	void *p;
+-	uint64_t addr;
++	int ret = 0;
++	struct bs_mmap_info *info = arg;
++	struct scsi_cmd *cmd;
+ 	uint32_t length;
+ 
+-	if (cmd->scb[0] == SYNCHRONIZE_CACHE ||
+-	    cmd->scb[0] == SYNCHRONIZE_CACHE_16)
+-		return fsync(fd);
++	while (1) {
++		uint64_t addr;
++		char *p, dummy;
++		int i, nr;
+ 
+-	length = (scsi_get_data_dir(cmd) == DATA_WRITE) ?
+-		scsi_get_out_length(cmd) : scsi_get_in_length(cmd);
++		pthread_mutex_lock(&info->pending_lock);
++	retest:
++		if (list_empty(&info->pending_list)) {
++			pthread_cond_wait(&info->pending_cond, &info->pending_lock);
++			if (info->stop) {
++				pthread_mutex_unlock(&info->pending_lock);
++				break;
++			}
++			goto retest;
++		}
+ 
+-	p = mmap64(NULL, pgcnt(length, cmd->offset) << pageshift,
+-		   PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+-		   cmd->offset & ~((1ULL << pageshift) - 1));
+-	if (p == MAP_FAILED) {
+-		ret = -EINVAL;
+-		eprintf("%u %" PRIu64 "\n", length, cmd->offset);
++		cmd = list_entry(info->pending_list.next,
++				 struct scsi_cmd, bs_list);
++
++		dprintf("got %p\n", cmd);
++
++		list_del(&cmd->bs_list);
++		pthread_mutex_unlock(&info->pending_lock);
++
++		if (cmd->scb[0] == SYNCHRONIZE_CACHE ||
++		    cmd->scb[0] == SYNCHRONIZE_CACHE_16) {
++			ret = fsync(cmd->dev->fd);
++			goto done;
++		}
++
++		ret = 0;
++
++		if (cmd->data_dir == DATA_WRITE) {
++			addr = (unsigned long)scsi_get_out_buffer(cmd);
++			length = scsi_get_out_length(cmd);
++		} else {
++			addr = (unsigned long)scsi_get_in_buffer(cmd);
++			length = scsi_get_in_length(cmd);
++		}
++
++		nr = pgcnt(length, (addr & (pagesize - 1)));
++		addr &= ~(pagesize - 1);
++
++		p = (void *)(unsigned long)addr;
++		for (i = 0; i < nr; i++) {
++			dummy = *p;
++			p += pagesize;
++		}
++	done:
++		if (ret) {
++			eprintf("io error %p %x %d %d, %m\n",
++				cmd, cmd->scb[0], ret, cmd->offset);
++			scsi_set_result(cmd, SAM_STAT_CHECK_CONDITION);
++			sense_data_build(cmd, MEDIUM_ERROR, ASC_READ_ERROR);
++		} else
++			scsi_set_result(cmd, SAM_STAT_GOOD);
++
++		pthread_mutex_lock(&info->finished_lock);
++		list_add(&cmd->bs_list, &info->finished_list);
++		pthread_mutex_unlock(&info->finished_lock);
++
++		pthread_cond_signal(&info->finished_cond);
+ 	}
+ 
+-	addr = (unsigned long)p + (cmd->offset & (pagesize - 1));
++	return NULL;
++}
+ 
+-	if (scsi_get_data_dir(cmd) == DATA_WRITE)
+-		scsi_set_out_buffer(cmd, (void *)(unsigned long)addr);
+-	else if (scsi_get_data_dir(cmd) == DATA_READ)
+-		scsi_set_in_buffer(cmd, (void *)(unsigned long)addr);
++static void bs_mmap_handler(int fd, int events, void *data)
++{
++	struct bs_mmap_info *info = data;
++	struct scsi_cmd *cmd;
++	int nr_events, ret;
+ 
+-	dprintf("%" PRIx64 " %u %" PRIu64 "\n", addr, length, cmd->offset);
++	ret = read(info->done_fd[0], &nr_events, sizeof(nr_events));
++	if (ret < 0) {
++		eprintf("wrong wakeup\n");
++		return;
++	}
++
++	while (!list_empty(&info->ack_list)) {
++		cmd = list_entry(info->ack_list.next,
++				 struct scsi_cmd, bs_list);
+ 
+-	return ret;
++		dprintf("back to tgtd, %p\n", cmd);
++
++		list_del(&cmd->bs_list);
++		target_cmd_io_done(cmd, scsi_get_result(cmd));
++	}
++
++	write(info->command_fd[1], &nr_events, sizeof(nr_events));
++}
++
++static int bs_mmap_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
++{
++	int i, ret;
++	struct bs_mmap_info *info =
++		(struct bs_mmap_info *)((char *)lu + sizeof(*lu));
++
++	INIT_LIST_HEAD(&info->ack_list);
++	INIT_LIST_HEAD(&info->finished_list);
++	INIT_LIST_HEAD(&info->pending_list);
++
++	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
++	if (*fd < 0)
++		return *fd;
++
++	pthread_cond_init(&info->finished_cond, NULL);
++	pthread_cond_init(&info->pending_cond, NULL);
++
++	pthread_mutex_init(&info->finished_lock, NULL);
++	pthread_mutex_init(&info->pending_lock, NULL);
++
++	ret = pipe(info->command_fd);
++	if (ret)
++		goto close_dev_fd;
++
++	ret = pipe(info->done_fd);
++	if (ret)
++		goto close_command_fd;
++
++	ret = tgt_event_add(info->done_fd[0], EPOLLIN, bs_mmap_handler, info);
++	if (ret)
++		goto close_done_fd;
++
++	ret = pthread_create(&info->ack_thread, NULL, bs_mmap_ack_fn, info);
++	if (ret)
++		goto event_del;
++
++	for (i = 0; i < ARRAY_SIZE(info->worker_thread); i++) {
++		ret = pthread_create(&info->worker_thread[i], NULL,
++				     bs_mmap_worker_fn, info);
++	}
++
++	write(info->command_fd[1], &ret, sizeof(ret));
++
++	return 0;
++event_del:
++	tgt_event_del(info->done_fd[0]);
++close_done_fd:
++	close(info->done_fd[0]);
++	close(info->done_fd[1]);
++close_command_fd:
++	close(info->command_fd[0]);
++	close(info->command_fd[1]);
++close_dev_fd:
++	close(*fd);
++
++	pthread_cond_destroy(&info->finished_cond);
++	pthread_cond_destroy(&info->pending_cond);
++	pthread_mutex_destroy(&info->finished_lock);
++	pthread_mutex_destroy(&info->pending_lock);
++
++	return -1;
++}
++
++static void bs_mmap_close(struct scsi_lu *lu)
++{
++	int i;
++	struct bs_mmap_info *info =
++		(struct bs_mmap_info *)((char *)lu + sizeof(*lu));
++
++	pthread_cancel(info->ack_thread);
++	pthread_join(info->ack_thread, NULL);
++
++	info->stop = 1;
++	pthread_cond_broadcast(&info->pending_cond);
++
++	for (i = 0; i < ARRAY_SIZE(info->worker_thread); i++)
++		pthread_join(info->worker_thread[i], NULL);
++
++	pthread_cond_destroy(&info->finished_cond);
++	pthread_cond_destroy(&info->pending_cond);
++	pthread_mutex_destroy(&info->finished_lock);
++	pthread_mutex_destroy(&info->pending_lock);
++
++	close(lu->fd);
+ }
+ 
+ static int bs_mmap_cmd_done(struct scsi_cmd *cmd)
+@@ -109,7 +327,59 @@ static int bs_mmap_cmd_done(struct scsi_cmd *cmd)
+ 	return err;
+ }
+ 
++static int bs_mmap_cmd_submit(struct scsi_cmd *cmd)
++{
++	struct scsi_lu *lu = cmd->dev;
++	struct bs_mmap_info *info =
++		(struct bs_mmap_info *)((char *)lu + sizeof(*lu));
++	int fd;
++	uint32_t length;
++	uint64_t addr;
++	void *p;
++
++	fd = cmd->dev->fd;
++	length = 0;
++
++	if (cmd->scb[0] == SYNCHRONIZE_CACHE ||
++	    cmd->scb[0] == SYNCHRONIZE_CACHE_16)
++		goto queuing;
++
++	if (cmd->data_dir == DATA_WRITE)
++		length = scsi_get_out_length(cmd);
++	else
++		length = scsi_get_in_length(cmd);
++
++	p = mmap64(NULL, pgcnt(length, cmd->offset) << pageshift,
++		   PROT_READ | PROT_WRITE, MAP_SHARED, fd,
++		   cmd->offset & ~((1ULL << pageshift) - 1));
++	if (p == MAP_FAILED)
++		return EIO;
++
++	addr = (unsigned long)p + (cmd->offset & (pagesize - 1));
++
++	if (scsi_get_data_dir(cmd) == DATA_WRITE)
++		scsi_set_out_buffer(cmd, (void *)(unsigned long)addr);
++	else
++		scsi_set_in_buffer(cmd, (void *)(unsigned long)addr);
++
++	scsi_set_result(cmd, SAM_STAT_GOOD);
++
++queuing:
++	pthread_mutex_lock(&info->pending_lock);
++
++	list_add(&cmd->bs_list, &info->pending_list);
++
++	pthread_mutex_unlock(&info->pending_lock);
++
++	pthread_cond_signal(&info->pending_cond);
++
++	set_cmd_async(cmd);
++
++	return 0;
++}
++
+ struct backingstore_template mmap_bst = {
++	.bs_datasize		= sizeof(struct bs_mmap_info),
+ 	.bs_open		= bs_mmap_open,
+ 	.bs_close		= bs_mmap_close,
+ 	.bs_cmd_submit		= bs_mmap_cmd_submit,
+
+
+From albert.pauw at gmail.com  Sat Nov 24 15:45:14 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Sat, 24 Nov 2007 15:45:14 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+Message-ID: <474838FA.8090004@gmail.com>
+
+I saw that a device type of "No LUN" is defined in target.c.
+
+Would it be possible to use it to mask the controller (LUN 0) of every 
+target I create?
+
+I know it's not implemented yet, but it would be handy to have the 
+opportunity to have this LUN
+made invisible to the initiators.
+
+It might look something like this then:
+
+tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 
+--device-type "No LUN"
+
+
+Thanks,
+
+Albert
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20071124/1aec259e/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Nov 26 06:36:37 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 26 Nov 2007 14:36:37 +0900
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474838FA.8090004@gmail.com>
+References: <474838FA.8090004@gmail.com>
+Message-ID: <20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+
+On Sat, 24 Nov 2007 15:45:14 +0100
+Albert Pauw <albert.pauw at gmail.com> wrote:
+
+> I saw that a device type of "No LUN" is defined in target.c.
+> 
+> Would it be possible to use it to mask the controller (LUN 0) of every 
+> target I create?
+> 
+> I know it's not implemented yet, but it would be handy to have the 
+> opportunity to have this LUN
+> made invisible to the initiators.
+> 
+> It might look something like this then:
+> 
+> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 
+> --device-type "No LUN"
+
+What you want is remove the lun0 scc device, right?
+
+It doesn't work well for the ibmvstgt driver, so I also want to do
+something.
+
+When I finish some overdue tgt stuff, I'll take a look at it.
+
+Thanks,
+
+BTW, 
+
+1) please don't use an attached email.
+
+2) Have you compared tgt performance with IET recently?
+
+
+Thanks,
+
+
+From apauw at inter.nl.net  Mon Nov 26 09:18:32 2007
+From: apauw at inter.nl.net (Albert Pauw)
+Date: Mon, 26 Nov 2007 09:18:32 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+References: <474838FA.8090004@gmail.com>
+	<20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <474A8158.1020809@inter.nl.net>
+
+Hi Tomo
+> What you want is remove the lun0 scc device, right?
+>   
+Yes, see one my previously posted message regarding Windows behaviour.
+> It doesn't work well for the ibmvstgt driver, so I also want to do
+> something.
+>
+> When I finish some overdue tgt stuff, I'll take a look at it.
+>   
+Thanks that's appreciated.
+> Thanks,
+>
+> BTW, 
+>
+> 1) please don't use an attached email.
+>   
+You got me puzzled there, can't remember an attached email, but then again
+I sometimes forget to set the mail to plain text instead of html.
+> 2) Have you compared tgt performance with IET recently?
+>   
+I did a quick test just now, very interesting. Running tgt/iet on same 
+machine as open-iscsi
+I noticed that iet is nearly twice as fast. I used a simple test (just 
+hdparm -t) but the
+difference in behaviour is striking. tgt keeps returning the same speed 
+using hdparm, while
+iet creeps up in speed (which was initially faster anyway) to six times 
+faster than tgt.
+Mind you that must have something to do with caching, it's just strange 
+that tgt doesn't show
+that behaviour.
+
+Albert
+
+
+From apauw at inter.nl.net  Mon Nov 26 09:53:38 2007
+From: apauw at inter.nl.net (Albert Pauw)
+Date: Mon, 26 Nov 2007 09:53:38 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+References: <474838FA.8090004@gmail.com>
+	<20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <474A8992.6030509@inter.nl.net>
+
+Just reminded myself to compare apples with apples, not pears ;-)
+
+So I ran the tests again, both type of targets (iet, tgt) with the same 
+settings
+(MaxBurstLength, DataSegmentLenghts, Digests).
+
+I see a six fold difference in performance, I don't see iet starting low 
+(twice the performance of tgt)
+and going up in performance that much. Since the only parameters I 
+changed on iet
+was to set Digests to None explicitly the previously seen behaviour  
+must have come from the digest stuff in some way.
+All iet parameters where standard and I set tgt to match.
+
+Albert
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Nov 26 10:09:08 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 26 Nov 2007 18:09:08 +0900
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474A8992.6030509@inter.nl.net>
+References: <474838FA.8090004@gmail.com>
+	<20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+	<474A8992.6030509@inter.nl.net>
+Message-ID: <20071126180908N.fujita.tomonori@lab.ntt.co.jp>
+
+On Mon, 26 Nov 2007 09:53:38 +0100
+Albert Pauw <apauw at inter.nl.net> wrote:
+
+> Just reminded myself to compare apples with apples, not pears ;-)
+> 
+> So I ran the tests again, both type of targets (iet, tgt) with the same 
+> settings
+> (MaxBurstLength, DataSegmentLenghts, Digests).
+> 
+> I see a six fold difference in performance, I don't see iet starting low 
+> (twice the performance of tgt)
+
+So IET is still faster?
+
+If so, very wired. I just run open-iscsi and IET/tgt with two boxes
+connected via a GbE switch with the same iSCSI parameter
+
+sens:/home/fujita# ./ltp-full-20061222/testcases/kernel/io/disktest/disktest -PT -T30 -h1 -K8 -B32768 -pL -ID /dev/sdd
+
+- tgt
+
+| 2007/11/26-17:39:24 | STAT  | 2184 | v1.2.8 | /dev/sdd | Read throughput: 53706752.0B/s (51.22MB/s), IOPS 1647.0/s.
+
+- IET
+
+| 2007/11/26-17:44:21 | STAT  | 2248 | v1.2.8 | /dev/sdd | Read throughput: 42860544.0B/s (40.88MB/s), IOPS 1316.0/s.
+
+
+BTW, you need to change several parameter with tgt since the tgt
+default paramaters are different from the IET paramaters.
+
+
+From albert.pauw at gmail.com  Mon Nov 26 10:15:49 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Mon, 26 Nov 2007 10:15:49 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071126180908N.fujita.tomonori@lab.ntt.co.jp>
+References: <474838FA.8090004@gmail.com>	<20071126143637E.fujita.tomonori@lab.ntt.co.jp>	<474A8992.6030509@inter.nl.net>
+	<20071126180908N.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <474A8EC5.3040202@gmail.com>
+
+Hi Tomo,
+
+as said it was a simple test. Yes I changed all tgt parameters to match iet.
+
+I'll try your test. Another thing of course is, both initiator and 
+target ran on the same machine.
+
+So, I'll use a different machine for the target and initiator and run
+the test you did. Unfortunately, they're only coupled on 100 MBit ethernet.
+
+Let you know the results.
+
+Albert
+
+FUJITA Tomonori wrote:
+> On Mon, 26 Nov 2007 09:53:38 +0100
+> Albert Pauw <apauw at inter.nl.net> wrote:
+> 
+>> Just reminded myself to compare apples with apples, not pears ;-)
+>>
+>> So I ran the tests again, both type of targets (iet, tgt) with the same 
+>> settings
+>> (MaxBurstLength, DataSegmentLenghts, Digests).
+>>
+>> I see a six fold difference in performance, I don't see iet starting low 
+>> (twice the performance of tgt)
+> 
+> So IET is still faster?
+> 
+> If so, very wired. I just run open-iscsi and IET/tgt with two boxes
+> connected via a GbE switch with the same iSCSI parameter
+> 
+> sens:/home/fujita# ./ltp-full-20061222/testcases/kernel/io/disktest/disktest -PT -T30 -h1 -K8 -B32768 -pL -ID /dev/sdd
+> 
+> - tgt
+> 
+> | 2007/11/26-17:39:24 | STAT  | 2184 | v1.2.8 | /dev/sdd | Read throughput: 53706752.0B/s (51.22MB/s), IOPS 1647.0/s.
+> 
+> - IET
+> 
+> | 2007/11/26-17:44:21 | STAT  | 2248 | v1.2.8 | /dev/sdd | Read throughput: 42860544.0B/s (40.88MB/s), IOPS 1316.0/s.
+> 
+> 
+> BTW, you need to change several parameter with tgt since the tgt
+> default paramaters are different from the IET paramaters.
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+> 
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Nov 26 12:06:03 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 26 Nov 2007 20:06:03 +0900
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474A8992.6030509@inter.nl.net>
+References: <474838FA.8090004@gmail.com>
+	<20071126143637E.fujita.tomonori@lab.ntt.co.jp>
+	<474A8992.6030509@inter.nl.net>
+Message-ID: <20071126200603J.fujita.tomonori@lab.ntt.co.jp>
+
+On Mon, 26 Nov 2007 09:53:38 +0100
+Albert Pauw <apauw at inter.nl.net> wrote:
+
+> Just reminded myself to compare apples with apples, not pears ;-)
+> 
+> So I ran the tests again, both type of targets (iet, tgt) with the same 
+> settings
+> (MaxBurstLength, DataSegmentLenghts, Digests).
+
+Does this patch help on your configuration (target and initiator run
+on the same machine)?
+
+
+diff --git a/usr/log.c b/usr/log.c
+index 414f9f4..b77b8c3 100644
+--- a/usr/log.c
++++ b/usr/log.c
+@@ -338,8 +338,8 @@ int log_init(char *program_name, int size, int daemon, int debug)
+ 		sigaction(SIGSEGV, &sa_new, &sa_old );
+ 
+ 		while(1) {
+-			log_flush();
+-			sleep(1);
++/* 			log_flush(); */
++			sleep(100);
+ 		}
+ 		exit(0);
+ 	}
+
+
+From albert.pauw at gmail.com  Mon Nov 26 12:25:19 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Mon, 26 Nov 2007 12:25:19 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071126200603J.fujita.tomonori@lab.ntt.co.jp>
+References: <474838FA.8090004@gmail.com>	<20071126143637E.fujita.tomonori@lab.ntt.co.jp>	<474A8992.6030509@inter.nl.net>
+	<20071126200603J.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <474AAD1F.2000502@gmail.com>
+
+2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+
+The patch didn't make a difference, sorry.
+
+Albert
+> Does this patch help on your configuration (target and initiator run
+> on the same machine)?
+>
+>
+> diff --git a/usr/log.c b/usr/log.c
+> index 414f9f4..b77b8c3 100644
+> --- a/usr/log.c
+> +++ b/usr/log.c
+> @@ -338,8 +338,8 @@ int log_init(char *program_name, int size, int daemon, int debug)
+>  		sigaction(SIGSEGV, &sa_new, &sa_old );
+>  
+>  		while(1) {
+> -			log_flush();
+> -			sleep(1);
+> +/* 			log_flush(); */
+> +			sleep(100);
+>  		}
+>  		exit(0);
+>  	}
+>
+>   
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Nov 26 12:39:07 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 26 Nov 2007 20:39:07 +0900
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474AAD1F.2000502@gmail.com>
+References: <474A8992.6030509@inter.nl.net>
+	<20071126200603J.fujita.tomonori@lab.ntt.co.jp>
+	<474AAD1F.2000502@gmail.com>
+Message-ID: <20071126203907X.fujita.tomonori@lab.ntt.co.jp>
+
+On Mon, 26 Nov 2007 12:25:19 +0100
+Albert Pauw <albert.pauw at gmail.com> wrote:
+
+> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+> 
+> The patch didn't make a difference, sorry.
+
+The performances in the configuration don't matter much, but I just
+run initiator and target on the same machine:
+
+sens:/home/fujita# hdparm -t /dev/sdd
+
+/dev/sdd:
+ Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+sens:/home/fujita# hdparm -t /dev/sdd
+
+/dev/sdd:
+ Timing buffered disk reads:  376 MB in  3.03 seconds = 124.25 MB/sec
+sens:/home/fujita# hdparm -t /dev/sdd
+
+/dev/sdd:
+ Timing buffered disk reads:  400 MB in  3.08 seconds = 129.85 MB/sec
+sens:/home/fujita# hdparm -t /dev/sdd
+
+/dev/sdd:
+ Timing buffered disk reads:  410 MB in  3.11 seconds = 131.89 MB/sec
+sens:/home/fujita# hdparm -t /dev/sdd
+
+/dev/sdd:
+ Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+
+
+Seems that haparm isn't an appropriate tool to meature performance but
+not bad performances.
+
+
+From albert.pauw at gmail.com  Mon Nov 26 13:46:59 2007
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Mon, 26 Nov 2007 13:46:59 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474ABD2B.7010904@wpkg.org>
+References: <474A8992.6030509@inter.nl.net>	<20071126200603J.fujita.tomonori@lab.ntt.co.jp>	<474AAD1F.2000502@gmail.com>
+	<20071126203907X.fujita.tomonori@lab.ntt.co.jp>
+	<474ABD2B.7010904@wpkg.org>
+Message-ID: <474AC043.2090003@gmail.com>
+
+Thanks Tomasz,
+
+I didn't use the device mounted, but you are right in clearing the 
+caches. As told in the stuff I found on the internet regarding 
+drop_caches a sync is necessary first.
+
+Would it be an idea to create a test script using e.g disktest (on 
+diskdevice), iozone (on filesystem) clearing the caches properly.
+
+That way we can compare our own results better with others?
+
+Albert
+
+P.S. To be complete, the info on drop_caches I found on the internet:
+
+Kernels 2.6.16 and newer provide a mechanism to have the kernel drop the 
+page cache and/or inode and dentry caches on command, which can help 
+free up a lot of memory. Now you can throw away that script that 
+allocated a ton of memory just to get rid of the cache...
+
+To use /proc/sys/vm/drop_caches, just echo a number to it.
+
+To free pagecache:
+
+# echo 1 > /proc/sys/vm/drop_caches
+
+To free dentries and inodes:
+
+# echo 2 > /proc/sys/vm/drop_caches
+
+To free pagecache, dentries and inodes:
+
+echo 3 > /proc/sys/vm/drop_caches
+
+As this is a non-destructive operation and dirty objects are not 
+freeable, the user should run "sync" first!
+
+> It is appropriate, when used appropriately.
+> 
+> If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+> 
+> 
+> One should always clear the cache if wants to measure performance (on 
+> the target, on the initiator, or both, depending on where the block 
+> device is used; to be 100% sure, clear the cache on both target and 
+> initiator before each test):
+> 
+> echo 3 > /proc/sys/vm/drop_caches
+> 
+> 
+
+
+
+From mangoo at wpkg.org  Mon Nov 26 13:33:47 2007
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 26 Nov 2007 13:33:47 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071126203907X.fujita.tomonori@lab.ntt.co.jp>
+References: <474A8992.6030509@inter.nl.net>	<20071126200603J.fujita.tomonori@lab.ntt.co.jp>	<474AAD1F.2000502@gmail.com>
+	<20071126203907X.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <474ABD2B.7010904@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Mon, 26 Nov 2007 12:25:19 +0100
+> Albert Pauw <albert.pauw at gmail.com> wrote:
+> 
+>> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+>> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+>>
+>> The patch didn't make a difference, sorry.
+> 
+> The performances in the configuration don't matter much, but I just
+> run initiator and target on the same machine:
+> 
+> sens:/home/fujita# hdparm -t /dev/sdd
+> 
+> /dev/sdd:
+>  Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+
+(...)
+
+> sens:/home/fujita# hdparm -t /dev/sdd
+> 
+> /dev/sdd:
+>  Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+> 
+> 
+> Seems that haparm isn't an appropriate tool to meature performance but
+> not bad performances.
+
+It is appropriate, when used appropriately.
+
+If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+
+
+One should always clear the cache if wants to measure performance (on 
+the target, on the initiator, or both, depending on where the block 
+device is used; to be 100% sure, clear the cache on both target and 
+initiator before each test):
+
+echo 3 > /proc/sys/vm/drop_caches
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From tomof at acm.org  Mon Nov 26 14:40:35 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Mon, 26 Nov 2007 22:40:35 +0900
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474ABD2B.7010904@wpkg.org>
+References: <474AAD1F.2000502@gmail.com>
+	<20071126203907X.fujita.tomonori@lab.ntt.co.jp>
+	<474ABD2B.7010904@wpkg.org>
+Message-ID: <20071126224307W.tomof@acm.org>
+
+On Mon, 26 Nov 2007 13:33:47 +0100
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> FUJITA Tomonori schrieb:
+> > On Mon, 26 Nov 2007 12:25:19 +0100
+> > Albert Pauw <albert.pauw at gmail.com> wrote:
+> > 
+> >> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+> >> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+> >>
+> >> The patch didn't make a difference, sorry.
+> > 
+> > The performances in the configuration don't matter much, but I just
+> > run initiator and target on the same machine:
+> > 
+> > sens:/home/fujita# hdparm -t /dev/sdd
+> > 
+> > /dev/sdd:
+> >  Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+> 
+> (...)
+> 
+> > sens:/home/fujita# hdparm -t /dev/sdd
+> > 
+> > /dev/sdd:
+> >  Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+> > 
+> > 
+> > Seems that haparm isn't an appropriate tool to meature performance but
+> > not bad performances.
+> 
+> It is appropriate, when used appropriately.
+
+Oops, I'm not talking about only cache.
+
+hdparm seems to issue only one outstanding request, the duration is
+too short, etc. It's not designed for performance measurement.
+
+
+> If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+
+Block devices always use page cache (unless you access to it via DIO).
+
+
+BTW, please let me know if you find that tgt's performance is still
+terrible as compared with IET.
+
+
+From mangoo at wpkg.org  Mon Nov 26 15:53:37 2007
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 26 Nov 2007 15:53:37 +0100
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071126224307W.tomof@acm.org>
+References: <474AAD1F.2000502@gmail.com>	<20071126203907X.fujita.tomonori@lab.ntt.co.jp>	<474ABD2B.7010904@wpkg.org>
+	<20071126224307W.tomof@acm.org>
+Message-ID: <474ADDF1.5010101@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Mon, 26 Nov 2007 13:33:47 +0100
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+>> FUJITA Tomonori schrieb:
+>>> On Mon, 26 Nov 2007 12:25:19 +0100
+>>> Albert Pauw <albert.pauw at gmail.com> wrote:
+>>>
+>>>> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+>>>> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+>>>>
+>>>> The patch didn't make a difference, sorry.
+>>> The performances in the configuration don't matter much, but I just
+>>> run initiator and target on the same machine:
+>>>
+>>> sens:/home/fujita# hdparm -t /dev/sdd
+>>>
+>>> /dev/sdd:
+>>>  Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+>> (...)
+>>
+>>> sens:/home/fujita# hdparm -t /dev/sdd
+>>>
+>>> /dev/sdd:
+>>>  Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+>>>
+>>>
+>>> Seems that haparm isn't an appropriate tool to meature performance but
+>>> not bad performances.
+>> It is appropriate, when used appropriately.
+> 
+> Oops, I'm not talking about only cache.
+> 
+> hdparm seems to issue only one outstanding request, the duration is
+> too short, etc. It's not designed for performance measurement.
+
+True, hdparm is only a very basic tool for measuring performance.
+
+
+>> If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+> 
+> Block devices always use page cache (unless you access to it via DIO).
+
+Umm:
+
+
+# echo 3 > /proc/sys/vm/drop_caches
+
+# free
+              total       used       free     shared    buffers     cached
+Mem:        512252      22152     490100          0         84       4320
+-/+ buffers/cache:      17748     494504
+Swap:            0          0          0
+
+# dd if=/dev/LVM2/swap of=/dev/null
+6291456+0 records in
+6291456+0 records out
+3221225472 bytes (3.2 GB) copied, 52.8739 seconds, 60.9 MB/s
+
+# free
+              total       used       free     shared    buffers     cached
+Mem:        512252      22760     489492          0        124       4708
+-/+ buffers/cache:      17928     494324
+Swap:            0          0          0
+
+So, nothing was cached.
+
+Now, let's use this volume:
+
+# swapon /dev/superthecus/swap
+
+# dd if=/dev/superthecus/swap of=/dev/null
+6291456+0 records in
+6291456+0 records out
+3221225472 bytes (3.2 GB) copied, 52.4117 seconds, 61.5 MB/s
+
+# free
+              total       used       free     shared    buffers     cached
+Mem:        512252     423212      89040          0     393836       4348
+-/+ buffers/cache:      25028     487224
+Swap:      3145720        112    3145608
+
+Plenty of cache was used.
+
+So, once dd accessed it via DIO, and once without DIO? I don't 
+understand it.
+
+
+> BTW, please let me know if you find that tgt's performance is still
+> terrible as compared with IET.
+
+Yes, I'll try to make some tests this week.
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From tomof at acm.org  Mon Nov 26 17:01:56 2007
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Tue, 27 Nov 2007 01:01:56 +0900
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <474ADDF1.5010101@wpkg.org>
+References: <474ABD2B.7010904@wpkg.org> <20071126224307W.tomof@acm.org>
+	<474ADDF1.5010101@wpkg.org>
+Message-ID: <20071127010358P.tomof@acm.org>
+
+On Mon, 26 Nov 2007 15:53:37 +0100
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> FUJITA Tomonori schrieb:
+> > On Mon, 26 Nov 2007 13:33:47 +0100
+> > Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> > 
+> >> FUJITA Tomonori schrieb:
+> >>> On Mon, 26 Nov 2007 12:25:19 +0100
+> >>> Albert Pauw <albert.pauw at gmail.com> wrote:
+> >>>
+> >>>> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+> >>>> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+> >>>>
+> >>>> The patch didn't make a difference, sorry.
+> >>> The performances in the configuration don't matter much, but I just
+> >>> run initiator and target on the same machine:
+> >>>
+> >>> sens:/home/fujita# hdparm -t /dev/sdd
+> >>>
+> >>> /dev/sdd:
+> >>>  Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+> >> (...)
+> >>
+> >>> sens:/home/fujita# hdparm -t /dev/sdd
+> >>>
+> >>> /dev/sdd:
+> >>>  Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+> >>>
+> >>>
+> >>> Seems that haparm isn't an appropriate tool to meature performance but
+> >>> not bad performances.
+> >> It is appropriate, when used appropriately.
+> > 
+> > Oops, I'm not talking about only cache.
+> > 
+> > hdparm seems to issue only one outstanding request, the duration is
+> > too short, etc. It's not designed for performance measurement.
+> 
+> True, hdparm is only a very basic tool for measuring performance.
+> 
+> 
+> >> If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+> > 
+> > Block devices always use page cache (unless you access to it via DIO).
+> 
+> Umm:
+> 
+> 
+> # echo 3 > /proc/sys/vm/drop_caches
+> 
+> # free
+>               total       used       free     shared    buffers     cached
+> Mem:        512252      22152     490100          0         84       4320
+> -/+ buffers/cache:      17748     494504
+> Swap:            0          0          0
+> 
+> # dd if=/dev/LVM2/swap of=/dev/null
+> 6291456+0 records in
+> 6291456+0 records out
+> 3221225472 bytes (3.2 GB) copied, 52.8739 seconds, 60.9 MB/s
+> 
+> # free
+>               total       used       free     shared    buffers     cached
+> Mem:        512252      22760     489492          0        124       4708
+> -/+ buffers/cache:      17928     494324
+> Swap:            0          0          0
+> 
+> So, nothing was cached.
+
+When dd finished, nothing was cached. But dd enjoyed cache.
+
+ag:/home/fujita# echo 3 > /proc/sys/vm/drop_caches
+ag:/home/fujita# free
+             total       used       free     shared    buffers     cached
+Mem:        256696      32144     224552          0        188       4048
+-/+ buffers/cache:      27908     228788
+Swap:       409616          0     409616
+
+ag:/home/fujita# dd if=/dev/sdb of=/dev/null
+
+Let's suspend dd and see how memory is used:
+
+[1]+  Stopped                 dd if=/dev/sdb of=/dev/null
+
+ag:/home/fujita# free
+             total       used       free     shared    buffers     cached
+Mem:        256696      61408     195288          0      28144       4208
+-/+ buffers/cache:      29056     227640
+Swap:       409616          0     409616
+
+
+'buffers' is the amount of page cache belonging to block devices. dd
+use tons of page cache.
+
+If dd reads a block device sequentially, probabaly dd can enjoy page
+cache due to readahead.
+
+So you never get proper results of disk performance with programs that
+doesn't use dio.
+
+
+> > BTW, please let me know if you find that tgt's performance is still
+> > terrible as compared with IET.
+> 
+> Yes, I'll try to make some tests this week.
+
+Nice, thanks.
+
+
+From blackmagic02881 at gmail.com  Mon Nov 26 17:10:04 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 26 Nov 2007 11:10:04 -0500
+Subject: [Stgt-devel] No LUN option in target.c
+In-Reply-To: <20071127010358P.tomof@acm.org>
+References: <474ABD2B.7010904@wpkg.org> <20071126224307W.tomof@acm.org>
+	<474ADDF1.5010101@wpkg.org>  <20071127010358P.tomof@acm.org>
+Message-ID: <1196093404.4067.6.camel@dhcp-117.ibrix.com>
+
+On Tue, 2007-11-27 at 01:01 +0900, FUJITA Tomonori wrote:
+> On Mon, 26 Nov 2007 15:53:37 +0100
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+> > FUJITA Tomonori schrieb:
+> > > On Mon, 26 Nov 2007 13:33:47 +0100
+> > > Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> > > 
+> > >> FUJITA Tomonori schrieb:
+> > >>> On Mon, 26 Nov 2007 12:25:19 +0100
+> > >>> Albert Pauw <albert.pauw at gmail.com> wrote:
+> > >>>
+> > >>>> 2007/11/26-12:24:19 | STAT  | 3237 | v1.2.8 | /dev/sdb | Total read 
+> > >>>> throughput: 827938.1B/s (0.79MB/s), IOPS 25.3/s.
+> > >>>>
+> > >>>> The patch didn't make a difference, sorry.
+> > >>> The performances in the configuration don't matter much, but I just
+> > >>> run initiator and target on the same machine:
+> > >>>
+> > >>> sens:/home/fujita# hdparm -t /dev/sdd
+> > >>>
+> > >>> /dev/sdd:
+> > >>>  Timing buffered disk reads:   20 MB in  3.15 seconds =   6.35 MB/sec
+> > >> (...)
+> > >>
+> > >>> sens:/home/fujita# hdparm -t /dev/sdd
+> > >>>
+> > >>> /dev/sdd:
+> > >>>  Timing buffered disk reads:  410 MB in  3.02 seconds = 135.55 MB/sec
+> > >>>
+> > >>>
+> > >>> Seems that haparm isn't an appropriate tool to meature performance but
+> > >>> not bad performances.
+> > >> It is appropriate, when used appropriately.
+> > > 
+> > > Oops, I'm not talking about only cache.
+> > > 
+> > > hdparm seems to issue only one outstanding request, the duration is
+> > > too short, etc. It's not designed for performance measurement.
+> > 
+> > True, hdparm is only a very basic tool for measuring performance.
+> > 
+> > 
+> > >> If a block device is used (mounted, swap, md/dm etc.) it is also cached.
+> > > 
+> > > Block devices always use page cache (unless you access to it via DIO).
+> > 
+> > Umm:
+> > 
+> > 
+> > # echo 3 > /proc/sys/vm/drop_caches
+> > 
+> > # free
+> >               total       used       free     shared    buffers     cached
+> > Mem:        512252      22152     490100          0         84       4320
+> > -/+ buffers/cache:      17748     494504
+> > Swap:            0          0          0
+> > 
+> > # dd if=/dev/LVM2/swap of=/dev/null
+> > 6291456+0 records in
+> > 6291456+0 records out
+> > 3221225472 bytes (3.2 GB) copied, 52.8739 seconds, 60.9 MB/s
+> > 
+> > # free
+> >               total       used       free     shared    buffers     cached
+> > Mem:        512252      22760     489492          0        124       4708
+> > -/+ buffers/cache:      17928     494324
+> > Swap:            0          0          0
+> > 
+> > So, nothing was cached.
+> 
+> When dd finished, nothing was cached. But dd enjoyed cache.
+> 
+> ag:/home/fujita# echo 3 > /proc/sys/vm/drop_caches
+> ag:/home/fujita# free
+>              total       used       free     shared    buffers     cached
+> Mem:        256696      32144     224552          0        188       4048
+> -/+ buffers/cache:      27908     228788
+> Swap:       409616          0     409616
+> 
+> ag:/home/fujita# dd if=/dev/sdb of=/dev/null
+> 
+> Let's suspend dd and see how memory is used:
+> 
+> [1]+  Stopped                 dd if=/dev/sdb of=/dev/null
+> 
+> ag:/home/fujita# free
+>              total       used       free     shared    buffers     cached
+> Mem:        256696      61408     195288          0      28144       4208
+> -/+ buffers/cache:      29056     227640
+> Swap:       409616          0     409616
+> 
+> 
+> 'buffers' is the amount of page cache belonging to block devices. dd
+> use tons of page cache.
+> 
+> If dd reads a block device sequentially, probabaly dd can enjoy page
+> cache due to readahead.
+> 
+> So you never get proper results of disk performance with programs that
+> doesn't use dio.
+
+
+check if your dd version is new enough to support dio.
+
+from dd man page.
+
+       Each FLAG symbol may be:
+
+       append append mode (makes sense only for output)
+
+       direct use direct I/O for data
+
+
+
+> 
+> 
+> > > BTW, please let me know if you find that tgt's performance is still
+> > > terrible as compared with IET.
+> > 
+> > Yes, I'll try to make some tests this week.
+> 
+> Nice, thanks.
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+-- 
+Ming Zhang
+
+
+@#$%^ purging memory... (*!%
+http://blackmagic02881.wordpress.com/
+http://www.linkedin.com/in/blackmagic02881
+--------------------------------------------
+
+
+

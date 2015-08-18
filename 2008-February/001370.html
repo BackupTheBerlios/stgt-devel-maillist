@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C20080208110944W.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001361.html">
+   <LINK REL="Next"  HREF="001376.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C20080208110944W.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Feb  8 03:09:44 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001361.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+        <LI>Next message: <A HREF="001376.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1370">[ date ]</a>
+              <a href="thread.html#1370">[ thread ]</a>
+              <a href="subject.html#1370">[ subject ]</a>
+              <a href="author.html#1370">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 07 Feb 2008 11:05:03 -0500
+Joe Landman &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">landman at scalableinformatics.com</A>&gt; wrote:
+
+&gt;<i> Update:
+</I>&gt;<i> 
+</I>&gt;<i> [<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at woody</A> etc]# dd if=/dev/zero of=/big/local.file bs=256k count=100000
+</I>&gt;<i> 100000+0 records in
+</I>&gt;<i> 100000+0 records out
+</I>&gt;<i> 26214400000 bytes (26 GB) copied, 58.7484 seconds, 446 MB/s
+</I>&gt;<i> 
+</I>&gt;<i> Better. I rebuilt OFED 1.2.5.5.  Are there specific recommended tuning 
+</I>&gt;<i> guides for iSER?  Backing store in this case are real disks, and we can 
+</I>&gt;<i> sink/source &gt;750 MB/s on them, so I am not worried about disk IO 
+</I>&gt;<i> bottlenecks, more worried about bad config of iSCSI/iSER.
+</I>&gt;<i> 
+</I>&gt;<i> BTW:  the 2TB LUN limit I asked about is still here in this code.  Same 
+</I>&gt;<i> machines (initiator and target) used for SRP reported correct LUN sizes. 
+</I>&gt;<i>   Here we are using the -868 open-iscsi initiator, and the tgt RPM 
+</I>&gt;<i> announced.  I would like to dig into this.
+</I>
+Thanks a lot,
+
+I thought that I tested tgt with &gt;2TB devices but seems that I
+didn't. I'll try to fix the problem shortly.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001361.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+	<LI>Next message: <A HREF="001376.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1370">[ date ]</a>
+              <a href="thread.html#1370">[ thread ]</a>
+              <a href="subject.html#1370">[ subject ]</a>
+              <a href="author.html#1370">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

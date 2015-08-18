@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/8 ] Core stgt update
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/8%20%5D%20Core%20stgt%20update&In-Reply-To=%3Cf29db9a80705221956u166a22dbs3c75c53398170d8e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000693.html">
+   <LINK REL="Next"  HREF="000682.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/8 ] Core stgt update</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/8%20%5D%20Core%20stgt%20update&In-Reply-To=%3Cf29db9a80705221956u166a22dbs3c75c53398170d8e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 0/8 ] Core stgt update">markh794 at gmail.com
+       </A><BR>
+    <I>Wed May 23 04:56:32 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000693.html">[Stgt-devel] 2.6.22-rc2 + it_nexus patch broken
+</A></li>
+        <LI>Next message: <A HREF="000682.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#681">[ date ]</a>
+              <a href="thread.html#681">[ thread ]</a>
+              <a href="subject.html#681">[ subject ]</a>
+              <a href="author.html#681">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Again - Sorry for the inclusion of attachments. gmail corrupts tab chars...
+
+This patch has grown way beyond what I was initially planning on submitting.
+The attachment included with this is a single patch with all the below.
+
+Note: Patchs against:
+
+  =========================
+commit 2ff8cb4bf6682469e2f75c47a7f155b9690cf9a1
+Author: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Date:   Wed May 2 18:41:55 2007 +0900
+
+    update the iSCSI descriptions
+
+    Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+  ========================
+
+Patch 1 : Setup .device_init, device_shutdown &amp; device_config to the
+device template.
+             Move target setup to each 'module' although they all
+currently call a common routine in spc.c. The smc module will add to
+this when submitted in later patches.
+             Also some 'cruft' in spc_illegal_op to log the SCSI
+command being rejected. (I can't figure out an easy way of removing
+this section of the patch without a lot of fiddling. This will be
+cleaned up with one of the following patch (2 x 8) in this patch set.
+
+Patch 2 : Combine INQUIRY into a common spc_inquiry routine.
+              Ability to define if a device can handle removable media
+              Moved scsi_sn, scsi_id and d_sense (now sense_format)
+into a common struct with other INQUIRY related data.
+              Moved / split up tgtadm.h into two sections. As the
+tgtadm error codes are required by other modules, I've moved the error
+code into tgtadm_error.h so I don't have to include the whold tgtadm.h
+in with the SCSI target.
+
+Patch 3 : Added the ability to change/tune SCSI Inquiry params:
+            Vendor Identification
+            Product Identification
+            Product Revision
+            Sense format
+            If media is 'removable'
+
+Patch 4 : Add support for MODE SENSE(6) and MODE SENSE(10) commands.
+            This is a major change in that the mode pages are
+configured/defined at setup time using the following example for MODE
+PAGE 3.
+
+# Format mode page
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
+       --params ModePage=3:0:22:0:0:0:0:0:0:0:0:1:0:2:0:0:0:0:0:0:0:0:13:0:0
+
+
+Patch 5 : Clean up scripts/tgt-core-test script to remove any
+un-implemented options.
+              Clean up MODE SENSE params to sane values.
+              TUR now checks for Power-on/Reset flag.
+
+Patch 6 : Update sense_data_build to use #defined ASC/ASCQ and
+standardise on one
+common error if data = valloc() fails to 'HARDWARE / INTERNAL_TARGET_FAILURE'
+
+Patch 7 : Force Disable Block Descriptor to be set for MMC mode sense
+as per t10 doco.
+
+Patch 8 : Attempt to document the 'configuration' options for each
+target. - Work in progress..
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: big.diff
+Type: text/x-patch
+Size: 67832 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/842888c6/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/842888c6/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000693.html">[Stgt-devel] 2.6.22-rc2 + it_nexus patch broken
+</A></li>
+	<LI>Next message: <A HREF="000682.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#681">[ date ]</a>
+              <a href="thread.html#681">[ thread ]</a>
+              <a href="subject.html#681">[ subject ]</a>
+              <a href="author.html#681">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

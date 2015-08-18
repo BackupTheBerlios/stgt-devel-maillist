@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C439AF4C1.9030800%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000183.html">
+   <LINK REL="Next"  HREF="000203.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C439AF4C1.9030800%40vlnb.net%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?">vst at vlnb.net
+       </A><BR>
+    <I>Sat Dec 10 16:31:13 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000183.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000203.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#194">[ date ]</a>
+              <a href="thread.html#194">[ thread ]</a>
+              <a href="subject.html#194">[ subject ]</a>
+              <a href="author.html#194">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mike Christie wrote:
+&gt;&gt;&gt;<i> There is still memory and scatterlist allocations. If we are not 
+</I>&gt;&gt;&gt;<i> going to allocate all the memory for a command buffer and request 
+</I>&gt;&gt;&gt;<i> with GFP_ATOMIC (and can then run from the the HW interrupt or soft 
+</I>&gt;&gt;&gt;<i> irq) we have to pass that on to a thread. I guess there is 
+</I>&gt;&gt;&gt;<i> disagreement whether that part is a feature or bad use of GFP_ATOMIC 
+</I>&gt;&gt;&gt;<i> though so... But I just mean to say there could be a little more to do.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Actually, there is the way to allocate sg vectors with buffers in SIRQ 
+</I>&gt;&gt;<i> and not with GFP_ATOMIC. This is the second major improvement, which 
+</I>&gt;&gt;<i> is pending in scst. I called it sgv_pool. This is a new allocator in 
+</I>&gt;&gt;<i> the kernel similar to mem_pool, but it contains *complete* sg-vectors 
+</I>&gt;&gt;<i> of some size with data buffers (pages). Initiator sends data requests 
+</I>&gt;&gt;<i> usually with some fixed size, like 128K. After a data command 
+</I>&gt;&gt;<i> completed, its sg vector will not be immediately freed, but will be 
+</I>&gt;&gt;<i> kept in 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> We considered this, but what did you decide is the upper limit size for 
+</I>&gt;<i> the pool? Is it dynmaic? We also wanted something that the SCSI ULDs 
+</I>&gt;<i> could use for their allocations which could go up to 6 MB.
+</I>
+Why do you think it needs any upper limit size? Would you like also any 
+upper limits on sizes of the page or slab caches? I don't see any 
+difference between them and sgv_pool. Let it allocate and keep unused as 
+much memory as possible until it would be notified about memory pressure 
+and ask to free some. Similarly as slab does.
+
+BTW, from our experience, initiators tend to send commands without limit 
+and in case if actual SCSI device isn't so fast to serve all of them 
+with the rate, which they arrive, incoming queued commands very quickly 
+eat all system memory with obvious consequences. So, there must be some 
+kind of IO-throttling, when after some watermark the initiators start 
+receiving TASK QUEUE FULL, which calm them down. I implemented very 
+stupid one: don't let more than 32 commands per session. This let scst 
+survive under extreme loads. You can think about something smarter  :-)
+
+Vlad
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000183.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000203.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#194">[ date ]</a>
+              <a href="thread.html#194">[ thread ]</a>
+              <a href="subject.html#194">[ subject ]</a>
+              <a href="author.html#194">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

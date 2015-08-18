@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] segfault in the ssc code ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20segfault%20in%20the%20ssc%20code%20...&In-Reply-To=%3C46b8a8850807261714g78bdf3fcg92efc74694b6fe50%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001895.html">
+   <LINK REL="Next"  HREF="001906.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] segfault in the ssc code ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20segfault%20in%20the%20ssc%20code%20...&In-Reply-To=%3C46b8a8850807261714g78bdf3fcg92efc74694b6fe50%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] segfault in the ssc code ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Sun Jul 27 02:14:25 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001895.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+        <LI>Next message: <A HREF="001906.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1896">[ date ]</a>
+              <a href="thread.html#1896">[ thread ]</a>
+              <a href="subject.html#1896">[ subject ]</a>
+              <a href="author.html#1896">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, Jul 26, 2008 at 4:56 PM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> From: &quot;Richard Sharpe&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] segfault in the ssc code ...
+</I>&gt;<i> Date: Sat, 26 Jul 2008 16:40:59 -0700
+</I>
+[trim, trim, trim ...]
+
+&gt;&gt;<i> &gt;&gt; I was wondering if this change would do the trick:
+</I>&gt;&gt;<i> &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; In usr/smc.c, change set_slot_full to take a target structure as well
+</I>&gt;&gt;<i> &gt;&gt; as the other args, and from that call tgt_set_device_path_update,
+</I>&gt;&gt;<i> &gt;&gt; which will also call the correct things ...
+</I>&gt;&gt;<i> &gt;&gt;
+</I>&gt;&gt;<i> &gt;&gt; and in set_slot_empty, also call tdt_set_device_path_update ...
+</I>&gt;&gt;<i> &gt;
+</I>&gt;&gt;<i> &gt; When I put this bit into the code, I was thinking something like &quot;exec
+</I>&gt;&gt;<i> &gt; tgtadm .... &lt;with options to update backing store&gt;&quot;
+</I>&gt;<i>
+</I>&gt;<i> Agreed, I like that.
+</I>
+Why do you want to exec tgtadm again when this code is running in the
+context of tgtd and is simply executing an SMC request to load a tape
+into the drive.
+
+Why not expose the correct method in target.c and have the code call it ...
+
+
+&gt;<i>
+</I>&gt;&gt;<i> &gt; Where the backing store consists of a path prefix along with the 'barcode'
+</I>&gt;&gt;<i> &gt; as the filename.
+</I>&gt;&gt;<i> &gt;
+</I>&gt;&gt;<i> &gt; I'm sure there is a neater method however.
+</I>&gt;<i>
+</I>&gt;<i> What do you think about using extended attributes as Ronnie suggested?
+</I>
+Hmmm, that seems OK for things like file marks and setmarks
+
+&gt;&gt;<i> &gt; The same thing is required for the MMC device as well (for a Virtual CD/DVD
+</I>&gt;&gt;<i> &gt; Library).
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Hmmm, while I have stuff mostly working, further examination showed
+</I>&gt;&gt;<i> that I should have passed --params bstype=ssc or something like that
+</I>&gt;&gt;<i> when I created the virtual tape drive, in which case I would get the
+</I>&gt;&gt;<i> correct backing store module, I think ...
+</I>
+That seems to have done the trick. I am still checking.
+
+BTW, the MAM implementation is wrong as well. It is not a per-drive
+attribute, it is a per-cartridge attribute, and thus per-virtual-tape.
+
+This too, could be stored in extended attributes, and retrieved when
+the virtual tape is moved into a drive.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001895.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+	<LI>Next message: <A HREF="001906.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1896">[ date ]</a>
+              <a href="thread.html#1896">[ thread ]</a>
+              <a href="subject.html#1896">[ subject ]</a>
+              <a href="author.html#1896">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

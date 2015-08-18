@@ -1,0 +1,752 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] head and data digest
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20head%20and%20data%20digest&In-Reply-To=%3C20070424083930S.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000593.html">
+   <LINK REL="Next"  HREF="000596.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] head and data digest</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20head%20and%20data%20digest&In-Reply-To=%3C20070424083930S.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] head and data digest">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Apr 24 01:39:30 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000593.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+        <LI>Next message: <A HREF="000596.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#595">[ date ]</a>
+              <a href="thread.html#595">[ thread ]</a>
+              <a href="subject.html#595">[ subject ]</a>
+              <a href="author.html#595">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] head and data digest
+Date: Mon, 23 Apr 2007 19:21:56 +0200
+
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+</I>&gt;<i> &gt; Subject: Re: [Stgt-devel] [PATCH] head and data digest
+</I>&gt;<i> &gt; Date: Sun, 22 Apr 2007 17:39:26 +0200
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   
+</I>&gt;<i> &gt;&gt; I set HeaderDigest to CRC32C on the disk target:
+</I>&gt;<i> &gt;&gt;     
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Do you enable the features? Here's an example:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op show --mode target --tid 1
+</I>&gt;<i> &gt; MaxRecvDataSegmentLength=8192
+</I>&gt;<i> &gt; MaxXmitDataSegmentLength=8192
+</I>&gt;<i> &gt; HeaderDigest=None
+</I>&gt;<i> &gt; DataDigest=None
+</I>&gt;<i> &gt; InitialR2T=Yes
+</I>&gt;<i> &gt; MaxOutstandingR2T=1
+</I>&gt;<i> &gt; ImmediateData=Yes
+</I>&gt;<i> &gt; FirstBurstLength=65536
+</I>&gt;<i> &gt; MaxBurstLength=262144
+</I>&gt;<i> &gt; DataPDUInOrder=Yes
+</I>&gt;<i> &gt; DataSequenceInOrder=Yes
+</I>&gt;<i> &gt; ErrorRecoveryLevel=0
+</I>&gt;<i> &gt; IFMarker=No
+</I>&gt;<i> &gt; OFMarker=No
+</I>&gt;<i> &gt; DefaultTime2Wait=2
+</I>&gt;<i> &gt; DefaultTime2Retain=20
+</I>&gt;<i> &gt; OFMarkInt=Reject
+</I>&gt;<i> &gt; IFMarkInt=Reject
+</I>&gt;<i> &gt; MaxConnections=1
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op update --mode target --tid 1 -n HeaderDigest -v CRC32C
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op update --mode target --tid 1 -n DataDigest -v CRC32C
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op show --mode target --tid 1
+</I>&gt;<i> &gt; MaxRecvDataSegmentLength=8192
+</I>&gt;<i> &gt; MaxXmitDataSegmentLength=8192
+</I>&gt;<i> &gt; HeaderDigest=CRC32C
+</I>&gt;<i> &gt; DataDigest=CRC32C
+</I>&gt;<i> &gt; InitialR2T=Yes
+</I>&gt;<i> &gt; MaxOutstandingR2T=1
+</I>&gt;<i> &gt; ImmediateData=Yes
+</I>&gt;<i> &gt; FirstBurstLength=65536
+</I>&gt;<i> &gt; MaxBurstLength=262144
+</I>&gt;<i> &gt; DataPDUInOrder=Yes
+</I>&gt;<i> &gt; DataSequenceInOrder=Yes
+</I>&gt;<i> &gt; ErrorRecoveryLevel=0
+</I>&gt;<i> &gt; IFMarker=No
+</I>&gt;<i> &gt; OFMarker=No
+</I>&gt;<i> &gt; DefaultTime2Wait=2
+</I>&gt;<i> &gt; DefaultTime2Retain=20
+</I>&gt;<i> &gt; OFMarkInt=Reject
+</I>&gt;<i> &gt; IFMarkInt=Reject
+</I>&gt;<i> &gt; MaxConnections=1
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; With this configuration, the target accepts CRC32C and
+</I>&gt;<i> &gt; None. Currently, there is no way to configure a target to accept only
+</I>&gt;<i> &gt; CRC32C.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; If it still doesn't work for you, please send the tcpdump log during a
+</I>&gt;<i> &gt; login process.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   
+</I>&gt;<i> Ok, login works fine, if I look with wireshark I can see that the digest
+</I>&gt;<i> is ok.
+</I>
+Sorry, I put a silly bug in the patch. Here's a new one.
+
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index e4e36aa..fcd2385 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -176,18 +176,3 @@ int conn_take_fd(struct iscsi_connection
+ 
+ 	return 0;
+ }
+-
+-void conn_read_pdu(struct iscsi_connection *conn)
+-{
+-	conn-&gt;rx_iostate = IOSTATE_READ_BHS;
+-	conn-&gt;rx_buffer = (void *)&amp;conn-&gt;req.bhs;
+-	conn-&gt;rx_size = BHS_SIZE;
+-}
+-
+-void conn_write_pdu(struct iscsi_connection *conn)
+-{
+-	conn-&gt;tx_iostate = IOSTATE_WRITE_BHS;
+-	memset(&amp;conn-&gt;rsp, 0, sizeof(conn-&gt;rsp));
+-	conn-&gt;tx_buffer = (void *)&amp;conn-&gt;rsp.bhs;
+-	conn-&gt;tx_size = BHS_SIZE;
+-}
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 2377952..3d38ccc 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -38,9 +38,53 @@ #include &quot;iscsid.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;util.h&quot;
+ #include &quot;driver.h&quot;
++#include &quot;crc32c.h&quot;
+ 
+ #define MAX_QUEUE_CMD	32
+ 
++enum {
++	IOSTATE_FREE,
++
++	IOSTATE_RX_BHS,
++	IOSTATE_RX_INIT_AHS,
++	IOSTATE_RX_AHS,
++	IOSTATE_RX_INIT_HDIGEST,
++	IOSTATE_RX_HDIGEST,
++	IOSTATE_RX_CHECK_HDIGEST,
++	IOSTATE_RX_INIT_DATA,
++	IOSTATE_RX_DATA,
++	IOSTATE_RX_INIT_DDIGEST,
++	IOSTATE_RX_DDIGEST,
++	IOSTATE_RX_CHECK_DDIGEST,
++	IOSTATE_RX_END,
++
++	IOSTATE_TX_BHS,
++	IOSTATE_TX_INIT_AHS,
++	IOSTATE_TX_AHS,
++	IOSTATE_TX_INIT_HDIGEST,
++	IOSTATE_TX_HDIGEST,
++	IOSTATE_TX_INIT_DATA,
++	IOSTATE_TX_DATA,
++	IOSTATE_TX_INIT_DDIGEST,
++	IOSTATE_TX_DDIGEST,
++	IOSTATE_TX_END,
++};
++
++void conn_read_pdu(struct iscsi_connection *conn)
++{
++	conn-&gt;rx_iostate = IOSTATE_RX_BHS;
++	conn-&gt;rx_buffer = (void *)&amp;conn-&gt;req.bhs;
++	conn-&gt;rx_size = BHS_SIZE;
++}
++
++static void conn_write_pdu(struct iscsi_connection *conn)
++{
++	conn-&gt;tx_iostate = IOSTATE_TX_BHS;
++	memset(&amp;conn-&gt;rsp, 0, sizeof(conn-&gt;rsp));
++	conn-&gt;tx_buffer = (void *)&amp;conn-&gt;rsp.bhs;
++	conn-&gt;tx_size = BHS_SIZE;
++}
++
+ static struct iscsi_key login_keys[] = {
+ 	{&quot;InitiatorName&quot;,},
+ 	{&quot;InitiatorAlias&quot;,},
+@@ -1265,9 +1309,7 @@ found:
+ 		task-&gt;r2t_count,
+ 		ntoh24(req-&gt;dlength), be32_to_cpu(req-&gt;offset));
+ 
+-	conn-&gt;rx_buffer = task-&gt;data;
+-	conn-&gt;rx_buffer += be32_to_cpu(req-&gt;offset);
+-	conn-&gt;rx_size = roundup(ntoh24(req-&gt;dlength), 4);
++	conn-&gt;req.data = task-&gt;data + be32_to_cpu(req-&gt;offset);
+ 
+ 	task-&gt;offset += ntoh24(req-&gt;dlength);
+ 	task-&gt;r2t_count -= ntoh24(req-&gt;dlength);
+@@ -1357,12 +1399,10 @@ static int iscsi_scsi_cmd_rx_start(struc
+ 	if (ahs_len) {
+ 		task-&gt;ahs = task-&gt;data + sizeof(req-&gt;cdb);
+ 		task-&gt;data = task-&gt;ahs + ahs_len;
+-		conn-&gt;rx_buffer = task-&gt;ahs;
+- 		conn-&gt;rx_size = ahs_len + imm_len;
+-	} else if (data_len) {
+- 		conn-&gt;rx_buffer = task-&gt;data;
+-		conn-&gt;rx_size = imm_len;
+- 	}
++		conn-&gt;req.ahs = task-&gt;ahs;
++		conn-&gt;req.data = task-&gt;data;
++	} else if (data_len)
++		conn-&gt;req.data = task-&gt;data;
+ 
+ 	if (req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE) {
+ 		task-&gt;offset = ntoh24(req-&gt;dlength);
+@@ -1414,9 +1454,8 @@ static int iscsi_noop_out_rx_start(struc
+ 	}
+ 
+ 	if (len) {
+-		conn-&gt;rx_size = len;
+ 		task-&gt;len = len;
+-		conn-&gt;rx_buffer = task-&gt;data;
++		conn-&gt;req.data = task-&gt;data;
+ 	}
+ out:
+ 	return err;
+@@ -1662,167 +1701,314 @@ nodata:
+ 	return -EAGAIN;
+ }
+ 
++static int do_recv(int fd, struct iscsi_connection *conn, int next_state)
++{
++	int ret;
++
++	ret = conn-&gt;tp-&gt;ep_read(fd, conn-&gt;rx_buffer, conn-&gt;rx_size);
++	if (!ret) {
++		conn-&gt;state = STATE_CLOSE;
++		return 0;
++	} else if (ret &lt; 0) {
++		if (errno == EINTR || errno == EAGAIN)
++			return 0;
++		else
++			return -EIO;
++	}
++
++	conn-&gt;rx_size -= ret;
++	conn-&gt;rx_buffer += ret;
++	if (!conn-&gt;rx_size)
++		conn-&gt;rx_iostate = next_state;
++
++	return ret;
++}
++
+ static void iscsi_rx_handler(int fd, struct iscsi_connection *conn)
+ {
+-	int res;
++	int ret = 0, hdigest, ddigest;
++	uint32_t crc;
+ 
++	if (conn-&gt;state == STATE_SCSI) {
++		struct param *p = conn-&gt;session_param;
++		hdigest = p[ISCSI_PARAM_HDRDGST_EN].val &amp; DIGEST_CRC32C;
++		ddigest = p[ISCSI_PARAM_DATADGST_EN].val &amp; DIGEST_CRC32C;
++	} else
++		hdigest = ddigest = 0;
++again:
+ 	switch (conn-&gt;rx_iostate) {
+-	case IOSTATE_READ_BHS:
+-	case IOSTATE_READ_AHS_DATA:
+-	read_again:
+-		res = conn-&gt;tp-&gt;ep_read(fd, conn-&gt;rx_buffer, conn-&gt;rx_size);
+-		if (!res) {
+-			conn-&gt;state = STATE_CLOSE;
++	case IOSTATE_RX_BHS:
++		ret = do_recv(fd, conn, IOSTATE_RX_INIT_AHS);
++		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_INIT_AHS)
+ 			break;
+-		} else if (res &lt; 0) {
+-			if (errno == EINTR)
+-				goto read_again;
+-			else if (errno == EAGAIN)
+-				break;
+-			else {
++	case IOSTATE_RX_INIT_AHS:
++		if (conn-&gt;state == STATE_SCSI) {
++			ret = iscsi_task_rx_start(conn);
++			if (ret) {
+ 				conn-&gt;state = STATE_CLOSE;
+-				dprintf(&quot;%d %d, %m\n&quot;, res, errno);
++				break;
+ 			}
++		} else {
++			conn-&gt;rx_buffer = conn-&gt;req_buffer;
++			conn-&gt;req.ahs = conn-&gt;rx_buffer;
++			conn-&gt;req.data = conn-&gt;rx_buffer + conn-&gt;rx_size;
++		}
++		conn-&gt;req.ahssize = conn-&gt;req.bhs.hlength * 4;
++		conn-&gt;req.datasize = ntoh24(conn-&gt;req.bhs.dlength);
++		conn-&gt;rx_size = roundup(conn-&gt;req.ahssize, 4);
++		if (conn-&gt;rx_size) {
++			ret = do_recv(fd, conn, IOSTATE_RX_AHS);
++			if (ret &lt;= 0)
++				break;
++		} else
++			conn-&gt;rx_iostate = hdigest ?
++				IOSTATE_RX_INIT_HDIGEST : IOSTATE_RX_INIT_DATA;
++
++		if (conn-&gt;rx_iostate == IOSTATE_RX_INIT_DATA)
++			goto again;
++		else if (conn-&gt;rx_iostate != IOSTATE_RX_AHS)
++			break;
++	case IOSTATE_RX_AHS:
++		ret = do_recv(fd, conn, hdigest ?
++			      IOSTATE_RX_INIT_HDIGEST : IOSTATE_RX_INIT_DATA);
++		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_INIT_HDIGEST)
+ 			break;
++	case IOSTATE_RX_INIT_HDIGEST:
++		conn-&gt;rx_buffer = conn-&gt;rx_digest;
++		conn-&gt;rx_size = sizeof(conn-&gt;rx_digest);
++		conn-&gt;rx_iostate = IOSTATE_RX_HDIGEST;
++	case IOSTATE_RX_HDIGEST:
++		ret = do_recv(fd, conn, IOSTATE_RX_CHECK_HDIGEST);
++		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_CHECK_HDIGEST)
++			break;
++	case IOSTATE_RX_CHECK_HDIGEST:
++		crc = ~0;
++		crc = crc32c(crc, &amp;conn-&gt;req.bhs, BHS_SIZE);
++		if (conn-&gt;req.ahssize)
++			crc = crc32c(crc, conn-&gt;req.ahs,
++				     roundup(conn-&gt;req.ahssize, 4));
++		crc = ~__cpu_to_le32(crc);
++		if (*((uint32_t *)conn-&gt;rx_digest) != crc) {
++			eprintf(&quot;rx hdr digest error 0x%x calc 0x%x\n&quot;,
++				*((uint32_t *)conn-&gt;rx_digest), crc);
++			conn-&gt;state = STATE_CLOSE;
+ 		}
+-		conn-&gt;rx_size -= res;
+-		conn-&gt;rx_buffer += res;
+-		if (conn-&gt;rx_size)
++		conn-&gt;rx_iostate = IOSTATE_RX_INIT_DATA;
++	case IOSTATE_RX_INIT_DATA:
++		conn-&gt;rx_size = roundup(conn-&gt;req.datasize, 4);
++		if (conn-&gt;rx_size) {
++			conn-&gt;rx_iostate = IOSTATE_RX_DATA;
++			conn-&gt;rx_buffer = conn-&gt;req.data;
++		} else {
++			conn-&gt;rx_iostate = IOSTATE_RX_END;
++			break;
++		}
++	case IOSTATE_RX_DATA:
++		ret = do_recv(fd, conn, ddigest ?
++			      IOSTATE_RX_INIT_DDIGEST : IOSTATE_RX_END);
++		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_INIT_DDIGEST)
++			break;
++	case IOSTATE_RX_INIT_DDIGEST:
++		conn-&gt;rx_buffer = conn-&gt;rx_digest;
++		conn-&gt;rx_size = sizeof(conn-&gt;rx_digest);
++		conn-&gt;rx_iostate = IOSTATE_RX_DDIGEST;
++	case IOSTATE_RX_DDIGEST:
++		ret = do_recv(fd, conn, IOSTATE_RX_CHECK_DDIGEST);
++		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_CHECK_DDIGEST)
+ 			break;
++	case IOSTATE_RX_CHECK_DDIGEST:
++		crc = ~0;
++		crc = crc32c(crc, conn-&gt;req.data, roundup(conn-&gt;req.datasize, 4));
++		crc = ~__cpu_to_le32(crc);
++		conn-&gt;rx_iostate = IOSTATE_RX_END;
++		if (*((uint32_t *)conn-&gt;rx_digest) != crc) {
++			eprintf(&quot;rx hdr digest error 0x%x calc 0x%x\n&quot;,
++				*((uint32_t *)conn-&gt;rx_digest), crc);
++			conn-&gt;state = STATE_CLOSE;
++		}
++		break;
++	default:
++		eprintf(&quot;error %d %d\n&quot;, conn-&gt;state, conn-&gt;rx_iostate);
++		exit(1);
++	}
+ 
+-		switch (conn-&gt;rx_iostate) {
+-		case IOSTATE_READ_BHS:
+-			conn-&gt;req.ahssize = conn-&gt;req.bhs.hlength * 4;
+-			conn-&gt;req.datasize = ntoh24(conn-&gt;req.bhs.dlength);
++	if (ret &lt; 0 ||
++	    conn-&gt;rx_iostate != IOSTATE_RX_END ||
++	    conn-&gt;state == STATE_CLOSE)
++		return;
+ 
+-			if (conn-&gt;state == STATE_SCSI) {
+-				res = iscsi_task_rx_start(conn);
+-				if (res) {
+-					conn-&gt;state = STATE_CLOSE;
+-					break;
+-				}
+-			} else {
+-				conn-&gt;rx_buffer = conn-&gt;req_buffer;
+-				conn-&gt;req.ahs = conn-&gt;rx_buffer;
+-				conn-&gt;rx_size = roundup(conn-&gt;req.ahssize, 4);
+-				conn-&gt;req.data = conn-&gt;rx_buffer + conn-&gt;rx_size;
+-				conn-&gt;rx_size += roundup(conn-&gt;req.datasize, 4);
+-			}
++	if (conn-&gt;rx_size) {
++		eprintf(&quot;error %d %d %d\n&quot;, conn-&gt;state, conn-&gt;rx_iostate,
++			conn-&gt;rx_size);
++		exit(1);
++	}
+ 
+-			if (conn-&gt;rx_size) {
+-				conn-&gt;rx_iostate = IOSTATE_READ_AHS_DATA;
+-				goto read_again;
+-			}
++	if (conn-&gt;state == STATE_SCSI) {
++		ret = iscsi_task_rx_done(conn);
++		if (ret)
++			conn-&gt;state = STATE_CLOSE;
++		else
++			conn_read_pdu(conn);
++	} else {
++		conn_write_pdu(conn);
++		tgt_event_modify(fd, EPOLLOUT);
++		ret = cmnd_execute(conn);
++		if (ret)
++			conn-&gt;state = STATE_CLOSE;
++	}
++}
+ 
+-		case IOSTATE_READ_AHS_DATA:
+-			if (conn-&gt;state == STATE_SCSI) {
+-				res = iscsi_task_rx_done(conn);
+-				if (!res)
+-					conn_read_pdu(conn);
+-			} else {
+-				conn_write_pdu(conn);
+-				tgt_event_modify(fd, EPOLLOUT);
+-				res = cmnd_execute(conn);
+-			}
++static int do_send(int fd, struct iscsi_connection *conn, int next_state)
++{
++	int ret;
++again:
++	ret = conn-&gt;tp-&gt;ep_write_begin(fd, conn-&gt;tx_buffer, conn-&gt;tx_size);
++	if (ret &lt; 0) {
++		if (errno != EINTR &amp;&amp; errno != EAGAIN)
++			conn-&gt;state = STATE_CLOSE;
++		else if (errno == EINTR || errno == EAGAIN)
++			goto again;
+ 
+-			if (res)
+-				conn-&gt;state = STATE_CLOSE;
+-			break;
+-		}
+-		break;
++		return -EIO;
+ 	}
++
++	conn-&gt;tx_size -= ret;
++	conn-&gt;tx_buffer += ret;
++	if (conn-&gt;tx_size)
++		goto again;
++	conn-&gt;tx_iostate = next_state;
++
++	return 0;
+ }
+ 
+ static void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
+ {
+-	int res;
++	int ret = 0, hdigest, ddigest;
++	uint32_t crc;
++
++	if (conn-&gt;state == STATE_SCSI) {
++		struct param *p = conn-&gt;session_param;
++		hdigest = p[ISCSI_PARAM_HDRDGST_EN].val &amp; DIGEST_CRC32C;
++		ddigest = p[ISCSI_PARAM_DATADGST_EN].val &amp; DIGEST_CRC32C;
++	} else
++		hdigest = ddigest = 0;
+ 
+ 	if (conn-&gt;state == STATE_SCSI &amp;&amp; !conn-&gt;tx_task) {
+-		res = iscsi_task_tx_start(conn);
+-		if (res)
++		ret = iscsi_task_tx_start(conn);
++		if (ret)
+ 			return;
+ 	}
+ 
+ 	switch (conn-&gt;tx_iostate) {
+-	case IOSTATE_WRITE_BHS:
+-	case IOSTATE_WRITE_AHS:
+-	case IOSTATE_WRITE_DATA:
+-	write_again:
+-		res = conn-&gt;tp-&gt;ep_write_begin(fd, conn-&gt;tx_buffer,
+-					       conn-&gt;tx_size);
+-		if (res &lt; 0) {
+-			if (errno != EINTR &amp;&amp; errno != EAGAIN)
+-				conn-&gt;state = STATE_CLOSE;
+-			else if (errno == EINTR)
+-				goto write_again;
++	case IOSTATE_TX_BHS:
++		ret = do_send(fd, conn, IOSTATE_TX_INIT_AHS);
++		if (ret &lt; 0)
+ 			break;
+-		}
++	case IOSTATE_TX_INIT_AHS:
++		if (conn-&gt;rsp.ahssize) {
++			conn-&gt;tx_iostate = IOSTATE_TX_AHS;
++			conn-&gt;tx_buffer = conn-&gt;rsp.ahs;
++			conn-&gt;tx_size = conn-&gt;rsp.ahssize;
+ 
+-		conn-&gt;tx_size -= res;
+-		conn-&gt;tx_buffer += res;
+-		if (conn-&gt;tx_size)
+-			goto write_again;
+-
+-		switch (conn-&gt;tx_iostate) {
+-		case IOSTATE_WRITE_BHS:
+-			if (conn-&gt;rsp.ahssize) {
+-				conn-&gt;tx_iostate = IOSTATE_WRITE_AHS;
+-				conn-&gt;tx_buffer = conn-&gt;rsp.ahs;
+-				conn-&gt;tx_size = conn-&gt;rsp.ahssize;
+-				goto write_again;
+-			}
+-		case IOSTATE_WRITE_AHS:
+-			if (conn-&gt;rsp.datasize) {
+-				int pad;
+-
+-				conn-&gt;tx_iostate = IOSTATE_WRITE_DATA;
+-				conn-&gt;tx_buffer = conn-&gt;rsp.data;
+-				conn-&gt;tx_size = conn-&gt;rsp.datasize;
+-				pad = conn-&gt;tx_size &amp; (PAD_WORD_LEN - 1);
+-				if (pad) {
+-					pad = PAD_WORD_LEN - pad;
+-					memset(conn-&gt;tx_buffer + conn-&gt;tx_size,
+-					       0, pad);
+-					conn-&gt;tx_size += pad;
+-				}
+-				goto write_again;
+-			}
+-		case IOSTATE_WRITE_DATA:
+-			conn-&gt;tp-&gt;ep_write_end(fd);
+-			cmnd_finish(conn);
++			conn-&gt;tx_iostate = IOSTATE_TX_AHS;
++		} else
++			conn-&gt;tx_iostate = hdigest ?
++				IOSTATE_TX_INIT_HDIGEST : IOSTATE_TX_INIT_DATA;
+ 
+-			switch (conn-&gt;state) {
+-			case STATE_KERNEL:
+-				res = conn_take_fd(conn, fd);
+-				if (res)
+-					conn-&gt;state = STATE_CLOSE;
+-				else {
+-					conn-&gt;state = STATE_SCSI;
+-					conn_read_pdu(conn);
+-					tgt_event_modify(fd, EPOLLIN);
+-				}
+-				break;
+-			case STATE_EXIT:
+-			case STATE_CLOSE:
+-				break;
+-			case STATE_SCSI:
+-				iscsi_task_tx_done(conn);
+-				break;
+-			default:
+-				conn_read_pdu(conn);
+-				tgt_event_modify(fd, EPOLLIN);
+-				break;
++		if (conn-&gt;tx_iostate != IOSTATE_TX_AHS)
++			break;
++	case IOSTATE_TX_AHS:
++		conn-&gt;tx_iostate = hdigest ?
++			IOSTATE_TX_INIT_HDIGEST : IOSTATE_TX_INIT_DATA;
++		if (conn-&gt;tx_iostate != IOSTATE_TX_INIT_HDIGEST)
++			break;
++	case IOSTATE_TX_INIT_HDIGEST:
++		crc = ~0;
++		crc = crc32c(crc, &amp;conn-&gt;rsp.bhs, BHS_SIZE);
++		*(uint32_t *)conn-&gt;tx_digest = ~__cpu_to_le32(crc);
++		conn-&gt;tx_iostate = IOSTATE_TX_HDIGEST;
++		conn-&gt;tx_buffer = conn-&gt;tx_digest;
++		conn-&gt;tx_size = sizeof(conn-&gt;tx_digest);
++	case IOSTATE_TX_HDIGEST:
++		ret = do_send(fd, conn, IOSTATE_TX_INIT_DATA);
++		if (ret &lt; 0)
++			break;
++	case IOSTATE_TX_INIT_DATA:
++		if (conn-&gt;rsp.datasize) {
++			int pad;
++
++			conn-&gt;tx_iostate = IOSTATE_TX_DATA;
++			conn-&gt;tx_buffer = conn-&gt;rsp.data;
++			conn-&gt;tx_size = conn-&gt;rsp.datasize;
++			pad = conn-&gt;tx_size &amp; (PAD_WORD_LEN - 1);
++			if (pad) {
++				pad = PAD_WORD_LEN - pad;
++				memset(conn-&gt;tx_buffer + conn-&gt;tx_size, 0, pad);
++				conn-&gt;tx_size += pad;
+ 			}
++		} else
++			conn-&gt;tx_iostate = IOSTATE_TX_END;
++		if (conn-&gt;tx_iostate != IOSTATE_TX_DATA)
+ 			break;
+-		}
+-
++	case IOSTATE_TX_DATA:
++		ret = do_send(fd, conn, ddigest ?
++			      IOSTATE_TX_INIT_DDIGEST : IOSTATE_TX_END);
++		if (ret &lt; 0)
++			return;
++		if (conn-&gt;tx_iostate != IOSTATE_TX_INIT_DDIGEST)
++			break;
++	case IOSTATE_TX_INIT_DDIGEST:
++		crc = ~0;
++		crc = crc32c(crc, conn-&gt;rsp.data,
++			     roundup(conn-&gt;rsp.datasize, 4));
++		*(uint32_t *)conn-&gt;tx_digest = ~__cpu_to_le32(crc);
++		conn-&gt;tx_iostate = IOSTATE_TX_DDIGEST;
++		conn-&gt;tx_buffer = conn-&gt;tx_digest;
++		conn-&gt;tx_size = sizeof(conn-&gt;tx_digest);
++	case IOSTATE_TX_DDIGEST:
++		ret = do_send(fd, conn, IOSTATE_TX_END);
+ 		break;
+ 	default:
+-		eprintf(&quot;illegal iostate %d %d\n&quot;, conn-&gt;tx_iostate,
+-			conn-&gt;tx_iostate);
+-		conn-&gt;state = STATE_CLOSE;
++		eprintf(&quot;error %d %d\n&quot;, conn-&gt;state, conn-&gt;tx_iostate);
++		exit(1);
+ 	}
+ 
++	if (ret &lt; 0 ||
++	    conn-&gt;tx_iostate != IOSTATE_TX_END ||
++	    conn-&gt;state == STATE_CLOSE)
++		return;
++
++	if (conn-&gt;tx_size) {
++		eprintf(&quot;error %d %d %d\n&quot;, conn-&gt;state, conn-&gt;tx_iostate,
++			conn-&gt;tx_size);
++		exit(1);
++	}
++
++	conn-&gt;tp-&gt;ep_write_end(fd);
++	cmnd_finish(conn);
++
++	switch (conn-&gt;state) {
++	case STATE_KERNEL:
++		ret = conn_take_fd(conn, fd);
++		if (ret)
++			conn-&gt;state = STATE_CLOSE;
++		else {
++			conn-&gt;state = STATE_SCSI;
++			conn_read_pdu(conn);
++			tgt_event_modify(fd, EPOLLIN);
++		}
++		break;
++	case STATE_EXIT:
++	case STATE_CLOSE:
++		break;
++	case STATE_SCSI:
++		iscsi_task_tx_done(conn);
++		break;
++	default:
++		conn_read_pdu(conn);
++		tgt_event_modify(fd, EPOLLIN);
++		break;
++	}
+ }
+ 
+ void iscsi_event_handler(int fd, int events, void *data)
+@@ -1838,8 +2024,10 @@ void iscsi_event_handler(int fd, int eve
+ 	if (conn-&gt;state != STATE_CLOSE &amp;&amp; events &amp; EPOLLOUT)
+ 		iscsi_tx_handler(fd, conn);
+ 
+-	if (conn-&gt;state == STATE_CLOSE)
++	if (conn-&gt;state == STATE_CLOSE) {
+ 		conn_close(conn, fd);
++		dprintf(&quot;connection closed\n&quot;);
++	}
+ }
+ 
+ struct tgt_driver iscsi = {
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 84d74f3..29abc5d 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -174,6 +174,9 @@ struct iscsi_connection {
+ 
+ 	struct list_head tx_clist;
+ 
++	unsigned char rx_digest[4];
++	unsigned char tx_digest[4];
++
+ 	int auth_state;
+ 	union {
+ 		struct {
+@@ -187,13 +190,6 @@ struct iscsi_connection {
+ 	struct iscsi_transport *tp;
+ };
+ 
+-#define IOSTATE_FREE		0
+-#define IOSTATE_READ_BHS	1
+-#define IOSTATE_READ_AHS_DATA	2
+-#define IOSTATE_WRITE_BHS	3
+-#define IOSTATE_WRITE_AHS	4
+-#define IOSTATE_WRITE_DATA	5
+-
+ #define STATE_FREE		0
+ #define STATE_SECURITY		1
+ #define STATE_SECURITY_AUTH	2
+@@ -263,14 +259,13 @@ extern void conn_put(struct iscsi_connec
+ extern int conn_get(struct iscsi_connection *conn);
+ extern struct iscsi_connection * conn_find(struct iscsi_session *session, uint32_t cid);
+ extern int conn_take_fd(struct iscsi_connection *conn, int fd);
+-extern void conn_read_pdu(struct iscsi_connection *conn);
+-extern void conn_write_pdu(struct iscsi_connection *conn);
+ extern void conn_add_to_session(struct iscsi_connection *conn, struct iscsi_session *session);
+ 
+ /* iscsid.c */
+ extern void iscsi_event_handler(int fd, int events, void *data);
+ extern char *text_key_find(struct iscsi_connection *conn, char *searchKey);
+ extern void text_key_add(struct iscsi_connection *conn, char *key, char *value);
++extern void conn_read_pdu(struct iscsi_connection *conn);
+ 
+ /* iscsid.c iscsi_task */
+ extern void iscsi_free_task(struct iscsi_task *task);
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000593.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+	<LI>Next message: <A HREF="000596.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#595">[ date ]</a>
+              <a href="thread.html#595">[ thread ]</a>
+              <a href="subject.html#595">[ subject ]</a>
+              <a href="author.html#595">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Implementation of vtl
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Implementation%20of%20vtl&In-Reply-To=%3Cf29db9a80805070122x7b6fd3a3hfa33cfba731f5417%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001610.html">
+   <LINK REL="Next"  HREF="001624.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Implementation of vtl</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Implementation%20of%20vtl&In-Reply-To=%3Cf29db9a80805070122x7b6fd3a3hfa33cfba731f5417%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Implementation of vtl">markh794 at gmail.com
+       </A><BR>
+    <I>Wed May  7 10:22:45 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001610.html">[Stgt-devel] Implementation of vtl
+</A></li>
+        <LI>Next message: <A HREF="001624.html">[Stgt-devel] Implementation of vtl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1622">[ date ]</a>
+              <a href="thread.html#1622">[ thread ]</a>
+              <a href="subject.html#1622">[ subject ]</a>
+              <a href="author.html#1622">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hello aftab azmi,
+
+First off, thanks... You beat me to the punch :) It might save me some work....
+
+While I can't speak authoritatively, I'm sure this will be rejected
+first off due the the code base not following the Linux kernel coding
+style... You can find the coding style document in the Linux kernel
+source under the Documentation dir.
+
+I've passed it thru the scripts/checkpatch.pl script and attached are
+the coding style errors: (Lots of tab/space issues)
+
+2nd. The 'detection' of a filemark appears a little week. i.e. first
+byte at a 512 byte boundary to contain '28'. This could produce many
+false positives.
+
+3rd. I see no way to detect variable block underrun/overrun detection
+(the main sticking point with my code base)..
+
+4th. You assume variable block writes. This code would fail if the
+user set the tape block size to 'fixed block'.
+
+Point 1 is easily resolved with a little effort.
+Do you have any ideas on the solution to points 2 &amp; 3 (just not coded yet) ?
+Point 4 is an easy code fix.
+
+Keep up the good work.
+
+p.s. To make it much easier for people on this list to review the
+code, please refer to the Linux kernel 'submitting patches' document.
+You will receive much faster code reviews...
+
+Regards
+Mark Harvey
+
+On Tue, May 6, 2008 at 5:24 PM, aftab azmi &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">max_aftab at yahoo.com</A>&gt; wrote:
+&gt;<i> Hiii everyone...
+</I>&gt;<i>     Attached herewith  is our implementation  of  Virtual  Tape Library....I have implemented all the mandatory commands mentioned in ssc-r42  except  erase command.....
+</I>&gt;<i>  For this to run u have  to change the default-bst in iscsid.c  to &quot;ssc&quot;..
+</I>&gt;<i>  We can use tar command to read/write  backup..
+</I>&gt;<i>  Please do send in your comments and suggestions for further devlopment.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>       Bollywood, fun, friendship, sports and more. You name it, we have it on <A HREF="http://in.promos.yahoo.com/groups/bestofyahoo/">http://in.promos.yahoo.com/groups/bestofyahoo/</A>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i>  Stgt-devel mailing list
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: bs_ssc-check_patch
+Type: application/octet-stream
+Size: 16346 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080507/856ef0a4/attachment.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080507/856ef0a4/attachment.obj</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: ssc-check_patch
+Type: application/octet-stream
+Size: 2017 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080507/856ef0a4/attachment-0001.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080507/856ef0a4/attachment-0001.obj</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001610.html">[Stgt-devel] Implementation of vtl
+</A></li>
+	<LI>Next message: <A HREF="001624.html">[Stgt-devel] Implementation of vtl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1622">[ date ]</a>
+              <a href="thread.html#1622">[ thread ]</a>
+              <a href="subject.html#1622">[ subject ]</a>
+              <a href="author.html#1622">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

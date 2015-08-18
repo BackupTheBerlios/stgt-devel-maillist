@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] target parser problems with SAS
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20target%20parser%20problems%20with%20SAS&In-Reply-To=%3C45F9CFA7.8050704%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000444.html">
+   <LINK REL="Next"  HREF="000440.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] target parser problems with SAS</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20target%20parser%20problems%20with%20SAS&In-Reply-To=%3C45F9CFA7.8050704%40torque.net%3E"
+       TITLE="[Stgt-devel] target parser problems with SAS">dougg at torque.net
+       </A><BR>
+    <I>Thu Mar 15 23:58:47 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000444.html">[Stgt-devel] [PATCH 3/3] bidirectional
+</A></li>
+        <LI>Next message: <A HREF="000440.html">[Stgt-devel] [PATCH] one more iscsi ahs bug fix
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#436">[ date ]</a>
+              <a href="thread.html#436">[ thread ]</a>
+              <a href="subject.html#436">[ subject ]</a>
+              <a href="author.html#436">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I'm looking at adding a SAS target to tgt. There is
+already an in-kernel ramdisk type driver which works
+on my LSI MPT Fusion hardware. Hence I suspect it can
+be done. Unfortunately a big hammer may be required
+on the existing tgt user space code.
+
+It looks like SAS may be different from other SCSI
+transports in that the target &quot;pulls&quot; data_out bytes
+from the initiator. This means that for commands like
+WRITE (SBC) and MODE SELECT the parser first receives
+the cdb only. The parser then needs to determine the
+byte count to be fetched and send that number back to
+the transport. The parser will then get entered a second
+time for the same cdb, this time with data attached.
+
+In the case of SBC the byte count is not obvious to
+the target code (in kernel). It is the lu context
+(in user space) that knows the block size. Further
+that block size may have been recently changed with
+a FORMAT command.
+
+For those interested in the low level details see the
+SAS XFER_RDY frame in its transport layer. Even though
+MPT Fusion firmware hides this level of detail, the
+requirement remain to calculate the length of data to
+&quot;pull&quot; on a WRITE like command. This &quot;feature&quot; might
+explain why SAS disks have better queued write
+performance than its FC and SPI cousins.
+
+
+So, do folks want the various tgt parsers changed to
+cope with SAS ??
+
+Doug Gilbert
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000444.html">[Stgt-devel] [PATCH 3/3] bidirectional
+</A></li>
+	<LI>Next message: <A HREF="000440.html">[Stgt-devel] [PATCH] one more iscsi ahs bug fix
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#436">[ date ]</a>
+              <a href="thread.html#436">[ thread ]</a>
+              <a href="subject.html#436">[ subject ]</a>
+              <a href="author.html#436">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

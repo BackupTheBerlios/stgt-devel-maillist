@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER multiple readers
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080208191133.GA14485%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001367.html">
+   <LINK REL="Next"  HREF="001375.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER multiple readers</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080208191133.GA14485%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER multiple readers">pw at osc.edu
+       </A><BR>
+    <I>Fri Feb  8 20:11:33 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001367.html">[Stgt-devel] iSER multiple readers
+</A></li>
+        <LI>Next message: <A HREF="001375.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1372">[ date ]</a>
+              <a href="thread.html#1372">[ thread ]</a>
+              <a href="subject.html#1372">[ subject ]</a>
+              <a href="author.html#1372">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Thu, 07 Feb 2008 21:07 -0500:
+&gt;<i> I think I'm seeing iSER read corruption problems.
+</I>&gt;<i> a) in stock centos5.1 when not using kernel 2.6.22.6 I get read
+</I>&gt;<i>    corruption with just a single reader
+</I>&gt;<i> b) every kernel/OS/ofed combination that I've tried when there are
+</I>&gt;<i>    multiple simultaneous readers
+</I>&gt;<i> 
+</I>&gt;<i> the multiple reader problem happens whether the data is read from
+</I>&gt;<i> multiple luns or clients or... well, just multiple reads to a single
+</I>&gt;<i> tgtd doing iSER seems to be enough to cause it.
+</I>&gt;<i> 
+</I>&gt;<i> I'm hoping these problems are just something that I've broken in my
+</I>&gt;<i> setup... previously 2.6.18-52.el5 + centos5 worked (in the single
+</I>&gt;<i> reader case) but I can't make it work now.
+</I>&gt;<i> 
+</I>&gt;<i> is anyone else seeing easy read corruption?
+</I>&gt;<i> 
+</I>&gt;<i> the easiest way I can reproduce it is:
+</I>&gt;<i>  initiator side - write data:
+</I>&gt;<i>    lmdd if=internal of=/dev/sdc opat=1 bs=1M count=1000
+</I>&gt;<i>  target side - check that the file is ok (it is):
+</I>&gt;<i>    lmdd of=internal if=/mnt/ramdisk/file ipat=1 bs=1M count=1000 mismatch=1
+</I>&gt;<i>  initiator side - read and check data (is sometimes ok):
+</I>&gt;<i>    lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1
+</I>&gt;<i>  initiator side - read data with 2 processes at once (always fails):
+</I>&gt;<i>    lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1 &amp;
+</I>&gt;<i>    lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1 &amp;
+</I>&gt;<i> 
+</I>&gt;<i> I'm using the kernel git tree of stgt.
+</I>&gt;<i> I don't see any problems when using TCP IPoIB.
+</I>
+I've tried this and a few variations but can't find any problems.
+That's unfortunate.  To debug it, perhaps you can investigate the
+mismatched data that comes back and see if you can discern a
+pattern.  Like if it is always at 4k boundaries, or always at 512k
+boundaries, that could help us to narrow it down.
+
+You had another corruption issue a long time ago that I thought was
+related to the response message getting in front of the RDMA.  But
+IB guys insist that this is not possible.  I had a patch that I very
+much did not like that delayed the final response message until the
+target saw the local completions for its RDMAs.  This never went in.
+It is dated 16 oct 2007.  In case your notes or mail archives lead
+you to believe this current read corruption is similar.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001367.html">[Stgt-devel] iSER multiple readers
+</A></li>
+	<LI>Next message: <A HREF="001375.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1372">[ date ]</a>
+              <a href="thread.html#1372">[ thread ]</a>
+              <a href="subject.html#1372">[ subject ]</a>
+              <a href="author.html#1372">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

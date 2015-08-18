@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] task data leak
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20task%20data%20leak&In-Reply-To=%3C20071211140830D.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001193.html">
+   <LINK REL="Next"  HREF="001191.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] task data leak</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20task%20data%20leak&In-Reply-To=%3C20071211140830D.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] task data leak">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Dec 11 06:08:30 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001193.html">[Stgt-devel] [PATCH] task data leak
+</A></li>
+        <LI>Next message: <A HREF="001191.html">[Stgt-devel] [PATCH 16/20] iser params
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1206">[ date ]</a>
+              <a href="thread.html#1206">[ thread ]</a>
+              <a href="subject.html#1206">[ subject ]</a>
+              <a href="author.html#1206">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, 8 Dec 2007 10:30:16 -0500
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Sat, 08 Dec 2007 21:59 +0900:
+</I>&gt;<i> &gt; From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] [PATCH] task data leak
+</I>&gt;<i> &gt; Date: Fri, 7 Dec 2007 15:23:53 -0500
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; iscsi_scsi_cmd_rx_start always allocates a buffer of 4096 to accommodate
+</I>&gt;<i> &gt; &gt; assumptions in spc, sbc, etc.  Even when a SCSI command asks for data
+</I>&gt;<i> &gt; &gt; length of zero, task-&gt;data is allocated to 4096.  However this is never
+</I>&gt;<i> &gt; &gt; assigned as in or out buf on scmd.  Thus never freed.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; This works around that by freeing an orphaned task-&gt;data.  Again, though,
+</I>&gt;<i> &gt; &gt; the better solution is to fix up all the little functions like inquiry
+</I>&gt;<i> &gt; &gt; that cause this situation in the first place.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> &gt; &gt; ---
+</I>&gt;<i> &gt; &gt;  usr/iscsi/iscsid.c |   11 +++++++++++
+</I>&gt;<i> &gt; &gt;  1 files changed, 11 insertions(+), 0 deletions(-)
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; &gt; index 1e0172a..ab1999d 100644
+</I>&gt;<i> &gt; &gt; --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; &gt; +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; &gt; @@ -1024,6 +1024,17 @@ void iscsi_free_task(struct iscsi_task *task)
+</I>&gt;<i> &gt; &gt;  {
+</I>&gt;<i> &gt; &gt;  	struct iscsi_connection *conn = task-&gt;conn;
+</I>&gt;<i> &gt; &gt;  
+</I>&gt;<i> &gt; &gt; +	/*
+</I>&gt;<i> &gt; &gt; +	 * Catch case when data_len is zero but pushed up to 4096
+</I>&gt;<i> &gt; &gt; +	 * to work around spc allocation assumption, but then later
+</I>&gt;<i> &gt; &gt; +	 * determined to be DATA_NONE and not used as either in or
+</I>&gt;<i> &gt; &gt; +	 * out buffer.
+</I>&gt;<i> &gt; &gt; +	 */
+</I>&gt;<i> &gt; &gt; +	if (task-&gt;data &amp;&amp;
+</I>&gt;<i> &gt; &gt; +	    task-&gt;data != scsi_get_in_buffer(&amp;task-&gt;scmd) &amp;&amp;
+</I>&gt;<i> &gt; &gt; +	    task-&gt;data != scsi_get_out_buffer(&amp;task-&gt;scmd))
+</I>&gt;<i> &gt; &gt; +		conn-&gt;tp-&gt;free_data_buf(conn, task-&gt;data);
+</I>&gt;<i> &gt; &gt; +
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Nice catch, thanks.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; How about this patch?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; index 1e0172a..e27c74c 100644
+</I>&gt;<i> &gt; --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; @@ -1435,7 +1435,7 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+</I>&gt;<i> &gt;  	/*
+</I>&gt;<i> &gt;  	 * fix spc, sbc, etc. they assume that buffer is long enough.
+</I>&gt;<i> &gt;  	 */
+</I>&gt;<i> &gt; -	if (data_len &lt; 4096)
+</I>&gt;<i> &gt; +	if (data_len &amp;&amp; data_len &lt; 4096)
+</I>&gt;<i> &gt;  		data_len = 4096;
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt;  	ext_len = ahs_len ? sizeof(req-&gt;cdb) + ahs_len : 0;
+</I>&gt;<i> &gt; 
+</I>&gt;<i> 
+</I>&gt;<i> Would be simpler, yes, but less safe.  Client could do an inquiry
+</I>&gt;<i> with data_len of 0 and lead to a crash in spc_inquiry, e.g.
+</I>
+But it is true even before I rewrote data buffer handling code, isn't
+it?
+
+
+&gt;<i> We really should just fix those functions.  Adding a bunch of &quot;if
+</I>&gt;<i> (data_len &gt; ...)&quot; is one way, although one would need many of these
+</I>&gt;<i> tests for all the various cases.  I had proposed allocating a temp
+</I>&gt;<i> buffer, then memcpy with bounds checking into whatever out_buffer is
+</I>&gt;<i> available as the final step.  See the old 03/20 iser-transport-buf
+</I>&gt;<i> patch if you think that has merit.
+</I>
+I prefer (data_len &gt; ...) way since I always like to use the same way
+(report_luns already does that check). But it might become too
+ugly. I'll fix it to see how things look like.
+
+
+&gt;<i> The other issue is that inquiry etc. expect a zeroed buffer, and
+</I>&gt;<i> trying to guess if scsi_is_io_opcode() to determine if the handler
+</I>&gt;<i> function doesn't need zeroing is insufficient.  I'll send a terrible
+</I>&gt;<i> patch to work around this for OSD, but would prefer to fix inquiry
+</I>&gt;<i> and friends instead.
+</I>
+Yeah, we need to fix this too.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001193.html">[Stgt-devel] [PATCH] task data leak
+</A></li>
+	<LI>Next message: <A HREF="001191.html">[Stgt-devel] [PATCH 16/20] iser params
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1206">[ date ]</a>
+              <a href="thread.html#1206">[ thread ]</a>
+              <a href="subject.html#1206">[ subject ]</a>
+              <a href="author.html#1206">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

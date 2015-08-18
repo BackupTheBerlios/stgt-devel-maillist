@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] isns fix initiator -&gt; target
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20isns%20fix%20initiator%20-%3E%20target&In-Reply-To=%3C200709160538.l8G5cFS8020762%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001045.html">
+   <LINK REL="Next"  HREF="001047.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] isns fix initiator -&gt; target</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20isns%20fix%20initiator%20-%3E%20target&In-Reply-To=%3C200709160538.l8G5cFS8020762%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] isns fix initiator -&gt; target">tomof at acm.org
+       </A><BR>
+    <I>Sun Sep 16 07:38:15 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001045.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+        <LI>Next message: <A HREF="001047.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1046">[ date ]</a>
+              <a href="thread.html#1046">[ thread ]</a>
+              <a href="subject.html#1046">[ subject ]</a>
+              <a href="author.html#1046">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+Subject: [Stgt-devel] [PATCH] isns fix initiator -&gt; target
+Date: Sat, 15 Sep 2007 22:28:01 +0200
+
+&gt;<i> Here's a little patch for the isns part.
+</I>&gt;<i> 
+</I>&gt;<i> Seems that when incorporating the open-iscsi isns stuf in tgt the change 
+</I>&gt;<i> from initiator type to target type was forgotton.
+</I>
+No.
+
+
+&gt;<i> In particular
+</I>&gt;<i> 
+</I>&gt;<i> file usr/iscsi/isns.c
+</I>&gt;<i> 
+</I>&gt;<i> ISNS_NODE_INITIATOR -&gt; ISNS_NODE_TARGET
+</I>&gt;<i> ISNS_SCN_FLAG_INITIATOR -&gt; ISNS_SCN_FLAG_TARGET
+</I>&gt;<i> 
+</I>&gt;<i> There are quite a few local parameters left in with initiator in the 
+</I>&gt;<i> name, but I left those in, this patch only let tgt tell to isns that it 
+</I>&gt;<i> is a target.
+</I>
+Please send a patch as inline text in the body of the email.
+
+
+--- usr/iscsi/isns.c	2007-09-05 20:38:55.000000000 +0200
++++ usr/iscsi/isns.c.new	2007-09-15 22:19:49.000000000 +0200
+@@ -265,7 +265,7 @@
+ 	length += isns_tlv_set(&amp;tlv, ISNS_ATTR_ISCSI_NAME, strlen(name), name);
+ 	length += isns_tlv_set(&amp;tlv, 0, 0, 0);
+ 
+-	scn_flags = ISNS_SCN_FLAG_INITIATOR | ISNS_SCN_FLAG_OBJECT_REMOVE |
++	scn_flags = ISNS_SCN_FLAG_TARGET | ISNS_SCN_FLAG_OBJECT_REMOVE |
+ 		ISNS_SCN_FLAG_OBJECT_ADDED | ISNS_SCN_FLAG_OBJECT_UPDATED;
+
+No. We register SCN to monitor initiators.
+
+
+ 	set_scn_flag(scn_flags);
+ 	scn_flags = htonl(scn_flags);
+@@ -291,7 +291,7 @@
+ 	struct isns_hdr *hdr = (struct isns_hdr *) buf;
+ 	struct isns_tlv *tlv;
+ 	struct iscsi_target *target;
+-	uint32_t node = htonl(ISNS_NODE_INITIATOR);
++	uint32_t node = htonl(ISNS_NODE_TARGET);
+ 	struct isns_qry_mgmt *mgmt;
+ 
+No, we send a query about initiators.
+
+
+ 	if (list_empty(&amp;iscsi_targets_list))
+@@ -681,7 +681,7 @@
+ 			name = (char *) tlv-&gt;value;
+ 			break;
+ 		case ISNS_ATTR_ISCSI_NODE_TYPE:
+-			if (ntohl(*(tlv-&gt;value)) == ISNS_NODE_INITIATOR &amp;&amp; name) {
++			if (ntohl(*(tlv-&gt;value)) == ISNS_NODE_TARGET &amp;&amp; name) {
+ 				eprintf(&quot;%s\n&quot;, (char *) name);
+ 				ini = malloc(sizeof(*ini));
+ 				if (!ini)
+
+No, we handle the response to the query about initiators.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001045.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+	<LI>Next message: <A HREF="001047.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1046">[ date ]</a>
+              <a href="thread.html#1046">[ thread ]</a>
+              <a href="subject.html#1046">[ subject ]</a>
+              <a href="author.html#1046">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

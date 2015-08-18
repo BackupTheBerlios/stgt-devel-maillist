@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] vsd -&gt; vdev is bad
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vsd%20-%3E%20vdev%20is%20bad&In-Reply-To=%3C1127254015.5550.0.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000086.html">
+   <LINK REL="Next"  HREF="000083.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] vsd -&gt; vdev is bad</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20vsd%20-%3E%20vdev%20is%20bad&In-Reply-To=%3C1127254015.5550.0.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] vsd -&gt; vdev is bad">mingz at ele.uri.edu
+       </A><BR>
+    <I>Wed Sep 21 00:06:55 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000086.html">[Stgt-devel] vsd -&gt; vdev is bad
+</A></li>
+        <LI>Next message: <A HREF="000083.html">[Stgt-devel] vsd -&gt; vdev is bad
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#87">[ date ]</a>
+              <a href="thread.html#87">[ thread ]</a>
+              <a href="subject.html#87">[ subject ]</a>
+              <a href="author.html#87">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 2005-09-20 at 14:22 -0500, Mike Christie wrote:
+&gt;<i> Ming Zhang wrote:
+</I>&gt;<i> &gt; On Tue, 2005-09-20 at 13:44 -0500, Mike Christie wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt;Ming Zhang wrote:
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;On Tue, 2005-09-20 at 13:27 -0500, Mike Christie wrote:
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;Mike Christie wrote:
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;Ming Zhang wrote:
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;Hi Mike
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;I think change vsd-&gt;vdev is a bad idea.
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;I would agree it is a bad name, but all that device does today is the 
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;reads and writes. It should probably be called something-something-IO. 
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;From your experience with iet, do you think a read or write will be 
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;different for tape or disk when using the interface we are using?
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;Oh yeah, I had looked at scst's dev_handlers for an example. I think 
+</I>&gt;<i> &gt;&gt;&gt;&gt;mostly only the error hanlding will be a problem.
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;yes, that is quite different.
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;So I guess we will need something. Originally the vsd and sd names came 
+</I>&gt;<i> &gt;&gt;about becuase we were only doing SCSI and vsd was a virtual scsi disk 
+</I>&gt;<i> &gt;&gt;and sd was a scsi disk passthrough type of device. They basically 
+</I>&gt;<i> &gt;&gt;emulated SCSI's ULDs for tape, cd, disk but they also performed 
+</I>&gt;<i> &gt;&gt;different types of IO, passthrough vs generic_file_readv/writev. 
+</I>&gt;<i> &gt;&gt;Eventually we pushed the SCSI stuff to the protocol handlers and the 
+</I>&gt;<i> &gt;&gt;devices became what they are today. Maybe io_handlers or io_type is a 
+</I>&gt;<i> &gt;&gt;better name?
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;Then to suport scsi tape, cd, etc we can add that code to the scsi 
+</I>&gt;<i> &gt;&gt;protocol and have something simialr to the SCSI-ml ULDs.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; iet currently have target type and io type. target_disk is a target type
+</I>&gt;<i> &gt; and fileio is a io type. so current vsd looks more like a io_handlers as
+</I>&gt;<i> &gt; u said.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; in fact, i do not think target type is ok since it is quite possible
+</I>&gt;<i> &gt; that 1 target has several lu while some of them are disk and others are
+</I>&gt;<i> &gt; cdrom or tape. so LU type is better here. base on scsi spec, it is the
+</I>&gt;<i> &gt; device server to decide what action it performs.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; so it would be nice that tgt define a clear line between target mode
+</I>&gt;<i> &gt; common and device specific; each lu has its own device server. device
+</I>&gt;<i> &gt; server process most of the function in user space, and r/w use certain
+</I>&gt;<i> &gt; io handler.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> 
+</I>&gt;<i> So for tgt we will end up having:
+</I>&gt;<i> 
+</I>&gt;<i> - target_type (this is just the low level target driver like IET or 
+</I>&gt;<i> qla2xxx, emulex, vscsi etc).
+</I>&gt;<i> - device_type (at the moment this just handles low level IO details but 
+</I>&gt;<i> will end up handling some device specifics like if the device is a tape, 
+</I>&gt;<i> disk, etc (some of this code is just stuck in tgt_scsi right now since 
+</I>&gt;<i> we only support disks, but the scsi specifics will be seperated out 
+</I>&gt;<i> similar to the SCSI-ml ULDs) and we will move the low level IO details 
+</I>&gt;<i> to a new struct)
+</I>&gt;<i> - io_handler (this will handle the lower level destination IO details 
+</I>&gt;<i> like if it is uses blk_execute_rq_nowait, sendfile or generic_file_*, etc).
+</I>&gt;<i> 
+</I>&gt;<i> And sometihng similar will be needed in userspace.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>
+fully agree. ;)
+
+Ming
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000086.html">[Stgt-devel] vsd -&gt; vdev is bad
+</A></li>
+	<LI>Next message: <A HREF="000083.html">[Stgt-devel] vsd -&gt; vdev is bad
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#87">[ date ]</a>
+              <a href="thread.html#87">[ thread ]</a>
+              <a href="subject.html#87">[ subject ]</a>
+              <a href="author.html#87">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

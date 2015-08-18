@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some platforms
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fcoe%3A%20size_t%20is%2064bits%20on%20some%0A%20platforms&In-Reply-To=%3C20080630085908Z.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001722.html">
+   <LINK REL="Next"  HREF="001724.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some platforms</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fcoe%3A%20size_t%20is%2064bits%20on%20some%0A%20platforms&In-Reply-To=%3C20080630085908Z.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some platforms">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Jun 30 01:58:49 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001722.html">[Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some platforms
+</A></li>
+        <LI>Next message: <A HREF="001724.html">[Stgt-devel] [PATCH 2/2] fcoe: print a warning instead of SEGV when	no interface was specified
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1728">[ date ]</a>
+              <a href="thread.html#1728">[ thread ]</a>
+              <a href="subject.html#1728">[ subject ]</a>
+              <a href="author.html#1728">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 30 Jun 2008 09:24:21 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> Fixup some printf arguments to use the correct lengths
+</I>&gt;<i> 
+</I>&gt;<i> From a0d93e71ece21b44cb0c2efcfb1f94225299bfbc Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> Date: Tue, 24 Jun 2008 13:11:50 +1000
+</I>&gt;<i> Subject: [PATCH 1/2] size_t is 64 bit on some architectures.
+</I>&gt;<i> 
+</I>&gt;<i> fix debug print statements to use correct printf types for the FCOE
+</I>&gt;<i> target
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> Signed-off-by: root &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ubuntu-server-1.sahlberg.net</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/fcoe/fcs_state.c   |    4 ++--
+</I>&gt;<i>  usr/fcoe/openfc_scst.c |    6 +++---
+</I>&gt;<i>  usr/fcoe/sa_state.c    |   14 +++++++-------
+</I>&gt;<i>  3 files changed, 12 insertions(+), 12 deletions(-)
+</I>
+Applied both, thanks.
+
+Well, I think that we need to rework on the whole fcoe code because
+after I took the code from the foce project, they redid the design and
+fixed lots of the bugs, I think.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001722.html">[Stgt-devel] [PATCH 1/2] fcoe: size_t is 64bits on some platforms
+</A></li>
+	<LI>Next message: <A HREF="001724.html">[Stgt-devel] [PATCH 2/2] fcoe: print a warning instead of SEGV when	no interface was specified
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1728">[ date ]</a>
+              <a href="thread.html#1728">[ thread ]</a>
+              <a href="subject.html#1728">[ subject ]</a>
+              <a href="author.html#1728">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

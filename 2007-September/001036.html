@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070909181242.GA9302%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001035.html">
+   <LINK REL="Next"  HREF="001000.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070909181242.GA9302%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER">pw at osc.edu
+       </A><BR>
+    <I>Sun Sep  9 20:12:42 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001035.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001000.html">[Stgt-devel] patch for rhel4/centos4
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1036">[ date ]</a>
+              <a href="thread.html#1036">[ thread ]</a>
+              <a href="subject.html#1036">[ subject ]</a>
+              <a href="author.html#1036">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Sun, 09 Sep 2007 11:30 -0400:
+&gt;<i> Summary:
+</I>&gt;<i>  - 2.6.21 seems to be a good kernel. 2.6.22 or newer, or RedHat's OFED 1.2
+</I>&gt;<i>    patched kernels all seem to have iSER bugs that make them unusable.
+</I>&gt;<i>  - as everything works in 2.6.21 presumably this means there's nothing
+</I>&gt;<i>    wrong with the iSER implementation in tgtd. well done! :)
+</I>
+Well, that's good and bad news.  Nice to know that things do work at times,
+but we have to figure out what happened in the initiator now.  Or maybe tgt
+is making some bad assumptions.
+
+&gt;<i> with the 2.6.22.6 kernel and iSER I couldn't find any corruption
+</I>&gt;<i> issues using dd to /dev/sdc. however (as reported previously) if I put
+</I>&gt;<i> an ext3 filesystem on the iSER device and then dd to a file in the ext3
+</I>&gt;<i> filsystem then pretty much immediately I get:
+</I>&gt;<i>   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196611, length 1
+</I>&gt;<i>   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196612, length 1
+</I>&gt;<i>   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196613, length 1
+</I>&gt;<i>   ...
+</I>&gt;<i> 
+</I>&gt;<i> I get the same type of errors with 2.6.23-rc5 too.
+</I>
+I'm still not been able to reproduce this, at least on my
+2.6.22-rc5.  One of these days we'll move to some newer kernels
+here, but have been sort of waiting for the bidi approaches to
+stabilize somewhat.
+
+The only issue I've found is a slight race condition when the
+initiator unexpectly hangs up.  The target would exit if it saw
+a work request flush before seeing the CM disconnect event.  Added
+a new patch to the git to fix this.  But it doesn't explain your
+corruption issues.
+
+&gt;<i> with 2.6.21 (mem=512M) on the initiator side and 2.6.21 or 2.6.22.6
+</I>&gt;<i> (7.1g ramdisk as backing store) then everything seems to work fine.
+</I>&gt;<i> eg. bonnie++
+</I>&gt;<i> 
+</I>&gt;<i> Version  1.03       ------Sequential Output------ --Sequential Input- --Random-
+</I>&gt;<i>                     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+</I>&gt;<i> Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+</I>&gt;<i> x11            512M 80329  99 521771 99 224506 44 85983  95 525440 49 +++++ +++
+</I>&gt;<i> x11              1G 80649  99 484939 92 207655 43 59377  98 488031 41 13703  14
+</I>&gt;<i> x11              2G 79976  99 461833 94 208618 42 74189  97 467245 39 10060  13
+</I>&gt;<i> x11              4G 79873  99 487361 97 210199 43 87312  98 484341 42  8459  13
+</I>&gt;<i>                     ------Sequential Create------ --------Random Create--------
+</I>&gt;<i>                     -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+</I>&gt;<i>               files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+</I>&gt;<i>                  16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+</I>&gt;<i>                  64 80318  99 +++++ +++ 86949  99 80277  99 +++++ +++ 83630 100
+</I>&gt;<i>                 256 68904  97 436942 98 61886  83 67777  95 +++++ +++ 48291  69
+</I>&gt;<i>                 512 40226  62 34164  25 37500  65 44426  67 22325  18 28473  53
+</I>
+You're getting neighborhood of 500 MB/s for block reads _and_ writes
+through ext3.  This is different from your earlier results with dd:
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Wed, 05 Sep 2007 10:46 -0400:
+&gt;<i> bypassing the page cache (and readahead?) with O_DIRECT:
+</I>&gt;<i>  eg. dd if=/dev/zero of=/dev/sdc bs=1k count=8000 oflag=direct
+</I>&gt;<i>    bs   write MB/s read MB/s
+</I>&gt;<i>   10M     1200      520
+</I>&gt;<i>    1M      790      460
+</I>&gt;<i>  200k      480      350
+</I>&gt;<i>    4k       40       34
+</I>&gt;<i>    1k       11        9
+</I>&gt;<i> large writes look fabulous, but reads seem to be limited by something
+</I>&gt;<i> other than IB bandwidth.
+</I>&gt;<i> 
+</I>&gt;<i> in the more usual usage case via the page cache:
+</I>&gt;<i>  eg. dd if=/dev/zero of=/dev/sdc bs=1k count=8000000 
+</I>&gt;<i>    bs   write MB/s read MB/s
+</I>&gt;<i>   10M     1100      260
+</I>&gt;<i>    1M     1100      270
+</I>&gt;<i>    4k      960      270
+</I>&gt;<i>    1k       30      240
+</I>&gt;<i> so maybe extra copies to/from page cache are getting in the way of the
+</I>&gt;<i> read bandwidth and are lowering it by a factor of 2.
+</I>&gt;<i> I'm guessing the good small block read performance here is due to
+</I>&gt;<i> readahead, and the mostly better writes are from aggregation.
+</I>
+We see similar behavior as your earlier tests on dd, where reads are
+too slow, and have started trying to figure out what's taking so
+long in the code.  One would expect reads to be the fast case, as
+they map to RDMA write operations.
+
+Thanks for doing all this testing.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001035.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001000.html">[Stgt-devel] patch for rhel4/centos4
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1036">[ date ]</a>
+              <a href="thread.html#1036">[ thread ]</a>
+              <a href="subject.html#1036">[ subject ]</a>
+              <a href="author.html#1036">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

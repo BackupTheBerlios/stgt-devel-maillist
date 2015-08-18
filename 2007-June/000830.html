@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Some remarks on current git version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Some%20remarks%20on%20current%20git%20version&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C016B4339%40TUS1XCHCLUPIN06.enterprise.veritas.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000829.html">
+   <LINK REL="Next"  HREF="000831.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Some remarks on current git version</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Some%20remarks%20on%20current%20git%20version&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C016B4339%40TUS1XCHCLUPIN06.enterprise.veritas.com%3E"
+       TITLE="[Stgt-devel] Some remarks on current git version">mark_harvey at symantec.com
+       </A><BR>
+    <I>Sat Jun 23 00:54:10 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000829.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+        <LI>Next message: <A HREF="000831.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#830">[ date ]</a>
+              <a href="thread.html#830">[ thread ]</a>
+              <a href="subject.html#830">[ subject ]</a>
+              <a href="author.html#830">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Albert,
+
+Try : &quot;--device-type=cd&quot; 
+
+It works for me.
+
+Cheers
+Mark
+
+-----Original Message-----
+From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>
+[mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of Albert Pauw
+Sent: Saturday, 23 June 2007 6:10 AM
+To: STGT list
+Subject: Re: [Stgt-devel] Some remarks on current git version
+
+
+&gt;&gt;<i> - I am not able to define a cdrom anymore (using an cd iso as backing
+</I>
+&gt;&gt;<i> store),  --device-type cdrom doesn't work.
+</I>Using the command:
+
+tgtadm --lld iscsi --mode logicalunit --op new --tid 2 --lun 1 
+--backing-store /tmp/cd.iso --device-type cd/dvd
+
+But it looks like the --device-type command doesn't recognise the cd/dvd
+
+type. Tried it within quotes (i.e. &quot;cd/dvd&quot;) but that doesn't help.
+In target.c it is defined as a possible type, like e.g. disk, but it 
+doesn't work here.
+_______________________________________________
+Stgt-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000829.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+	<LI>Next message: <A HREF="000831.html">[Stgt-devel] Some remarks on current git version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#830">[ date ]</a>
+              <a href="thread.html#830">[ thread ]</a>
+              <a href="subject.html#830">[ subject ]</a>
+              <a href="author.html#830">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

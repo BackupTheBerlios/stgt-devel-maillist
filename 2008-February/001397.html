@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%095.1&In-Reply-To=%3Ce2e108260802120324y482268d4m1cd5e4b40089be3c%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001396.html">
+   <LINK REL="Next"  HREF="001398.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%095.1&In-Reply-To=%3Ce2e108260802120324y482268d4m1cd5e4b40089be3c%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Different throughput numbers on SLES 10 and RHEL	5.1">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Tue Feb 12 12:24:59 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001396.html">[Stgt-devel] Different throughput numbers on SLES 10 and	RHEL	5.1
+</A></li>
+        <LI>Next message: <A HREF="001398.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1397">[ date ]</a>
+              <a href="thread.html#1397">[ thread ]</a>
+              <a href="subject.html#1397">[ subject ]</a>
+              <a href="author.html#1397">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Feb 12, 2008 12:17 PM, Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> are you loading mthca with
+</I>&gt;<i>   options ib_mthca tune_pci=1
+</I>&gt;<i> so that lspci -vvv says:
+</I>&gt;<i>   MaxReadReq 4096 bytes
+</I>
+An even better way than specifying tune_pci=1 is to perform a BIOS
+upgrade. On an Intel S5000PAL this increased MaxReadReq from 128 to
+512 bytes, which is enough to obtain maximal throughput on an SDR 4x
+IB network.
+
+Bart Van Assche.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001396.html">[Stgt-devel] Different throughput numbers on SLES 10 and	RHEL	5.1
+</A></li>
+	<LI>Next message: <A HREF="001398.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1397">[ date ]</a>
+              <a href="thread.html#1397">[ thread ]</a>
+              <a href="subject.html#1397">[ subject ]</a>
+              <a href="author.html#1397">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

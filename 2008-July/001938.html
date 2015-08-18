@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Make changes so that VTL stuff works properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%20properly%20...&In-Reply-To=%3C488E8537.8060009%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001934.html">
+   <LINK REL="Next"  HREF="001939.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Make changes so that VTL stuff works properly ...</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%20properly%20...&In-Reply-To=%3C488E8537.8060009%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Make changes so that VTL stuff works properly ...">markh794 at gmail.com
+       </A><BR>
+    <I>Tue Jul 29 04:49:27 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001934.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works properly	...
+</A></li>
+        <LI>Next message: <A HREF="001939.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1938">[ date ]</a>
+              <a href="thread.html#1938">[ thread ]</a>
+              <a href="subject.html#1938">[ subject ]</a>
+              <a href="author.html#1938">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Richard Sharpe wrote:
+&gt;&gt;<i>From a16d368a29298170df2c21fd19d8490c248f06b1 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;<i> Date: Mon, 28 Jul 2008 14:34:12 -0700
+</I>&gt;<i> Subject: [PATCH] Make changes so that VTL stuff works properly ...
+</I>&gt;<i> Signed-off-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;<i> 
+</I>&gt;<i> There are three changes here.
+</I>&gt;<i> 
+</I>&gt;<i> In target.h I expose device_lookup for use by the smc.c code.
+</I>&gt;<i> 
+</I>&gt;<i> In target.h I modify tgt_device_path_update so that we can call it to
+</I>&gt;<i> both open and close a file that has been allocated to a
+</I>&gt;<i> data_transfer_station.
+</I>&gt;<i> 
+</I>&gt;<i> In smc.c I modified set_slot_full and set_slot_empty to call the
+</I>&gt;<i> modified tgt_device_path_update to achieve my goals. We call
+</I>&gt;<i> device_lookup to figure out the device we are interested in.
+</I>&gt;<i> 
+</I>&gt;<i> I have tested this by loading and unloading tapes and DVDs, doing tar
+</I>&gt;<i> to the drive and using cdrecord on the device, and verifying with lsof
+</I>&gt;<i> that the tgtd has the files open when they are in the transfer station
+</I>&gt;<i> and does not have them open when the station has been unloaded.
+</I>&gt;<i> 
+</I>&gt;<i> It all seems to work. I have attached the patch as well because gmail
+</I>&gt;<i> seems to kill patches ... I hope the attached patch is OK.
+</I>Sorry, I don't quite understand the reason for this patch.
+
+The smc already calls a non-static dtd_load_unload() which performs a similar function to tgt_device_path_update() but with different args.
+
+int dtd_load_unload(int tid, uint64_t lun, int load, char *file)
+vs
+int tgt_device_path_update(struct target *target, struct scsi_lu *lu, char *path)
+
+i.e. dtd_load_unload calls __device_lookup() and then opens/closes the backing store.
+
+All this patch seems to do is call the 'open' or 'close' backing store twice.
+
+
+Perhaps 'fixing' dtd_load_unload() so it then calls tgt_device_path_update() if this function is not correct.
+
+FWIW: dtd_load_unload == Data Transfer Device load/unload
+
+At the time this function was added, the tgt_device_path_update() did not exist.
+
+Cheers
+Mark
+&gt;<i> 
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/smc.c    |   34 ++++++++++++++++++++++++----------
+</I>&gt;<i>  usr/target.c |   15 ++++++++++-----
+</I>&gt;<i>  usr/target.h |    2 ++
+</I>&gt;<i>  3 files changed, 36 insertions(+), 15 deletions(-)
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/smc.c b/usr/smc.c
+</I>&gt;<i> index 9d7f681..0848101 100644
+</I>&gt;<i> --- a/usr/smc.c
+</I>&gt;<i> +++ b/usr/smc.c
+</I>&gt;<i> @@ -47,12 +47,18 @@
+</I>&gt;<i>  #include &quot;smc.h&quot;
+</I>&gt;<i>  #include &quot;media.h&quot;
+</I>&gt;<i> 
+</I>&gt;<i> -static int set_slot_full(struct slot *s, uint16_t src, char *path)
+</I>&gt;<i> +static int set_slot_full(struct target *target, struct slot *s, uint16_t src, c
+</I>&gt;<i> har *path)
+</I>
+&gt;<i>  {
+</I>&gt;<i>         int err = 0;
+</I>&gt;<i> 
+</I>&gt;<i> -       if (path)
+</I>&gt;<i> -               err = dtd_load_unload(s-&gt;drive_tid, s-&gt;drive_lun, LOAD, path);
+</I>&gt;<i> +       if (path) {
+</I>&gt;<i> +               struct scsi_lu *lu = device_lookup(target, s-&gt;drive_lun);
+</I>&gt;<i> +
+</I>&gt;<i> +               if (!lu)
+</I>&gt;<i> +                       return 1;  /* we could not find the LU ... */
+</I>&gt;<i> +
+</I>&gt;<i> +               err = tgt_device_path_update(target, lu, path);
+</I>&gt;<i> +       }
+</I>&gt;<i>         if (err)
+</I>&gt;<i>                 return err;
+</I>&gt;<i> 
+</I>&gt;<i> @@ -62,13 +68,20 @@ static int set_slot_full(struct slot *s, uint16_t src, char
+</I>&gt;<i> *path)
+</I>&gt;<i>         return err;
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i> -static void set_slot_empty(struct slot *s)
+</I>&gt;<i> +static void set_slot_empty(struct target *target, struct slot *s)
+</I>&gt;<i>  {
+</I>&gt;<i>         s-&gt;status &amp;= 0xfe;
+</I>&gt;<i>         s-&gt;last_addr = 0;
+</I>&gt;<i>         memset(s-&gt;barcode, ' ', sizeof(s-&gt;barcode));
+</I>&gt;<i> -       if (s-&gt;element_type == ELEMENT_DATA_TRANSFER)
+</I>&gt;<i> -               dtd_load_unload(s-&gt;drive_tid, s-&gt;drive_lun, UNLOAD, NULL);
+</I>&gt;<i> +
+</I>&gt;<i> +       if (s-&gt;element_type == ELEMENT_DATA_TRANSFER) {
+</I>&gt;<i> +               struct scsi_lu *lu = device_lookup(target, s-&gt;drive_lun);
+</I>&gt;<i> +
+</I>&gt;<i> +               if (!lu)
+</I>&gt;<i> +                       return 1;  /* we could not find the LU ... */
+</I>&gt;<i> +
+</I>&gt;<i> +               (void)tgt_device_path_update(target, lu, NULL);
+</I>&gt;<i> +       }
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i>  static int test_slot_full(struct slot *s)
+</I>&gt;<i> @@ -355,6 +368,7 @@ sense:
+</I>&gt;<i>  static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i>         struct smc_info *smc = dtype_priv(cmd-&gt;dev);
+</I>&gt;<i> +       struct target *tgt = cmd-&gt;c_target;
+</I>&gt;<i>         uint8_t *scb;
+</I>&gt;<i>         uint16_t src;
+</I>&gt;<i>         uint16_t dest;
+</I>&gt;<i> @@ -410,15 +424,15 @@ static int smc_move_medium(int host_no, struct scsi_cmd *c
+</I>&gt;<i> md)
+</I>&gt;<i>                         goto sense;
+</I>&gt;<i>                 }
+</I>&gt;<i> 
+</I>&gt;<i> -               if (set_slot_full(dest_slot, src, path)) {
+</I>&gt;<i> +               if (set_slot_full(tgt, dest_slot, src, path)) {
+</I>&gt;<i>                         key = HARDWARE_ERROR;
+</I>&gt;<i>                         asc = ASC_MECHANICAL_POSITIONING_ERROR;
+</I>&gt;<i>                         goto sense;
+</I>&gt;<i>                 }
+</I>&gt;<i>         } else
+</I>&gt;<i> -               set_slot_full(dest_slot, src, NULL);
+</I>&gt;<i> +               set_slot_full(tgt, dest_slot, src, NULL);
+</I>&gt;<i> 
+</I>&gt;<i> -       set_slot_empty(src_slot);
+</I>&gt;<i> +       set_slot_empty(tgt, src_slot);
+</I>&gt;<i> 
+</I>&gt;<i>         scsi_set_in_resid_by_actual(cmd, 0);
+</I>&gt;<i>         return SAM_STAT_GOOD;
+</I>&gt;<i> @@ -626,7 +640,7 @@ static int config_slot(struct scsi_lu *lu, struct tmp_param
+</I>&gt;<i> *tmp)
+</I>&gt;<i>                 if (!s)
+</I>&gt;<i>                         break;  // Slot not found..
+</I>&gt;<i>                 strncpy(s-&gt;barcode, tmp-&gt;barcode, sizeof(s-&gt;barcode));
+</I>&gt;<i> -               set_slot_full(s, 0, NULL);
+</I>&gt;<i> +               set_slot_full(lu-&gt;tgt, s, 0, NULL);
+</I>&gt;<i>                 ret = TGTADM_SUCCESS;
+</I>&gt;<i>                 break;
+</I>&gt;<i>         case ELEMENT_DATA_TRANSFER:
+</I>&gt;<i> diff --git a/usr/target.c b/usr/target.c
+</I>&gt;<i> index 7abaa54..863ec9b 100644
+</I>&gt;<i> --- a/usr/target.c
+</I>&gt;<i> +++ b/usr/target.c
+</I>&gt;<i> @@ -297,7 +297,7 @@ int it_nexus_destroy(int tid, uint64_t itn_id)
+</I>&gt;<i>         return 0;
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i> -static struct scsi_lu *device_lookup(struct target *target, uint64_t lun)
+</I>&gt;<i> +struct scsi_lu *device_lookup(struct target *target, uint64_t lun)
+</I>&gt;<i>  {
+</I>&gt;<i>         struct scsi_lu *lu;
+</I>&gt;<i> 
+</I>&gt;<i> @@ -347,7 +347,7 @@ int tgt_device_path_update(struct target *target, struct scs
+</I>&gt;<i> i_lu *lu, char *path
+</I>&gt;<i>         uint64_t size;
+</I>&gt;<i> 
+</I>&gt;<i>         if (lu-&gt;path) {
+</I>&gt;<i> -               if (lu-&gt;attrs.online)
+</I>&gt;<i> +               if (path &amp;&amp; lu-&gt;attrs.online)
+</I>&gt;<i>                         return TGTADM_INVALID_REQUEST;
+</I>&gt;<i> 
+</I>&gt;<i>                 lu-&gt;dev_type_template.lu_offline(lu);
+</I>&gt;<i> @@ -359,6 +359,10 @@ int tgt_device_path_update(struct target *target, struct sc
+</I>&gt;<i> si_lu *lu, char *path
+</I>&gt;<i>                 lu-&gt;path = NULL;
+</I>&gt;<i>         }
+</I>&gt;<i> 
+</I>&gt;<i> +       /* Were we called to close the file? */
+</I>&gt;<i> +       if (!path)
+</I>&gt;<i> +               return 0;
+</I>&gt;<i> +
+</I>&gt;<i>         path = strdup(path);
+</I>&gt;<i>         if (!path)
+</I>&gt;<i>                 return TGTADM_NOMEM;
+</I>&gt;<i> @@ -418,7 +422,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, c
+</I>&gt;<i> har *params,
+</I>&gt;<i>         struct it_nexus_lu_info *itn_lu;
+</I>&gt;<i>         struct it_nexus *itn;
+</I>&gt;<i> 
+</I>&gt;<i> -       dprintf(&quot;%d %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+</I>&gt;<i> +       eprintf(&quot;%d %&quot; PRIu64 &quot; params: %s\n&quot;, tid, lun, params);
+</I>&gt;<i> 
+</I>&gt;<i>         while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+</I>&gt;<i>                 substring_t args[MAX_OPT_ARGS];
+</I>&gt;<i> @@ -452,8 +456,9 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, c
+</I>&gt;<i> har *params,
+</I>&gt;<i>         }
+</I>&gt;<i> 
+</I>&gt;<i>         bst = target-&gt;bst;
+</I>&gt;<i> -       if (backing) {
+</I>&gt;<i> +       /*if (backing) {*/
+</I>&gt;<i>                 if (bstype) {
+</I>&gt;<i> +                       eprintf(&quot;backing store trying: %s\n&quot;, bstype);
+</I>&gt;<i>                         bst = get_backingstore_template(bstype);
+</I>&gt;<i>                         if (!bst) {
+</I>&gt;<i>                                 eprintf(&quot;failed to find bstype, %s\n&quot;, bstype);
+</I>&gt;<i> @@ -461,7 +466,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, c
+</I>&gt;<i> har *params,
+</I>&gt;<i>                                 goto out;
+</I>&gt;<i>                         }
+</I>&gt;<i>                 }
+</I>&gt;<i> -       }
+</I>&gt;<i> +       /*}*/
+</I>&gt;<i> 
+</I>&gt;<i>         t = device_type_lookup(dev_type);
+</I>&gt;<i>         if (!t) {
+</I>&gt;<i> diff --git a/usr/target.h b/usr/target.h
+</I>&gt;<i> index 8fe30aa..4d4768a 100644
+</I>&gt;<i> --- a/usr/target.h
+</I>&gt;<i> +++ b/usr/target.h
+</I>&gt;<i> @@ -87,4 +87,6 @@ static inline int queue_active(const struct tgt_cmd_queue *q)
+</I>&gt;<i>         \
+</I>&gt;<i>  QUEUE_FNS(BLOCKED, blocked)
+</I>&gt;<i>  QUEUE_FNS(DELETED, deleted)
+</I>&gt;<i> 
+</I>&gt;<i> +struct scsi_lu *device_lookup(struct target *target, uint64_t lun);
+</I>&gt;<i> +
+</I>&gt;<i>  #endif
+</I>&gt;<i> --
+</I>&gt;<i> 1.5.5.1
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> ------------------------------------------------------------------------
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001934.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works properly	...
+</A></li>
+	<LI>Next message: <A HREF="001939.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1938">[ date ]</a>
+              <a href="thread.html#1938">[ thread ]</a>
+              <a href="subject.html#1938">[ subject ]</a>
+              <a href="author.html#1938">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

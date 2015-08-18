@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Use correct return value of lseek
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Use%20correct%20return%20value%20of%20lseek&In-Reply-To=%3C20080720000707P.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001787.html">
+   <LINK REL="Next"  HREF="001799.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Use correct return value of lseek</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Use%20correct%20return%20value%20of%20lseek&In-Reply-To=%3C20080720000707P.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] Use correct return value of lseek">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Jul 19 17:43:38 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001787.html">[Stgt-devel] [PATCH] Use correct return value of lseek
+</A></li>
+        <LI>Next message: <A HREF="001799.html">[Stgt-devel] [PATCH] Use correct return value of lseek
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1795">[ date ]</a>
+              <a href="thread.html#1795">[ thread ]</a>
+              <a href="subject.html#1795">[ subject ]</a>
+              <a href="author.html#1795">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 18 Jul 2008 18:37:24 +0200
+Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+
+&gt;<i> Just a small patch.
+</I>&gt;<i> 
+</I>&gt;<i> The wrong return value was checked in the if statement.
+</I>&gt;<i> 
+</I>&gt;<i> Albert
+</I>&gt;<i> 
+</I>&gt;<i> --------
+</I>&gt;<i> 
+</I>&gt;<i> --- bs_ssc.c	2008-07-17 19:19:10.000000000 +0200
+</I>&gt;<i> +++ bs_ssc.c.new	2008-07-18 18:34:15.000000000 +0200
+</I>&gt;<i> @@ -65,7 +65,7 @@
+</I>&gt;<i>  	case REZERO_UNIT:
+</I>&gt;<i>  		rew = lseek(fd, 0, SEEK_SET);
+</I>&gt;<i>  		curr_pos = lseek(fd, 0, SEEK_CUR);
+</I>&gt;<i> -		if (ret)
+</I>&gt;<i> +		if (rew)
+</I>&gt;<i>  			set_medium_error(&amp;result, &amp;key, &amp;asc);
+</I>&gt;<i>  		eprintf(&quot;Rewind Successful, File Pointer at %&quot; PRIu64&quot;,%m\n&quot;,
+</I>&gt;<i>  			curr_pos);
+</I>
+I think that the fix is right but what's for the second lseek? Can we
+remove it?
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001787.html">[Stgt-devel] [PATCH] Use correct return value of lseek
+</A></li>
+	<LI>Next message: <A HREF="001799.html">[Stgt-devel] [PATCH] Use correct return value of lseek
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1795">[ date ]</a>
+              <a href="thread.html#1795">[ thread ]</a>
+              <a href="subject.html#1795">[ subject ]</a>
+              <a href="author.html#1795">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

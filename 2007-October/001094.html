@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 09/20] iser event handler to tcp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2009/20%5D%20iser%20event%20handler%20to%20tcp&In-Reply-To=%3C4c49de1d38fc3ccd34899fb12a7be1c8c31563d4.1192554396.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001080.html">
+   <LINK REL="Next"  HREF="001121.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 09/20] iser event handler to tcp</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2009/20%5D%20iser%20event%20handler%20to%20tcp&In-Reply-To=%3C4c49de1d38fc3ccd34899fb12a7be1c8c31563d4.1192554396.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 09/20] iser event handler to tcp">pw at osc.edu
+       </A><BR>
+    <I>Tue Oct 16 17:20:22 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001080.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+        <LI>Next message: <A HREF="001121.html">[Stgt-devel] [PATCH 09/20] iser event handler to tcp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1094">[ date ]</a>
+              <a href="thread.html#1094">[ thread ]</a>
+              <a href="subject.html#1094">[ subject ]</a>
+              <a href="author.html#1094">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Move iscsi_event_handler to iscsi_tcp.c as it is TCP-specific.  RDMA will
+have its own event handler.  Both will call into iscsi_tx_handler and
+iscsi_rx_handler, which are now exported, along with iscsi_scsi_cmd_execute
+that will be needed when an RDMA read collects all the write data.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_tcp.c |   23 ++++++++++++++++++++++-
+ usr/iscsi/iscsid.c    |   25 +++----------------------
+ usr/iscsi/iscsid.h    |    4 +++-
+ 3 files changed, 28 insertions(+), 24 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 0d189c7..7e0ab90 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -40,6 +40,8 @@
+ #define LISTEN_MAX		4
+ #define INCOMING_MAX		32
+ 
++static void iscsi_tcp_event_handler(int fd, int events, void *data);
++
+ static int set_keepalive(int fd)
+ {
+ 	int ret, opt;
+@@ -97,7 +99,7 @@ static void accept_connection(int afd, int events, void *data)
+ 	conn_read_pdu(conn);
+ 	set_non_blocking(fd);
+ 
+-	err = tgt_event_add(fd, EPOLLIN, iscsi_event_handler, conn);
++	err = tgt_event_add(fd, EPOLLIN, iscsi_tcp_event_handler, conn);
+ 	if (err)
+ 		goto free_conn;
+ 
+@@ -109,6 +111,25 @@ out:
+ 	return;
+ }
+ 
++static void iscsi_tcp_event_handler(int fd, int events, void *data)
++{
++	struct iscsi_connection *conn = (struct iscsi_connection *) data;
++
++	if (events &amp; EPOLLIN)
++		iscsi_rx_handler(fd, conn);
++
++	if (conn-&gt;state == STATE_CLOSE)
++		dprintf(&quot;connection closed\n&quot;);
++
++	if (conn-&gt;state != STATE_CLOSE &amp;&amp; events &amp; EPOLLOUT)
++		iscsi_tx_handler(fd, conn);
++
++	if (conn-&gt;state == STATE_CLOSE) {
++		conn_close(conn, fd);
++		dprintf(&quot;connection closed\n&quot;);
++	}
++}
++
+ static int iscsi_tcp_init(void)
+ {
+ 	struct addrinfo hints, *res, *res0;
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 59f226c..85c7724 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1151,7 +1151,7 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 	return target_cmd_queue(conn-&gt;session-&gt;target-&gt;tid, scmd);
+ }
+ 
+-static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
++int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &amp;task-&gt;req;
+@@ -1746,7 +1746,7 @@ static int do_recv(int fd, struct iscsi_connection *conn, int next_state)
+ 	return ret;
+ }
+ 
+-static void iscsi_rx_handler(int fd, struct iscsi_connection *conn)
++void iscsi_rx_handler(int fd, struct iscsi_connection *conn)
+ {
+ 	int ret = 0, hdigest, ddigest;
+ 	uint32_t crc;
+@@ -1913,7 +1913,7 @@ again:
+ 	return 0;
+ }
+ 
+-static void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
++void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
+ {
+ 	int ret = 0, hdigest, ddigest;
+ 	uint32_t crc;
+@@ -2043,25 +2043,6 @@ static void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
+ 	}
+ }
+ 
+-void iscsi_event_handler(int fd, int events, void *data)
+-{
+-	struct iscsi_connection *conn = (struct iscsi_connection *) data;
+-
+-	if (events &amp; EPOLLIN)
+-		iscsi_rx_handler(fd, conn);
+-
+-	if (conn-&gt;state == STATE_CLOSE)
+-		dprintf(&quot;connection closed\n&quot;);
+-
+-	if (conn-&gt;state != STATE_CLOSE &amp;&amp; events &amp; EPOLLOUT)
+-		iscsi_tx_handler(fd, conn);
+-
+-	if (conn-&gt;state == STATE_CLOSE) {
+-		conn_close(conn, fd);
+-		dprintf(&quot;connection closed\n&quot;);
+-	}
+-}
+-
+ struct tgt_driver iscsi = {
+ 	.name			= &quot;iscsi&quot;,
+ 	.use_kernel		= 0,
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 2f6c7c8..524c2f3 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -259,10 +259,12 @@ extern int conn_take_fd(struct iscsi_connection *conn, int fd);
+ extern void conn_add_to_session(struct iscsi_connection *conn, struct iscsi_session *session);
+ 
+ /* iscsid.c */
+-extern void iscsi_event_handler(int fd, int events, void *data);
+ extern char *text_key_find(struct iscsi_connection *conn, char *searchKey);
+ extern void text_key_add(struct iscsi_connection *conn, char *key, char *value);
+ extern void conn_read_pdu(struct iscsi_connection *conn);
++extern void iscsi_tx_handler(int fd, struct iscsi_connection *conn);
++extern void iscsi_rx_handler(int fd, struct iscsi_connection *conn);
++extern int iscsi_scsi_cmd_execute(struct iscsi_task *task);
+ 
+ /* iscsid.c iscsi_task */
+ extern void iscsi_free_task(struct iscsi_task *task);
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001080.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+	<LI>Next message: <A HREF="001121.html">[Stgt-devel] [PATCH 09/20] iser event handler to tcp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1094">[ date ]</a>
+              <a href="thread.html#1094">[ thread ]</a>
+              <a href="subject.html#1094">[ subject ]</a>
+              <a href="author.html#1094">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

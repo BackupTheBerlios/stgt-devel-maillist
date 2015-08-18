@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C1171897528.3045.16.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000402.html">
+   <LINK REL="Next"  HREF="000404.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C1171897528.3045.16.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Mon Feb 19 16:05:28 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000402.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000404.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#403">[ date ]</a>
+              <a href="thread.html#403">[ thread ]</a>
+              <a href="subject.html#403">[ subject ]</a>
+              <a href="author.html#403">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 2007-02-19 at 23:32 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+</I>&gt;<i> Date: Tue, 23 Jan 2007 11:19:17 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A> wrote on Mon, 22 Jan 2007 14:35 -0500:
+</I>&gt;<i> &gt; &gt; not a good idea. suggest to keep in a way like IET code, for each target
+</I>&gt;<i> &gt; &gt; type, call its foo_cmd_perform(), and make some common spc function as
+</I>&gt;<i> &gt; &gt; helper functions.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I think you're saying that I should duplicate the switch() logic for
+</I>&gt;<i> &gt; the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+</I>&gt;<i> &gt; type-specific functions.  This would reduce scsi_cmd_perform() into
+</I>&gt;<i> &gt; just a check on the target type, with no handling of SPC commands,
+</I>&gt;<i> &gt; e.g. INQUIRY.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I'm not opposed to doing that, just don't have a good reason to do
+</I>&gt;<i> &gt; so.  As the OSD work progresses this may become clear to me (PERFORM
+</I>&gt;<i> &gt; SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+</I>&gt;<i> 
+</I>&gt;<i> Very sorry for taking so long.
+</I>&gt;<i> 
+</I>&gt;<i> I put a patch to support various device types:
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://zaal.org/tgt/device-types.diff">http://zaal.org/tgt/device-types.diff</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I don't merge it because:
+</I>&gt;<i> 
+</I>&gt;<i> - only iscsi + AIO works (sg and ibmvio are broken).
+</I>&gt;<i> 
+</I>&gt;<i> - there are still lots of things to implement
+</I>&gt;<i> 
+</I>&gt;<i> - huge cleanup is necessary
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I took an approach discussed a long time ago in IET mailing list. Each
+</I>&gt;<i> device type has its own function array (like sbc_mode_sense). spc code
+</I>&gt;<i> exports some common functions. A LLD can cleanly replace functions in
+</I>&gt;<i> arrays (so we can kill dirty hack in tgt_driver struct). A transport
+</I>&gt;<i> class also needs that (though we don't implement yet).
+</I>
+i prefer this approach. spc provides common functions and other device
+handlers are free to override it.
+
+why call sbc_null instead of sbc_tur?
+
+can we have rawio or sg to be implemented as bcc?
+ Bridge Controller Commands (BCC)
+{Date: 2004/09/21, Rev: 00, Status: Development, Project: 1528-D, File:
+bcc-r00.pdf (329079 bytes)}
+BCC describes the command set for SCSI protocol bridge controller
+devices that bridge between various SCSI protocols like SPI, FCP, SRP,
+and iSCSI.
+
+
+target.c invokes &quot;result = ops-&gt;cmd_exec(target-&gt;tid, target-&gt;lid,...&quot;
+without check if cmd_exec is NULL.
+
+
+ming
+
+-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000402.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000404.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#403">[ date ]</a>
+              <a href="thread.html#403">[ thread ]</a>
+              <a href="subject.html#403">[ subject ]</a>
+              <a href="author.html#403">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

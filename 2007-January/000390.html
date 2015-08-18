@@ -1,0 +1,848 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 3/4] block/primary separation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%5D%20block/primary%20separation&In-Reply-To=%3C20070122190431.GD1477%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000389.html">
+   <LINK REL="Next"  HREF="000393.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 3/4] block/primary separation</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%5D%20block/primary%20separation&In-Reply-To=%3C20070122190431.GD1477%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 3/4] block/primary separation">pw at osc.edu
+       </A><BR>
+    <I>Mon Jan 22 20:04:31 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000389.html">[Stgt-devel] [PATCH 2/4] track target type
+</A></li>
+        <LI>Next message: <A HREF="000393.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#390">[ date ]</a>
+              <a href="thread.html#390">[ thread ]</a>
+              <a href="subject.html#390">[ subject ]</a>
+              <a href="author.html#390">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Separate block commands from primary commands.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/Makefile |    2 +-
+ usr/sbc.c    |  307 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/scsi.c   |  339 ++++++++--------------------------------------------------
+ usr/tgtd.h   |    5 +
+ 4 files changed, 359 insertions(+), 294 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 80b8f8f..7b828e0 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -45,7 +45,7 @@ INCLUDES += -I.
+ CFLAGS += -Wall -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDES)
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o
++TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o sbc.o log.o driver.o util.o work.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/sbc.c b/usr/sbc.c
+new file mode 100644
+index 0000000..a727924
+--- /dev/null
++++ b/usr/sbc.c
+@@ -0,0 +1,307 @@
++/*
++ * SCSI block command processing
++ *
++ * (C) 2004 - 2005 FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
++ * (C) 2005 Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
++ */
++
++#include &lt;errno.h&gt;
++#include &lt;fcntl.h&gt;
++#include &lt;inttypes.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;syscall.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;linux/fs.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;driver.h&quot;
++#include &quot;scsi.h&quot;
++
++#define BLK_SHIFT	9
++
++static int insert_disconnect_pg(uint8_t *ptr)
++{
++	unsigned char disconnect_pg[] = {0x02, 0x0e, 0x80, 0x80, 0x00, 0x0a, 0x00, 0x00,
++                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
++
++	memcpy(ptr, disconnect_pg, sizeof(disconnect_pg));
++	return sizeof(disconnect_pg);
++}
++
++static int insert_caching_pg(uint8_t *ptr)
++{
++	unsigned char caching_pg[] = {0x08, 0x12, 0x14, 0x00, 0xff, 0xff, 0x00, 0x00,
++				      0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0x00, 0x00,
++				      0x00, 0x00, 0x00, 0x00};
++
++	memcpy(ptr, caching_pg, sizeof(caching_pg));
++	return sizeof(caching_pg);
++}
++
++static int insert_ctrl_m_pg(uint8_t *ptr)
++{
++	unsigned char ctrl_m_pg[] = {0x0a, 0x0a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
++				     0x00, 0x00, 0x02, 0x4b};
++
++	memcpy(ptr, ctrl_m_pg, sizeof(ctrl_m_pg));
++	return sizeof(ctrl_m_pg);
++}
++
++static int insert_iec_m_pg(uint8_t *ptr)
++{
++	unsigned char iec_m_pg[] = {0x1c, 0xa, 0x08, 0x00, 0x00, 0x00, 0x00,
++				    0x00, 0x00, 0x00, 0x00, 0x00};
++
++	memcpy(ptr, iec_m_pg, sizeof(iec_m_pg));
++	return sizeof(iec_m_pg);
++}
++
++static int insert_format_m_pg(uint8_t *ptr)
++{
++	unsigned char format_m_pg[] = {0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++				       0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
++				       0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00};
++	memcpy(ptr, format_m_pg, sizeof(format_m_pg));
++	return sizeof(format_m_pg);
++}
++
++static int insert_geo_m_pg(uint8_t *ptr, uint64_t sec)
++{
++	unsigned char geo_m_pg[] = {0x04, 0x16, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
++				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++				    0x00, 0x00, 0x00, 0x00, 0x3a, 0x98, 0x00, 0x00};
++	uint32_t ncyl, *p;
++
++	/* assume 0xff heads, 15krpm. */
++	memcpy(ptr, geo_m_pg, sizeof(geo_m_pg));
++	ncyl = sec &gt;&gt; 14; /* 256 * 64 */
++	p = (uint32_t *)(ptr + 1);
++	*p = *p | __cpu_to_be32(ncyl);
++	return sizeof(geo_m_pg);
++}
++
++int mode_sense(struct tgt_device *dev, uint8_t *scb, uint8_t *data, int *len)
++{
++	int result = SAM_STAT_GOOD;
++	uint8_t pcode = scb[2] &amp; 0x3f;
++	uint64_t size;
++
++	*len = 4;
++	size = dev-&gt;size &gt;&gt; BLK_SHIFT;
++
++	if ((scb[1] &amp; 0x8))
++		data[3] = 0;
++	else {
++		data[3] = 8;
++		*len += 8;
++		*(uint32_t *)(data + 4) = (size &gt;&gt; 32) ?
++			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
++		*(uint32_t *)(data + 8) = __cpu_to_be32(1 &lt;&lt; BLK_SHIFT);
++	}
++
++	switch (pcode) {
++	case 0x0:
++		break;
++	case 0x2:
++		*len += insert_disconnect_pg(data + *len);
++		break;
++	case 0x3:
++		*len += insert_format_m_pg(data + *len);
++		break;
++	case 0x4:
++		*len += insert_geo_m_pg(data + *len, size);
++		break;
++	case 0x8:
++		*len += insert_caching_pg(data + *len);
++		break;
++	case 0xa:
++		*len += insert_ctrl_m_pg(data + *len);
++		break;
++	case 0x1c:
++		*len += insert_iec_m_pg(data + *len);
++		break;
++	case 0x3f:
++		*len += insert_disconnect_pg(data + *len);
++		*len += insert_format_m_pg(data + *len);
++		*len += insert_geo_m_pg(data + *len, size);
++		*len += insert_caching_pg(data + *len);
++		*len += insert_ctrl_m_pg(data + *len);
++		*len += insert_iec_m_pg(data + *len);
++		break;
++	default:
++		result = SAM_STAT_CHECK_CONDITION;
++		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
++					0x24, 0);
++	}
++
++	data[0] = *len - 1;
++
++	return result;
++}
++
++static int read_capacity(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
++{
++	uint32_t *data = (uint32_t *) p;
++	uint64_t size;
++
++	if (!(scb[8] &amp; 0x1) &amp; (scb[2] | scb[3] | scb[4] | scb[5])) {
++		*len = sense_data_build(p, 0x70, ILLEGAL_REQUEST,
++					0x24, 0);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	size = dev-&gt;size &gt;&gt; BLK_SHIFT;
++
++	data[0] = (size &gt;&gt; 32) ?
++		__cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
++	data[1] = __cpu_to_be32(1U &lt;&lt; BLK_SHIFT);
++	*len = 8;
++
++	return SAM_STAT_GOOD;
++}
++
++static int sync_cache(struct tgt_device *dev, uint8_t *data, int *len)
++{
++	int err;
++
++	err = fsync(dev-&gt;fd);
++
++	switch (err) {
++	case EROFS:
++	case EINVAL:
++	case EBADF:
++	case EIO:
++		/*
++		 * is this the right sense code?
++		 * what should I put for the asc/ascq?
++		 */
++		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST, 0, 0);
++		return SAM_STAT_CHECK_CONDITION;
++	default:
++		*len = 0;
++		return SAM_STAT_GOOD;
++	}
++}
++
++static int sevice_action(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
++{
++	uint32_t *data = (uint32_t *) p;
++	uint64_t *data64, size;
++
++	size = dev-&gt;size &gt;&gt; BLK_SHIFT;
++
++	data64 = (uint64_t *) data;
++	data64[0] = __cpu_to_be64(size - 1);
++	data[2] = __cpu_to_be32(1UL &lt;&lt; BLK_SHIFT);
++
++	*len = 12;
++
++	return SAM_STAT_GOOD;
++}
++
++static uint64_t scsi_cmd_data_offset(uint8_t *scb)
++{
++	uint64_t off;
++
++	switch (scb[0]) {
++	case READ_6:
++	case WRITE_6:
++		off = ((scb[1] &amp; 0x1f) &lt;&lt; 16) + (scb[2] &lt;&lt; 8) + scb[3];
++		break;
++	case READ_10:
++	case WRITE_10:
++	case WRITE_VERIFY:
++		off = __be32_to_cpu(*(uint32_t *) &amp;scb[2]);
++		break;
++	case READ_16:
++	case WRITE_16:
++		off = __be64_to_cpu(*(uint64_t *) &amp;scb[2]);
++		break;
++	default:
++		off = 0;
++		break;
++	}
++
++	return off &lt;&lt; BLK_SHIFT;
++}
++
++int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
++                      unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++		      uint64_t *offset, struct tgt_device *dev, int *async,
++		      void *key, bkio_submit_t *submit)
++{
++	int result = SAM_STAT_GOOD;
++	uint8_t *data = NULL;
++
++	switch (scb[0]) {
++	case READ_CAPACITY:
++		data = get_zeroed_page();
++		result = read_capacity(dev, scb, data, len);
++		break;
++	case MODE_SENSE:
++		data = get_zeroed_page();
++		result = mode_sense(dev, scb, data, len);
++		break;
++	case SERVICE_ACTION_IN:
++		data = get_zeroed_page();
++		result = sevice_action(dev, scb, data, len);
++		break;
++	case SYNCHRONIZE_CACHE:
++		data = get_zeroed_page();
++		result = sync_cache(dev, data, len);
++		break;
++	case START_STOP:
++	case VERIFY:
++		*len = 0;
++		break;
++	case READ_6:
++	case READ_10:
++	case READ_16:
++	case WRITE_6:
++	case WRITE_10:
++	case WRITE_16:
++	case WRITE_VERIFY:
++		switch (scb[0]) {
++		case READ_6:
++		case READ_10:
++		case READ_16:
++			*rw = READ;
++			break;
++		case WRITE_6:
++		case WRITE_10:
++		case WRITE_16:
++		case WRITE_VERIFY:
++			*rw = WRITE;
++			break;
++		}
++
++		*offset = scsi_cmd_data_offset(scb);
++		result = submit(dev, scb, *rw, datalen, uaddr, *offset, async, key);
++		if (result == SAM_STAT_GOOD) {
++			*len = datalen;
++			*try_map = 1;
++		} else {
++			*rw = READ;
++			*offset = 0;
++			data = get_zeroed_page();
++			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
++						0x25, 0);
++		}
++		break;
++	default:
++		eprintf(&quot;unknown command %x %u\n&quot;, scb[0], datalen);
++		*len = 0;
++		break;
++	}
++
++	if (data)
++		*uaddr = (unsigned long) data;
++
++	return result;
++}
++
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 82ddb0d..277924c 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -43,126 +43,6 @@ int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 	return len + 8;
+ }
+ 
+-static int insert_disconnect_pg(uint8_t *ptr)
+-{
+-	unsigned char disconnect_pg[] = {0x02, 0x0e, 0x80, 0x80, 0x00, 0x0a, 0x00, 0x00,
+-                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, disconnect_pg, sizeof(disconnect_pg));
+-	return sizeof(disconnect_pg);
+-}
+-
+-static int insert_caching_pg(uint8_t *ptr)
+-{
+-	unsigned char caching_pg[] = {0x08, 0x12, 0x14, 0x00, 0xff, 0xff, 0x00, 0x00,
+-				      0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0x00, 0x00,
+-				      0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, caching_pg, sizeof(caching_pg));
+-	return sizeof(caching_pg);
+-}
+-
+-static int insert_ctrl_m_pg(uint8_t *ptr)
+-{
+-	unsigned char ctrl_m_pg[] = {0x0a, 0x0a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				     0x00, 0x00, 0x02, 0x4b};
+-
+-	memcpy(ptr, ctrl_m_pg, sizeof(ctrl_m_pg));
+-	return sizeof(ctrl_m_pg);
+-}
+-
+-static int insert_iec_m_pg(uint8_t *ptr)
+-{
+-	unsigned char iec_m_pg[] = {0x1c, 0xa, 0x08, 0x00, 0x00, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, iec_m_pg, sizeof(iec_m_pg));
+-	return sizeof(iec_m_pg);
+-}
+-
+-static int insert_format_m_pg(uint8_t *ptr)
+-{
+-	unsigned char format_m_pg[] = {0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				       0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
+-				       0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00};
+-	memcpy(ptr, format_m_pg, sizeof(format_m_pg));
+-	return sizeof(format_m_pg);
+-}
+-
+-static int insert_geo_m_pg(uint8_t *ptr, uint64_t sec)
+-{
+-	unsigned char geo_m_pg[] = {0x04, 0x16, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x3a, 0x98, 0x00, 0x00};
+-	uint32_t ncyl, *p;
+-
+-	/* assume 0xff heads, 15krpm. */
+-	memcpy(ptr, geo_m_pg, sizeof(geo_m_pg));
+-	ncyl = sec &gt;&gt; 14; /* 256 * 64 */
+-	p = (uint32_t *)(ptr + 1);
+-	*p = *p | __cpu_to_be32(ncyl);
+-	return sizeof(geo_m_pg);
+-}
+-
+-static int mode_sense(struct tgt_device *dev, uint8_t *scb, uint8_t *data, int *len)
+-{
+-	int result = SAM_STAT_GOOD;
+-	uint8_t pcode = scb[2] &amp; 0x3f;
+-	uint64_t size;
+-
+-	*len = 4;
+-	size = dev-&gt;size &gt;&gt; BLK_SHIFT;
+-
+-	if ((scb[1] &amp; 0x8))
+-		data[3] = 0;
+-	else {
+-		data[3] = 8;
+-		*len += 8;
+-		*(uint32_t *)(data + 4) = (size &gt;&gt; 32) ?
+-			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
+-		*(uint32_t *)(data + 8) = __cpu_to_be32(1 &lt;&lt; BLK_SHIFT);
+-	}
+-
+-	switch (pcode) {
+-	case 0x0:
+-		break;
+-	case 0x2:
+-		*len += insert_disconnect_pg(data + *len);
+-		break;
+-	case 0x3:
+-		*len += insert_format_m_pg(data + *len);
+-		break;
+-	case 0x4:
+-		*len += insert_geo_m_pg(data + *len, size);
+-		break;
+-	case 0x8:
+-		*len += insert_caching_pg(data + *len);
+-		break;
+-	case 0xa:
+-		*len += insert_ctrl_m_pg(data + *len);
+-		break;
+-	case 0x1c:
+-		*len += insert_iec_m_pg(data + *len);
+-		break;
+-	case 0x3f:
+-		*len += insert_disconnect_pg(data + *len);
+-		*len += insert_format_m_pg(data + *len);
+-		*len += insert_geo_m_pg(data + *len, size);
+-		*len += insert_caching_pg(data + *len);
+-		*len += insert_ctrl_m_pg(data + *len);
+-		*len += insert_iec_m_pg(data + *len);
+-		break;
+-	default:
+-		result = SAM_STAT_CHECK_CONDITION;
+-		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+-					0x24, 0);
+-	}
+-
+-	data[0] = *len - 1;
+-
+-	return result;
+-}
+-
+ #define VENDOR_ID	&quot;IET&quot;
+ #define PRODUCT_ID	&quot;VIRTUAL-DISK&quot;
+ #define PRODUCT_REV	&quot;0&quot;
+@@ -331,50 +211,6 @@ static int report_luns(int lid, struct list_head *dev_list, uint8_t *lun_buf,
+ 	return fn(dev_list, lun_buf, scb, p, len);
+ }
+ 
+-static int read_capacity(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
+-{
+-	uint32_t *data = (uint32_t *) p;
+-	uint64_t size;
+-
+-	if (!(scb[8] &amp; 0x1) &amp; (scb[2] | scb[3] | scb[4] | scb[5])) {
+-		*len = sense_data_build(p, 0x70, ILLEGAL_REQUEST,
+-					0x24, 0);
+-		return SAM_STAT_CHECK_CONDITION;
+-	}
+-
+-	size = dev-&gt;size &gt;&gt; BLK_SHIFT;
+-
+-	data[0] = (size &gt;&gt; 32) ?
+-		__cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
+-	data[1] = __cpu_to_be32(1U &lt;&lt; BLK_SHIFT);
+-	*len = 8;
+-
+-	return SAM_STAT_GOOD;
+-}
+-
+-static int sync_cache(struct tgt_device *dev, uint8_t *data, int *len)
+-{
+-	int err;
+-
+-	err = fsync(dev-&gt;fd);
+-
+-	switch (err) {
+-	case EROFS:
+-	case EINVAL:
+-	case EBADF:
+-	case EIO:
+-		/*
+-		 * is this the right sense code?
+-		 * what should I put for the asc/ascq?
+-		 */
+-		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST, 0, 0);
+-		return SAM_STAT_CHECK_CONDITION;
+-	default:
+-		*len = 0;
+-		return SAM_STAT_GOOD;
+-	}
+-}
+-
+ /*
+  * TODO: We always assume autosense.
+  */
+@@ -385,70 +221,6 @@ static int request_sense(uint8_t *data, int* len)
+ 	return SAM_STAT_GOOD;
+ }
+ 
+-static int sevice_action(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
+-{
+-	uint32_t *data = (uint32_t *) p;
+-	uint64_t *data64, size;
+-
+-	size = dev-&gt;size &gt;&gt; BLK_SHIFT;
+-
+-	data64 = (uint64_t *) data;
+-	data64[0] = __cpu_to_be64(size - 1);
+-	data[2] = __cpu_to_be32(1UL &lt;&lt; BLK_SHIFT);
+-
+-	*len = 12;
+-
+-	return SAM_STAT_GOOD;
+-}
+-
+-static uint64_t scsi_cmd_data_offset(uint8_t *scb)
+-{
+-	uint64_t off;
+-
+-	switch (scb[0]) {
+-	case READ_6:
+-	case WRITE_6:
+-		off = ((scb[1] &amp; 0x1f) &lt;&lt; 16) + (scb[2] &lt;&lt; 8) + scb[3];
+-		break;
+-	case READ_10:
+-	case WRITE_10:
+-	case WRITE_VERIFY:
+-		off = __be32_to_cpu(*(uint32_t *) &amp;scb[2]);
+-		break;
+-	case READ_16:
+-	case WRITE_16:
+-		off = __be64_to_cpu(*(uint64_t *) &amp;scb[2]);
+-		break;
+-	default:
+-		off = 0;
+-		break;
+-	}
+-
+-	return off &lt;&lt; BLK_SHIFT;
+-}
+-
+-static int scsi_cmd_rw(uint8_t *scb, uint8_t *rw)
+-{
+-	int is_alloc = 0;
+-
+-	switch (scb[0]) {
+-	case READ_6:
+-	case READ_10:
+-	case READ_16:
+-		*rw = READ;
+-		break;
+-	case WRITE_6:
+-	case WRITE_10:
+-	case WRITE_16:
+-	case WRITE_VERIFY:
+-		*rw = WRITE;
+-		break;
+-	default:
+-		is_alloc = 1;
+-	}
+-	return is_alloc;
+-}
+-
+ #define        TGT_INVALID_DEV_ID      ~0ULL
+ 
+ static uint64_t __scsi_get_devid(uint8_t *p)
+@@ -478,22 +250,35 @@ uint64_t scsi_get_devid(int lid, uint8_t *p)
+ 	return fn(p);
+ }
+ 
+-int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
++void *get_zeroed_page(void)
++{
++	int ret;
++	void *page;
++
++	ret = posix_memalign(&amp;page, PAGE_SIZE, PAGE_SIZE);
++	if (ret) {
++		eprintf(&quot;out of memory&quot;);
++		exit(1);
++	}
++	memset(page, 0, PAGE_SIZE);
++	return page;
++}
++
++/*
++ * Handle generic SPC activities, and call to target type-specific handler.
++ */
++int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+ 		     int *len, uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 		     uint8_t *try_map, uint64_t *offset, uint8_t *lun_buf,
+ 		     struct tgt_device *dev, struct list_head *dev_list, int *async,
+ 		     void *key, bkio_submit_t *submit, enum scsi_target_type target_type)
+ {
+ 	int result = SAM_STAT_GOOD;
+-	uint8_t *data = NULL, *scb = pdu;
++	uint8_t *data = NULL;
+ 
+ 	dprintf(&quot;%x %u\n&quot;, scb[0], datalen);
+ 
+ 	*async = *offset = 0;
+-	if (scsi_cmd_rw(scb, rw)) {
+-		data = valloc(PAGE_SIZE);
+-		memset(data, 0, PAGE_SIZE);
+-	}
+ 
+ 	if (!dev) {
+ 		switch (scb[0]) {
+@@ -502,11 +287,7 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
+ 		case REPORT_LUNS:
+ 			break;
+ 		default:
+-			*offset = 0;
+-			if (!data) {
+-				data = valloc(PAGE_SIZE);
+-				memset(data, 0, PAGE_SIZE);
+-			}
++			data = get_zeroed_page();
+ 			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+ 						0x25, 0);
+ 			result = SAM_STAT_CHECK_CONDITION;
+@@ -526,91 +307,63 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
+ 				/* these commands are always allowed. */
+ 				break;
+ 			default:
+-			*offset = 0;
+-			if (data) {
+-				free(data);
+-				data = NULL;
+-			}
+-
+-			*len = 0;
+-			result = SAM_STAT_RESERVATION_CONFLICT;
+-			goto out;
++				*len = 0;
++				result = SAM_STAT_RESERVATION_CONFLICT;
++				goto out;
+ 			}
+ 		}
+ 	}
+ 
++	/*
++	 * Generic SPC commands
++	 */
+ 	switch (scb[0]) {
+ 	case INQUIRY:
++		data = get_zeroed_page();
+ 		result = inquiry(lid, dev, host_no, lun_buf, scb, data, len);
+-		break;
++		goto out;
+ 	case REPORT_LUNS:
+ 		*len = datalen;
++		data = get_zeroed_page();
+ 		result = report_luns(lid, dev_list, lun_buf, scb, data, len);
+-		break;
+-	case READ_CAPACITY:
+-		result = read_capacity(dev, scb, data, len);
+-		break;
+-	case MODE_SENSE:
+-		result = mode_sense(dev, scb, data, len);
+-		break;
++		goto out;
+ 	case REQUEST_SENSE:
++		data = get_zeroed_page();
+ 		result = request_sense(data, len);
+-		break;
+-	case SERVICE_ACTION_IN:
+-		result = sevice_action(dev, scb, data, len);
+-		break;
+-	case SYNCHRONIZE_CACHE:
+-		result = sync_cache(dev, data, len);
+-		break;
+-	case START_STOP:
++		goto out;
+ 	case TEST_UNIT_READY:
+-	case VERIFY:
+ 		*len = 0;
+-		break;
+-	case READ_6:
+-	case READ_10:
+-	case READ_16:
+-	case WRITE_6:
+-	case WRITE_10:
+-	case WRITE_16:
+-	case WRITE_VERIFY:
+-		*offset = scsi_cmd_data_offset(scb);
+-		result = submit(dev, scb, *rw, datalen, uaddr, *offset, async, key);
+-		if (result == SAM_STAT_GOOD) {
+-			*len = datalen;
+-			*try_map = 1;
+-		} else {
+-			*rw = READ;
+-			*offset = 0;
+-			if (!data)
+-				data = valloc(PAGE_SIZE);
+-			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+-						0x25, 0);
+-		}
+-		break;
++		goto out;
+ 	case RESERVE:
+ 	case RESERVE_10:
+ 		result = device_reserve(nid, dev-&gt;lun, nid);
+ 		if (result)
+ 			result = SAM_STAT_RESERVATION_CONFLICT;
+ 		*len = 0;
+-		break;
++		goto out;
+ 	case RELEASE:
+ 	case RELEASE_10:
+ 		result = device_release(nid, dev-&gt;lun, host_no, 0);
+ 		if (result)
+ 			result = SAM_STAT_RESERVATION_CONFLICT;
+ 		*len = 0;
+-		break;
+-	default:
+-		eprintf(&quot;unknown command %x %u\n&quot;, scb[0], datalen);
+-		*len = 0;
+-		break;
++		goto out;
+ 	}
+ 
++	/*
++	 * Specific device command set
++	 */
++	if (target_type == SCSI_TARGET_SBC)
++		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
++		                           try_map, offset, dev, async, key,
++					   submit);
++	else
++		eprintf(&quot;unknown target type %d\n&quot;, target_type);
++
+ out:
+ 	if (data)
+ 		*uaddr = (unsigned long) data;
+ 
+ 	return result;
+ }
++
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 090f84a..262dc9c 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -114,12 +114,17 @@ extern void target_mgmt_request(uint64_t nid, uint64_t req_id, int function,
+ extern void target_cmd_io_done(void *key, int result);
+ 
+ extern uint64_t scsi_get_devid(int lid, uint8_t *pdu);
++extern void *get_zeroed_page(void);
+ extern int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu, int *len,
+ 			    uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 			    uint8_t *try_map, uint64_t *offset, uint8_t *lun,
+ 			    struct tgt_device *dev, struct list_head *dev_list,
+ 			    int *async, void *key, bkio_submit_t *submit,
+ 			    enum scsi_target_type target_type);
++int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
++                      unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++		      uint64_t *offset, struct tgt_device *dev, int *async,
++		      void *key, bkio_submit_t *submit);
+ 
+ extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 			    uint8_t ascode, uint8_t ascodeq);
+-- 
+1.4.4.2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000389.html">[Stgt-devel] [PATCH 2/4] track target type
+</A></li>
+	<LI>Next message: <A HREF="000393.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#390">[ date ]</a>
+              <a href="thread.html#390">[ thread ]</a>
+              <a href="subject.html#390">[ subject ]</a>
+              <a href="author.html#390">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

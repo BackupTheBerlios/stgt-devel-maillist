@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 07/18] iser virtualize event modify
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2007/18%5D%20iser%20virtualize%20event%20modify&In-Reply-To=%3C20070904200903.GK6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001013.html">
+   <LINK REL="Next"  HREF="001015.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 07/18] iser virtualize event modify</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2007/18%5D%20iser%20virtualize%20event%20modify&In-Reply-To=%3C20070904200903.GK6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 07/18] iser virtualize event modify">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:09:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001013.html">[Stgt-devel] [PATCH 06/18] iser list del init
+</A></li>
+        <LI>Next message: <A HREF="001015.html">[Stgt-devel] [PATCH 08/18] iser virtualize malloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1014">[ date ]</a>
+              <a href="thread.html#1014">[ thread ]</a>
+              <a href="subject.html#1014">[ subject ]</a>
+              <a href="author.html#1014">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Make event modification a transport-specific operation.  TCP
+has a nice transmit flow control mechanism that relies on
+checking that the socket is writeable.  RDMA cannot take
+advantage of this.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_tcp.c |   26 ++++++++++++++++++--------
+ usr/iscsi/iscsid.c    |   22 ++++++++++++----------
+ usr/iscsi/transport.h |    1 +
+ 3 files changed, 31 insertions(+), 18 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 0c35aa5..c775594 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -232,13 +232,23 @@ static int iscsi_tcp_show(int ep, char *buf, int rest)
+ 	return total &gt; 0 ? total : 0;
+ }
+ 
++void iscsi_event_modify(int fd, int events)
++{
++	int ret;
++
++	ret = tgt_event_modify(fd, events);
++	if (ret)
++		eprintf(&quot;tgt_event_modify failed\n&quot;);
++}
++
+ struct iscsi_transport iscsi_tcp = {
+-	.name		= &quot;iscsi&quot;,
+-	.rdma		= 0,
+-	.ep_init	= iscsi_tcp_init,
+-	.ep_read	= iscsi_tcp_read,
+-	.ep_write_begin	= iscsi_tcp_write_begin,
+-	.ep_write_end	= iscsi_tcp_write_end,
+-	.ep_close	= iscsi_tcp_close,
+-	.ep_show	= iscsi_tcp_show,
++	.name			= &quot;iscsi&quot;,
++	.rdma			= 0,
++	.ep_init		= iscsi_tcp_init,
++	.ep_read		= iscsi_tcp_read,
++	.ep_write_begin		= iscsi_tcp_write_begin,
++	.ep_write_end		= iscsi_tcp_write_end,
++	.ep_close		= iscsi_tcp_close,
++	.ep_show		= iscsi_tcp_show,
++	.ep_event_modify	= iscsi_event_modify,
+ };
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 4b4e35f..85d4c95 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1041,7 +1041,7 @@ static int iscsi_scsi_cmd_done(uint64_t nid, int result, struct scsi_cmd *scmd)
+ 	}
+ 
+ 	list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-	tgt_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
++	task-&gt;conn-&gt;tp-&gt;ep_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
+ 
+ 	return 0;
+ }
+@@ -1165,13 +1165,13 @@ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ 	if (rw &amp;&amp; task-&gt;r2t_count) {
+ 		if (!task-&gt;unsol_count) {
+ 			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-			tgt_event_modify(conn-&gt;fd, EPOLLIN | EPOLLOUT);
++			conn-&gt;tp-&gt;ep_event_modify(conn-&gt;fd, EPOLLIN | EPOLLOUT);
+ 		}
+ 		return err;
+ 	}
+ 
+ 	task-&gt;offset = 0;  /* for use as transmit pointer for data-ins */
+-	tgt_event_modify(conn-&gt;fd, EPOLLIN);
++	conn-&gt;tp-&gt;ep_event_modify(conn-&gt;fd, EPOLLIN);
+ 	err = iscsi_target_cmd_queue(task);
+ 	return err;
+ }
+@@ -1201,7 +1201,7 @@ static int iscsi_tm_done(struct mgmt_req *mreq)
+ 		break;
+ 	}
+ 	list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-	tgt_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
++	task-&gt;conn-&gt;tp-&gt;ep_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
+ 	return 0;
+ }
+ 
+@@ -1257,7 +1257,8 @@ static int iscsi_task_execute(struct iscsi_task *task)
+ 	case ISCSI_OP_NOOP_OUT:
+ 	case ISCSI_OP_LOGOUT:
+ 		list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-		tgt_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
++		task-&gt;conn-&gt;tp-&gt;ep_event_modify(task-&gt;conn-&gt;fd,
++						EPOLLIN | EPOLLOUT);
+ 		break;
+ 	case ISCSI_OP_SCSI_CMD:
+ 		/* convenient directionality for our internal use */
+@@ -1277,7 +1278,8 @@ static int iscsi_task_execute(struct iscsi_task *task)
+ 		err = iscsi_tm_execute(task);
+ 		if (err) {
+ 			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-			tgt_event_modify(task-&gt;conn-&gt;fd, EPOLLIN | EPOLLOUT);
++			task-&gt;conn-&gt;tp-&gt;ep_event_modify(task-&gt;conn-&gt;fd,
++							EPOLLIN | EPOLLOUT);
+ 		}
+ 		break;
+ 	case ISCSI_OP_TEXT:
+@@ -1721,7 +1723,7 @@ static int iscsi_task_tx_start(struct iscsi_connection *conn)
+ 
+ nodata:
+ 	dprintf(&quot;no more data\n&quot;);
+-	tgt_event_modify(conn-&gt;fd, EPOLLIN);
++	conn-&gt;tp-&gt;ep_event_modify(conn-&gt;fd, EPOLLIN);
+ 	return -EAGAIN;
+ }
+ 
+@@ -1885,7 +1887,7 @@ again:
+ 			conn_read_pdu(conn);
+ 	} else {
+ 		conn_write_pdu(conn);
+-		tgt_event_modify(fd, EPOLLOUT);
++		conn-&gt;tp-&gt;ep_event_modify(fd, EPOLLOUT);
+ 		ret = cmnd_execute(conn);
+ 		if (ret)
+ 			conn-&gt;state = STATE_CLOSE;
+@@ -2029,7 +2031,7 @@ static void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
+ 		else {
+ 			conn-&gt;state = STATE_SCSI;
+ 			conn_read_pdu(conn);
+-			tgt_event_modify(fd, EPOLLIN);
++			conn-&gt;tp-&gt;ep_event_modify(fd, EPOLLIN);
+ 		}
+ 		break;
+ 	case STATE_EXIT:
+@@ -2040,7 +2042,7 @@ static void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
+ 		break;
+ 	default:
+ 		conn_read_pdu(conn);
+-		tgt_event_modify(fd, EPOLLIN);
++		conn-&gt;tp-&gt;ep_event_modify(fd, EPOLLIN);
+ 		break;
+ 	}
+ }
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index ec34bb0..9660396 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -11,6 +11,7 @@ struct iscsi_transport {
+ 	void (*ep_write_end)(int ep);
+ 	size_t (*ep_close) (int ep);
+ 	int (*ep_show) (int ep, char *buf, int rest);
++	void (*ep_event_modify) (int ep, int events);
+ };
+ 
+ extern struct iscsi_transport iscsi_tcp;
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001013.html">[Stgt-devel] [PATCH 06/18] iser list del init
+</A></li>
+	<LI>Next message: <A HREF="001015.html">[Stgt-devel] [PATCH 08/18] iser virtualize malloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1014">[ date ]</a>
+              <a href="thread.html#1014">[ thread ]</a>
+              <a href="subject.html#1014">[ subject ]</a>
+              <a href="author.html#1014">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Ips] Calculating the VA in iSER header
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIps%5D%20Calculating%20the%20VA%20in%20iSER%20header&In-Reply-To=%3C20080416144830.GC23861%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001524.html">
+   <LINK REL="Next"  HREF="001526.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Ips] Calculating the VA in iSER header</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIps%5D%20Calculating%20the%20VA%20in%20iSER%20header&In-Reply-To=%3C20080416144830.GC23861%40osc.edu%3E"
+       TITLE="[Stgt-devel] [Ips] Calculating the VA in iSER header">pw at osc.edu
+       </A><BR>
+    <I>Wed Apr 16 16:48:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001524.html">[Stgt-devel] [Ips] Calculating the VA in iSER header
+</A></li>
+        <LI>Next message: <A HREF="001526.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1525">[ date ]</a>
+              <a href="thread.html#1525">[ thread ]</a>
+              <a href="subject.html#1525">[ subject ]</a>
+              <a href="author.html#1525">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorfman.eli at gmail.com</A> wrote on Wed, 16 Apr 2008 11:22 +0300:
+&gt;<i> According to Mike's explanation below it seems that we have a bug in
+</I>&gt;<i> iSER initiator.
+</I>&gt;<i> Fixing this bug will require a fix in the stgt iSER code.
+</I>&gt;<i> 
+</I>&gt;<i> The problem is that the initiator send a VA which already includes an
+</I>&gt;<i> offset for the unsolicited data (which is wrong).
+</I>&gt;<i> In iser_initiator.c::iser_prepare_write_cmd the code looks like this:
+</I>&gt;<i> hdr-&gt;write_va   = cpu_to_be64(regd_buf-&gt;reg.va + unsol_sz);
+</I>&gt;<i> 
+</I>&gt;<i> we think that it should be modified to:
+</I>&gt;<i> hdr-&gt;write_va   = cpu_to_be64(regd_buf-&gt;reg.va);
+</I>&gt;<i> 
+</I>&gt;<i> Let's discuss this and verify we interpret the spec correctly.
+</I>&gt;<i> If agreed we will send a patch.
+</I>
+Agree with the interpretation of the spec, and it's probably a bit
+clearer that way too.  But we have working initiators and targets
+that do it the &quot;wrong&quot; way.
+
+The transition involved in fixing both sides will lead to problems.
+How does a target detect an unfixed initiator and vice versa?  A
+mismatched pair will lead to data corruption.
+
+We could address this in a few ways:
+
+1. Flag day: all initiators and targets change at the same time.
+Will see data corruption if someone unluckily runs one or the other
+using old non-fixed code.
+
+2. Rewrite the IB Annex to codify what's done in practice, and don't
+&quot;fix&quot; any code.
+
+3. Start using the Hello messages and extend them to specify if the
+VA marks the start of the buffer or the unsol offset.
+
+I really don't look forward to the bug reports we'll get from a
+flag da approach.  Old linux versions tend to hang around for a
+very long time, and people are often reluctant to upgrade.
+
+		-- Pete
+
+&gt;<i> 2008/4/15 Mike Ko &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mako at almaden.ibm.com</A>&gt;:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; VA is a concept introduced in an Infiniband annex to support iSER.  It
+</I>&gt;<i> &gt; appears in the expanded iSER header for Infiniband use only to support the
+</I>&gt;<i> &gt; non-Zero Based Virtual Address (non-ZBVA) used in Infiniband vs the ZBVA
+</I>&gt;<i> &gt; used in IETF.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &quot;The DataDescriptorOut describes the I/O buffer starting with the immediate
+</I>&gt;<i> &gt; unsolicited data (if any), followed by the non-immediate unsolicited data
+</I>&gt;<i> &gt; (if any) and solicited data.&quot;  If non-ZBVA mode is used, then VA points to
+</I>&gt;<i> &gt; the beginning of this buffer.  So in your example, the VA field in the
+</I>&gt;<i> &gt; expanded iSER header will be zero.  Note that for IETF, ZBVA is assumed and
+</I>&gt;<i> &gt; there is no provision to specify a different VA in the iSER header.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Tagged offset (TO) refers to the offset within a tagged buffer in RDMA Write
+</I>&gt;<i> &gt; and RDMA Read Request Messages.  When sending non-immediate unsolicited
+</I>&gt;<i> &gt; data, Send Message types are used and the TO field is not present.  Instead,
+</I>&gt;<i> &gt; the buffer offset is appropriately represented by the Buffer Offset field in
+</I>&gt;<i> &gt; the SCSI Data-Out PDU.  Note that Tagged Offset is not the same as write VA
+</I>&gt;<i> &gt; and it does not appear in the iSER header.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Mike
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+</I>&gt;<i> &gt; Sent by: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ips-bounces at ietf.org</A>
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; 04/15/2008 06:40 AM
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; To <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ips at ietf.org</A>
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; cc
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Subject [Ips] Calculating the VA in iSER header
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; We're trying to understand what should be the write VA (tagged offset)
+</I>&gt;<i> &gt;  in the iSER header for WRITE commands. If unsolicited data is to be
+</I>&gt;<i> &gt;  sent, should the VA be the original VA or should it be original VA +
+</I>&gt;<i> &gt;  FirstBurstLength?
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Example:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  InitialR2T=No
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  FirstBurstLength = 1000
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Base address of the registered buffer = 0
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Now, what should be the VA in the iSER header? 0 or 1000?
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  We read the following paragraph in the iSER spec, but didn't get an
+</I>&gt;<i> &gt;  answer from there:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  * If there is solicited data to be transferred for the SCSI write or
+</I>&gt;<i> &gt;  bidirectional command, as indicated by the Expected Data Transfer
+</I>&gt;<i> &gt;  Length in the SCSI Command PDU exceeding the value of
+</I>&gt;<i> &gt;  UnsolicitedDataSize, the iSER layer at the initiator MUST do the
+</I>&gt;<i> &gt;  following:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  a. It MUST allocate a Write STag for the I/O Buffer defined by
+</I>&gt;<i> &gt;  the qualifier DataDescriptorOut. The DataDescriptorOut
+</I>&gt;<i> &gt;  describes the I/O buffer starting with the immediate
+</I>&gt;<i> &gt;  unsolicited data (if any), followed by the non-immediate
+</I>&gt;<i> &gt;  unsolicited data (if any) and solicited data. This means
+</I>&gt;<i> &gt;  that the BufferOffset for the SCSI Data-out for this
+</I>&gt;<i> &gt;  command is equal to the TO. This implies that a zero TO
+</I>&gt;<i> &gt;  for this STag points to the beginning of this I/O Buffer.
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001524.html">[Stgt-devel] [Ips] Calculating the VA in iSER header
+</A></li>
+	<LI>Next message: <A HREF="001526.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1525">[ date ]</a>
+              <a href="thread.html#1525">[ thread ]</a>
+              <a href="subject.html#1525">[ subject ]</a>
+              <a href="author.html#1525">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

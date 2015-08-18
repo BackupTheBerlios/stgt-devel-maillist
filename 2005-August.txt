@@ -1,0 +1,2421 @@
+From tomof at acm.org  Mon Aug 22 17:43:51 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Tue, 23 Aug 2005 00:43:51 +0900
+Subject: [Stgt-devel] Re: SCSI Target framework configuration
+In-Reply-To: <43024C3B.7010003@cs.wisc.edu>
+References: <20050816105621B.fujita.tomonori@lab.ntt.co.jp>
+	<20050816150820.GB27631@infradead.org>
+	<43024C3B.7010003@cs.wisc.edu>
+Message-ID: <20050823004351S.tomof@acm.org>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: SCSI Target framework configuration
+Date: Tue, 16 Aug 2005 15:27:39 -0500
+
+> > I think we should export attributes through sysfs, and leave actual
+> > handling of the commands and complex configuration bits to netlink.
+> > Having different attributes for different drivers doesn't sound like
+> > a problem.
+> 
+> So, Fujita we can do something similar to scsi_transport_iscsi.c for the
+> transport specific bits then. For driver specific things we should look
+> at scsi-ml's way to add host and device attributes I think.
+> 
+> Do you want me to at least get the ioctl and procfs (session file only
+> for now since LU suff should be stgt attributes like how scsi-ml does
+> scsi_device attributes) stuff replaced with sysfs and nelinks? From
+> there we can move the netlink processing out of the iscsi target transport
+> class to its final destination.
+
+Really sorry for novice questions again.
+
+How do 'iscsi_target_class' (similar to scsi_transport_iscsi.c) and
+'scsi_target_class' work together?
+
+scsi_target_class can handle LU stuff, which are common for all target
+drivers (FC and iSCSI at present).
+
+iscsi_target_class can handle connections (iSCSI specific) and sessions
+and targets, which some of thier informations are protocol specific.
+
+
+My first impression is that stgt.c has 'struct scsi_target_internal'
+like 'struct iscsi_internal' and stgt_iscsi.c and stgt_fc.c have
+protocol specific functions (e.g., exporting attributes). That is,
+target drivers call scsi_target_register (similar to
+iscsi_register_transport) and use helper functions in stgt_iscsi.c or
+stgt_fc.c to simplify their implementations.
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 02:54:59 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Mon, 22 Aug 2005 19:54:59 -0500
+Subject: [Stgt-devel] Re: SCSI Target framework configuration
+In-Reply-To: <20050823004351S.tomof@acm.org>
+References: <20050816105621B.fujita.tomonori@lab.ntt.co.jp>	<20050816150820.GB27631@infradead.org>	<43024C3B.7010003@cs.wisc.edu> <20050823004351S.tomof@acm.org>
+Message-ID: <430A73E3.7090807@cs.wisc.edu>
+
+grr, still cannot seem to use ssh to checkout so I cannot checkin too.
+I can ssh directly to the server though
+
+FUJITA Tomonori wrote:
+> Really sorry for novice questions again.
+> 
+
+no problem
+
+> How do 'iscsi_target_class' (similar to scsi_transport_iscsi.c) and
+> 'scsi_target_class' work together?
+> 
+> scsi_target_class can handle LU stuff, which are common for all target
+> drivers (FC and iSCSI at present).
+
+> 
+> iscsi_target_class can handle connections (iSCSI specific) and sessions
+> and targets, which some of thier informations are protocol specific.
+> 
+> 
+> My first impression is that stgt.c has 'struct scsi_target_internal'
+> like 'struct iscsi_internal' and stgt_iscsi.c and stgt_fc.c have
+> protocol specific functions (e.g., exporting attributes). That is,
+> target drivers call scsi_target_register (similar to
+> iscsi_register_transport) and use helper functions in stgt_iscsi.c or
+> stgt_fc.c to simplify their implementations.
+
+
+Attached (sorry christoph will inline from now on), is a first pass at
+adding stgt_target level attributes. There are attrs that are common
+to all targets and have nothing to do with transport specific like
+iSCSI sessions.
+
+I will send a stgt_device patch next (need to use driver model interface
+to support different types of scsi devices like st, sg, sg osd, etc though).
+
+
+I am thinking most of the transport stuff will be kept seperate like
+the iscsi_session or fc rport. I mean there will not be a driver
+model transport register call in stgt core). This is like scsi-ml
+where it allows the LLD to notify the transport when it has a
+i_t_nexus becuase it looks like there are not too many transport
+level target or device attributes (for stgt stgt_session seems useful
+though).
+
+This patch is not really tested so do not apply yet.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: add-target-sysfs.patch
+Type: text/x-patch
+Size: 9967 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20050822/aaf433c2/attachment.bin>
+
+From michaelc at cs.wisc.edu  Tue Aug 23 02:57:39 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Mon, 22 Aug 2005 19:57:39 -0500
+Subject: [Stgt-devel] Re: SCSI Target framework configuration
+In-Reply-To: <430A73E3.7090807@cs.wisc.edu>
+References: <20050816105621B.fujita.tomonori@lab.ntt.co.jp>	<20050816150820.GB27631@infradead.org>	<43024C3B.7010003@cs.wisc.edu> <20050823004351S.tomof@acm.org> <430A73E3.7090807@cs.wisc.edu>
+Message-ID: <430A7483.8080701@cs.wisc.edu>
+
+Mike Christie wrote:
+> +static struct class_device_attribute *stgt_target_attrs[] = {
+> +	&class_device_attr_queued_cmnds,
+> +	NULL
+> +};
+> +
+
+oh yeah, I am not proposing there should only be one attribute.
+I just added the one because I am busy or lazy.
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 03:21:44 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Mon, 22 Aug 2005 20:21:44 -0500
+Subject: [Stgt-devel] Re: SCSI Target framework configuration
+In-Reply-To: <20050823004351S.tomof@acm.org>
+References: <20050816105621B.fujita.tomonori@lab.ntt.co.jp>	<20050816150820.GB27631@infradead.org>	<43024C3B.7010003@cs.wisc.edu> <20050823004351S.tomof@acm.org>
+Message-ID: <430A7A28.3090009@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> 
+> Really sorry for novice questions again.
+> 
+> How do 'iscsi_target_class' (similar to scsi_transport_iscsi.c) and
+> 'scsi_target_class' work together?
+
+oh yeah I think there will be....
+
+stgt core strucutre attributes: these are things like scatter list limits
+that the target_drivers have or the device type (I mean disk vs tape for
+example). For these we have two classes stgt_target_class and
+stgt_device_class.
+
+stgt_target_class attrs - target values like max commands a target can
+queue. A target driver can override these or add extra ones.
+
+stgt_device_class attrs = device values like capacity. Again
+a target driver can override these or add new ones.
+
+transport attributes:
+These will most commonly be ones like open-iscsi's iscsi_session or
+connection class that export information about the iSCSI session or
+connection. Common values are ones found in the iSCSI RFC. Also like the
+FC's rport class. The LLD will call functions to add these as necessary.
+
+The other types of tranport class attrs could be ones that go along
+with the stgt core strucutures like how the fc_host and scsi_host work.
+For example there could be a iscsi_stgt_target class that exports
+some value specific to all iSCSI targets. Example for this one maybe
+iSCSI target name (although if we push all that code to userspace target
+name is not really needed in the kernel)?
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 04:51:02 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Mon, 22 Aug 2005 21:51:02 -0500
+Subject: [Stgt-devel] [PATCH]  add sysfs to core stgt structs
+Message-ID: <1124765462.26853.4.camel@max>
+
+This patch adds sysfs integration to the core stgt structs.
+For transport attrs like iscsi session or connection things
+or FC rports the LLD can call into the transport class to
+do this. If the transport attr is related to the device
+or target, then we can just copy more code from scsi-ml
+(the transport template pointer on the struct or template
+I mean). I could not think of any at the moment so I did
+not add this.
+
+
+I also changed the netlink numbers so I could test with current kernels.
+
+
+
+diff -Naurp trunk/iscsi/include/iet_u.h trunk.work/iscsi/include/iet_u.h
+--- trunk/iscsi/include/iet_u.h	2005-08-22 18:21:41.000000000 -0500
++++ trunk.work/iscsi/include/iet_u.h	2005-08-22 19:29:06.000000000 -0500
+@@ -112,7 +112,7 @@ struct iet_event {
+ #define	MIN_NR_QUEUED_CMNDS	1
+ #define	MAX_NR_QUEUED_CMNDS	256
+ 
+-#define NETLINK_IET	11
++#define NETLINK_IET	21
+ 
+ #define ADD_TARGET _IOW('i', 0, struct target_info)
+ #define DEL_TARGET _IOW('i', 1, struct target_info)
+diff -Naurp trunk/iscsi/kernel/iscsi.h trunk.work/iscsi/kernel/iscsi.h
+--- trunk/iscsi/kernel/iscsi.h	2005-08-22 18:21:41.000000000 -0500
++++ trunk.work/iscsi/kernel/iscsi.h	2005-08-22 19:33:48.000000000 -0500
+@@ -56,6 +56,7 @@ struct network_thread_info {
+ };
+ 
+ struct iscsi_cmnd;
++struct stgt_target;
+ 
+ enum iscsi_device_state {
+ 	IDEV_RUNNING,
+diff -Naurp trunk/iscsi/kernel/target.c trunk.work/iscsi/kernel/target.c
+--- trunk/iscsi/kernel/target.c	2005-08-22 18:21:41.000000000 -0500
++++ trunk.work/iscsi/kernel/target.c	2005-08-22 19:37:03.000000000 -0500
+@@ -10,6 +10,7 @@
+ #include <digest.h>
+ #include <iscsi_dbg.h>
+ #include <stgt.h>
++#include <stgt_target.h>
+ 
+ #define	MAX_NR_TARGETS	(1UL << 30)
+ 
+@@ -111,6 +112,11 @@ static void target_thread_stop(struct is
+ 	nthread_stop(target);
+ }
+ 
++static struct stgt_target_template iet_stgt_target_template = {
++	.name = "iet",
++	.queued_cmnds = DEFAULT_NR_QUEUED_CMNDS,
++};
++
+ static int iscsi_target_create(struct target_info *info, u32 tid)
+ {
+ 	int err = -EINVAL, len;
+@@ -154,7 +160,7 @@ static int iscsi_target_create(struct ta
+ 		goto out;
+ 	}
+ 
+-	target->stt = stgt_target_create();
++	target->stt = stgt_target_create(&iet_stgt_target_template);
+ 	assert(target->stt);
+ 
+ 	return 0;
+diff -Naurp trunk/kernel/Makefile trunk.work/kernel/Makefile
+--- trunk/kernel/Makefile	2005-08-22 18:21:40.000000000 -0500
++++ trunk.work/kernel/Makefile	2005-08-22 20:47:51.000000000 -0500
+@@ -2,10 +2,11 @@
+ # Makefile for the Linux kernel device drivers.
+ #
+ 
+-EXTRA_CFLAGS += -I$(obj) -I$(obj)/../include -DNETLINK_STGT=12
++EXTRA_CFLAGS += -I$(obj) -I$(obj)/../include -DNETLINK_STGT=20
+ 
+ ifneq ($(KERNELRELEASE),)
+-obj-m		+= stgt.o
++obj-m		+= stgt_core.o
++stgt_core-objs	:= stgt_sysfs.o stgt.o
+ else
+ 
+ ifeq ($(KERNELSRC),)
+diff -Naurp trunk/kernel/stgt.c trunk.work/kernel/stgt.c
+--- trunk/kernel/stgt.c	2005-08-22 18:21:40.000000000 -0500
++++ trunk.work/kernel/stgt.c	2005-08-22 21:42:03.000000000 -0500
+@@ -17,6 +17,8 @@
+ #include <scsi/scsi.h>
+ 
+ #include <stgt.h>
++#include <stgt_target.h>
++#include <stgt_device.h>
+ #include <stgt_if.h>
+ 
+ #define DEBUG_STGT
+@@ -127,7 +129,7 @@ static void stgt_queue_work(struct stgt_
+ 	schedule_work(&target->work);
+ }
+ 
+-struct stgt_target *stgt_target_create(void)
++struct stgt_target *stgt_target_create(struct stgt_target_template *stt)
+ {
+ 	struct stgt_target *target;
+ 
+@@ -150,6 +152,13 @@ struct stgt_target *stgt_target_create(v
+ 	INIT_LIST_HEAD(&target->work_list);
+ 
+ 	INIT_WORK(&target->work, stgt_worker, target);
++	target->stt = stt;
++	target->queued_cmnds = stt->queued_cmnds;
++
++	if (stgt_sysfs_register_target(target)) {
++		kfree(target);
++		return NULL;
++	}
+ 
+ 	spin_lock(&all_targets_lock);
+ 	list_add(&target->tlist, &all_targets);
+@@ -165,7 +174,7 @@ int stgt_target_destroy(struct stgt_targ
+ 	list_del(&target->tlist);
+ 	spin_unlock(&all_targets_lock);
+ 
+-	kfree(target);
++	stgt_sysfs_unregister_target(target);
+ 
+ 	return 0;
+ }
+@@ -309,8 +318,8 @@ int stgt_session_destroy(struct stgt_ses
+ EXPORT_SYMBOL(stgt_session_destroy);
+ 
+ struct stgt_device *
+-stgt_device_create(struct stgt_target *target, char *path, uint32_t lun,
+-		   unsigned long dflags)
++stgt_device_create(struct stgt_device_template *sdt, struct stgt_target *target,
++		   char *path, uint32_t lun, unsigned long dflags)
+ {
+ 	struct stgt_device *device;
+ 	unsigned long flags;
+@@ -324,12 +333,14 @@ stgt_device_create(struct stgt_target *t
+ 
+ 	memset(device, 0, sizeof(*device));
+ 
++	device->sdt = sdt;
+ 	device->lun = lun;
+-	device->path = kmalloc(strlen(path) + 1, GFP_KERNEL);
+-	if (!device->path)
++	device->target = target;
++	if (!strcpy(device->path, path))
++		goto out;
++
++	if (stgt_sysfs_register_device(device))
+ 		goto out;
+-	strcpy(device->path, path);
+-	device->path[strlen(path)] = '\0';
+ 
+ 	spin_lock_irqsave(&target->lock, flags);
+ 	list_add(&device->dlist, &target->device_list);
+@@ -356,8 +367,7 @@ int stgt_device_destroy(struct stgt_devi
+ 	list_del(&device->dlist);
+ 	spin_unlock_irqrestore(&target->lock, flags);
+ 
+-	kfree(device->path);
+-	kfree(device);
++	stgt_sysfs_unregister_device(device);
+ 
+ 	return 0;
+ }
+@@ -693,6 +703,8 @@ static void __exit stgt_exit(void)
+ 
+ 	if (nls)
+ 		sock_release(nls->sk_socket);
++
++	stgt_sysfs_exit();
+ }
+ 
+ static int __init stgt_init(void)
+@@ -703,6 +715,10 @@ static int __init stgt_init(void)
+ 	spin_lock_init(&atomic_sessions_lock);
+ 	spin_lock_init(&cmnd_hash_lock);
+ 
++	err = stgt_sysfs_init();
++	if (err)
++		return err;
++
+ 	cmnd_slab = kmem_cache_create("stgt_cmnd", sizeof(struct stgt_cmnd), 0,
+ 				      SLAB_HWCACHE_ALIGN | SLAB_NO_REAP,
+ 				      NULL, NULL);
+diff -Naurp trunk/kernel/stgt_device.h trunk.work/kernel/stgt_device.h
+--- trunk/kernel/stgt_device.h	1969-12-31 18:00:00.000000000 -0600
++++ trunk.work/kernel/stgt_device.h	2005-08-22 21:37:38.000000000 -0500
+@@ -0,0 +1,42 @@
++/*
++ * STGT device
++ */
++#ifndef __SCSI_STGT_DEVICE_H
++#define __SCSI_STGT_DEVICE_H
++
++#include <linux/device.h>
++#include <linux/list.h>
++
++struct stgt_device_template {
++	const char *name;
++
++	/*
++	 * Pointer to the sysfs class properties for this host, NULL terminated.
++	 */
++	struct class_device_attribute **device_attrs;
++};
++
++struct stgt_device {
++	struct stgt_device_template *sdt;
++	struct class_device cdev;
++
++        char *path;
++        uint32_t lun;
++        uint32_t blk_shift;
++        uint64_t blk_count;
++
++        struct stgt_target *target;
++        struct list_head dlist;
++};
++
++#define cdev_to_stgt_device(cdev) \
++        container_of(cdev, struct stgt_device, cdev)
++
++extern struct stgt_device* stgt_device_create(struct stgt_device_template *sdt,
++		   			      struct stgt_target *target,						      char *path, uint32_t lun,
++		   			      unsigned long dflags);
++extern int stgt_device_destroy(struct stgt_device *device);
++extern int stgt_sysfs_register_device(struct stgt_device *device);
++extern void stgt_sysfs_unregister_device(struct stgt_device *device);
++
++#endif
+diff -Naurp trunk/kernel/stgt.h trunk.work/kernel/stgt.h
+--- trunk/kernel/stgt.h	2005-08-22 18:21:40.000000000 -0500
++++ trunk.work/kernel/stgt.h	2005-08-22 21:14:09.000000000 -0500
+@@ -8,19 +8,6 @@
+ 
+ #include <scsi/scsi_cmnd.h>
+ 
+-struct stgt_target {
+-	/* Protects session_list, work_list, device_list */
+-	spinlock_t lock;
+-
+-	struct list_head tlist;
+-
+-	struct list_head device_list;
+-	struct list_head session_list;
+-
+-	struct work_struct work;
+-	struct list_head work_list;
+-};
+-
+ struct stgt_session {
+ 	struct stgt_target *target;
+ 	struct list_head slist;
+@@ -52,19 +39,6 @@ struct stgt_cmnd {
+ 	void *private;
+ };
+ 
+-struct stgt_device {
+-	char *path;
+-	uint32_t lun;
+-	uint32_t blk_shift;
+-	uint64_t blk_count;
+-
+-	struct stgt_target *target;
+-	struct list_head dlist;
+-};
+-
+-extern struct stgt_target *stgt_target_create(void);
+-extern int stgt_target_destroy(struct stgt_target *target);
+-
+ extern struct stgt_session *
+ stgt_session_create(struct stgt_target *target,
+ 		    int max_cmnds,
+@@ -77,10 +51,6 @@ extern void stgt_cmnd_alloc_buffer(struc
+ 				  void (*done)(struct stgt_cmnd *));
+ extern int stgt_cmnd_queue(struct stgt_cmnd *cmnd,
+ 			   void (*done)(struct stgt_cmnd *));
+-
+-extern struct stgt_device*
+-stgt_device_create(struct stgt_target *target, char *path, uint32_t lun,
+-		   unsigned long dflags);
+-extern int stgt_device_destroy(struct stgt_device *device);
+-
++extern int stgt_sysfs_init(void);
++extern void stgt_sysfs_exit(void);
+ #endif
+diff -Naurp trunk/kernel/stgt_sysfs.c trunk.work/kernel/stgt_sysfs.c
+--- trunk/kernel/stgt_sysfs.c	1969-12-31 18:00:00.000000000 -0600
++++ trunk.work/kernel/stgt_sysfs.c	2005-08-22 21:44:05.000000000 -0500
+@@ -0,0 +1,235 @@
++/*
++ * STGT core sysfs files
++ */
++#include <stgt_target.h>
++#include <stgt_device.h>
++
++/*
++ * Target files
++ */
++#define stgt_target_show_fn(field, format_string)			\
++static ssize_t								\
++show_##field (struct class_device *cdev, char *buf)			\
++{									\
++	struct stgt_target *target = cdev_to_stgt_target(cdev);		\
++	return snprintf (buf, 20, format_string, target->field);	\
++}
++
++#define stgt_target_rd_attr(field, format_string)		\
++	stgt_target_show_fn(field, format_string)		\
++static CLASS_DEVICE_ATTR(field, S_IRUGO, show_##field, NULL);
++
++stgt_target_rd_attr(queued_cmnds, "%u\n");
++
++static struct class_device_attribute *stgt_target_attrs[] = {
++	&class_device_attr_queued_cmnds,
++	NULL
++};
++
++static void stgt_target_class_release(struct class_device *cdev)
++{
++	struct stgt_target *target = cdev_to_stgt_target(cdev);
++	kfree(target);
++}
++
++static struct class stgt_target_class = {
++	.name = "stgt_target",
++	.release = stgt_target_class_release,
++};
++
++/*
++ * Tmp: used for unique class_id names. For software we could
++ * push the naming to userspace
++ */
++static int stgt_target_num = 0;
++
++static struct class_device_attribute *class_attr_overridden(
++				struct class_device_attribute **attrs,
++				struct class_device_attribute *attr)
++{
++	int i;
++
++	if (!attrs)
++		return NULL;
++
++	for (i = 0; attrs[i]; i++)
++		if (!strcmp(attrs[i]->attr.name, attr->attr.name))
++			return attrs[i];
++	return NULL;
++}
++
++static int class_attr_add(struct class_device *classdev,
++			  struct class_device_attribute *attr)
++{
++	struct class_device_attribute *base_attr;
++
++	/*
++	 * Spare the caller from having to copy things it's not interested in.
++	*/
++	base_attr = class_attr_overridden(stgt_target_attrs, attr);
++	if (base_attr) {
++		/* extend permissions */
++		attr->attr.mode |= base_attr->attr.mode;
++
++		/* override null show/store with default */
++		if (!attr->show)
++			attr->show = base_attr->show;
++		if (!attr->store)
++			attr->store = base_attr->store;
++	}
++
++	return class_device_create_file(classdev, attr);
++}
++
++int stgt_sysfs_register_target(struct stgt_target *target)
++{
++	struct class_device *cdev = &target->cdev;
++	int err, i;
++	
++	cdev->class = &stgt_target_class;
++	snprintf(cdev->class_id, BUS_ID_SIZE, "target%d", stgt_target_num);
++
++	err = class_device_register(cdev);
++	if (err)
++		return err;
++
++	if (target->stt->target_attrs) {
++		for (i = 0; target->stt->target_attrs[i]; i++) {
++			err = class_attr_add(&target->cdev,
++					     target->stt->target_attrs[i]);
++                        if (err)
++                                goto cleanup;
++		}
++	}
++
++	for (i = 0; stgt_target_attrs[i]; i++) {
++		if (!class_attr_overridden(target->stt->target_attrs,
++					   stgt_target_attrs[i])) {
++			err = class_device_create_file(&target->cdev,
++						       stgt_target_attrs[i]);
++			if (err)
++				goto cleanup;
++		}
++	}
++
++	return 0;
++
++cleanup:
++	class_device_unregister(cdev);
++	return err;
++}
++
++void stgt_sysfs_unregister_target(struct stgt_target *target)
++{
++	class_device_unregister(&target->cdev);
++}
++
++/*
++ * Device files
++ */
++#define stgt_device_show_fn(field, format_string)			\
++static ssize_t								\
++show_##field (struct class_device *cdev, char *buf)			\
++{									\
++	struct stgt_device *device = cdev_to_stgt_device(cdev);		\
++	return sprintf (buf, format_string, device->field);	\
++}
++
++#define stgt_device_rd_attr(field, format_string)		\
++	stgt_device_show_fn(field, format_string)		\
++static CLASS_DEVICE_ATTR(field, S_IRUGO, show_##field, NULL);
++
++stgt_device_rd_attr(path, "%s\n");
++
++static struct class_device_attribute *stgt_device_attrs[] = {
++	&class_device_attr_path,
++	NULL
++};
++
++
++static void stgt_device_class_release(struct class_device *cdev)
++{
++	struct stgt_device *device = cdev_to_stgt_device(cdev);
++	struct stgt_target *target = device->target;
++
++	class_device_put(&target->cdev);
++	kfree(device->path);
++	kfree(device);
++}
++
++static struct class stgt_device_class = {
++	.name = "stgt_device",
++	.release = stgt_device_class_release,
++};
++
++int stgt_sysfs_register_device(struct stgt_device *device)
++{
++	struct stgt_target *target = device->target;
++	struct class_device *cdev = &device->cdev;
++	int err, i;
++
++	cdev->class = &stgt_device_class;
++	snprintf(cdev->class_id, BUS_ID_SIZE, "device%d", device->lun);
++	err = class_device_register(cdev);
++	if (err)
++		return err;
++
++	/*
++	 * get handle to target so our parent is never released before
++	 * us
++	 */
++	if (!class_device_get(&target->cdev))
++		return -EINVAL;
++
++	if (device->sdt->device_attrs) {
++		for (i = 0; device->sdt->device_attrs[i]; i++) {
++			err = class_attr_add(&device->cdev,
++					     device->sdt->device_attrs[i]);
++                        if (err)
++                                goto cleanup;
++		}
++	}
++
++	for (i = 0; stgt_device_attrs[i]; i++) {
++		if (!class_attr_overridden(device->sdt->device_attrs,
++					   stgt_device_attrs[i])) {
++			err = class_device_create_file(&device->cdev,
++						       stgt_device_attrs[i]);
++			if (err)
++				goto cleanup;
++		}
++	}
++
++	return 0;
++
++cleanup:
++	class_device_put(&target->cdev);
++	class_device_unregister(cdev);
++	return err;
++
++}
++
++void stgt_sysfs_unregister_device(struct stgt_device *device)
++{
++	class_device_unregister(&device->cdev);
++}
++
++int stgt_sysfs_init(void)
++{
++	int err;
++
++	err = class_register(&stgt_target_class);
++	if (err)
++		return err;
++
++	err = class_register(&stgt_device_class);
++	if (err)
++		class_unregister(&stgt_target_class);
++	return err;
++}
++
++void stgt_sysfs_exit(void)
++{
++	class_unregister(&stgt_target_class);
++	class_unregister(&stgt_device_class);
++}
+diff -Naurp trunk/kernel/stgt_target.h trunk.work/kernel/stgt_target.h
+--- trunk/kernel/stgt_target.h	1969-12-31 18:00:00.000000000 -0600
++++ trunk.work/kernel/stgt_target.h	2005-08-22 21:22:49.000000000 -0500
+@@ -0,0 +1,46 @@
++/*
++ * STGT target definitions
++ */
++#ifndef __SCSI_STGT_TARGET_H
++#define __SCSI_STGT_TARGET_H
++
++#include <linux/device.h>
++#include <linux/list.h>
++
++struct stgt_target_template {
++	const char *name;
++
++	int queued_cmnds;
++	/*
++	 * Pointer to the sysfs class properties for this host, NULL terminated.
++	 */
++	struct class_device_attribute **target_attrs;
++};
++
++struct stgt_target {
++	struct stgt_target_template *stt;
++	struct class_device cdev;
++
++	int queued_cmnds;
++
++	/* Protects session_list, work_list, device_list */
++	spinlock_t lock;
++
++	struct list_head tlist;
++
++	struct list_head device_list;
++	struct list_head session_list;
++
++	struct work_struct work;
++	struct list_head work_list;
++};
++
++#define cdev_to_stgt_target(cdev) \
++	container_of(cdev, struct stgt_target, cdev)
++
++extern struct stgt_target *stgt_target_create(struct stgt_target_template *stt);
++extern int stgt_target_destroy(struct stgt_target *target);
++extern int stgt_sysfs_register_target(struct stgt_target *target);
++extern void stgt_sysfs_unregister_target(struct stgt_target *target);
++
++#endif
+diff -Naurp trunk/usr/Makefile trunk.work/usr/Makefile
+--- trunk/usr/Makefile	2005-08-22 18:21:40.000000000 -0500
++++ trunk.work/usr/Makefile	2005-08-22 19:28:30.000000000 -0500
+@@ -1,4 +1,4 @@
+-CFLAGS += -O2 -fno-inline -Wall -Wstrict-prototypes -I../include -DNETLINK_STGT=12
++CFLAGS += -O2 -fno-inline -Wall -Wstrict-prototypes -I../include -DNETLINK_STGT=20
+ PROGRAMS = stgtd
+ 
+ all: $(PROGRAMS)
+
+
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 07:59:16 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 00:59:16 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+Message-ID: <1124776757.3593.5.camel@max>
+
+This adds the beginings of a stgt_device_template for
+passthrough commands. It will end up using the block
+layer BLOCK_PC facility to pass the command to the
+underlying device similar to how we do it for SG_IO
+and dm-multipath hw_handlers like dm-emc.c.
+
+It is not completely hooked in yet. The command
+handling needs to be done and so does the actual
+device creation.
+
+This was built over my last patch.
+
+diff -Naurp trunk/kernel/Makefile trunk.work/kernel/Makefile
+--- trunk/kernel/Makefile	2005-08-23 00:48:01.000000000 -0500
++++ trunk.work/kernel/Makefile	2005-08-23 00:31:38.000000000 -0500
+@@ -7,6 +7,8 @@ EXTRA_CFLAGS += -I$(obj) -I$(obj)/../inc
+ ifneq ($(KERNELRELEASE),)
+ obj-m		+= stgt_core.o
+ stgt_core-objs	:= stgt_sysfs.o stgt.o
++
++obj-m		+= stgt_sd.o
+ else
+ 
+ ifeq ($(KERNELSRC),)
+diff -Naurp trunk/kernel/stgt.c trunk.work/kernel/stgt.c
+--- trunk/kernel/stgt.c	2005-08-23 00:48:01.000000000 -0500
++++ trunk.work/kernel/stgt.c	2005-08-23 00:41:43.000000000 -0500
+@@ -48,6 +48,9 @@ MODULE_LICENSE("GPL");
+ static spinlock_t all_targets_lock;
+ static LIST_HEAD(all_targets);
+ 
++static spinlock_t device_tmpl_lock;
++static LIST_HEAD(device_tmpl_list);
++
+ static void session_init_handler(void *data);
+ static spinlock_t atomic_sessions_lock;
+ static LIST_HEAD(atomic_sessions);
+@@ -317,9 +320,77 @@ int stgt_session_destroy(struct stgt_ses
+ }
+ EXPORT_SYMBOL(stgt_session_destroy);
+ 
+-struct stgt_device *
+-stgt_device_create(struct stgt_device_template *sdt, struct stgt_target *target,
+-		   char *path, uint32_t lun, unsigned long dflags)
++struct device_type_internal {
++	struct stgt_device_template *sdt;
++	struct list_head list;
++};
++
++static struct stgt_device_template *device_template_get(const char *name)
++{
++	unsigned long flags;
++	struct device_type_internal *ti;
++
++	spin_lock_irqsave(&device_tmpl_lock, flags);
++
++	list_for_each_entry(ti, &device_tmpl_list, list)
++		if (!strcmp(name, ti->sdt->name)) {
++			if (!try_module_get(ti->sdt->module))
++				ti = NULL;
++			spin_unlock_irqrestore(&device_tmpl_lock, flags);
++			return ti ? ti->sdt : NULL;
++		}
++
++	spin_unlock_irqrestore(&device_tmpl_lock, flags);
++
++	return NULL;
++}
++
++static void device_template_put(struct stgt_device_template *sdt)
++{
++	module_put(sdt->module);
++}
++
++int stgt_device_template_register(struct stgt_device_template *sdt)
++{
++	unsigned long flags;
++	struct device_type_internal *ti;
++
++	ti = kmalloc(sizeof(*ti), GFP_KERNEL);
++	if (!ti)
++		return -ENOMEM;
++	memset(ti, 0, sizeof(*ti));
++	INIT_LIST_HEAD(&ti->list);
++	ti->sdt = sdt;
++
++	spin_lock_irqsave(&device_tmpl_lock, flags);
++	list_add_tail(&ti->list, &device_tmpl_list);
++	spin_unlock_irqrestore(&device_tmpl_lock, flags);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(stgt_device_template_register);
++
++void stgt_device_template_unregister(struct stgt_device_template *sdt)
++{
++	unsigned long flags;
++	struct device_type_internal *ti;
++
++	spin_lock_irqsave(&device_tmpl_lock, flags);
++
++	list_for_each_entry(ti, &device_tmpl_list, list)
++		if (ti->sdt == sdt) {
++			list_del(&ti->list);
++			kfree(ti);
++			break;
++		}
++
++	spin_unlock_irqrestore(&device_tmpl_lock, flags);
++}
++EXPORT_SYMBOL_GPL(stgt_device_template_unregister);
++
++struct stgt_device *stgt_device_create(struct stgt_target *target,
++				       char *device_type, char *path,
++				       uint32_t lun, unsigned long dflags)
+ {
+ 	struct stgt_device *device;
+ 	unsigned long flags;
+@@ -333,23 +404,43 @@ stgt_device_create(struct stgt_device_te
+ 
+ 	memset(device, 0, sizeof(*device));
+ 
+-	device->sdt = sdt;
+ 	device->lun = lun;
+ 	device->target = target;
+ 	if (!strcpy(device->path, path))
+-		goto out;
++		goto free_device;
++
++	device->sdt = device_template_get(device_type);
++	if (device->sdt)
++		goto free_path;
++
++	device->sdt_data = kmalloc(sizeof(device->sdt->priv_data_size),
++				   GFP_KERNEL);
++	if (!device->sdt_data)
++		goto put_template;
++
++	if (device->sdt->create)
++		if (device->sdt->create(device))
++			goto free_priv_sdt_data;
+ 
+ 	if (stgt_sysfs_register_device(device))
+-		goto out;
++		goto sdt_destroy;
+ 
+ 	spin_lock_irqsave(&target->lock, flags);
+ 	list_add(&device->dlist, &target->device_list);
+ 	spin_unlock_irqrestore(&target->lock, flags);
+ 
+ 	return device;
+-out:
+-	if (device)
+-		kfree(device->path);
++
++sdt_destroy:
++	if (device->sdt->destroy)
++		device->sdt->destroy(device);
++free_priv_sdt_data:
++	kfree(device->sdt_data);
++put_template:
++	device_template_put(device->sdt);
++free_path:
++	kfree(device->path);
++free_device:
+ 	kfree(device);
+ 	return NULL;
+ }
+@@ -367,6 +458,10 @@ int stgt_device_destroy(struct stgt_devi
+ 	list_del(&device->dlist);
+ 	spin_unlock_irqrestore(&target->lock, flags);
+ 
++	if (device->sdt->destroy)
++		device->sdt->destroy(device);
++
++	device_template_put(device->sdt);
+ 	stgt_sysfs_unregister_device(device);
+ 
+ 	return 0;
+@@ -553,12 +648,19 @@ static void uspace_cmnd_done(struct stgt
+ 	cmnd_done(cmnd);
+ }
+ 
+-static void virtual_disk_handler(void *data)
++static void queuecommand(void *data)
+ {
+ 	struct stgt_cmnd *cmnd = (struct stgt_cmnd *) data;
+ 
+ 	dprintk("%x\n", cmnd->scb[0]);
+ 
++	/*
++	 * seperate vsd (virtual disk from sd (real sd))
++	 * call scsi_device_temaplte->prepcommand to see if they want it
++	 * and allow them to setup.
++	 *
++	 * Then call queuecommand
++	 */
+ 	switch (cmnd->scb[0]) {
+ 	case READ_6:
+ 	case READ_10:
+@@ -595,7 +697,7 @@ int stgt_cmnd_queue(struct stgt_cmnd *cm
+ 		return -EINVAL;
+ 	}
+ 
+-	work = stgt_init_work(session, virtual_disk_handler, cmnd);
++	work = stgt_init_work(session, queuecommand, cmnd);
+ 	if (!work)
+ 		return -ENOMEM;
+ 	stgt_queue_work(session->target, work);
+@@ -714,6 +816,7 @@ static int __init stgt_init(void)
+ 	spin_lock_init(&all_targets_lock);
+ 	spin_lock_init(&atomic_sessions_lock);
+ 	spin_lock_init(&cmnd_hash_lock);
++	spin_lock_init(&device_tmpl_lock);
+ 
+ 	err = stgt_sysfs_init();
+ 	if (err)
+diff -Naurp trunk/kernel/stgt_device.h trunk.work/kernel/stgt_device.h
+--- trunk/kernel/stgt_device.h	2005-08-23 00:48:01.000000000 -0500
++++ trunk.work/kernel/stgt_device.h	2005-08-23 00:50:33.000000000 -0500
+@@ -7,8 +7,18 @@
+ #include <linux/device.h>
+ #include <linux/list.h>
+ 
++struct stgt_device;
++struct stgt_cmnd;
++
+ struct stgt_device_template {
+ 	const char *name;
++	struct module *module;
++	unsigned priv_data_size;
++
++	int (* create)(struct stgt_device *);
++	void (* destroy)(struct stgt_device *);
++	int (* queuecommand)(struct stgt_device *device, struct stgt_cmnd *cmd);
++	int (* prepcommand)(struct stgt_device *device, struct stgt_cmnd *cmn);
+ 
+ 	/*
+ 	 * Pointer to the sysfs class properties for this host, NULL terminated.
+@@ -18,6 +28,8 @@ struct stgt_device_template {
+ 
+ struct stgt_device {
+ 	struct stgt_device_template *sdt;
++	void *sdt_data;
++
+ 	struct class_device cdev;
+ 
+         char *path;
+@@ -32,11 +44,14 @@ struct stgt_device {
+ #define cdev_to_stgt_device(cdev) \
+         container_of(cdev, struct stgt_device, cdev)
+ 
+-extern struct stgt_device* stgt_device_create(struct stgt_device_template *sdt,
+-		   			      struct stgt_target *target,						      char *path, uint32_t lun,
+-		   			      unsigned long dflags);
++extern struct stgt_device* stgt_device_create(struct stgt_target *target,
++					      char *device_type, char *path,
++					      uint32_t lun,
++					      unsigned long dflags);
+ extern int stgt_device_destroy(struct stgt_device *device);
+ extern int stgt_sysfs_register_device(struct stgt_device *device);
+ extern void stgt_sysfs_unregister_device(struct stgt_device *device);
++extern int stgt_device_template_register(struct stgt_device_template *sdt);
++extern void stgt_device_template_unregister(struct stgt_device_template *sdt);
+ 
+ #endif
+diff -Naurp trunk/kernel/stgt_sd.c trunk.work/kernel/stgt_sd.c
+--- trunk/kernel/stgt_sd.c	1969-12-31 18:00:00.000000000 -0600
++++ trunk.work/kernel/stgt_sd.c	2005-08-23 00:50:19.000000000 -0500
+@@ -0,0 +1,141 @@
++/*
++ * STGT passthrough device
++ */
++#include <linux/types.h>
++#include <linux/blkdev.h>
++#include <linux/namei.h>
++
++#include <stgt_device.h>
++
++struct stgt_sd_dev {
++	struct block_device *bdev;
++};
++
++/*
++ * Convert a device path to a dev_t.
++ * from dm-table.c
++ */
++static int lookup_device(const char *path, dev_t *dev)
++{
++	int r;
++	struct nameidata nd;
++	struct inode *inode;
++
++	r = path_lookup(path, LOOKUP_FOLLOW, &nd);
++	if (r)
++		return r;
++
++	inode = nd.dentry->d_inode;
++	if (!inode) {
++		r = -ENOENT;
++		goto out;
++	}
++
++	if (!S_ISBLK(inode->i_mode)) {
++		r = -ENOTBLK;
++		goto out;
++	}
++
++	*dev = inode->i_rdev;
++out:
++	path_release(&nd);
++	return r;
++}
++
++static int open_dev(struct stgt_sd_dev *sddev, dev_t devt)
++{
++        struct block_device *bdev;
++
++        bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
++        if (IS_ERR(bdev))
++                return PTR_ERR(bdev);
++	sddev->bdev = bdev;
++        return 0;
++}
++
++/*
++ * Close a device that we've been using.
++ */
++static void close_dev(struct stgt_sd_dev *sddev)
++{
++	blkdev_put(sddev->bdev);
++}
++
++static int stgt_sd_create(struct stgt_device *device)
++{
++	struct stgt_sd_dev *sddev = device->sdt_data;
++	dev_t devt;
++	int err;
++
++	err = lookup_device(device->path, &devt);
++	if (err)
++		return err;
++
++	sddev = kmalloc(sizeof(*sddev), GFP_KERNEL);
++	if (!sddev)
++		return -ENOMEM;
++
++	err = open_dev(sddev, devt);
++	if (err)
++		goto free_sddev;
++
++	return 0;
++
++free_sddev:
++	kfree(sddev);
++	return err;
++}
++
++static void stgt_sd_destroy(struct stgt_device *device)
++{
++	close_dev(device->sdt_data);
++}
++
++static int stgt_sd_queue(struct stgt_device *device, struct stgt_cmnd *cmnd)
++{
++	/*
++	struct stgt_sd_dev *sddev = device->sdt_data;
++	struct request_queue *q = bdev_get_queue(sddev->bdev);
++	struct request *rq;
++
++	 * format struct request as BLOCK_PC command and do
++	 * elv_add_request or if James's no_wait helper is in
++	 * then use it
++	 *
++	 * Will need some stgt wrappers/helpers though
++	 */
++	return 0;
++}
++
++static int stgt_sd_prep(struct stgt_device *device, struct stgt_cmnd *cmnd)
++{
++	/*
++	 * can we take owner ship? If so return 0 else return a enum
++	 * (TODO define this)
++	 */
++	return 0;
++}
++
++static struct stgt_device_template stgt_sd = {
++	.name = "stgt_sd",
++	.module = THIS_MODULE,
++	.create = stgt_sd_create,
++	.destroy = stgt_sd_destroy,
++	.queuecommand = stgt_sd_queue,
++	.prepcommand = stgt_sd_prep,
++};
++
++static int __init stgt_sd_init(void)
++{
++	stgt_sd.priv_data_size = sizeof(struct stgt_sd_dev);
++	return stgt_device_template_register(&stgt_sd);
++}
++
++static void __exit stgt_sd_exit(void)
++{
++	stgt_device_template_unregister(&stgt_sd);
++}
++
++module_init(stgt_sd_init);
++module_exit(stgt_sd_exit);
++MODULE_LICENSE("GPL");
+diff -Naurp trunk/kernel/stgt_sysfs.c trunk.work/kernel/stgt_sysfs.c
+--- trunk/kernel/stgt_sysfs.c	2005-08-23 00:48:01.000000000 -0500
++++ trunk.work/kernel/stgt_sysfs.c	2005-08-23 00:25:41.000000000 -0500
+@@ -153,6 +153,7 @@ static void stgt_device_class_release(st
+ 	struct stgt_target *target = device->target;
+ 
+ 	class_device_put(&target->cdev);
++	kfree(device->sdt_data);
+ 	kfree(device->path);
+ 	kfree(device);
+ }
+
+
+
+
+From tomof at acm.org  Tue Aug 23 16:51:26 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Tue, 23 Aug 2005 23:51:26 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <1124776757.3593.5.camel@max>
+References: <1124776757.3593.5.camel@max>
+Message-ID: <200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 00:59:16 -0500
+
+> This adds the beginings of a stgt_device_template for
+> passthrough commands. It will end up using the block
+> layer BLOCK_PC facility to pass the command to the
+> underlying device similar to how we do it for SG_IO
+> and dm-multipath hw_handlers like dm-emc.c.
+> 
+> It is not completely hooked in yet. The command
+> handling needs to be done and so does the actual
+> device creation.
+
+Great! 
+
+Here are small fixes.
+
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/kernel/stgt.c stgt.work/kernel/stgt.c
+--- stgt.new/kernel/stgt.c	2005-08-23 19:09:04.000000000 +0900
++++ stgt.work/kernel/stgt.c	2005-08-23 23:47:25.000000000 +0900
+@@ -406,11 +406,14 @@
+ 
+ 	device->lun = lun;
+ 	device->target = target;
+-	if (!strcpy(device->path, path))
++	device->path = kmalloc(strlen(path) + 1, GFP_KERNEL);
++	if (!device->path)
+ 		goto free_device;
++	strcpy(device->path, path);
++	device->path[strlen(path)] = '\0';
+ 
+ 	device->sdt = device_template_get(device_type);
+-	if (device->sdt)
++	if (!device->sdt)
+ 		goto free_path;
+ 
+ 	device->sdt_data = kmalloc(sizeof(device->sdt->priv_data_size),
+
+
+From tomof at acm.org  Tue Aug 23 16:56:47 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Tue, 23 Aug 2005 23:56:47 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max>
+	<200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>
+Message-ID: <200508231456.j7NEums9004447@r-dd.iij4u.or.jp>
+
+From: FUJITA Tomonori <tomof at acm.org>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 23:51:26 +0900
+
+> > This adds the beginings of a stgt_device_template for
+> > passthrough commands. It will end up using the block
+> > layer BLOCK_PC facility to pass the command to the
+> > underlying device similar to how we do it for SG_IO
+> > and dm-multipath hw_handlers like dm-emc.c.
+> > 
+> > It is not completely hooked in yet. The command
+> > handling needs to be done and so does the actual
+> > device creation.
+> 
+> Great! 
+> 
+> Here are small fixes.
+
+Forgot to mention.
+
+Do we need to use GFP_ATOMIC instead of GFP_KERNEL in
+stgt_device_create()?
+
+
+From tomof at acm.org  Tue Aug 23 17:05:03 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 00:05:03 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <1124776757.3593.5.camel@max>
+References: <1124776757.3593.5.camel@max>
+Message-ID: <200508231505.j7NF54t0005210@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 00:59:16 -0500
+
+> This adds the beginings of a stgt_device_template for
+> passthrough commands. It will end up using the block
+> layer BLOCK_PC facility to pass the command to the
+> underlying device similar to how we do it for SG_IO
+> and dm-multipath hw_handlers like dm-emc.c.
+> 
+> It is not completely hooked in yet. The command
+> handling needs to be done and so does the actual
+> device creation.
+> 
+> This was built over my last patch.
+
+I've attached the patch to enable IET to use your new features. Now we
+can use 'Lun' in the IET configure file (/etc/ietd.conf) again.
+
+For example, I put 'Lun 0 Path=/dev/hdb' line in my configuration
+file.
+
+fujita at lily:/sys/class$ find stgt_*
+stgt_device
+stgt_device/device0
+stgt_device/device0/path
+stgt_target
+stgt_target/target0
+stgt_target/target0/queued_cmnds
+
+fujita at lily:/sys/class$ cat stgt_device/device0/path
+/dev/hdb
+
+
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/config.c stgt.work/iscsi/kernel/config.c
+--- stgt.new/iscsi/kernel/config.c	2005-08-19 00:42:26.000000000 +0900
++++ stgt.work/iscsi/kernel/config.c	2005-08-23 22:29:50.000000000 +0900
+@@ -170,8 +170,7 @@
+ 	if ((err = copy_from_user(&info, (void *) ptr, sizeof(info))) < 0)
+ 		return err;
+ 
+-	return 0;
+-/* 	return volume_add(target, &info); */
++	return volume_add(target, &info);
+ }
+ 
+ static int del_volume(struct iscsi_target *target, unsigned long ptr)
+@@ -182,8 +181,7 @@
+ 	if ((err = copy_from_user(&info, (void *) ptr, sizeof(info))) < 0)
+ 		return err;
+ 
+-	return 0;
+-/* 	return iscsi_volume_del(target, &info); */
++	return volume_del(target, &info);
+ }
+ 
+ static int iscsi_param_config(struct iscsi_target *target, unsigned long ptr, int set)
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/iscsi.h stgt.work/iscsi/kernel/iscsi.h
+--- stgt.new/iscsi/kernel/iscsi.h	2005-08-23 18:56:10.000000000 +0900
++++ stgt.work/iscsi/kernel/iscsi.h	2005-08-23 22:48:38.000000000 +0900
+@@ -73,6 +73,7 @@
+ 	struct iscsi_trgt_param trgt_param;
+ 
+ 	struct list_head session_list;
++	struct list_head device_list;
+ 
+ 	struct network_thread_info nthread_info;
+ 
+@@ -231,6 +232,8 @@
+ struct iscsi_target *target_lookup_by_id(u32);
+ extern int target_add(struct target_info *);
+ extern int target_del(u32 id);
++extern int volume_del(struct iscsi_target *target, struct volume_info *info);
++extern int volume_add(struct iscsi_target *target, struct volume_info *info);
+ 
+ /* config.c */
+ extern int iet_procfs_init(void);
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/target.c stgt.work/iscsi/kernel/target.c
+--- stgt.new/iscsi/kernel/target.c	2005-08-23 18:56:10.000000000 +0900
++++ stgt.work/iscsi/kernel/target.c	2005-08-23 23:25:50.000000000 +0900
+@@ -11,6 +11,7 @@
+ #include <iscsi_dbg.h>
+ #include <stgt.h>
+ #include <stgt_target.h>
++#include <stgt_device.h>
+ 
+ #define	MAX_NR_TARGETS	(1UL << 30)
+ 
+@@ -151,6 +152,7 @@
+ 	init_MUTEX(&target->target_sem);
+ 
+ 	INIT_LIST_HEAD(&target->session_list);
++	INIT_LIST_HEAD(&target->device_list);
+ 	list_add(&target->t_list, &target_list);
+ 
+ 	nthread_init(target);
+@@ -277,3 +279,79 @@
+ 
+ 	return 0;
+ }
++
++/*
++ * Temporary device code
++ */
++
++struct iscsi_device {
++	uint64_t lun;
++	struct list_head list;
++	struct stgt_device *sd;
++};
++
++struct iscsi_device *volume_lookup(struct iscsi_target *target, u32 lun)
++{
++	struct iscsi_device *device;
++	list_for_each_entry(device, &target->device_list, list) {
++		if (device->lun == lun)
++			return device;
++	}
++	return NULL;
++}
++
++int volume_add(struct iscsi_target *target, struct volume_info *info)
++{
++	char *path, *type, dtype[] = "stgt_sd";
++	struct iscsi_device *device;
++	struct stgt_device *sd;
++
++	eprintk("%u %s\n", info->lun, info->args);
++
++	if (volume_lookup(target, info->lun)) {
++		eprintk("%u\n", info->lun);
++		return -EEXIST;
++	}
++
++	path = strstr(info->args, "Path=");
++	if (!path)
++		return -EINVAL;
++	path += strlen("Path=");
++
++	device = kmalloc(sizeof(*device), GFP_KERNEL);
++	if (!device)
++		return -ENOMEM;
++
++	type = strstr(info->args, "Type=");
++	if (type)
++		type += strlen("Type=");
++	else
++		type = dtype;
++
++	eprintk("%u %s %s\n", info->lun, path, type);
++	sd = stgt_device_create(target->stt, type, path, info->lun, 0);
++	if (!sd)
++		goto out;
++
++	device->sd = sd;
++	device->lun = info->lun;
++	list_add(&device->list, &target->device_list);
++	return 0;
++out:
++	kfree(device);
++	return -EINVAL;
++}
++
++int volume_del(struct iscsi_target *target, struct volume_info *info)
++{
++	struct iscsi_device *device;
++
++	device = volume_lookup(target, info->lun);
++	if (!device)
++		return -ENOENT;
++
++	stgt_device_destroy(device->sd);
++	list_del(&device->list);
++	kfree(device);
++	return 0;
++}
+
+
+From tomof at acm.org  Tue Aug 23 17:47:40 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 00:47:40 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <1124776757.3593.5.camel@max>
+References: <1124776757.3593.5.camel@max>
+Message-ID: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 00:59:16 -0500
+
+> This adds the beginings of a stgt_device_template for
+> passthrough commands. It will end up using the block
+> layer BLOCK_PC facility to pass the command to the
+> underlying device similar to how we do it for SG_IO
+> and dm-multipath hw_handlers like dm-emc.c.
+> 
+> It is not completely hooked in yet. The command
+> handling needs to be done and so does the actual
+> device creation.
+> 
+> This was built over my last patch.
+
+The patch to fix memory leak.
+
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.vsd/kernel/stgt_sd.c stgt.work/kernel/stgt_sd.c
+--- stgt.vsd/kernel/stgt_sd.c	2005-08-23 23:47:50.000000000 +0900
++++ stgt.work/kernel/stgt_sd.c	2005-08-24 00:45:16.000000000 +0900
+@@ -71,10 +71,6 @@
+ 	if (err)
+ 		return err;
+ 
+-	sddev = kmalloc(sizeof(*sddev), GFP_KERNEL);
+-	if (!sddev)
+-		return -ENOMEM;
+-
+ 	err = open_dev(sddev, devt);
+ 	if (err)
+ 		goto free_sddev;
+
+
+From tomof at acm.org  Tue Aug 23 18:00:15 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 01:00:15 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max>
+	<200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>
+Message-ID: <200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp>
+
+From: FUJITA Tomonori <tomof at acm.org>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 24 Aug 2005 00:47:40 +0900
+
+> > This adds the beginings of a stgt_device_template for
+> > passthrough commands. It will end up using the block
+> > layer BLOCK_PC facility to pass the command to the
+> > underlying device similar to how we do it for SG_IO
+> > and dm-multipath hw_handlers like dm-emc.c.
+> > 
+> > It is not completely hooked in yet. The command
+> > handling needs to be done and so does the actual
+> > device creation.
+> > 
+> > This was built over my last patch.
+> 
+> The patch to fix memory leak.
+
+Oops, it's incomplete. Try again.
+
+diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.vsd/kernel/stgt_sd.c stgt.work/kernel/stgt_sd.c
+--- stgt.vsd/kernel/stgt_sd.c	2005-08-23 23:47:50.000000000 +0900
++++ stgt.work/kernel/stgt_sd.c	2005-08-24 00:58:01.000000000 +0900
+@@ -71,19 +71,11 @@
+ 	if (err)
+ 		return err;
+ 
+-	sddev = kmalloc(sizeof(*sddev), GFP_KERNEL);
+-	if (!sddev)
+-		return -ENOMEM;
+-
+ 	err = open_dev(sddev, devt);
+ 	if (err)
+-		goto free_sddev;
++		return err;
+ 
+ 	return 0;
+-
+-free_sddev:
+-	kfree(sddev);
+-	return err;
+ }
+ 
+ static void stgt_sd_destroy(struct stgt_device *device)
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 18:04:07 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 11:04:07 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max> <200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>
+Message-ID: <430B48F7.90006@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Tue, 23 Aug 2005 00:59:16 -0500
+> 
+> 
+>>This adds the beginings of a stgt_device_template for
+>>passthrough commands. It will end up using the block
+>>layer BLOCK_PC facility to pass the command to the
+>>underlying device similar to how we do it for SG_IO
+>>and dm-multipath hw_handlers like dm-emc.c.
+>>
+>>It is not completely hooked in yet. The command
+>>handling needs to be done and so does the actual
+>>device creation.
+> 
+> 
+> Great! 
+> 
+> Here are small fixes.
+> 
+> diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/kernel/stgt.c stgt.work/kernel/stgt.c
+> --- stgt.new/kernel/stgt.c	2005-08-23 19:09:04.000000000 +0900
+> +++ stgt.work/kernel/stgt.c	2005-08-23 23:47:25.000000000 +0900
+> @@ -406,11 +406,14 @@
+>  
+>  	device->lun = lun;
+>  	device->target = target;
+> -	if (!strcpy(device->path, path))
+> +	device->path = kmalloc(strlen(path) + 1, GFP_KERNEL);
+> +	if (!device->path)
+>  		goto free_device;
+> +	strcpy(device->path, path);
+> +	device->path[strlen(path)] = '\0';
+
+oops. I actually meant to put strdup() :)
+
+>  
+>  	device->sdt = device_template_get(device_type);
+> -	if (device->sdt)
+> +	if (!device->sdt)
+>  		goto free_path;
+
+oops
+
+>  
+>  	device->sdt_data = kmalloc(sizeof(device->sdt->priv_data_size),
+
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 18:05:54 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 11:05:54 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231456.j7NEums9004447@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max>	<200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp> <200508231456.j7NEums9004447@r-dd.iij4u.or.jp>
+Message-ID: <430B4962.70903@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: FUJITA Tomonori <tomof at acm.org>
+> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Tue, 23 Aug 2005 23:51:26 +0900
+> 
+> 
+>>>This adds the beginings of a stgt_device_template for
+>>>passthrough commands. It will end up using the block
+>>>layer BLOCK_PC facility to pass the command to the
+>>>underlying device similar to how we do it for SG_IO
+>>>and dm-multipath hw_handlers like dm-emc.c.
+>>>
+>>>It is not completely hooked in yet. The command
+>>>handling needs to be done and so does the actual
+>>>device creation.
+>>
+>>Great! 
+>>
+>>Here are small fixes.
+> 
+> 
+> Forgot to mention.
+> 
+> Do we need to use GFP_ATOMIC instead of GFP_KERNEL in
+> stgt_device_create()?
+
+I do not think so. It does not seem like we will be in
+interrupt context and it does not look like we
+are under a spin_lock. Was there something else
+you were thinking of (probably was :))?
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 18:07:13 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 11:07:13 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max> <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>
+Message-ID: <430B49B1.2000200@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Tue, 23 Aug 2005 00:59:16 -0500
+> 
+> 
+>>This adds the beginings of a stgt_device_template for
+>>passthrough commands. It will end up using the block
+>>layer BLOCK_PC facility to pass the command to the
+>>underlying device similar to how we do it for SG_IO
+>>and dm-multipath hw_handlers like dm-emc.c.
+>>
+>>It is not completely hooked in yet. The command
+>>handling needs to be done and so does the actual
+>>device creation.
+>>
+>>This was built over my last patch.
+> 
+> 
+> The patch to fix memory leak.
+> 
+> diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.vsd/kernel/stgt_sd.c stgt.work/kernel/stgt_sd.c
+> --- stgt.vsd/kernel/stgt_sd.c	2005-08-23 23:47:50.000000000 +0900
+> +++ stgt.work/kernel/stgt_sd.c	2005-08-24 00:45:16.000000000 +0900
+> @@ -71,10 +71,6 @@
+>  	if (err)
+>  		return err;
+>  
+> -	sddev = kmalloc(sizeof(*sddev), GFP_KERNEL);
+> -	if (!sddev)
+> -		return -ENOMEM;
+
+oops again. I moved the allocation to allow stgt_core do it
+but forgot to remove this. thanks
+
+> -
+>  	err = open_dev(sddev, devt);
+>  	if (err)
+>  		goto free_sddev;
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 18:08:06 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 11:08:06 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max>	<200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp> <200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp>
+Message-ID: <430B49E6.6090805@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> 
+> Oops, it's incomplete. Try again.
+> 
+
+
+Thanks again. Did you merge all these changes?
+
+I still cannot merge stuff.
+
+
+From tomof at acm.org  Tue Aug 23 18:18:43 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 01:18:43 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430B49E6.6090805@cs.wisc.edu>
+References: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>
+	<200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp>
+	<430B49E6.6090805@cs.wisc.edu>
+Message-ID: <200508231618.j7NGIiMX011750@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 11:08:06 -0500
+
+> FUJITA Tomonori wrote:
+> > 
+> > Oops, it's incomplete. Try again.
+> > 
+> 
+> 
+> Thanks again. Did you merge all these changes?
+
+OK.
+
+
+> I still cannot merge stuff.
+
+Cannot you still log in shell.berlios.de or svn.berlios.de ?
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 18:25:07 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 11:25:07 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231618.j7NGIiMX011750@r-dd.iij4u.or.jp>
+References: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp>	<200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp>	<430B49E6.6090805@cs.wisc.edu> <200508231618.j7NGIiMX011750@r-dd.iij4u.or.jp>
+Message-ID: <430B4DE3.2060903@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Tue, 23 Aug 2005 11:08:06 -0500
+> 
+> 
+>>FUJITA Tomonori wrote:
+>>
+>>>Oops, it's incomplete. Try again.
+>>>
+>>
+>>
+>>Thanks again. Did you merge all these changes?
+> 
+> 
+> OK.
+> 
+> 
+> 
+>>I still cannot merge stuff.
+> 
+> 
+> Cannot you still log in shell.berlios.de or svn.berlios.de ?
+
+
+oh shoot it all works now. but the strange thing is I have to put
+in my password 3 times.
+
+So I do:
+svn checkout svn+ssh://mnc at svn.berlios.de/svnroot/repos/stgt/trunk
+mnc at svn.berlios.de's password:
+mnc at svn.berlios.de's password:
+mnc at svn.berlios.de's password:
+
+and after this 3rd time it works :)
+
+Ok I can check all this in if you want.
+
+
+From hch at infradead.org  Tue Aug 23 18:26:12 2005
+From: hch at infradead.org (Christoph Hellwig)
+Date: Tue, 23 Aug 2005 17:26:12 +0100
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430B4DE3.2060903@cs.wisc.edu>
+References: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp> <200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp> <430B49E6.6090805@cs.wisc.edu> <200508231618.j7NGIiMX011750@r-dd.iij4u.or.jp> <430B4DE3.2060903@cs.wisc.edu>
+Message-ID: <20050823162612.GA10918@infradead.org>
+
+Btw, I've been trying to subscribe to the stgt-devel list using the
+webinterface at berlios.de, but never got the normal mailman confirmation
+mail one has to reply to.
+
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 18:31:01 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 11:31:01 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <20050823162612.GA10918@infradead.org>
+References: <200508231547.j7NFlfZX009190@r-dd.iij4u.or.jp> <200508231600.j7NG0GgE010284@r-dd.iij4u.or.jp> <430B49E6.6090805@cs.wisc.edu> <200508231618.j7NGIiMX011750@r-dd.iij4u.or.jp> <430B4DE3.2060903@cs.wisc.edu> <20050823162612.GA10918@infradead.org>
+Message-ID: <430B4F45.3030608@cs.wisc.edu>
+
+Christoph Hellwig wrote:
+> Btw, I've been trying to subscribe to the stgt-devel list using the
+> webinterface at berlios.de, but never got the normal mailman confirmation
+> mail one has to reply to.
+
+I had to do this three times too to finally get a mailman confirmation.
+Strange ...
+
+
+From tomof at acm.org  Tue Aug 23 18:46:36 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 01:46:36 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430B4DE3.2060903@cs.wisc.edu>
+References: <430B49E6.6090805@cs.wisc.edu>
+	<200508231618.j7NGIiMX011750@r-dd.iij4u.or.jp>
+	<430B4DE3.2060903@cs.wisc.edu>
+Message-ID: <200508231646.j7NGkbt9013955@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 11:25:07 -0500
+
+> > Cannot you still log in shell.berlios.de or svn.berlios.de ?
+> 
+> 
+> oh shoot it all works now. but the strange thing is I have to put
+> in my password 3 times.
+> 
+> So I do:
+> svn checkout svn+ssh://mnc at svn.berlios.de/svnroot/repos/stgt/trunk
+> mnc at svn.berlios.de's password:
+> mnc at svn.berlios.de's password:
+> mnc at svn.berlios.de's password:
+> 
+> and after this 3rd time it works :)
+
+Have you finished ssh key stuff ?
+
+http://developer.berlios.de/docman/display_doc.php?docid=31&group_id=2
+
+
+> Ok I can check all this in if you want.
+
+Yes, please commit all your patches to make sure that we both can work
+with the svn repository.
+
+# Don't forget to add your copyright.
+
+After you commit, I'll commit the patch for IET and stgt_vsd code
+(which I've not sent you yet).
+
+Before committing, please set 'umask' correctly.
+
+http://developer.berlios.de/docman/display_doc.php?docid=394&group_id=2#login
+
+
+From tomof at acm.org  Tue Aug 23 18:47:01 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 01:47:01 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430B4F45.3030608@cs.wisc.edu>
+References: <430B4DE3.2060903@cs.wisc.edu>
+	<20050823162612.GA10918@infradead.org>
+	<430B4F45.3030608@cs.wisc.edu>
+Message-ID: <200508231647.j7NGl2df013987@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 11:31:01 -0500
+
+> Christoph Hellwig wrote:
+> > Btw, I've been trying to subscribe to the stgt-devel list using the
+> > webinterface at berlios.de, but never got the normal mailman confirmation
+> > mail one has to reply to.
+> 
+> I had to do this three times too to finally get a mailman confirmation.
+> Strange ...
+
+I've not failed yet. I was successful to subscribe to the list with
+another address today. Wired.
+
+Christoph, I'll do it on behalf of you. Just a minute.
+
+
+From tomof at acm.org  Tue Aug 23 18:54:09 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 01:54:09 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231647.j7NGl2df013987@r-dd.iij4u.or.jp>
+References: <20050823162612.GA10918@infradead.org>
+	<430B4F45.3030608@cs.wisc.edu>
+	<200508231647.j7NGl2df013987@r-dd.iij4u.or.jp>
+Message-ID: <200508231654.j7NGsApD014527@r-dd.iij4u.or.jp>
+
+From: FUJITA Tomonori <tomof at acm.org>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 24 Aug 2005 01:47:01 +0900
+
+> > Christoph Hellwig wrote:
+> > > Btw, I've been trying to subscribe to the stgt-devel list using the
+> > > webinterface at berlios.de, but never got the normal mailman confirmation
+> > > mail one has to reply to.
+> > 
+> > I had to do this three times too to finally get a mailman confirmation.
+> > Strange ...
+> 
+> I've not failed yet. I was successful to subscribe to the list with
+> another address today. Wired.
+> 
+> Christoph, I'll do it on behalf of you. Just a minute.
+
+Done. You will get this mail through the mailing list too.
+
+
+From hch at infradead.org  Tue Aug 23 18:58:51 2005
+From: hch at infradead.org (Christoph Hellwig)
+Date: Tue, 23 Aug 2005 17:58:51 +0100
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231654.j7NGsApD014527@r-dd.iij4u.or.jp>
+References: <20050823162612.GA10918@infradead.org> <430B4F45.3030608@cs.wisc.edu> <200508231647.j7NGl2df013987@r-dd.iij4u.or.jp> <200508231654.j7NGsApD014527@r-dd.iij4u.or.jp>
+Message-ID: <20050823165851.GA11528@infradead.org>
+
+On Wed, Aug 24, 2005 at 01:54:09AM +0900, FUJITA Tomonori wrote:
+> > I've not failed yet. I was successful to subscribe to the list with
+> > another address today. Wired.
+> > 
+> > Christoph, I'll do it on behalf of you. Just a minute.
+> 
+> Done. You will get this mail through the mailing list too.
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+Yeah, looks like it works.
+
+
+From tomof at acm.org  Tue Aug 23 19:13:33 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Wed, 24 Aug 2005 02:13:33 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430B4962.70903@cs.wisc.edu>
+References: <200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>
+	<200508231456.j7NEums9004447@r-dd.iij4u.or.jp>
+	<430B4962.70903@cs.wisc.edu>
+Message-ID: <200508231713.j7NHDY9I015902@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 11:05:54 -0500
+
+> > Do we need to use GFP_ATOMIC instead of GFP_KERNEL in
+> > stgt_device_create()?
+> 
+> I do not think so. It does not seem like we will be in
+> interrupt context and it does not look like we
+> are under a spin_lock. Was there something else
+> you were thinking of (probably was :))?
+
+I thought that possibly we are in interrupt context, though as far as
+I know, no HBA drivers do it.
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 19:14:14 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 12:14:14 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231505.j7NF54t0005210@r-dd.iij4u.or.jp>
+References: <1124776757.3593.5.camel@max> <200508231505.j7NF54t0005210@r-dd.iij4u.or.jp>
+Message-ID: <430B5966.90407@cs.wisc.edu>
+
+Ok I merged my patches with your fixes (but I used strdup
+in that one patch). I did not merge your patch below becuase
+I assumed it is part of your fileio work that you are going to
+merge.
+
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Tue, 23 Aug 2005 00:59:16 -0500
+> 
+> 
+>>This adds the beginings of a stgt_device_template for
+>>passthrough commands. It will end up using the block
+>>layer BLOCK_PC facility to pass the command to the
+>>underlying device similar to how we do it for SG_IO
+>>and dm-multipath hw_handlers like dm-emc.c.
+>>
+>>It is not completely hooked in yet. The command
+>>handling needs to be done and so does the actual
+>>device creation.
+>>
+>>This was built over my last patch.
+> 
+> 
+> I've attached the patch to enable IET to use your new features. Now we
+> can use 'Lun' in the IET configure file (/etc/ietd.conf) again.
+> 
+> For example, I put 'Lun 0 Path=/dev/hdb' line in my configuration
+> file.
+> 
+> fujita at lily:/sys/class$ find stgt_*
+> stgt_device
+> stgt_device/device0
+> stgt_device/device0/path
+> stgt_target
+> stgt_target/target0
+> stgt_target/target0/queued_cmnds
+> 
+> fujita at lily:/sys/class$ cat stgt_device/device0/path
+> /dev/hdb
+> 
+> 
+> diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/config.c stgt.work/iscsi/kernel/config.c
+> --- stgt.new/iscsi/kernel/config.c	2005-08-19 00:42:26.000000000 +0900
+> +++ stgt.work/iscsi/kernel/config.c	2005-08-23 22:29:50.000000000 +0900
+> @@ -170,8 +170,7 @@
+>  	if ((err = copy_from_user(&info, (void *) ptr, sizeof(info))) < 0)
+>  		return err;
+>  
+> -	return 0;
+> -/* 	return volume_add(target, &info); */
+> +	return volume_add(target, &info);
+>  }
+>  
+>  static int del_volume(struct iscsi_target *target, unsigned long ptr)
+> @@ -182,8 +181,7 @@
+>  	if ((err = copy_from_user(&info, (void *) ptr, sizeof(info))) < 0)
+>  		return err;
+>  
+> -	return 0;
+> -/* 	return iscsi_volume_del(target, &info); */
+> +	return volume_del(target, &info);
+>  }
+>  
+>  static int iscsi_param_config(struct iscsi_target *target, unsigned long ptr, int set)
+> diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/iscsi.h stgt.work/iscsi/kernel/iscsi.h
+> --- stgt.new/iscsi/kernel/iscsi.h	2005-08-23 18:56:10.000000000 +0900
+> +++ stgt.work/iscsi/kernel/iscsi.h	2005-08-23 22:48:38.000000000 +0900
+> @@ -73,6 +73,7 @@
+>  	struct iscsi_trgt_param trgt_param;
+>  
+>  	struct list_head session_list;
+> +	struct list_head device_list;
+>  
+>  	struct network_thread_info nthread_info;
+>  
+> @@ -231,6 +232,8 @@
+>  struct iscsi_target *target_lookup_by_id(u32);
+>  extern int target_add(struct target_info *);
+>  extern int target_del(u32 id);
+> +extern int volume_del(struct iscsi_target *target, struct volume_info *info);
+> +extern int volume_add(struct iscsi_target *target, struct volume_info *info);
+>  
+>  /* config.c */
+>  extern int iet_procfs_init(void);
+> diff -x CVS -x .svn -x GPATH -x GRTAGS -x GSYMS -x GTAGS -x .config -u --new-file --recursive stgt.new/iscsi/kernel/target.c stgt.work/iscsi/kernel/target.c
+> --- stgt.new/iscsi/kernel/target.c	2005-08-23 18:56:10.000000000 +0900
+> +++ stgt.work/iscsi/kernel/target.c	2005-08-23 23:25:50.000000000 +0900
+> @@ -11,6 +11,7 @@
+>  #include <iscsi_dbg.h>
+>  #include <stgt.h>
+>  #include <stgt_target.h>
+> +#include <stgt_device.h>
+>  
+>  #define	MAX_NR_TARGETS	(1UL << 30)
+>  
+> @@ -151,6 +152,7 @@
+>  	init_MUTEX(&target->target_sem);
+>  
+>  	INIT_LIST_HEAD(&target->session_list);
+> +	INIT_LIST_HEAD(&target->device_list);
+>  	list_add(&target->t_list, &target_list);
+>  
+>  	nthread_init(target);
+> @@ -277,3 +279,79 @@
+>  
+>  	return 0;
+>  }
+> +
+> +/*
+> + * Temporary device code
+> + */
+> +
+> +struct iscsi_device {
+> +	uint64_t lun;
+> +	struct list_head list;
+> +	struct stgt_device *sd;
+> +};
+> +
+> +struct iscsi_device *volume_lookup(struct iscsi_target *target, u32 lun)
+> +{
+> +	struct iscsi_device *device;
+> +	list_for_each_entry(device, &target->device_list, list) {
+> +		if (device->lun == lun)
+> +			return device;
+> +	}
+> +	return NULL;
+> +}
+> +
+> +int volume_add(struct iscsi_target *target, struct volume_info *info)
+> +{
+> +	char *path, *type, dtype[] = "stgt_sd";
+> +	struct iscsi_device *device;
+> +	struct stgt_device *sd;
+> +
+> +	eprintk("%u %s\n", info->lun, info->args);
+> +
+> +	if (volume_lookup(target, info->lun)) {
+> +		eprintk("%u\n", info->lun);
+> +		return -EEXIST;
+> +	}
+> +
+> +	path = strstr(info->args, "Path=");
+> +	if (!path)
+> +		return -EINVAL;
+> +	path += strlen("Path=");
+> +
+> +	device = kmalloc(sizeof(*device), GFP_KERNEL);
+> +	if (!device)
+> +		return -ENOMEM;
+> +
+> +	type = strstr(info->args, "Type=");
+> +	if (type)
+> +		type += strlen("Type=");
+> +	else
+> +		type = dtype;
+> +
+> +	eprintk("%u %s %s\n", info->lun, path, type);
+> +	sd = stgt_device_create(target->stt, type, path, info->lun, 0);
+> +	if (!sd)
+> +		goto out;
+> +
+> +	device->sd = sd;
+> +	device->lun = info->lun;
+> +	list_add(&device->list, &target->device_list);
+> +	return 0;
+> +out:
+> +	kfree(device);
+> +	return -EINVAL;
+> +}
+> +
+> +int volume_del(struct iscsi_target *target, struct volume_info *info)
+> +{
+> +	struct iscsi_device *device;
+> +
+> +	device = volume_lookup(target, info->lun);
+> +	if (!device)
+> +		return -ENOENT;
+> +
+> +	stgt_device_destroy(device->sd);
+> +	list_del(&device->list);
+> +	kfree(device);
+> +	return 0;
+> +}
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From michaelc at cs.wisc.edu  Tue Aug 23 19:29:22 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Tue, 23 Aug 2005 12:29:22 -0500
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <200508231713.j7NHDY9I015902@r-dd.iij4u.or.jp>
+References: <200508231451.j7NEpR2g003940@r-dd.iij4u.or.jp>	<200508231456.j7NEums9004447@r-dd.iij4u.or.jp>	<430B4962.70903@cs.wisc.edu> <200508231713.j7NHDY9I015902@r-dd.iij4u.or.jp>
+Message-ID: <430B5CF2.8020606@cs.wisc.edu>
+
+FUJITA Tomonori wrote:
+> From: Mike Christie <michaelc at cs.wisc.edu>
+> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+> Date: Tue, 23 Aug 2005 11:05:54 -0500
+> 
+> 
+>>>Do we need to use GFP_ATOMIC instead of GFP_KERNEL in
+>>>stgt_device_create()?
+>>
+>>I do not think so. It does not seem like we will be in
+>>interrupt context and it does not look like we
+>>are under a spin_lock. Was there something else
+>>you were thinking of (probably was :))?
+> 
+> 
+> I thought that possibly we are in interrupt context, though as far as
+> I know, no HBA drivers do it.
+
+yeah from looking at the qlogic code from SCST it looks like SCST is 
+implemented as a SCSI ULD - kinda. It implements a driver model 
+class_interface so its dev_handlers will get their attach() called from 
+the class_interface add() call and that is coming from when scsi_devices 
+are added to scsi-ml (like how sg works I guess).
+
+I was thinking we were going to have userspace call into stg_core to add 
+devices (similar to how iet's ioctl called into it to add volumes). The 
+stgt_device code would eventually replace iet's volume code. I was 
+replacing IET's ioctl and hit the volume and target ioctls so that it is 
+why patches showed up the same time you asked about it :)
+
+But by keeping more in userspace like IET does and not doing a 
+class_interface for scsi_devices like SCST, we do not have to worry 
+about the scsi refcouting and scsi_device state stuff SCST messed up on 
+becuase they dug so deep in there.
+
+
+From tomof at acm.org  Thu Aug 25 17:50:28 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Fri, 26 Aug 2005 00:50:28 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430B5CF2.8020606@cs.wisc.edu>
+References: <430B4962.70903@cs.wisc.edu>
+	<200508231713.j7NHDY9I015902@r-dd.iij4u.or.jp>
+	<430B5CF2.8020606@cs.wisc.edu>
+Message-ID: <200508251550.j7PFoTpw013356@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Tue, 23 Aug 2005 12:29:22 -0500
+
+> I was thinking we were going to have userspace call into stg_core to add 
+> devices (similar to how iet's ioctl called into it to add volumes). The 
+> stgt_device code would eventually replace iet's volume code. I was 
+> replacing IET's ioctl and hit the volume and target ioctls so that it is 
+> why patches showed up the same time you asked about it :)
+
+Do you mean using netlink by adding STGT_UEVENT_TARGET_CREATE, etc?
+
+If you have not started to work on this and I understand correctly,
+I'll do it if you want.
+
+Does stgt enable target drivers to call their own functions when
+user-space requires such operations? I guess that that target driver
+kernel modules don't need to handle LU stuff directly, though they
+need something about target stuff.
+
+
+From tomof at acm.org  Thu Aug 25 17:58:00 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Fri, 26 Aug 2005 00:58:00 +0900
+Subject: [Stgt-devel] Re: SCSI Target framework configuration
+In-Reply-To: <430A73E3.7090807@cs.wisc.edu>
+References: <43024C3B.7010003@cs.wisc.edu>
+	<20050823004351S.tomof@acm.org>
+	<430A73E3.7090807@cs.wisc.edu>
+Message-ID: <200508251558.j7PFw1k8013971@r-dd.iij4u.or.jp>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: [Stgt-devel] Re: SCSI Target framework configuration
+Date: Mon, 22 Aug 2005 19:54:59 -0500
+
+> I am thinking most of the transport stuff will be kept seperate like
+> the iscsi_session or fc rport. I mean there will not be a driver
+> model transport register call in stgt core). This is like scsi-ml
+> where it allows the LLD to notify the transport when it has a
+> i_t_nexus becuase it looks like there are not too many transport
+> level target or device attributes (for stgt stgt_session seems useful
+> though).
+
+I'm not sure but maybe we are OK without stgt_session structure.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Aug 26 04:18:21 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 26 Aug 2005 11:18:21 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430E234B.1090308@cs.wisc.edu>
+References: <200508251550.j7PFoTpw013356@r-dd.iij4u.or.jp>
+	<430DE27F.1070205@cs.wisc.edu>
+	<430E234B.1090308@cs.wisc.edu>
+Message-ID: <20050826111821T.fujita.tomonori@lab.ntt.co.jp>
+
+It seems that BerliOS mailing lists have not worked.
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Thu, 25 Aug 2005 15:00:11 -0500
+
+> >>> I was thinking we were going to have userspace call into stg_core to 
+> >>> add devices (similar to how iet's ioctl called into it to add 
+> >>> volumes). The stgt_device code would eventually replace iet's volume 
+> >>> code. I was replacing IET's ioctl and hit the volume and target 
+> >>> ioctls so that it is why patches showed up the same time you asked 
+> >>> about it :)
+> >>
+> >>
+> >>
+> >> Do you mean using netlink by adding STGT_UEVENT_TARGET_CREATE, etc?
+> > 
+> > 
+> > I am not sure about STGT_UEVENT_TARGET_CREATE, becuase of HW target 
+> > drivers though. Will they need it or use it? I thought we were going to 
+> > end up in a similar situation as we have for software iscsi vs HW cards. 
+> > It is probably best to do what we can with what we have and if HW 
+> > targets do not need it then that is fine. What do you think?
+> > 
+> 
+> Oh yeah I did find a qlogic and emulex card though. I am just waiting 
+> for someone to mail them to me.
+
+Nice.
+
+I will get qlogic 40xx cards. And as I said before, I can use Chelsio
+10 Gbps NICs that can process iSCSI. Chelsio driver is released under
+GPL.
+
+Are there other iSCSI cards that can be supported by stgt on the
+market?
+
+
+From tomof at acm.org  Sat Aug 27 17:49:44 2005
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sun, 28 Aug 2005 00:49:44 +0900
+Subject: [Stgt-devel] [PATCH] add stgt_device_template example
+In-Reply-To: <430DE27F.1070205@cs.wisc.edu>
+References: <430B5CF2.8020606@cs.wisc.edu>
+	<200508251550.j7PFoTpw013356@r-dd.iij4u.or.jp>
+	<430DE27F.1070205@cs.wisc.edu>
+Message-ID: <20050828004944V.tomof@acm.org>
+
+From: Mike Christie <michaelc at cs.wisc.edu>
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Thu, 25 Aug 2005 10:23:43 -0500
+
+> > Do you mean using netlink by adding STGT_UEVENT_TARGET_CREATE, etc?
+> 
+> I am not sure about STGT_UEVENT_TARGET_CREATE, becuase of HW target 
+> drivers though. Will they need it or use it? I thought we were going to 
+> end up in a similar situation as we have for software iscsi vs HW cards. 
+> It is probably best to do what we can with what we have and if HW 
+> targets do not need it then that is fine. What do you think?
+
+Agree. Probabaly, some HW target drivers need to directly access
+stgt_target_create/destroy in kernel space.
+
+Some HW target drivers can use netlink about target configuration, I
+guess. Chelsio cards seem to use the following scheme to configure
+targets.
+
+1. The user-space configuration tool reads the configuration file.
+2. It tells the kernel modules by using ioctl.
+
+So if stgt provides some callback mechanisms (that you mentioned
+below), Chelsio driver may work well with the netlink scheme.
+
+
+> I think there should be a STGT_UEVENT_DEVICE_CREATE though. The target 
+> drivers do not seem to have to hanlde that part.
+
+Yep. Now stgt_device_create/destroy can be accessed only though
+netlink.
+
+
+> > If you have not started to work on this and I understand correctly,
+> > I'll do it if you want.
+> 
+> ok go ahead.
+
+UEVENT_DEVICE stuff is done (though IET cannot still shut down
+cleanly), however, the interface need to be improved later.
+
+How should stgt handle a very log param like 'path'? I put it in
+netlink's payload, however, should I put it in struct stgt_event?
+
+I'll clean up the user-space stgt code because it is really messy.
+
+
+> > Does stgt enable target drivers to call their own functions when
+> > user-space requires such operations?
+> 
+> I think we will need to move the stgt_target_template registration to 
+> the target driver's module_init function. We can add some callbacks onto 
+> it so stgt can call into the target driver. Maybe a create_target(), 
+> set_param(), get_param(), destroy_target(), etc is needed. I think this 
+> is what you are suggesting right?
+
+I think so. I simply thought about mechanisms like
+stgt_device_template, however, I didn't have a clear idea. I'll
+implement that after the cleanup.
+
+

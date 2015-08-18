@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/3%5D%20iscsi%20ahs%20bugfixes&In-Reply-To=%3C20070315185852.GE856%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000439.html">
+   <LINK REL="Next"  HREF="000438.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/3%5D%20iscsi%20ahs%20bugfixes&In-Reply-To=%3C20070315185852.GE856%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes">pw at osc.edu
+       </A><BR>
+    <I>Thu Mar 15 19:58:52 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000439.html">[Stgt-devel] [PATCH 1/3] osd sense fixup
+</A></li>
+        <LI>Next message: <A HREF="000438.html">[Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#434">[ date ]</a>
+              <a href="thread.html#434">[ thread ]</a>
+              <a href="subject.html#434">[ subject ]</a>
+              <a href="author.html#434">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Set scb in case of exthdr but not AHS exthdr (like non-extended bidir).
+Return -errno for consistency, even though nothing actually looks at it.
+Repair precedence problem with ?:.
+Read into ahs buffer when ahs exists.
+Use unrounded immediate length value when considering how much more data
+    to fetch.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+
+ usr/iscsi/iscsid.c |   29 ++++++++++++++---------------
+ 1 files changed, 14 insertions(+), 15 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index bad9888..804177b 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -968,17 +968,19 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 
+ 	scmd-&gt;cmd_nexus_id = conn-&gt;session-&gt;iscsi_nexus_id;
+ 
++	scmd-&gt;scb = req-&gt;cdb;
++	scmd-&gt;scb_len = sizeof(req-&gt;cdb);
++
+ 	if (task-&gt;ahs) {
+ 		struct iscsi_ecdb_ahdr *ahs_extcdb = task-&gt;ahs;
+-		char *p = (void *)task-&gt;extdata;
+ 
+ 		if (ahs_extcdb-&gt;ahstype == ISCSI_AHSTYPE_CDB) {
+ 			int extcdb_len = ntohs(ahs_extcdb-&gt;ahslength) - 1;
++			uint8_t *p = (void *)task-&gt;extdata;
+ 
+ 			if (extcdb_len + sizeof(req-&gt;cdb) &gt; 260) {
+ 				eprintf(&quot;invalid extcdb len %d\n&quot;, extcdb_len);
+-
+-				return EINVAL;
++				return -EINVAL;
+ 			}
+ 
+ 			memcpy(p, req-&gt;cdb, sizeof(req-&gt;cdb));
+@@ -988,9 +990,6 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 			scmd-&gt;scb = p;
+ 			scmd-&gt;scb_len = sizeof(req-&gt;cdb) + extcdb_len;
+ 		}
+-	} else {
+-		scmd-&gt;scb = req-&gt;cdb;
+-		scmd-&gt;scb_len = sizeof(req-&gt;cdb);
+ 	}
+ 
+ 	memcpy(scmd-&gt;lun, task-&gt;req.lun, sizeof(scmd-&gt;lun));
+@@ -1240,7 +1239,7 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 		req-&gt;cdb[0], ahs_len, imm_len, data_len,
+ 		req-&gt;flags &amp; ISCSI_FLAG_CMD_ATTR_MASK, req-&gt;itt);
+ 
+-	task_len = ahs_len ? sizeof(req-&gt;cdb) + ahs_len : 0
++	task_len = (ahs_len ? sizeof(req-&gt;cdb) + ahs_len : 0)
+ 		+ max(imm_len, data_len);
+ 
+ 	task = iscsi_alloc_task(conn, task_len);
+@@ -1251,20 +1250,20 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 
+ 	task-&gt;tag = req-&gt;itt;
+ 
+-	if (ahs_len || data_len) {
+-		if (ahs_len) {
+-			task-&gt;ahs = task-&gt;data + sizeof(req-&gt;cdb);
+-			task-&gt;data = task-&gt;ahs + ahs_len;
+-		}
+-
++	if (ahs_len) {
++		task-&gt;ahs = task-&gt;data + sizeof(req-&gt;cdb);
++		task-&gt;data = task-&gt;ahs + ahs_len;
++		conn-&gt;rx_buffer = task-&gt;ahs;
+ 		conn-&gt;rx_size = ahs_len + imm_len;
++	} else if (data_len) {
+ 		conn-&gt;rx_buffer = task-&gt;data;
++		conn-&gt;rx_size = imm_len;
+ 	}
+ 
+ 	if (req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE) {
+-		task-&gt;r2t_count = data_len - imm_len;
++		task-&gt;offset = ntoh24(req-&gt;dlength);
++		task-&gt;r2t_count = data_len - task-&gt;offset;
+ 		task-&gt;unsol_count = !(req-&gt;flags &amp; ISCSI_FLAG_CMD_FINAL);
+-		task-&gt;offset = imm_len;
+ 
+ 		dprintf(&quot;%d %d %d %d\n&quot;, conn-&gt;rx_size, task-&gt;r2t_count,
+ 			task-&gt;unsol_count, task-&gt;offset);
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000439.html">[Stgt-devel] [PATCH 1/3] osd sense fixup
+</A></li>
+	<LI>Next message: <A HREF="000438.html">[Stgt-devel] [PATCH 2/3] iscsi ahs bugfixes
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#434">[ date ]</a>
+              <a href="thread.html#434">[ thread ]</a>
+              <a href="subject.html#434">[ subject ]</a>
+              <a href="author.html#434">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] ibmvio - rdma error
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070405173931I.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000520.html">
+   <LINK REL="Next"  HREF="000522.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] ibmvio - rdma error</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20ibmvio%20-%20rdma%20error&In-Reply-To=%3C20070405173931I.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] ibmvio - rdma error">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Apr  5 10:39:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000520.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+        <LI>Next message: <A HREF="000522.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#521">[ date ]</a>
+              <a href="thread.html#521">[ thread ]</a>
+              <a href="subject.html#521">[ subject ]</a>
+              <a href="author.html#521">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">waldi at berlios.de</A>&gt;
+Subject: Re: [Stgt-devel] ibmvio - rdma error
+Date: Thu, 5 Apr 2007 10:28:56 +0200
+
+&gt;<i> On Thu, Apr 05, 2007 at 10:24:05AM +0200, Bastian Blank wrote:
+</I>&gt;<i> &gt; The original ibmvscsis used maximum size of 128k (256 sectors) for the
+</I>&gt;<i> &gt; rdma transfers. ibmvstgt uses 512 by default. If I reduce the maximum
+</I>&gt;<i> &gt; size to 256, it seems to work.
+</I>&gt;<i> 
+</I>&gt;<i> I found an ibmvscsis version which uses 512 for the size but splits them
+</I>&gt;<i> into 128k rdma transfers. I don't know if this works as this version
+</I>&gt;<i> killed filesystems.
+</I>
+I thought ibmvscsis does it because it doesn't want to call
+dma_alloc_coherent for too large data, however, there might be some
+limit on RMDA transfer length.
+
+Can you try the following patch to see what error we get?
+
+
+diff --git a/drivers/scsi/ibmvscsi/ibmvstgt.c b/drivers/scsi/ibmvscsi/ibmvstgt.c
+index a7fbd10..a725b8b 100644
+--- a/drivers/scsi/ibmvscsi/ibmvstgt.c
++++ b/drivers/scsi/ibmvscsi/ibmvstgt.c
+@@ -248,7 +248,7 @@ static int ibmvstgt_rdma(struct scsi_cmnd *sc, struct scatterlist *sg, int nsg,
+ 						  md[i].va + mdone);
+ 
+ 			if (err != H_SUCCESS) {
+-				eprintk(&quot;rdma error %d %d\n&quot;, dir, slen);
++				eprintk(&quot;rdma error %d %d %d\n&quot;, dir, slen, err);
+ 				goto out;
+ 			}
+ 
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000520.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+	<LI>Next message: <A HREF="000522.html">[Stgt-devel] ibmvio - rdma error
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#521">[ date ]</a>
+              <a href="thread.html#521">[ thread ]</a>
+              <a href="subject.html#521">[ subject ]</a>
+              <a href="author.html#521">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

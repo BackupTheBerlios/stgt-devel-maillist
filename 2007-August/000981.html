@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/1] Add support for extra VPD pages	within	INQUIRY op code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20support%20for%20extra%20VPD%20pages%09within%0A%09INQUIRY%20op%20code&In-Reply-To=%3C20070827143819.GD28047%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000974.html">
+   <LINK REL="Next"  HREF="000982.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/1] Add support for extra VPD pages	within	INQUIRY op code</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20support%20for%20extra%20VPD%20pages%09within%0A%09INQUIRY%20op%20code&In-Reply-To=%3C20070827143819.GD28047%40osc.edu%3E"
+       TITLE="[Stgt-devel] [Patch 1/1] Add support for extra VPD pages	within	INQUIRY op code">pw at osc.edu
+       </A><BR>
+    <I>Mon Aug 27 16:38:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000974.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+</A></li>
+        <LI>Next message: <A HREF="000982.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages	within INQUIRY op code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#981">[ date ]</a>
+              <a href="thread.html#981">[ thread ]</a>
+              <a href="subject.html#981">[ subject ]</a>
+              <a href="author.html#981">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A> wrote on Fri, 24 Aug 2007 18:15 +1000:
+&gt;<i> Unfortunately I had to change the lu_init() interface so I could more 
+</I>&gt;<i> easily include the TID in the SCSI VPD page 80h and 83h
+</I>&gt;<i> 
+</I>&gt;<i> Hence the number of files touched with this patch.
+</I>&gt;<i> 
+</I>&gt;<i> As indicated in the patch, I am unsure from the osd2r01.pdf 
+</I>&gt;<i> documentation of what data should be included within VPD pages B0h and 
+</I>&gt;<i> B1h for the OSD module.
+</I>
+This looks great.  Thanks for looking at the OSD oddball parameters.
+I'll patch them up once this goes in.
+
+&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Date: Fri, 24 Aug 2007 18:04:24 +1000
+</I>&gt;<i> Subject: Add support for VPD pages 0x80 - 0xff
+</I>&gt;<i> 
+</I>&gt;<i> Ability to add VPD pages between 80h and FFh per SCSI device type.
+</I>&gt;<i> 
+</I>&gt;<i> An array of 128 vpd structures added to ly_phy_attr struct.
+</I>&gt;<i> 
+</I>&gt;<i> Use alloc_vpd(data size) to pre-alloc data for custom VPD page.
+</I>&gt;<i> - This data is appended to the 4 byte VPD header at runtime
+</I>&gt;<i>   i.e. When an INQUIRY for the VPD page is received.
+</I>&gt;<i> 
+</I>&gt;<i> - A custom vpd_update(struct scsi_lu *lu, void *) is used to
+</I>&gt;<i>   set/change data pre-allocated by alloc_vpd()
+</I>&gt;<i> 
+</I>&gt;<i> - All modules except use default page 80h &amp; 83h defined in spc.c
+</I>&gt;<i>   The osd module has two extra for VPD pages B0h and B1h
+</I>&gt;<i>   - Note: garbage values are set and should be reviewed/updated
+</I>&gt;<i>           by somebody who knows what should be set here.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> ---
+</I>[..]
+&gt;<i> diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+</I>[..]
+&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+</I>&gt;<i> +	--params vendor_id=OSD,product_id=OSD00,product_rev=0010,removable=1,sense_format=1
+</I>
+OSD sense format is always descriptor.  Cannot be old style, says the
+spec.  But there's lots more ways root can break things.
+
+[..]
+&gt;<i> -int spc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +int spc_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i> +	struct vpd **lu_vpd = lu-&gt;attrs.vpd;
+</I>&gt;<i> +
+</I>&gt;<i> +	lu-&gt;attrs.device_type = lu-&gt;dev_type_template.type;
+</I>&gt;<i> +	lu-&gt;attrs.qualifier = 0x0;
+</I>&gt;<i> +
+</I>&gt;<i>  	snprintf(lu-&gt;attrs.vendor_id, sizeof(lu-&gt;attrs.vendor_id),
+</I>&gt;<i>  		 &quot;%-16s&quot;, VENDOR_ID);
+</I>&gt;<i>  	snprintf(lu-&gt;attrs.product_rev, sizeof(lu-&gt;attrs.product_rev),
+</I>&gt;<i>  		 &quot;%s&quot;, &quot;0001&quot;);
+</I>&gt;<i> +	snprintf(lu-&gt;attrs.scsi_id, sizeof(lu-&gt;attrs.scsi_id),
+</I>&gt;<i> +		 &quot;deadbeaf%d:%&quot; PRIu64, tid, lu-&gt;lun);
+</I>&gt;<i> +	snprintf(lu-&gt;attrs.scsi_sn, sizeof(lu-&gt;attrs.scsi_sn),
+</I>&gt;<i> +		 &quot;beaf%d%&quot; PRIu64, tid, lu-&gt;lun);
+</I>
+The only reason you pass in the tid is to create these fake values?
+Would it be better to add a struct target * in struct scsi_lu
+instead?  Seems a bit hacky to pass around tid just for this.
+
+[..]
+&gt;<i> +struct vpd {
+</I>&gt;<i> +	uint16_t size;
+</I>&gt;<i> +	void (*vpd_update)(struct scsi_lu *lu, void *data);
+</I>&gt;<i> +	uint8_t data[0];
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i>  struct lu_phy_attr {
+</I>&gt;<i>  	char scsi_id[SCSI_ID_LEN + 1];
+</I>&gt;<i>  	char scsi_sn[SCSI_SN_LEN + 1];
+</I>&gt;<i> @@ -52,10 +61,9 @@ struct lu_phy_attr {
+</I>&gt;<i>  	char online;		/* Logical Unit online */
+</I>&gt;<i>  	char reset;		/* Power-on or reset has occured */
+</I>&gt;<i>  	char sense_format;	/* Descrptor format sense data supported */
+</I>&gt;<i> -};
+</I>&gt;<i>  
+</I>&gt;<i> -struct scsi_lu;
+</I>&gt;<i> -struct scsi_cmd;
+</I>&gt;<i> +	struct vpd *vpd[0x80];	/* VPD pages 0x80 -&gt; 0xff masked with 0x80*/
+</I>&gt;<i> +};
+</I>
+1 kB of pointer space.  Guess that's not a big deal.  A linked list
+would have been the other option you could consider.  I was going to
+say the need to add and subtract 0x80 here and there was cumbersome,
+but fixing that would cost another 1 kB.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000974.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+</A></li>
+	<LI>Next message: <A HREF="000982.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages	within INQUIRY op code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#981">[ date ]</a>
+              <a href="thread.html#981">[ thread ]</a>
+              <a href="subject.html#981">[ subject ]</a>
+              <a href="author.html#981">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

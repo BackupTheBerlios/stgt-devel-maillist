@@ -1,0 +1,436 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH 1/1] add infrastructure to handle commands taking
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%201/1%5D%20add%20infrastructure%20to%20handle%20commands%20taking&In-Reply-To=%3Cmailman.35.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001657.html">
+   <LINK REL="Next"  HREF="001659.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH 1/1] add infrastructure to handle commands taking</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%201/1%5D%20add%20infrastructure%20to%20handle%20commands%20taking&In-Reply-To=%3Cmailman.35.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH 1/1] add infrastructure to handle commands taking">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Mon May 26 06:55:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001657.html">[Stgt-devel] Found the OLS 2006 paper ...
+</A></li>
+        <LI>Next message: <A HREF="001659.html">[Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1660">[ date ]</a>
+              <a href="thread.html#1660">[ thread ]</a>
+              <a href="subject.html#1660">[ subject ]</a>
+              <a href="author.html#1660">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>service actions
+
+implement Maintenance / ReportAllSupportedOpcodes as an example
+
+Expand device_type_operations to also include a list of possible service
+actions for this cdb. We need to know how many/what service actions
+a certain cdb can take in order to be able to report
+SupportedOpcodes properly. (MaintIn/service action 0x0c)
+
+Implement MaintenanceIn and implement service action 0x0c for this command.
+the provided infrastructure should make it easier to add other MaintIn
+service actions, of which there are quite a few.
+
+there are many other opcodes that also take service actions and which
+could build on this framework:
+0xa4 MaintOut
+0x7f: variable length cdb
+0x5e/0x5f persistent reservarion in/out
+0xab
+0x9e
+0x9f
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/sbc.c  |    2 +-
+ usr/scc.c  |    2 +-
+ usr/scsi.c |   10 ++++
+ usr/smc.c  |    2 +-
+ usr/spc.c  |  170 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/spc.h  |    2 +
+ usr/tgtd.h |    8 +++
+ 7 files changed, 193 insertions(+), 3 deletions(-)
+
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 5612ebe..13dd33c 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -384,7 +384,7 @@ static struct device_type_template sbc_template = {
+ 		{spc_report_luns,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{spc_maint_in, maint_in_service_actions,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+diff --git a/usr/scc.c b/usr/scc.c
+index 7a6a66e..eed48a0 100644
+--- a/usr/scc.c
++++ b/usr/scc.c
+@@ -143,7 +143,7 @@ static struct device_type_template scc_template = {
+ 		{spc_report_luns,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{spc_maint_in, maint_in_service_actions,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 37d50dd..daf4aef 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -44,6 +44,16 @@ static unsigned char scsi_command_size[8] = {6, 10,
+10, 12, 16, 12, 10, 10};
+ #define CDB_SIZE(cmd) (((((cmd)-&gt;scb[0] &gt;&gt; 5) &amp; 7) &lt; 6) ? \
+ 				COMMAND_SIZE((cmd)-&gt;scb[0]) : (cmd)-&gt;scb_len)
+
++int get_scsi_command_size(unsigned char op)
++{
++	return COMMAND_SIZE(op);
++}
++
++int get_scsi_cdb_size(struct scsi_cmd *cmd)
++{
++	return CDB_SIZE(cmd);
++}
++
+ void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint16_t asc)
+ {
+
+diff --git a/usr/smc.c b/usr/smc.c
+index ef5f1b0..9a46d30 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -805,7 +805,7 @@ struct device_type_template smc_template = {
+ 		{spc_report_luns,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{spc_maint_in, maint_in_service_actions,},
+ 		{spc_illegal_op,},
+ 		{smc_move_medium,},
+ 		{spc_illegal_op,},
+diff --git a/usr/spc.c b/usr/spc.c
+index e3e4d98..eafae8e 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -431,6 +431,176 @@ sense:
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+
++static int report_opcodes_all(struct scsi_cmd *cmd, int rctd,
++uint32_t alloc_len)
++{
++	uint8_t buf[2048], *data;
++	struct device_type_operations *ops;
++	struct service_action *service_action;
++	int i;
++	uint32_t len;
++	int cdb_length;
++
++	/* cant request RCTD for all descriptors */
++	if (rctd) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++			ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	memset(buf, 0, sizeof(buf));
++	data = &amp;buf[4];
++
++	ops = cmd-&gt;dev-&gt;dev_type_template.ops;
++	for (i = 0; i &lt; 256; i++) {
++		if (ops[i].cmd_perform == spc_illegal_op)
++			continue;
++
++		/* this command does not take a service action, so just
++		   report the opcode
++		*/
++		if (!ops[i].service_actions) {
++			*data++ = i;
++
++			/* reserved */
++			data++;
++
++			/* service action */
++			data += 2;
++
++			/* reserved */
++			data++;
++
++			/* flags : no service action, no command descriptor */
++			data++;
++
++			/* cdb length */
++			cdb_length = get_scsi_command_size(i);
++			*data++ = (cdb_length &gt;&gt; 8) &amp; 0xff;
++			*data++ = cdb_length &amp; 0xff;
++
++			continue;
++		}
++
++		for (service_action = ops[i].service_actions;
++			service_action-&gt;cmd_perform;
++			service_action++) {
++			/* opcode */
++			*data++ = i;
++
++			/* reserved */
++			data++;
++
++			/* service action */
++			*data++ = (service_action-&gt;service_action &gt;&gt; 8) &amp; 0xff;
++			*data++ = service_action-&gt;service_action &amp; 0xff;
++
++			/* reserved */
++			data++;
++
++			/* flags : service action */
++			*data++ = 0x01;
++
++			/* cdb length */
++			cdb_length = get_scsi_command_size(i);
++			*data++ = (cdb_length &gt;&gt; 8) &amp; 0xff;
++			*data++ = cdb_length &amp; 0xff;
++		}
++	}
++
++	len = data - &amp;buf[0];
++	len -= 4;
++	buf[0] = (len &gt;&gt; 24) &amp; 0xff;
++	buf[1] = (len &gt;&gt; 16) &amp; 0xff;
++	buf[2] = (len &gt;&gt; 8)  &amp; 0xff;
++	buf[3] = len &amp; 0xff;
++
++	memcpy(scsi_get_in_buffer(cmd), buf,
++	       min(scsi_get_in_length(cmd), len+4));
++
++	scsi_set_in_resid_by_actual(cmd, len+4);
++
++	return SAM_STAT_GOOD;
++}
++
++int spc_report_supported_opcodes(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t reporting_options;
++	uint8_t requested_opcode;
++	uint16_t requested_service_action;
++	uint32_t alloc_len;
++	int rctd;
++	int ret = SAM_STAT_GOOD;
++
++	reporting_options = cmd-&gt;scb[2] &amp; 0x07;
++
++	requested_opcode = cmd-&gt;scb[3];
++
++	requested_service_action = cmd-&gt;scb[4];
++	requested_service_action &lt;&lt;= 8;
++	requested_service_action |= cmd-&gt;scb[5];
++
++	alloc_len = (uint32_t)cmd-&gt;scb[6] &lt;&lt; 24 |
++			(uint32_t)cmd-&gt;scb[7] &lt;&lt; 16 |
++			(uint32_t)cmd-&gt;scb[8] &lt;&lt; 8 |
++			(uint32_t)cmd-&gt;scb[9];
++
++	rctd = cmd-&gt;scb[2] &amp; 0x80;
++
++	switch (reporting_options) {
++	case 0x00: /* report all */
++		ret = report_opcodes_all(cmd, rctd, alloc_len);
++		break;
++	case 0x01: /* report one no service action*/
++	case 0x02: /* report one service action */
++	default:
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++			ASC_INVALID_FIELD_IN_CDB);
++		ret = SAM_STAT_CHECK_CONDITION;
++	}
++
++	return ret;
++}
++
++struct service_action maint_in_service_actions[] = {
++	{0x0c, spc_report_supported_opcodes},
++	{0, NULL}
++};
++
++struct service_action *
++find_service_action(struct service_action *service_action, uint32_t action)
++{
++	while (service_action-&gt;cmd_perform) {
++		if (service_action-&gt;service_action == action)
++			return service_action;
++		service_action++;
++	}
++	return NULL;
++}
++
++/**
++ * This functions emulates the various commands using the 0xa3 cdb opcode
++ */
++int spc_maint_in(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t action;
++	struct service_action *service_action;
++
++	action = cmd-&gt;scb[1] &amp; 0x1f;
++	service_action = find_service_action(maint_in_service_actions, action);
++
++	if (!service_action) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++				ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	return service_action-&gt;cmd_perform(host_no, cmd);
++}
++
+ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	scsi_set_in_resid_by_actual(cmd, 0);
+diff --git a/usr/spc.h b/usr/spc.h
+index a63436a..1a6d8d5 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -1,6 +1,8 @@
+ #ifndef __SPC_H
+ #define __SPC_H
+
++extern struct service_action maint_in_service_actions[];
++extern int spc_maint_in(int host_no, struct scsi_cmd *cmd);
+ extern int spc_inquiry(int host_no, struct scsi_cmd *cmd);
+ extern int spc_report_luns(int host_no, struct scsi_cmd *cmd);
+ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index e516b0a..36bc0d6 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -80,8 +80,14 @@ struct it_nexus_lu_info {
+ 	struct list_head pending_ua_sense_list;
+ };
+
++struct service_action {
++	uint32_t service_action;
++	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
++};
++
+ struct device_type_operations {
+ 	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
++	struct service_action *service_actions;
+ };
+
+ struct device_type_template {
+@@ -218,6 +224,8 @@ extern uint64_t scsi_rw_offset(uint8_t *scb);
+ extern uint32_t scsi_rw_count(uint8_t *scb);
+ extern int scsi_is_io_opcode(unsigned char op);
+ extern enum data_direction scsi_data_dir_opcode(unsigned char op);
++extern int get_scsi_cdb_size(struct scsi_cmd *cmd);
++extern int get_scsi_command_size(unsigned char op);
+
+ extern enum scsi_target_state tgt_get_target_state(int tid);
+ extern int tgt_set_target_state(int tid, char *str);
+-- 
+1.5.5
+
+------=_Part_71_9476074.1211778613446
+Content-Type: application/x-gzip;
+ name=0001-add-infrastructure-to-handle-commands-taking-service.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fgolg1tv0
+Content-Disposition: attachment;
+ filename=0001-add-infrastructure-to-handle-commands-taking-service.patch.gz
+
+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
+/m7vdDghAAA=
+------=_Part_71_9476074.1211778613446--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001657.html">[Stgt-devel] Found the OLS 2006 paper ...
+</A></li>
+	<LI>Next message: <A HREF="001659.html">[Stgt-devel] [PATCH spc 1/1] RESEND Add service action framework
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1660">[ date ]</a>
+              <a href="thread.html#1660">[ thread ]</a>
+              <a href="subject.html#1660">[ subject ]</a>
+              <a href="author.html#1660">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

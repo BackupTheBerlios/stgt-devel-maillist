@@ -1,0 +1,699 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tape drive not supported yet?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tape%20drive%20not%20supported%20yet%3F&In-Reply-To=%3C20080716165149X.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001772.html">
+   <LINK REL="Next"  HREF="001782.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tape drive not supported yet?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tape%20drive%20not%20supported%20yet%3F&In-Reply-To=%3C20080716165149X.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] tape drive not supported yet?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Jul 16 09:51:38 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001772.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+        <LI>Next message: <A HREF="001782.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1780">[ date ]</a>
+              <a href="thread.html#1780">[ thread ]</a>
+              <a href="subject.html#1780">[ subject ]</a>
+              <a href="author.html#1780">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, 12 Jul 2008 19:40:21 +0200
+Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+
+&gt;<i> Tried to set up a tape drive target:
+</I>&gt;<i> 
+</I>&gt;<i> LUN=$(($LUN+1))
+</I>&gt;<i> ID=Tape
+</I>&gt;<i> SN=54321
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode logicalunit --tid $TID --lun $LUN \
+</I>&gt;<i> --device-type tape
+</I>&gt;<i> 
+</I>&gt;<i> Unfortunately, tgtadm tells me:
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm: type emulation isn't supported yet
+</I>&gt;<i> 
+</I>&gt;<i> Is this correct?
+</I>
+You are talking about vtl, right?
+
+Here's aftab azmi's vtl patch:
+
+<A HREF="https://lists.berlios.de/pipermail/stgt-devel/2008-May/001610.html">https://lists.berlios.de/pipermail/stgt-devel/2008-May/001610.html</A>
+
+I've cleaned up it and my initiator can find a tape drive with this
+pathc. However, seems that this patch has several issues to solve.
+
+Mark's comments are:
+
+<A HREF="https://lists.berlios.de/pipermail/stgt-devel/2008-May/001622.html">https://lists.berlios.de/pipermail/stgt-devel/2008-May/001622.html</A>
+
+I need vtl to just work on the tape initiator driver. I'll try to
+improve the vtl support but probabaly I don't have time to make the
+vtl support good enough for real usage.
+
+
+BTW, here's an example how to setup a tape drive with this patch:
+
+tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2001-04.org.osrg:viola
+tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/tmp/image0 --device-type ssc --bstype ssc
+
+=
+diff --git a/usr/Makefile b/usr/Makefile
+index 48de052..4aae4c5 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -11,7 +11,7 @@ CFLAGS += -DISCSI
+ TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o \
+ 		iscsid.o target.o chap.o transport.o iscsi_tcp.o \
+ 		isns.o libcrc32c.o)
+-TGTD_OBJS += bs_rdwr.o bs_aio.o
++TGTD_OBJS += bs_rdwr.o bs_aio.o bs_ssc.o
+ 
+ LIBS += -lcrypto
+ ifneq ($(ISCSI_RDMA),)
+@@ -57,7 +57,7 @@ LIBS += -lpthread
+ PROGRAMS += tgtd tgtadm
+ SCRIPTS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+-		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
++		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o ssc.o bs.o
+ MANPAGES = ../doc/manpages/tgtadm.8 ../doc/manpages/tgt-setup-lun.8
+ 
+ TGTD_DEP = $(TGTD_OBJS:.o=.d)
+diff --git a/usr/bs_ssc.c b/usr/bs_ssc.c
+new file mode 100644
+index 0000000..78d5817
+--- /dev/null
++++ b/usr/bs_ssc.c
+@@ -0,0 +1,250 @@
++#include &lt;errno.h&gt;
++#include &lt;fcntl.h&gt;
++#include &lt;inttypes.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
++
++#include &lt;linux/fs.h&gt;
++#include &lt;sys/epoll.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;scsi.h&quot;
++#include &quot;bs_thread.h&quot;
++
++#define TCLP_BIT            4
++#define LONG_BIT            2
++#define BT_BIT              1
++
++static void set_medium_error(int *result, uint8_t *key, uint16_t *asc)
++{
++	*result = SAM_STAT_CHECK_CONDITION;
++	*key = MEDIUM_ERROR;
++	*asc = ASC_READ_ERROR;
++}
++
++static void ssc_sense_data_build(struct scsi_cmd *cmd, uint8_t key,
++				 uint16_t asc)
++{
++	int len = 0xa;
++	cmd-&gt;sense_buffer[0] = 0x70;
++	cmd-&gt;sense_buffer[2] = NO_SENSE;
++	cmd-&gt;sense_buffer[7] = len;
++	cmd-&gt;sense_buffer[12] = (asc &gt;&gt; 8) &amp; 0xff;
++	cmd-&gt;sense_buffer[13] = asc &amp; 0xff;
++	cmd-&gt;sense_len = len + 8;
++}
++
++static void rdwr_request(struct scsi_cmd *cmd)
++{
++	int ret, fd = cmd-&gt;dev-&gt;fd, code;
++	uint32_t length, i, transfer_length, residue;
++	int result = SAM_STAT_GOOD;
++	uint8_t key;
++	uint16_t asc;
++	uint8_t buff[512];
++	char *buf;
++	off_t rew;
++	uint64_t curr_pos;
++	uint32_t count;
++
++	ret = 0;
++	length = 0;
++	i = 0;
++	key = 0;
++	asc = 0;
++	transfer_length = 0;
++	residue = 0;
++	count = 0;
++	code = 0;
++
++	switch (cmd-&gt;scb[0]) {
++	case REZERO_UNIT:
++		rew = lseek(fd, 0, SEEK_SET);
++		curr_pos = lseek(fd, 0, SEEK_CUR);
++		if (ret)
++			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		eprintf(&quot;Rewind Successful, File Pointer at %&quot; PRIu64&quot;,%m\n&quot;,
++			curr_pos);
++		break;
++	case WRITE_FILEMARKS:
++		length = sizeof(buff);
++		memset(buff, 28, sizeof(buff));
++		ret = write(fd, buff, length);
++
++		if (ret != length)
++			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		eprintf(&quot;Write Filemark Successfull %d\n&quot;, ret);
++		curr_pos = lseek(fd, 0, SEEK_CUR);
++		eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, curr_pos);
++		break;
++	case READ_6:
++		length = scsi_get_in_length(cmd);
++		ret = read(fd, scsi_get_in_buffer(cmd), length);
++		buf = (char *)(unsigned long)scsi_get_in_buffer(cmd);
++		/* buf = (char *)buf; */
++		if (ret != length)
++			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		else {
++			for (i = 0; i &lt; ret; i += 512) {
++				eprintf(&quot;buf[%d]=%d&quot;, i, buf[i]);
++				if (buf[i] == 28) {
++					result = SAM_STAT_CHECK_CONDITION;
++					key = NO_SENSE;
++					asc = ASC_MARK;
++					transfer_length = ((cmd-&gt;scb[2] &lt;&lt; 16) |
++							   (cmd-&gt;scb[3] &lt;&lt; 8) |
++							   (cmd-&gt;scb[4]));
++/* 					residue = */
++/* 						transfer_length - i &lt;&lt; 9; */
++					residue = (length - i) &lt;&lt; 9;
++					cmd-&gt;sense_buffer[3] = residue &gt;&gt; 24;
++					cmd-&gt;sense_buffer[3] = residue &gt;&gt; 16;
++					cmd-&gt;sense_buffer[3] = residue &gt;&gt; 8;
++					cmd-&gt;sense_buffer[3] = residue;
++
++					eprintf(&quot;File Mark Detected at %d,&quot;
++						&quot; Residue = %d %m\n&quot;,
++						i, residue);
++				}
++			}
++		}
++		eprintf(&quot;Executed READ_6, Read %d bytes\n&quot;, ret);
++		curr_pos = lseek(fd, 0, SEEK_CUR);
++		eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, curr_pos);
++		break;
++	case WRITE_6:
++		length = scsi_get_out_length(cmd);
++		ret = write(fd, scsi_get_out_buffer(cmd), length);
++		if (ret != length)
++			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		eprintf(&quot;Executed WRITE_6, writen %d bytes\n&quot;, ret);
++		curr_pos = lseek(fd, 0, SEEK_CUR);
++		eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, curr_pos);
++		break;
++	case SPACE:
++		code = cmd-&gt;scb[1];
++		count = (cmd-&gt;scb[2] &lt;&lt; 16) | (cmd-&gt;scb[3] &lt;&lt; 8) |
++			(cmd-&gt;scb[4]);
++
++		if (code == 0) {
++			for (i = 0; i &lt; count; i++) {
++				ret = read(fd, buff, sizeof(buff));
++				if (ret != sizeof(buff))
++					set_medium_error(&amp;result, &amp;key, &amp;asc);
++
++				curr_pos = lseek(fd, 0, SEEK_CUR);
++				eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;,
++					curr_pos);
++
++				if (buff[i*512] == 28) {
++					result = SAM_STAT_CHECK_CONDITION;
++					key = NO_SENSE;
++					asc = ASC_MARK;
++				}
++			}
++		} else if (code == 1) {
++			i = 0;
++			while (i &lt; count) {
++				ret = read(fd, buff, sizeof(buff));
++				curr_pos = lseek(fd, 0, SEEK_CUR);
++				eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;,
++					curr_pos);
++				if (buff[i*512] == 28)
++					i++;
++			}
++		}
++		break;
++	case READ_POSITION:
++	{
++		int tclp = cmd-&gt;scb[1] &amp; TCLP_BIT;
++		int long_bit = cmd-&gt;scb[1] &amp; LONG_BIT;
++		int bt = cmd-&gt;scb[1] &amp; BT_BIT;
++		uint8_t *data;
++
++		eprintf(&quot;Size of in_buffer = %d &quot;, scsi_get_in_length(cmd));
++		if (tclp == 1 || tclp != long_bit || (bt == 1 &amp;&amp; long_bit == 1))
++			result = SAM_STAT_CHECK_CONDITION;
++		else {
++			memset(buff, 0, sizeof(buff));
++			data = buff;
++			curr_pos = lseek(fd, 0, SEEK_CUR);
++			if (curr_pos == 0)
++				data[0] = 0xb4;
++			else
++				data[0] = 0x34;
++			memcpy(scsi_get_in_buffer(cmd), data, 20);
++		}
++
++		break;
++	}
++	default:
++		break;
++	}
++
++	dprintf(&quot;io done %p %x %d %u\n&quot;, cmd, cmd-&gt;scb[0], ret, length);
++
++	scsi_set_result(cmd, result);
++
++	if (result != SAM_STAT_GOOD) {
++		eprintf(&quot;io error %p %x %d %d %&quot; PRIu64 &quot;, %m\n&quot;,
++			cmd, cmd-&gt;scb[0], ret, length, cmd-&gt;offset);
++		ssc_sense_data_build(cmd, key, asc);
++	}
++}
++
++
++static int bs_ssc_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
++{
++	int ret;
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++	uint64_t curr_pos;
++
++	eprintf(&quot;In bs_ssc_open\n&quot;);
++	*fd = backed_file_open(path, O_RDWR | O_LARGEFILE, size);
++	if (*fd &lt; 0) {
++		eprintf(&quot;Error in bs_ssc_open\n&quot;);
++		return *fd;
++	}
++	curr_pos = lseek(*fd, 0, SEEK_CUR);
++	eprintf(&quot;File %s File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, path, curr_pos);
++
++	ret = bs_thread_open(info, rdwr_request);
++	if (ret) {
++		close(*fd);
++		return -1;
++	}
++
++	return 0;
++}
++
++static void bs_ssc_close(struct scsi_lu *lu)
++{
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++
++	bs_thread_close(info);
++
++	close(lu-&gt;fd);
++}
++
++static int bs_ssc_cmd_done(struct scsi_cmd *cmd)
++{
++	return 0;
++}
++
++static struct backingstore_template ssc_bst = {
++	.bs_name		= &quot;ssc&quot;,
++	.bs_datasize		= sizeof(struct bs_thread_info),
++	.bs_open		= bs_ssc_open,
++	.bs_close		= bs_ssc_close,
++	.bs_cmd_submit		= bs_thread_cmd_submit,
++	.bs_cmd_done		= bs_ssc_cmd_done,
++};
++
++__attribute__((constructor)) static void bs_ssc_constructor(void)
++{
++	register_backingstore_template(&amp;ssc_bst);
++}
+diff --git a/usr/ssc.c b/usr/ssc.c
+new file mode 100644
+index 0000000..4363d4b
+--- /dev/null
++++ b/usr/ssc.c
+@@ -0,0 +1,300 @@
++/*
++ * SCSI stream command processing
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#include &lt;errno.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;linux/fs.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;tgtadm_error.h&quot;
++#include &quot;target.h&quot;
++#include &quot;driver.h&quot;
++#include &quot;scsi.h&quot;
++#include &quot;spc.h&quot;
++#include &quot;tgtadm_error.h&quot;
++
++#define BLK_SHIFT	9
++
++
++static int ssc_rw(int host_no, struct scsi_cmd *cmd)
++{
++	int ret;
++	unsigned char key = ILLEGAL_REQUEST;
++	uint16_t asc = ASC_LUN_NOT_SUPPORTED;
++
++	ret = device_reserved(cmd);
++	if (ret)
++		return SAM_STAT_RESERVATION_CONFLICT;
++
++	cmd-&gt;scsi_cmd_done = target_cmd_io_done;
++
++/* 	cmd-&gt;offset = (((cmd-&gt;scb[2] &lt;&lt; 16) | (cmd-&gt;scb[3] &lt;&lt; 8) | */
++/* 			(cmd-&gt;scb[4])) &lt;&lt; BLK_SHIFT); */
++
++	ret = cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
++	if (ret) {
++		key = HARDWARE_ERROR;
++		asc = ASC_INTERNAL_TGT_FAILURE;
++	} else {
++		set_cmd_mmapio(cmd);
++		return SAM_STAT_GOOD;
++	}
++
++	cmd-&gt;offset = 0;
++	scsi_set_in_resid_by_actual(cmd, 0);
++	scsi_set_out_resid_by_actual(cmd, 0);
++
++	sense_data_build(cmd, key, asc);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int ssc_read_block_limit(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t *data;
++	uint8_t buf[256];
++	uint16_t blk_len = 0x200;
++
++	memset(buf, 0, sizeof(buf));
++	data = buf;
++
++	data[0] = 9;
++	data[2] = blk_len &gt;&gt; 8;
++	data[3] = blk_len &amp; 0x0ff;
++	data[5] = blk_len &gt;&gt; 8;
++	data[6] = blk_len &amp; 0x0ff;
++
++	memcpy(scsi_get_in_buffer(cmd), data, 6);
++	eprintf(&quot;In ssc_read_block_limit \n&quot;);
++	return SAM_STAT_GOOD;
++}
++
++static int ssc_lu_init(struct scsi_lu *lu)
++{
++	uint64_t size;
++	uint8_t *data;
++
++	if (spc_lu_init(lu))
++		return TGTADM_NOMEM;
++
++	strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-TAPE&quot;,
++		sizeof(lu-&gt;attrs.product_id));
++	lu-&gt;attrs.version_desc[0] = 0x0200; /* SSC no version claimed */
++	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
++	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
++
++	data = lu-&gt;mode_block_descriptor;
++	size = lu-&gt;size &gt;&gt; BLK_SHIFT;
++
++	*(uint32_t *)(data) = (size &gt;&gt; 32) ?
++			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
++	*(uint32_t *)(data + 4) = __cpu_to_be32(1 &lt;&lt; BLK_SHIFT);
++
++	/* Vendor uniq - However most apps seem to call for mode page 0*/
++	add_mode_page(lu, &quot;0:0:0&quot;);
++	/* Disconnect page */
++	add_mode_page(lu, &quot;2:0:14:0x80:0x80:0:0xa:0:0:0:0:0:0:0:0:0:0&quot;);
++	/* Data Compression Page */
++	add_mode_page(lu, &quot;15:0:12:0:0:0:0:0:0:0:0:0:0:0:0&quot;);
++	/* Device Configuration Page */
++	add_mode_page(lu, &quot;0x10:0:11:0:0:0:0:0:0:0:0:0x48:0:0&quot;);
++	/* Control page */
++	add_mode_page(lu, &quot;10:0:10:2:0:0:0:0:0:0:0:2:0&quot;);
++	/* Informational Exceptions Control page */
++	add_mode_page(lu, &quot;0x1c:0:10:8:0:0:0:0:0:0:0:0:0&quot;);
++
++	return 0;
++}
++
++static struct device_type_template ssc_template = {
++	.type		= TYPE_TAPE,
++	.lu_init	= ssc_lu_init,
++	.lu_config	= spc_lu_config,
++	.lu_online	= spc_lu_online,
++	.lu_offline	= spc_lu_offline,
++	.lu_exit	= spc_lu_exit,
++
++	.ops		= {
++		{spc_test_unit,},
++		{ssc_rw,},
++		{spc_illegal_op,},
++		{spc_request_sense,},
++		{spc_illegal_op,},
++		{ssc_read_block_limit,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{ssc_rw,},
++		{spc_illegal_op,},
++		{ssc_rw,},
++		{ssc_rw,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x10 */
++		{ssc_rw,},
++		{ssc_rw,},
++		{spc_inquiry,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_mode_sense,},
++		{spc_start_stop,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x20 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x30 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{ssc_rw,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x40 ... 0x4f] = {spc_illegal_op,},
++
++		/* 0x50 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_mode_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x60 ... 0x7f] = {spc_illegal_op,},
++
++		/* 0x80 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x90 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0xA0 */
++		{spc_report_luns,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0xb0 ... 0xff] = {spc_illegal_op},
++	}
++};
++
++__attribute__((constructor)) static void ssc_init(void)
++{
++	device_type_register(&amp;ssc_template);
++}
+diff --git a/usr/tgtadm.c b/usr/tgtadm.c
+index ddceb7f..9e90b40 100644
+--- a/usr/tgtadm.c
++++ b/usr/tgtadm.c
+@@ -306,6 +306,8 @@ static int str_to_device_type(char *str)
+ 		return TYPE_MEDIUM_CHANGER;
+ 	else if (!strcmp(str, &quot;osd&quot;))
+ 		return TYPE_OSD;
++	else if (!strcmp(str, &quot;ssc&quot;))
++		return TYPE_TAPE;
+ 	else if (!strcmp(str, &quot;pt&quot;))
+ 		return TYPE_SPT;
+ 	else {
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001772.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+	<LI>Next message: <A HREF="001782.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1780">[ date ]</a>
+              <a href="thread.html#1780">[ thread ]</a>
+              <a href="subject.html#1780">[ subject ]</a>
+              <a href="author.html#1780">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

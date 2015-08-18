@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/3%5D%20Rework%20of%20mnemonic%20ASC/ASCQ%20values&In-Reply-To=%3C20070628032122Y.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000844.html">
+   <LINK REL="Next"  HREF="000851.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/3%5D%20Rework%20of%20mnemonic%20ASC/ASCQ%20values&In-Reply-To=%3C20070628032122Y.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jun 28 07:49:31 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000844.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+        <LI>Next message: <A HREF="000851.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#847">[ date ]</a>
+              <a href="thread.html#847">[ thread ]</a>
+              <a href="subject.html#847">[ subject ]</a>
+              <a href="author.html#847">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+Date: Thu, 28 Jun 2007 07:58:43 +1000
+
+&gt;<i> On 6/27/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</I>&gt;<i> &gt; Date: Sat, 23 Jun 2007 18:11:52 +1000
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt; &gt;From d163aa03f036609ac5343c2d8983aba38ecec679 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> &gt; &gt; From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; &gt; Date: Fri, 22 Jun 2007 18:20:54 +1000
+</I>&gt;<i> &gt; &gt; Subject: Use nmemonic codes for SENSE codes instead of numeric value.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; Using nmemonic representation for ASC/ASCQ as a 16bit value.
+</I>&gt;<i> &gt; &gt;  - Values defined in sense_codes.h
+</I>&gt;<i> &gt; &gt;  - Updated sense_data_build() to accept a single 16bit
+</I>&gt;<i> &gt; &gt;    combined asc/ascq value.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; &gt; ---
+</I>&gt;<i> &gt; &gt;  usr/bs_sync.c       |    3 +-
+</I>&gt;<i> &gt; &gt;  usr/ibmvio/ibmvio.c |   15 ++++---
+</I>&gt;<i> &gt; &gt;  usr/mmc.c           |    7 ++-
+</I>&gt;<i> &gt; &gt;  usr/osd.c           |    5 +-
+</I>&gt;<i> &gt; &gt;  usr/sbc.c           |   33 +++++++++-------
+</I>&gt;<i> &gt; &gt;  usr/scsi.c          |   13 +++---
+</I>&gt;<i> &gt; &gt;  usr/sense_codes.h   |  103 +++++++++++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i> &gt; &gt;  usr/spc.c           |   19 +++++----
+</I>&gt;<i> &gt; &gt;  usr/spt.c           |    5 +-
+</I>&gt;<i> &gt; &gt;  usr/tgtd.h          |    3 +-
+</I>&gt;<i> &gt; &gt;  10 files changed, 161 insertions(+), 45 deletions(-)
+</I>&gt;<i> &gt; &gt;  create mode 100644 usr/sense_codes.h
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; diff --git a/usr/bs_sync.c b/usr/bs_sync.c
+</I>&gt;<i> &gt; &gt; index 6789b5b..4986c59 100644
+</I>&gt;<i> &gt; &gt; --- a/usr/bs_sync.c
+</I>&gt;<i> &gt; &gt; +++ b/usr/bs_sync.c
+</I>&gt;<i> &gt; &gt; @@ -37,6 +37,7 @@
+</I>&gt;<i> &gt; &gt;  #include &quot;util.h&quot;
+</I>&gt;<i> &gt; &gt;  #include &quot;tgtd.h&quot;
+</I>&gt;<i> &gt; &gt;  #include &quot;scsi.h&quot;
+</I>&gt;<i> &gt; &gt; +#include &quot;sense_codes.h&quot;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;  #define NR_WORKER_THREADS    4
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; @@ -161,7 +162,7 @@ static void *bs_sync_worker_fn(void *arg)
+</I>&gt;<i> &gt; &gt;                       eprintf(&quot;io error %p %x %d %d %&quot; PRIu64 &quot;, %m\n&quot;,
+</I>&gt;<i> &gt; &gt;                               cmd, cmd-&gt;scb[0], ret, cmd-&gt;len, cmd-&gt;offset);
+</I>&gt;<i> &gt; &gt;                       cmd-&gt;result = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> &gt; &gt; -                     sense_data_build(cmd, MEDIUM_ERROR, 0x11, 0x0);
+</I>&gt;<i> &gt; &gt; +                     sense_data_build(cmd, MEDIUM_ERROR, ASC_READ_ERROR);
+</I>&gt;<i> &gt; &gt;               }
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;               pthread_mutex_lock(&amp;info-&gt;finished_lock);
+</I>&gt;<i> &gt; &gt; diff --git a/usr/ibmvio/ibmvio.c b/usr/ibmvio/ibmvio.c
+</I>&gt;<i> &gt; &gt; index 5a2f8fe..8cfc8d6 100644
+</I>&gt;<i> &gt; &gt; --- a/usr/ibmvio/ibmvio.c
+</I>&gt;<i> &gt; &gt; +++ b/usr/ibmvio/ibmvio.c
+</I>&gt;<i> &gt; &gt; @@ -44,6 +44,7 @@
+</I>&gt;<i> &gt; &gt;  #include &quot;target.h&quot;
+</I>&gt;<i> &gt; &gt;  #include &quot;driver.h&quot;
+</I>&gt;<i> &gt; &gt;  #include &quot;spc.h&quot;
+</I>&gt;<i> &gt; &gt; +#include &quot;sense_codes.h&quot;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;  #define GETTARGET(x) ((int)((((uint64_t)(x)) &gt;&gt; 56) &amp; 0x003f))
+</I>&gt;<i> &gt; &gt;  #define GETBUS(x) ((int)((((uint64_t)(x)) &gt;&gt; 53) &amp; 0x0007))
+</I>&gt;<i> &gt; &gt; @@ -140,7 +141,8 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt; &gt;  {
+</I>&gt;<i> &gt; &gt;       int ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> &gt; &gt;       uint8_t *data, *scb = cmd-&gt;scb;
+</I>&gt;<i> &gt; &gt; -     unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+</I>&gt;<i> &gt; &gt; +     unsigned char key = ILLEGAL_REQUEST;
+</I>&gt;<i> &gt; &gt; +     uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;       if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+</I>&gt;<i> &gt; &gt;               goto sense;
+</I>&gt;<i> &gt; &gt; @@ -148,7 +150,7 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt; &gt;       data = valloc(pagesize);
+</I>&gt;<i> &gt; &gt;       if (!data) {
+</I>&gt;<i> &gt; &gt;               key = HARDWARE_ERROR;
+</I>&gt;<i> &gt; &gt; -             asc = 0;
+</I>&gt;<i> &gt; &gt; +             asc = ASC_INTERNAL_TGT_FAILURE;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Just ASC_INTERNAL_FAILURE would look better?
+</I>&gt;<i> 
+</I>&gt;<i> Took the Values &amp; names from the t10 SPC doco
+</I>&gt;<i> This was INTERNAL TARGET FAILURE, however I shortened it from TARGET to TGT
+</I>&gt;<i> I can shorten this again to ASC_INTERNAL_FAILURE if you like..
+</I>
+ASC_INTERNAL_TGT_FAILURE or ASC_INTERNAL_TARGET_FAILURE is
+fine. Sorry, I remember the wrong name.
+
+
+&gt;<i> &gt; &gt;  #define        TGT_INVALID_DEV_ID      ~0ULL
+</I>&gt;<i> &gt; &gt; diff --git a/usr/sense_codes.h b/usr/sense_codes.h
+</I>&gt;<i> &gt; &gt; new file mode 100644
+</I>&gt;<i> &gt; &gt; index 0000000..ea8eebc
+</I>&gt;<i> &gt; &gt; --- /dev/null
+</I>&gt;<i> &gt; &gt; +++ b/usr/sense_codes.h
+</I>&gt;<i> &gt; &gt; @@ -0,0 +1,103 @@
+</I>&gt;<i> &gt; &gt; +/*
+</I>&gt;<i> &gt; &gt; + * The SCSI sense key Additional Sense Code / Additional Sense Code Qualifier
+</I>&gt;<i> &gt; &gt; + *
+</I>&gt;<i> &gt; &gt; + * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; How about:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; + * Copyright (C) 2007      Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Looks better.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I don't think camouflaging your address is useful since spammers can
+</I>&gt;<i> &gt; find your address in the git history.
+</I>&gt;<i> 
+</I>&gt;<i> Actually, I'm not even sure I should have a &quot;Copyright&quot; here as the
+</I>&gt;<i> details have been taken from information at www.t10.org
+</I>&gt;<i> 
+</I>&gt;<i> Should I remove my &quot;Copyright&quot; message altogether or leave it there
+</I>&gt;<i> and update as per your suggestion ?
+</I>
+I'm not sure. Either is ok for me though as you said, putting the
+copyright in this file might be meaningless.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000844.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+	<LI>Next message: <A HREF="000851.html">[Stgt-devel] [Patch 1/3] Rework of mnemonic ASC/ASCQ values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#847">[ date ]</a>
+              <a href="thread.html#847">[ thread ]</a>
+              <a href="subject.html#847">[ subject ]</a>
+              <a href="author.html#847">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

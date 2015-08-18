@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disabling write cache?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disabling%20write%20cache%3F&In-Reply-To=%3C48624A89.8070808%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001701.html">
+   <LINK REL="Next"  HREF="001716.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disabling write cache?</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disabling%20write%20cache%3F&In-Reply-To=%3C48624A89.8070808%40wpkg.org%3E"
+       TITLE="[Stgt-devel] disabling write cache?">mangoo at wpkg.org
+       </A><BR>
+    <I>Wed Jun 25 15:39:21 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001701.html">[Stgt-devel] disabling write cache?
+</A></li>
+        <LI>Next message: <A HREF="001716.html">[Stgt-devel] disabling write cache?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1706">[ date ]</a>
+              <a href="thread.html#1706">[ thread ]</a>
+              <a href="subject.html#1706">[ subject ]</a>
+              <a href="author.html#1706">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+
+(...)
+
+&gt;<i> I've uploaded two patches:
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch">http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch</A>
+</I>&gt;<i> <A HREF="http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch">http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch</A>
+</I>
+&gt;<i> With the patches, you can disable write caching in the following way:
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+</I>&gt;<i> 
+</I>&gt;<i> Note that you need to modify tid and lun in your environment.
+</I>
+Any chance of having it more human-readable? I.e. something similar to 
+&quot;--params write_cache=disable&quot; instead of 8:0:18:0x10:0:0xff:0xff:0:...?
+
+
+&gt;<i> Shortly, I'll let you control write caching via sdparm too.
+</I>
+Great!
+Could you notify the list when controlling via sdparm hits the git tree?
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001701.html">[Stgt-devel] disabling write cache?
+</A></li>
+	<LI>Next message: <A HREF="001716.html">[Stgt-devel] disabling write cache?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1706">[ date ]</a>
+              <a href="thread.html#1706">[ thread ]</a>
+              <a href="subject.html#1706">[ subject ]</a>
+              <a href="author.html#1706">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

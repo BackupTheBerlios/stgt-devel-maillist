@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540804282331w5530012bw8458dbc5b6032602%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001551.html">
+   <LINK REL="Next"  HREF="001524.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%09implementation&In-Reply-To=%3Cc9a3e4540804282331w5530012bw8458dbc5b6032602%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue Apr 29 08:31:19 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001551.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+        <LI>Next message: <A HREF="001524.html">[Stgt-devel] [Ips] Calculating the VA in iSER header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1553">[ date ]</a>
+              <a href="thread.html#1553">[ thread ]</a>
+              <a href="subject.html#1553">[ subject ]</a>
+              <a href="author.html#1553">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Ok, thanks.
+
+I redid the patches as you requested but I cant send SMTP mails from
+my home machines
+so hence git-send-email didnt work. :-(
+
+I have attached a tgz that contains the patch series created by
+git-format-patch instead.
+Please apply.
+
+
+ronnie sahlberg
+
+
+On Tue, Apr 29, 2008 at 3:14 PM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Tue, 29 Apr 2008 07:19:49 +1000
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;<i>  &gt; On Tue, Apr 29, 2008 at 3:47 AM, FUJITA Tomonori
+</I>&gt;<i>  &gt; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i>  &gt; &gt; On Mon, 28 Apr 2008 05:36:34 +1000
+</I>&gt;<i>  &gt; &gt;  &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i>  &gt; &gt;
+</I>&gt;<i>  &gt; &gt;  &gt; Hi,
+</I>&gt;<i>  &gt; &gt;  &gt;
+</I>&gt;<i>  &gt; &gt;  &gt; Please find attached a series of patches to enhance the MMC emulation
+</I>&gt;<i>  &gt; &gt;  &gt; to allow writing to emulated DVD+R disks.
+</I>&gt;<i>  &gt; &gt;  &gt; The emulation checks the backing store file when coming online and
+</I>&gt;<i>  &gt; &gt;  &gt; decides which type of emulation profile should be used :
+</I>&gt;<i>  &gt; &gt;  &gt; If there is no backingstore file   or the device is offline  this is
+</I>&gt;<i>  &gt; &gt;  &gt; emulated as NO_PROFILE and behaves as if there is no media in the &quot;dvd
+</I>&gt;<i>  &gt; &gt;  &gt; drive&quot;.
+</I>&gt;<i>  &gt; &gt;  &gt; If the backing store file is &gt;0 bytes in size, this is emulated as
+</I>&gt;<i>  &gt; &gt;  &gt; DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+</I>&gt;<i>  &gt; &gt;  &gt; &quot;dvd drive&quot; that can be read from.
+</I>&gt;<i>  &gt; &gt;  &gt; If the backing store file is ==0 bytes in size, this is emulated as if
+</I>&gt;<i>  &gt; &gt;  &gt; there is a blank writeable DVD+R disk in the &quot;dvd drive&quot;, allowing a
+</I>&gt;<i>  &gt; &gt;  &gt; user to burn to the device.
+</I>&gt;<i>  &gt; &gt;  &gt; Once finished burning and the application issues a CLOSE_TRACK
+</I>&gt;<i>  &gt; &gt;  &gt; command, the device morphs from DVD+R into the DVD_ROM profile.
+</I>&gt;<i>  &gt; &gt;
+</I>&gt;<i>  &gt; &gt;  Great, thanks!
+</I>&gt;<i>  &gt; &gt;
+</I>&gt;<i>  &gt; &gt;  Can you merge this patchset with
+</I>&gt;<i>  &gt; &gt;
+</I>&gt;<i>  &gt; &gt;  Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i>  &gt; &gt;
+</I>&gt;<i>  &gt; &gt;  ?
+</I>&gt;<i>  &gt; &gt;
+</I>&gt;<i>  &gt;
+</I>&gt;<i>  &gt; Sure I can.
+</I>&gt;<i>  &gt; How do I do this (I'm not very git-experienced)?
+</I>&gt;<i>
+</I>&gt;<i>  Ok, let me know if you will not use git. I'll merge patchset this
+</I>&gt;<i>  time.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>  &gt; What git commands should I use to redo the diffs so they get the sign-off text?
+</I>&gt;<i>
+</I>&gt;<i>  <A HREF="http://www.kernel.org/pub/software/scm/git/docs/tutorial.html">http://www.kernel.org/pub/software/scm/git/docs/tutorial.html</A>
+</I>&gt;<i>
+</I>&gt;<i>  You need to configure your name and email adreess:
+</I>&gt;<i>
+</I>&gt;<i>  $ git config --global user.name &quot;Your Name Comes Here&quot;
+</I>&gt;<i>  $ git config --global user.email <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">you at yourdomain.example.com</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>  You can use git-commit as you did (but please commit each patch with
+</I>&gt;<i>  an appropriate subject). Then git-format-patch with '-s' option
+</I>&gt;<i>  produces a proper patchset (proper author and signed-off-by).  You
+</I>&gt;<i>  need multiple patches, use git-format-patch with '-n' option, which
+</I>&gt;<i>  gives [PATCH n/m] format subjects.
+</I>&gt;<i>
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at arbre</A>:~/git/tgt$ git-format-patch -s -n -o ~/submit HEAD~2
+</I>&gt;<i>
+</I>&gt;<i>  After that, please use git-send-email to send patches.
+</I>&gt;<i>
+</I>-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: mmc.diff.gz
+Type: application/x-gzip
+Size: 14629 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080429/6c6f8a59/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080429/6c6f8a59/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001551.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+</A></li>
+	<LI>Next message: <A HREF="001524.html">[Stgt-devel] [Ips] Calculating the VA in iSER header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1553">[ date ]</a>
+              <a href="thread.html#1553">[ thread ]</a>
+              <a href="subject.html#1553">[ subject ]</a>
+              <a href="author.html#1553">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

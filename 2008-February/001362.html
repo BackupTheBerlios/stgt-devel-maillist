@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Strange throughput results with tgtd and iSCSI
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Strange%20throughput%20results%20with%20tgtd%20and%20iSCSI&In-Reply-To=%3C20080207165703.GA8048%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001360.html">
+   <LINK REL="Next"  HREF="001364.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Strange throughput results with tgtd and iSCSI</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Strange%20throughput%20results%20with%20tgtd%20and%20iSCSI&In-Reply-To=%3C20080207165703.GA8048%40osc.edu%3E"
+       TITLE="[Stgt-devel] Strange throughput results with tgtd and iSCSI">pw at osc.edu
+       </A><BR>
+    <I>Thu Feb  7 17:57:03 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001360.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+        <LI>Next message: <A HREF="001364.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1362">[ date ]</a>
+              <a href="thread.html#1362">[ thread ]</a>
+              <a href="subject.html#1362">[ subject ]</a>
+              <a href="author.html#1362">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bart.vanassche at gmail.com</A> wrote on Thu, 07 Feb 2008 17:04 +0100:
+&gt;<i> While running performance tests to compare various iSCSI target
+</I>&gt;<i> implementations I noticed that tgtd processes data writes slower via
+</I>&gt;<i> iSCSI for a block transfer size of 1 MB than for 512 KB. Although such
+</I>&gt;<i> large block transfer sizes are irrelevant when a filesystem is mounted
+</I>&gt;<i> on top of an iSCSI target, I decided to report this anyway.
+</I>&gt;<i> 
+</I>&gt;<i> Kernel version: 2.6.23.14
+</I>&gt;<i> STGT version (target): 20071227. The target was set up such that a RAM
+</I>&gt;<i> disk of 2GB in size was exported via iSCSI.
+</I>&gt;<i> open-iscsi version (initiator): 2.0.865-1
+</I>&gt;<i> Performance related settings on the iSCSI initiator:
+</I>&gt;<i> node.session.iscsi.FirstBurstLength = 262144,
+</I>&gt;<i> node.session.iscsi.MaxBurstLength = 16776192,
+</I>&gt;<i> node.conn[0].iscsi.MaxRecvDataSegmentLength = 131072 and
+</I>&gt;<i> node.conn[0].tcp.window_size = 524288.
+</I>&gt;<i> Test commands that were run on the initiator:
+</I>&gt;<i> dd if=/dev/zero of=/dev/sde bs=512K oflag=direct
+</I>&gt;<i> dd if=/dev/zero of=/dev/sde bs=1M oflag=direct
+</I>&gt;<i> 
+</I>&gt;<i> Results on Ethernet:
+</I>&gt;<i> For a block size of 512 KB: write throughput of 43 MB/s.
+</I>&gt;<i> For a block size of 1 MB: write throughput of 15 MB/s.
+</I>&gt;<i> 
+</I>&gt;<i> Results on with IPoIB:
+</I>&gt;<i> For a block size of 512 KB: write throughput of 95 MB/s.
+</I>&gt;<i> For a block size of 1 MB: write throughput of 26 MB/s.
+</I>
+Nice report.  I'll try to take a look at the ethernet numbers first.
+
+Please show me the output of &quot;iscsiadm -m session -P 3&quot;.  It has the
+actual negotiated connection params, which will differ from what you
+quote from the iscsid.conf above.  You may find it handy to do &quot;rm
+-rf /var/lib/iscsi/*/*&quot; to destroy all iscsi state if you find the
+negotiated values are not what you expect.
+
+My nodes only have 2G.  When I build a tmpfs, put in a 2G file,
+export that, these tests essentially measure swap performance of the
+system.  I get 12 MB/s for writes at both block sizes.  Running
+&quot;vmstat 2&quot; on the target shows it is busy swapping.
+
+Redoing the tests at 1G keeps it all in RAM for me.  Then I get 95
+MB/s at 512 kB and 88 MB/s at 1MB, so confirming your performance
+disparity, but not finding numbers nearly so bad.
+
+Here's the good bits from iscsiadm -m session -P 3 here:
+
+    Negotiated iSCSI params:
+    ************************
+    HeaderDigest: None
+    DataDigest: None
+    MaxRecvDataSegmentLength: 131072
+    MaxXmitDataSegmentLength: 131072
+    FirstBurstLength: 131072
+    MaxBurstLength: 16776192
+    ImmediateData: Yes
+    InitialR2T: Yes
+    MaxOutstandingR2T: 1
+
+and the script I use to try to replicate your seutp:
+
+    #!/bin/bash
+    ./tgtadm --lld iscsi --mode target --op new --tid 1 --targetname $(hostname)
+    ./tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address ALL
+    ./tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 --backing-store /tmp/ram/tgt-ram-1g-pw
+    ./tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --name=scsi_sn --value=$(hostname)
+    ./tgtadm --lld iscsi --mode target --op update --tid 1 --name MaxRecvDataSegmentLength --value 131072
+    ./tgtadm --lld iscsi --mode target --op update --tid 1 --name MaxXmitDataSegmentLength --value 131072
+    ./tgtadm --lld iscsi --mode target --op update --tid 1 --name FirstBurstLength --value 131072
+    ./tgtadm --lld iscsi --mode target --op update --tid 1 --name MaxBurstLength --value 16776192
+
+Show me what you have and I'll try to replicate.  The 88 vs 95 is
+enough in itself to cause alarm, which we can try to understand, but
+I'd also like to make sure that you can get numbers in this
+neighborhood at least.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001360.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+	<LI>Next message: <A HREF="001364.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1362">[ date ]</a>
+              <a href="thread.html#1362">[ thread ]</a>
+              <a href="subject.html#1362">[ subject ]</a>
+              <a href="author.html#1362">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

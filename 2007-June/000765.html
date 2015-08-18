@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Move device type to LUN
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Move%20device%20type%20to%20LUN&In-Reply-To=%3C20070612213358F.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000763.html">
+   <LINK REL="Next"  HREF="000767.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Move device type to LUN</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Move%20device%20type%20to%20LUN&In-Reply-To=%3C20070612213358F.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] Move device type to LUN">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Jun 12 14:33:58 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000763.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+        <LI>Next message: <A HREF="000767.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#765">[ date ]</a>
+              <a href="thread.html#765">[ thread ]</a>
+              <a href="subject.html#765">[ subject ]</a>
+              <a href="author.html#765">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Hannes Reinecke &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] Move device type to LUN
+Date: Mon, 11 Jun 2007 17:15:19 +0200
+
+&gt;<i> Pete Wyckoff wrote:
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A> wrote on Tue, 05 Jun 2007 15:38 +0200:
+</I>&gt;<i> &gt;&gt; This patch moves the device type down to the LUN structure.
+</I>&gt;<i> &gt;&gt; And in doing so we now also have the proper peripheral device
+</I>&gt;<i> &gt;&gt; type and peripheral device qualifier attributes for the INQUIRY
+</I>&gt;<i> &gt;&gt; data.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Makes sense to me too.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; One thing puzzles me, though: do we support commands with no
+</I>&gt;<i> &gt;&gt; LUN attached to it? IE is it valid to have 'cmd-&gt;dev == NULL'?
+</I>&gt;<i> &gt;&gt; If so: where is the point here? If that's our handling of a
+</I>&gt;<i> &gt;&gt; non-existing LUN 0 we should rather add a proper LUN 0 and
+</I>&gt;<i> &gt;&gt; treat cmd-&gt;dev == NULL as an error case ...
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; In the SCSI model, every device must have at least one LUN for
+</I>&gt;<i> &gt; handling REPORT LUNS and a couple other commands.  It is addressed
+</I>&gt;<i> &gt; as LUN 0 or using the &quot;well-known&quot; LUN for the command.  In the stgt
+</I>&gt;<i> &gt; abstraction, though, there is no magic LUN like this.  Instead
+</I>&gt;<i> &gt; things like spc_inqury use cmd-&gt;dev == NULL to handle this case.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> Ah. Hence.
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Perhaps it is reasonable to create a special device for these
+</I>&gt;<i> &gt; commands.  Up in target.c, you could assign cmd-&gt;dev to target-&gt;dev,
+</I>&gt;<i> &gt; where that is the special device, paralleling the way that
+</I>&gt;<i> &gt; target-&gt;cmd_queue is used.  As a side effect, lots of &quot;if (cmd-&gt;dev)
+</I>&gt;<i> &gt; ... else ILLEGAL_REQUEST&quot; clauses can be removed from device code
+</I>&gt;<i> &gt; too.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> Well, I actually thought of creating a proper LUN 0 with type 0xc.
+</I>
+We still need to handle cmd-&gt;dev == NULL case though probably we can
+remove cmd-&gt;dev == NULL case in device type code.
+
+I don't have storage systems that work in your way. Is it common?
+
+
+&gt;<i> This would be automagically created whenever a target is created.
+</I>&gt;<i> And we could hook some management facilities to that one.
+</I>&gt;<i> Maybe even turn it into a proper remote management :-)
+</I>&gt;<i> 
+</I>&gt;<i> But then, for this we definitely need to move the type to the LUN.
+</I>&gt;<i> 
+</I>&gt;<i> Tomo, what are you're thoughts on that one?
+</I>&gt;<i> 
+</I>&gt;<i> Cheers,
+</I>&gt;<i> 
+</I>&gt;<i> Hannes
+</I>&gt;<i> -- 
+</I>&gt;<i> Dr. Hannes Reinecke		      zSeries &amp; Storage
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>			      +49 911 74053 688
+</I>&gt;<i> SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N&#252;rnberg
+</I>&gt;<i> GF: Markus Rex, HRB 16746 (AG N&#252;rnberg)
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000763.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+	<LI>Next message: <A HREF="000767.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#765">[ date ]</a>
+              <a href="thread.html#765">[ thread ]</a>
+              <a href="subject.html#765">[ subject ]</a>
+              <a href="author.html#765">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

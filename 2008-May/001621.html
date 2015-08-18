@@ -1,0 +1,311 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Provide example on how to build DVD jukebox
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Provide%20example%20on%20how%20to%20build%20DVD%20jukebox&In-Reply-To=%3Cmailman.32.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001619.html">
+   <LINK REL="Next"  HREF="001620.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Provide example on how to build DVD jukebox</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Provide%20example%20on%20how%20to%20build%20DVD%20jukebox&In-Reply-To=%3Cmailman.32.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Provide example on how to build DVD jukebox">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Wed May  7 09:49:12 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001619.html">[Stgt-devel] [PATCH 1/1] mmc: unit serial number fix
+</A></li>
+        <LI>Next message: <A HREF="001620.html">[Stgt-devel] [PATCH docs 1/1] Provide example for creating DVD	jukebox (gzip patch is also attached)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1621">[ date ]</a>
+              <a href="thread.html#1621">[ thread ]</a>
+              <a href="subject.html#1621">[ subject ]</a>
+              <a href="author.html#1621">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add an example on how to configure STGT to act as a DVD jukebox
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ doc/README.mmc |  175 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 175 insertions(+), 0 deletions(-)
+
+diff --git a/doc/README.mmc b/doc/README.mmc
+index 6f7074d..021e4f5 100644
+--- a/doc/README.mmc
++++ b/doc/README.mmc
+@@ -98,3 +98,178 @@ tgtadm --tid 1 --lun 1 --op update --mode
+logicalunit --name path --value /tmp/e
+
+ # note: when we updated the device to a new bakend storage file the device
+ # automatically goes online again with the new media present.
++
++
++
++
++
++
++
++
++#
++# Example 4: How to create a DVD jukebox with 8 disk trays
++#
++
++# Create a target
++tgtadm --lld iscsi --mode target --op new --tid 1 -T
+iqn.2007-03:virtual-dvd:`hostname`
++
++# Create a DVD drive and give it a nice name
++# The dvd starts out without a backing store file, i.e. no disk loaded
++tgtadm --op new --mode logicalunit --tid 1 --lun 1 -Y cd
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1
+--params vendor_id=STGT_DVD,product_id=DVD101,product_rev=0010,scsi_sn=STGTDVD01,removable=1
++
++
++# We need a backend store file for the media changer
++if [ ! -f $HOME/smc ]; then
++	dd if=/dev/zero of=$HOME/smc bs=1k count=1
++fi
++
++# Create the SMC device and give it a nice name
++tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 2 -b
+$HOME/smc --device-type=changer
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params vendor_id=STK,product_id=L700,product_rev=0010,scsi_sn=XYZZY_0,removable=1
++
++
++# Add a Data Transfer devices (1 drive)
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params element_type=4,start_address=1,quantity=1
++
++# Specify that the DVD above (LUN 1) is the data transfer device we created
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params element_type=4,address=1,tid=1,lun=1
++
++# Medium Transport Elements (robot arm / picker)
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params element_type=1,start_address=16,quantity=1
++
++# define path to virtual media
++VTL=${HOME}/vtl
++mkdir -p ${VTL} 2&gt;/dev/null
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params media_home=${VTL}
++
++# Storage Elements - 8 starting at addr 1024
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params element_type=2,start_address=1024,quantity=8
++
++# Add 'media' to slots 1 and 2 and leave the other 6 slots empty
++# slot 1
++touch ${VTL}/DISK_001
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params element_type=2,address=1024,barcode=DISK_001,sides=1
++
++# slot 2
++touch ${VTL}/DISK_002
++tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 2
+--params element_type=2,address=1025,barcode=DISK_002,sides=1
++
++# Allow ALL initiators to connect to this target
++tgtadm --lld iscsi --mode target --op bind --tid 1 -I ALL
++
++# Show all our good work.
++tgtadm --lld iscsi --mode target --op show
++
++
++
++
++Now you should be able to access the devices and try it out :
++tgtadm --lld iscsi --mode target --op show
++
++Target 1: iqn.2007-03:virtual-dvd:ronnie
++    System information:
++        Driver: iscsi
++        State: ready
++    I_T nexus information:
++    LUN information:
++        LUN: 0
++            Type: controller
++            SCSI ID: deadbeaf1:0
++            SCSI SN: beaf10
++            Size: 0 MB
++            Online: Yes
++            Removable media: No
++            Backing store: No backing store
++        LUN: 1
++            Type: cd/dvd
++            SCSI ID: deadbeaf1:1
++            SCSI SN: STGTDVD0
++            Size: 0 MB
++            Online: No
++            Removable media: Yes
++            Backing store: No backing store
++        LUN: 2
++            Type: changer
++            SCSI ID: deadbeaf1:2
++            SCSI SN: XYZZY_0
++            Size: 0 MB
++            Online: Yes
++            Removable media: Yes
++            Backing store: /root/smc
++    Account information:
++    ACL information:
++        ALL
++
++
++You can use the 'mtx' command under linux to manage the jukebox (man mtx)
++mtx -f /dev/sg4 status
++
++  Storage Changer /dev/sg4:1 Drives, 8 Slots ( 0 Import/Export )
++Data Transfer Element 0:Empty
++      Storage Element 1:Full :VolumeTag=DISK_001
++      Storage Element 2:Full :VolumeTag=DISK_002
++      Storage Element 3:Empty:VolumeTag=
++      Storage Element 4:Empty:VolumeTag=
++      Storage Element 5:Empty:VolumeTag=
++      Storage Element 6:Empty:VolumeTag=
++      Storage Element 7:Empty:VolumeTag=
++      Storage Element 8:Empty:VolumeTag=
++
++Now load the disk in slot 1 :
++mtx -f /dev/sg4 load 1
++mtx -f /dev/sg4 status
++
++  Storage Changer /dev/sg4:1 Drives, 8 Slots ( 0 Import/Export )
++Data Transfer Element 0:Full (Storage Element 1 Loaded):VolumeTag =
+DISK_001
++      Storage Element 1:Empty:VolumeTag=
++      Storage Element 2:Full :VolumeTag=DISK_002
++      Storage Element 3:Empty:VolumeTag=
++      Storage Element 4:Empty:VolumeTag=
++      Storage Element 5:Empty:VolumeTag=
++      Storage Element 6:Empty:VolumeTag=
++      Storage Element 7:Empty:VolumeTag=
++      Storage Element 8:Empty:VolumeTag=
++
++And if we look at the devices again we see the DVD drive is now online and has
++a disk loaded :
++tgtadm --lld iscsi --mode target --op show
++
++Target 1: iqn.2007-03:virtual-dvd:ronnie    System information:
++        Driver: iscsi
++        State: ready
++    I_T nexus information:
++        I_T nexus: 1
++            Initiator: iqn.1993-08.org.debian:ronnie
++            Connection: 0
++                IP Address: 127.0.0.1
++    LUN information:
++        LUN: 0
++            Type: controller
++            SCSI ID: deadbeaf1:0
++            SCSI SN: beaf10
++            Size: 0 MB
++            Online: Yes
++            Removable media: No
++            Backing store: No backing store
++        LUN: 1
++            Type: cd/dvd
++            SCSI ID: deadbeaf1:1
++            SCSI SN: STGTDVD0
++            Size: 0 MB
++            Online: Yes
++            Removable media: Yes
++            Backing store: /root/vtl/DISK_001
++        LUN: 2
++            Type: changer
++            SCSI ID: deadbeaf1:2
++            SCSI SN: XYZZY_0
++            Size: 0 MB
++            Online: Yes
++            Removable media: Yes
++            Backing store: /root/smc
++    Account information:
++    ACL information:
++        ALL
++
++Have fun building big DVD jukeboxes !!!
+-- 
+1.5.5
+
+------=_Part_16778_27264919.1210146968097
+Content-Type: application/x-gzip;
+ name=0001-Provide-example-on-how-to-build-DVD-jukebox.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_ffxm3k3n0
+Content-Disposition: attachment;
+ filename=0001-Provide-example-on-how-to-build-DVD-jukebox.patch.gz
+
+H4sICChfIUgAAzAwMDEtUHJvdmlkZS1leGFtcGxlLW9uLWhvdy10by1idWlsZC1EVkQtanVrZWJv
+eC5wYXRjaADtWW1z28YR/lz8ivXYM5aGBAlAlCihZcaKJNeaSI7HZN0qmYxyAA7kRQCOORwoMWn+
+e3fvwFeRdZVSbWdqSAMB97K3++ze7nPQWyVzCKKT4NALuOdHAefR8Ul6mPCkG50cdLiXeN2IpSfp
+QcrgWhbQ52Pwu+B5ofmFwPN85y2KCeGjLArBoc9GWcTVEP6kTENZv78Z5kxkrVjmXznnTPMQ/sqT
+JnThmk1JzDHKDTsnoR9Aw/c8z+lX0U881iF8/+F0cPbuB/ig5EQkHPgDy8cZB1RnJO9BS4gqkSVw
+/ukcfqrueCQfHOc0SYAVG8bGskjFsFKo6eDPA2phsQZWAlsV0BfDgieuTFM3mj7JOtd1HUhk3P54
+cXp+fdHK8xj+DmjeITR+5+WAD6nIeAnxiBVDAo7EiaLkSgtZlHuN/SZ4kPCM23d333ESkabgukOB
+9rXXFIrWGhxRJPwBjtKu1+0krZYX+LyTHgK64qjTIZseyXBQscdy3rwB9+S4eQANvPvdY8AGPdQs
+yVEVLRK0xHWzqjB/5RiqcYLRgM+5RN9mcihiht2os+sWLOcwZnqEzxNs5dDW+bjNHXDgJRSSouh+
+xAu457WcBPSIIwwTEXPjWyj4PUTsjhcJlFoqNuQGyaVxJItVWuZM09rZFIYSkZZFJgoObMgELiBQ
+CZpC4nKeCAZjxUte6JbTWP95ib9wUUdeJ4R3deQpTpauxJkVfAyJKO9AKzYtzXQScDYbrpkacu00
+5ihmGOyijEsxQ82OsHiSgnOgByB+Llq4u7qudxBOhNIVy9xkkoQ/jmSpCd8f11Yj5RIlJviMkA3p
+geIHCkKUJtDoAYE3IUSZ0ghVpY0h9Jch2vGdKIYGbgt2E0SLt9Bh1s5MMswwSwbN1d4QA2shcwNx
+8s+gWJ28HF/rsTdmiuUlTDAypLoVSY/ywS2a3xwrmVSxpjZ89T1/3qL4pIcZz2vSkrdlYebgGByi
+eC4nLMp4z6+jABMcmoUhaSGZRWAdf6lUJqBsMNltrZyGSOF7eAFuCq/efXt90S5xr/7wRxpZOI0/
+YFITaa+Ncdv+hSsJMu0thkVlz7/D/FYVmnRIxYpnaa3+9dlsb2x17hOgXQk1g2sAbrSkuOva1Vw9
+HfPe3MZ/13vBZu99s+y4q67nbXfb326+++7m1tvkNFM4ACsUg4FiRZlyVWNWwp5vt8b+Tm3AnJ1j
+Irk1IHWaZk/dsiTB/IIebf5csUILPbUqvoT+mMcinaJDmTZepR3LIom+3Lv6y3vw91Efm97ICL1q
+BKVKm4h2sI22G7FQH8fjHUfP9L/GgK9yC+5YKg0XdirCq2QkMRxVDm0YC9wy6hmR9teRPnoEdcJT
+KgGmAmECr/On3bJO49PgqvfqVwr239oTnTmN/C4RCtwxvPoV+36D4CuzU4sqy3Zqhln/diRz3rMr
+1YFRl7c5ni4WFmMjZWMMFrIUC3rQeT5Qg3VQcbUFrMeLLfbaGPGaYC0zicr6JiUF5p5xNrEZS+JN
+wVE9hudjPSUJ9AroJC2reFTD3T6/7H9zS3z0Ga1bsStiKkahvdnCzRLpaTkLHqNjsFnH4D+k4+G6
+jsGqjqdZhtzk9OoKqaTQgmEElTVJLpB706MeUTZ5EgWJkEsutL0k+XWEEgdHhoWEQSHJkgncS3XX
++lflljh9wbLeo6yprKi1wlkR1rQos6QvxmRdLjG80kSVVlOqdkRSwqcuObBtfriVUNnzgNMAvPrT
+UvMcMcUiT6xSFqHtoOucKogK7ZqL5r42hyJMzcnUtl7eDrDEPlTlBkGU6DeLx54QvMU7XQMMjJCc
+qpXMMirBy739s/4lXJ6HCBZLIs5SP/Q2jOijXNO73il+QeEeXH+92v6t4c8h3PBytePjrOjaRBbC
+e7k64OtlAkndq5RyzVZ/o61JG53yWTv9LXbOaN3TLF2345Ghj6B4mqXBRktnrOozpgZbTK2p0K59
++jlT20pKTSTRjjqNDW/dENOnZ1dbIr1OK07jBrNAjIf9qrRF43WuH15juOc5bfsKD7YKUO/qgZID
+tlGRpHGzM9getgHOQbKBd+Lepm6Xww6VT12VtAjM6+uZRXw+KPTtni6bWG/7plDtIXaXObGb9sWD
+ITkoe5VT1lUavPDCVrUa+dUijhnnLdIHCD/JrMr5gA3n1QY2X9sEBdsEBU8UdGAVXhK0RcDnBHV2
+JehwV4KOdiWouytBxxsFzcofHaRtmaNjtShqXkTlbT2QzVD/vxPgJvD2HkU2XJnvAPsL46AHvzO6
+/acC/mWf/B/sE7tTTgv6akIH30zKO6hPzXNmaL/vcSg5nx+n7QcwJL4F7rLZh0AUM2K4VdjyV6zn
+o5LGzGcnkiv9j8jU5exUYJX1T04OXO+4JdWwlfBIsGKF9s6uM3t6oEXWmagR+oFOgHREwfWCbsvD
+H/8Lrf2fpbW7InsTnS2d0VeM/cJsNzHbd/QVJMWzvvn/Fi0RieHyfw8wfb148cJxXXD81mHr0HH+
+AXq8Rb/SGwAA
+------=_Part_16778_27264919.1210146968097--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001619.html">[Stgt-devel] [PATCH 1/1] mmc: unit serial number fix
+</A></li>
+	<LI>Next message: <A HREF="001620.html">[Stgt-devel] [PATCH docs 1/1] Provide example for creating DVD	jukebox (gzip patch is also attached)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1621">[ date ]</a>
+              <a href="thread.html#1621">[ thread ]</a>
+              <a href="subject.html#1621">[ subject ]</a>
+              <a href="author.html#1621">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

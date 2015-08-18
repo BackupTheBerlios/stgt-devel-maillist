@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C62318.190.10.50.223.1205641316.squirrel%40webmail.decarpentier.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001466.html">
+   <LINK REL="Next"  HREF="001444.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel</H1>
+    <B>Niels de Carpentier</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C62318.190.10.50.223.1205641316.squirrel%40webmail.decarpentier.com%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel">stgt at decarpentier.com
+       </A><BR>
+    <I>Sun Mar 16 05:21:56 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001466.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+</A></li>
+        <LI>Next message: <A HREF="001444.html">[Stgt-devel] Question about tgtdadm output
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1471">[ date ]</a>
+              <a href="thread.html#1471">[ thread ]</a>
+              <a href="subject.html#1471">[ subject ]</a>
+              <a href="author.html#1471">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;&gt;<i> option to tgtd (better). There is no other way, I guess (other than
+</I>&gt;&gt;<i> making it compile-time option, which is really bad).
+</I>&gt;<i>
+</I>&gt;<i> There is another option. If tgtd has no targets, then tgtd closes a
+</I>&gt;<i> connection instead of sending a response. So you can change the state
+</I>&gt;<i> to offline, configure targets and then change the state to running.
+</I>&gt;<i>
+</I>&gt;<i> Try this patch (against the current git head).
+</I>
+I tried the patch, and it works ok for me.
+
+Niels de Carpentier
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001466.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+</A></li>
+	<LI>Next message: <A HREF="001444.html">[Stgt-devel] Question about tgtdadm output
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1471">[ date ]</a>
+              <a href="thread.html#1471">[ thread ]</a>
+              <a href="subject.html#1471">[ subject ]</a>
+              <a href="author.html#1471">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

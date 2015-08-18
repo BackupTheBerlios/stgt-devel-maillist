@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C5eb093080608020759s1b14a798hb762898c414b1607%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000291.html">
+   <LINK REL="Next"  HREF="000293.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Alexander Nezhinsky</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C5eb093080608020759s1b14a798hb762898c414b1607%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] User-mode iSER">nezhinsky at gmail.com
+       </A><BR>
+    <I>Wed Aug  2 16:59:46 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000291.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000293.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#292">[ date ]</a>
+              <a href="thread.html#292">[ thread ]</a>
+              <a href="subject.html#292">[ subject ]</a>
+              <a href="author.html#292">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tom,
+
+&gt;<i>* &gt; &gt; Attaches is a new picture with kernel/user boundaries. I think the
+</I>*&gt;* &gt; &gt; boundary is somewhat fuzzy at the top and bottom due to the fact
+that
+*&gt;* &gt; &gt; the API is different for each target type and for each network
+provider
+*&gt;* &gt; &gt; type.
+*&gt;* &gt; &gt;
+*&gt;* &gt; &gt; For example, the sd driver will use open /dev/sdN and submit ioctl
+to
+*&gt;* &gt; &gt; read/write the disk, whereas the file target will
+*&gt;* &gt; &gt; open(&quot;/home/thisandthat&quot;, ...) and submit lseek/read/write to
+read/write *&gt;* &gt; &gt; the file.
+*&gt;* &gt; &gt; *
+*
+Regarding your diagram. Boxes marked &quot;SCSI Disk Driver&quot; interfacing /dev/sdX
+and &quot;Block Device Driver&quot; interfacing /dev/mdX are probably using the same
+API. /dev/sdX are normalized to the same &quot;Block Device&quot; interface as
+/dev/mdX. So no ioctl calls, the same open/read/write.
+Did you mean that the two need different management mechanisms which should
+be present in the corresponding user-space libraries?
+I guess &quot;SCSI Disk Driver&quot; should interface /dev/sgX devices exported by sg
+driver and allowing direct access to a SCSI disk. sg uses ioctl calls where
+explicit scsi commands are passed. No cache will be used in this case, just
+as with direct IO through a block device. And the copy issue is to be
+addressed here too.
+**
+*&gt;* &gt; &gt; On the network side, the TCP provider would use socket, listen,
+accept,
+*&gt;* &gt; &gt; send, recv (at least initially), the RMDA provider would use
+*&gt;* &gt; &gt; rdma_resolve_addr, rdma_resolve_route, rdma_listen, rdma_accept,
+*&gt;* &gt; &gt; rdma_create_qp, rdma_post_send, etc....
+*&gt;* &gt; &gt;
+*&gt;* &gt; &gt; My only point is that the kernel/user interface is not a straight
+line
+*&gt;* &gt; &gt; since some of these interfaces are higher level than others.
+*
+*As all transports interface &quot;Network interface layer&quot; using the same API,
+then all transports should have at least a user-space driver. **While some
+should also have an in-kernel part (e.g. FCP whose driver may remain intact,
+plus perhaps a special adaptation driver to enable zero-copy
+operation), others may do without additional kernel modules (e.g. iSER may
+use user-space IB verbs).  *
+*So the user-kernel line may remain where it is (under the user-space
+transport drivers) with a note that some transports may need additional
+boxes underneath as well.
+*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20060802/30d2ff58/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20060802/30d2ff58/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000291.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000293.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#292">[ date ]</a>
+              <a href="thread.html#292">[ thread ]</a>
+              <a href="subject.html#292">[ subject ]</a>
+              <a href="author.html#292">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

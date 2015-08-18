@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3Cc9a3e4540807021758q77b8e44bj882304d3c354dbe9%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001900.html">
+   <LINK REL="Next"  HREF="001738.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3Cc9a3e4540807021758q77b8e44bj882304d3c354dbe9%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Thu Jul  3 02:58:33 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001900.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+        <LI>Next message: <A HREF="001738.html">[Stgt-devel] should backed_file_open be called from dtd_load_unload,	or ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1737">[ date ]</a>
+              <a href="thread.html#1737">[ thread ]</a>
+              <a href="subject.html#1737">[ subject ]</a>
+              <a href="author.html#1737">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Tomasz
+
+I had no problems running TGTD under gdb.   Just let it start first
+and fork()   then
+ps aux |grep tgtd and  gdb -p PID to attach to each of the two processes.
+
+
+What appears to happen is the task has been removed already from
+struct scsi_cmd *cmd-&gt;c_hlist
+so that c_hlist is actually a completely empty list.
+next==prev==NULL.
+
+Thus the list_del() helper causes a SEGV since it assumes that the
+list can never be empty and that we can always
+dereference the next/prev pointers.
+
+
+Tomasz, can you try the patch below the gdb backtrace?
+It prevents the SEGV for me.
+
+
+This solves one of the bugs.  That list_del() gets a SEGV when the
+list is empty.
+There is probably another bug somewhere as well where tgtd has lost
+track of which tasks are active and has forgotten that this task
+has already been deleted/removed from the list. thus causing it to
+call list_del() for a task that is not on the list.
+I.e. the task is referenced from several places and when it was
+deleted tgtd previously removed it from this list but forgot to remove
+it from some other list/place.
+I have no idea where that bug is.
+
+
+regards
+ronnie s
+
+
+Program received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 0x7fc9c63056e0 (LWP 4124)]
+0x0000000000412ed4 in __list_del (prev=0x0, next=0x0) at list.h:79
+79              next-&gt;prev = prev;
+(gdb) bt
+#0  0x0000000000412ed4 in __list_del (prev=0x0, next=0x0) at list.h:79
+#1  0x0000000000412ea3 in list_del (entry=0x642868) at list.h:85
+#2  0x000000000041363d in cmd_hlist_remove (cmd=0x642860) at target.c:308
+#3  0x0000000000414d92 in __cmd_done (target=0x0, cmd=0x642860) at target.c:862
+#4  0x0000000000414fab in target_cmd_done (cmd=0x642860) at target.c:906
+#5  0x0000000000406faf in iscsi_free_cmd_task (task=0x6427a0)
+    at iscsi/iscsid.c:1081
+#6  0x0000000000403613 in conn_close (conn=0x63dc88) at iscsi/conn.c:112
+#7  0x000000000040ca19 in iscsi_tcp_event_handler (fd=14, events=5,
+    data=0x63dc88) at iscsi/iscsi_tcp.c:166
+#8  0x0000000000411513 in event_loop () at tgtd.c:251
+#9  0x00000000004118e2 in main (argc=1, argv=0x7fffce311678) at tgtd.c:355
+
+
+ diff --git a/usr/list.h b/usr/list.h
+index 4d76057..39222ab 100644
+--- a/usr/list.h
++++ b/usr/list.h
+@@ -82,6 +82,9 @@ static inline void __list_del(struct list_head * prev, struct
+
+ static inline void list_del(struct list_head *entry)
+ {
++       if ((entry-&gt;prev == NULL) &amp;&amp; (entry-&gt;next == NULL)) {
++               return;
++       }
+        __list_del(entry-&gt;prev, entry-&gt;next);
+        entry-&gt;next = entry-&gt;prev = NULL;
+ }
+
+
+
+On Mon, Jun 30, 2008 at 7:05 PM, Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+&gt;<i> Tomasz Chmielewski schrieb:
+</I>&gt;<i>
+</I>&gt;<i> (...)
+</I>&gt;<i>
+</I>&gt;&gt;<i> initiator# iptables -I INPUT -s &lt;target IP&gt; -p tcp --sport 3260 -j DROP
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> After a while, you will see that only one tgtd process is running, whereas
+</I>&gt;&gt;<i> the second has crashed.
+</I>&gt;<i>
+</I>&gt;<i> (...)
+</I>&gt;<i>
+</I>&gt;&gt;<i> The above is valid with tgt-20080527, I'm just about to try tgt-20080629.
+</I>&gt;<i>
+</I>&gt;<i> It still crashes with tgt-20080629.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> --
+</I>&gt;<i> Tomasz Chmielewski
+</I>&gt;<i> <A HREF="http://wpkg.org">http://wpkg.org</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001900.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+	<LI>Next message: <A HREF="001738.html">[Stgt-devel] should backed_file_open be called from dtd_load_unload,	or ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1737">[ date ]</a>
+              <a href="thread.html#1737">[ thread ]</a>
+              <a href="subject.html#1737">[ subject ]</a>
+              <a href="author.html#1737">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

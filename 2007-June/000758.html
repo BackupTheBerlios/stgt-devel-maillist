@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/2%5D%0A%20Add-ability-to-dynamically-set-SCSI-Inquiry-params%20-%20Try%204&In-Reply-To=%3C200706090712.l597CUMp026046%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000750.html">
+   <LINK REL="Next"  HREF="000738.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/2%5D%0A%20Add-ability-to-dynamically-set-SCSI-Inquiry-params%20-%20Try%204&In-Reply-To=%3C200706090712.l597CUMp026046%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Jun  9 09:12:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000750.html">[Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4
+</A></li>
+        <LI>Next message: <A HREF="000738.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#758">[ date ]</a>
+              <a href="thread.html#758">[ thread ]</a>
+              <a href="subject.html#758">[ subject ]</a>
+              <a href="author.html#758">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4
+Date: Mon, 04 Jun 2007 20:09:53 +1000
+
+&gt;<i> &gt;From 1db73f345c86e59bb3f616b44fbe761e104690e9 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Date: Sat, 2 Jun 2007 17:57:34 +1000
+</I>&gt;<i> Subject: [PATCH] Add ability to dynamically set SCSI Inquiry params
+</I>&gt;<i> 
+</I>&gt;<i> Added support to configure:
+</I>&gt;<i>   Vendor Identification
+</I>&gt;<i>   Product Identification
+</I>&gt;<i>   Product Revision
+</I>&gt;<i>   Format of returned 'sense data'
+</I>&gt;<i>   Define if the lu is capable of supporting removable media
+</I>&gt;<i>   Define/set if the lu is online / offline.
+</I>&gt;<i> 
+</I>&gt;<i> All params are passed using the 'tgtadm' utility:
+</I>&gt;<i> 
+</I>&gt;<i>   VendorIdent=&quot;string&quot;
+</I>&gt;<i>   ProductIdent=&quot;string&quot;
+</I>&gt;<i>   ProductRev=&quot;string&quot;
+</I>&gt;<i>   Removable=&lt;0|1&gt; - 0 == non-removable, 1 == removable media
+</I>&gt;<i>   SenseFormat=&lt;0|1&gt; - 0 == Clasic sense format, 1 == Support descriptor format
+</I>&gt;<i>   Online=&lt;0|1&gt; - 0 == Unit offline, 1 == Unit Online
+</I>&gt;<i> 
+</I>&gt;<i> e.g.
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid &lt;TID&gt; --lun &lt;LUN&gt; \
+</I>&gt;<i>         --params VendorIdent=QUANTUM,ProductIdent=HD100,ProductRev=0010
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid &lt;TID&gt; --lun &lt;LUN&gt; \
+</I>&gt;<i>         --params Removable=1,SenseFormat=1,Online=1
+</I>&gt;<i> 
+</I>&gt;<i> Example script (scripts/tgt-core-test) to set up HDD &amp; CD device.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+</I>&gt;<i> new file mode 100755
+</I>&gt;<i> index 0000000..d529849
+</I>&gt;<i> --- /dev/null
+</I>&gt;<i> +++ b/scripts/tgt-core-test
+</I>&gt;<i> @@ -0,0 +1,73 @@
+</I>&gt;<i> +#!/bin/bash
+</I>&gt;<i> +
+</I>&gt;<i> +P=`ps -ef|grep -v grep|grep tgtd|wc -l`
+</I>&gt;<i> +if [ &quot;X&quot;$P == &quot;X0&quot; ]; then
+</I>&gt;<i> +	tgtd -d 1
+</I>&gt;<i> +	sleep 1
+</I>&gt;<i> +fi
+</I>&gt;<i> +
+</I>&gt;<i> +if [ ! -d /d/01 ]; then
+</I>&gt;<i> +	mkdir -p /d/01
+</I>&gt;<i> +fi
+</I>&gt;<i> +
+</I>&gt;<i> +if [ ! -f /d/01/hd_block ]; then
+</I>&gt;<i> +	dd if=/dev/zero of=/d/01/hd_block bs=1M count=8
+</I>&gt;<i> +fi
+</I>&gt;<i> +if [ ! -f /d/01/cd_block0 ]; then
+</I>&gt;<i> +	dd if=/dev/zero of=/d/01/cd_block0 bs=1M count=8
+</I>&gt;<i> +fi
+</I>&gt;<i> +if [ ! -f /d/01/cd_block1 ]; then
+</I>&gt;<i> +	dd if=/dev/zero of=/d/01/cd_block1 bs=1M count=8
+</I>&gt;<i> +fi
+</I>&gt;<i> +if [ ! -f /d/01/cd_block2 ]; then
+</I>&gt;<i> +	dd if=/dev/zero of=/d/01/cd_block2 bs=1M count=8
+</I>&gt;<i> +fi
+</I>&gt;<i> +
+</I>&gt;<i> +set -x
+</I>&gt;<i> +
+</I>&gt;<i> +###################################################################################
+</I>&gt;<i> +# Set up SBC HDD device
+</I>&gt;<i> +###################################################################################
+</I>&gt;<i> +TID=1
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode target --op new --tid $TID \
+</I>&gt;<i> +		-T iqn.2007-03:marks-vtl_sbc:`hostname` --target-type disk
+</I>&gt;<i> +
+</I>&gt;<i> +sleep 1
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 0 -b /d/01/hd_block
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 --params scsi_sn=FRED00,scsi_id=Fred
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
+</I>&gt;<i> +	--params VendorIdent=QUANTUM,ProductIdent=HD100,ProductRev=0010,Removable=1,SenseFormat=0
+</I>&gt;<i> +
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+</I>&gt;<i> +
+</I>&gt;<i> +
+</I>&gt;<i> +###################################################################################
+</I>&gt;<i> +# Set up MMC CD/DVD device
+</I>&gt;<i> +###################################################################################
+</I>&gt;<i> +TID=2
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode target --op new --tid $TID \
+</I>&gt;<i> +		-T iqn.2007-03:marks-vtl_mmc:`hostname` --target-type cd
+</I>&gt;<i> +
+</I>&gt;<i> +sleep 1
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 0 -b /d/01/cd_block0
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
+</I>&gt;<i> +	--params VendorIdent=VirtualCD,ProductIdent=CD101,ProductRev=0010,scsi_sn=XYZZY10,Removable=1
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 1 -b /d/01/cd_block1
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 1 \
+</I>&gt;<i> +	--params VendorIdent=VirtualCD,ProductIdent=CD101,ProductRev=0010,scsi_sn=XYZZY11,Removable=1
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 2 -b /d/01/cd_block2
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 2 \
+</I>&gt;<i> +	--params VendorIdent=VirtualCD,ProductIdent=CD101,ProductRev=0010,scsi_sn=XYZZY12,Removable=1
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode target --op show
+</I>&gt;<i> +
+</I>&gt;<i> +
+</I>&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> index 32a9ff7..a29811e 100644
+</I>&gt;<i> --- a/usr/spc.c
+</I>&gt;<i> +++ b/usr/spc.c
+</I>&gt;<i> @@ -283,18 +283,29 @@ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  enum {
+</I>&gt;<i> -	Opt_scsiid, Opt_scsisn, Opt_err,
+</I>&gt;<i> +	Opt_scsiid, Opt_scsisn,
+</I>&gt;<i> +	Opt_VendorIdent, Opt_ProductIdent,
+</I>&gt;<i> +	Opt_ProductRev, Opt_SenseFormat,
+</I>&gt;<i> +	Opt_Removable, Opt_Online,
+</I>&gt;<i> +	Opt_err,
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i>  static match_table_t tokens = {
+</I>&gt;<i>  	{Opt_scsiid, &quot;scsi_id=%s&quot;},
+</I>&gt;<i>  	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
+</I>&gt;<i> +	{Opt_VendorIdent, &quot;VendorIdent=%s&quot;},
+</I>&gt;<i> +	{Opt_ProductIdent, &quot;ProductIdent=%s&quot;},
+</I>&gt;<i> +	{Opt_ProductRev, &quot;ProductRev=%s&quot;},
+</I>&gt;<i> +	{Opt_SenseFormat, &quot;SenseFormat=%s&quot;},
+</I>&gt;<i> +	{Opt_Removable, &quot;Removable=%s&quot;},
+</I>&gt;<i> +	{Opt_Online, &quot;Online=%s&quot;},
+</I>&gt;<i>  	{Opt_err, NULL},
+</I>&gt;<i>  };
+</I>
+I think that we need naming consistency here.
+
+
+&gt;<i>  int spc_lu_config(struct scsi_lu *lu, char *params) {
+</I>&gt;<i>  	int err = 0;
+</I>&gt;<i>  	char *p;
+</I>&gt;<i> +	char buf[20];
+</I>&gt;<i>  
+</I>&gt;<i>  	if (!strncmp(&quot;targetOps&quot;, params, 9))
+</I>&gt;<i>  		params = params + 10;
+</I>&gt;<i> @@ -315,6 +326,30 @@ int spc_lu_config(struct scsi_lu *lu, char *params) {
+</I>&gt;<i>  			match_strncpy(lu-&gt;attributes-&gt;scsi_sn, &amp;args[0],
+</I>&gt;<i>  				      sizeof(lu-&gt;attributes-&gt;scsi_sn) - 1);
+</I>&gt;<i>  			break;
+</I>&gt;<i> +		case Opt_VendorIdent:
+</I>&gt;<i> +			match_strncpy(lu-&gt;attributes-&gt;vendor_ident, &amp;args[0],
+</I>&gt;<i> +					sizeof(lu-&gt;attributes-&gt;vendor_ident));
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_ProductIdent:
+</I>&gt;<i> +			match_strncpy(lu-&gt;attributes-&gt;product_ident, &amp;args[0],
+</I>&gt;<i> +					sizeof(lu-&gt;attributes-&gt;product_ident));
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_ProductRev:
+</I>&gt;<i> +			match_strncpy(lu-&gt;attributes-&gt;product_rev, &amp;args[0],
+</I>&gt;<i> +					sizeof(lu-&gt;attributes-&gt;product_rev));
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_SenseFormat:
+</I>&gt;<i> +			match_strncpy(buf, &amp;args[0],  sizeof(buf));
+</I>&gt;<i> +			lu-&gt;attributes-&gt;sense_format = atoi(buf);
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_Removable:
+</I>&gt;<i> +			match_strncpy(buf, &amp;args[0],  sizeof(buf));
+</I>&gt;<i> +			lu-&gt;attributes-&gt;is_removable = atoi(buf);
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_Online:
+</I>&gt;<i> +			match_strncpy(buf, &amp;args[0],  sizeof(buf));
+</I>&gt;<i> +			lu-&gt;attributes-&gt;online = atoi(buf);
+</I>&gt;<i> +			break;
+</I>&gt;<i>  		default:
+</I>&gt;<i>  			err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i>  		}
+</I>&gt;<i> -- 
+</I>&gt;<i> 1.5.1.3
+</I>&gt;<i> 
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000750.html">[Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4
+</A></li>
+	<LI>Next message: <A HREF="000738.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#758">[ date ]</a>
+              <a href="thread.html#758">[ thread ]</a>
+              <a href="subject.html#758">[ subject ]</a>
+              <a href="author.html#758">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

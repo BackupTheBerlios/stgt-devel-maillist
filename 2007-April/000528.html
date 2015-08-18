@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Thoughts on vtl setup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20setup&In-Reply-To=%3C13ce23213cf662.13cf66213ce232%40o2.ie%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000527.html">
+   <LINK REL="Next"  HREF="000529.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Thoughts on vtl setup</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20setup&In-Reply-To=%3C13ce23213cf662.13cf66213ce232%40o2.ie%3E"
+       TITLE="[Stgt-devel] Thoughts on vtl setup">pauw at o2.ie
+       </A><BR>
+    <I>Thu Apr  5 21:32:51 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000527.html">[Stgt-devel] [PATCH] some shortcut options missing from tgtadm
+</A></li>
+        <LI>Next message: <A HREF="000529.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#528">[ date ]</a>
+              <a href="thread.html#528">[ thread ]</a>
+              <a href="subject.html#528">[ subject ]</a>
+              <a href="author.html#528">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Here are a few thoughts I wanted to share regarding the virtual tape library, just shoot at it if you think otherwise. Hope you don't find this too nosy Mark (Harvey) as you started the idea.
+
+General - Best would be to have the changer and the tapedrives on one target, the changer can be LUN 0, the drive(s) LUN 1 and onwards.
+
+Configuration - Would be best to keep this simple. The changer can be a standard one, implementing all necessary functions. For the drives you define the type once, and how many drives you want. If you use symbolic names (as to numeric) for the drive types, then this can be easily expanded. E.g. LTO3, DDS4, etc. for the drive type. If you need three different type of drives, then you just add one of each type. Since these types are predefined you don't have to set other parameters for these drives (like size etc). Lastly you define the directory where the tapeslots are.
+
+Tapes - Well, virtual tapes. I guess the filename can be the barcode, the extension the tape type, e.g. A00001.LTO2. However, when these files are accidentally renamed you loose the barcode and type. So every tape should have a header containing the barcode, and tape type. The barcode and tapetype should be in clear text (e.g. 4 characters LTO2). Another addition could be a two-byte field, containing bitfields, like this:
+
+0000 0000 0000 RCCC
+
+were
+CCC -&gt; compression 0-7, where 0 is no compression, 1 is LZ, etc. for different types of compression, if implemented. We can start without compression.
+
+R -&gt; Readonly bit, even if the file was readonly and set to readwrite, it would protect the data. Don't know if this setting can be done in the SCSI set.
+
+Tape handling - Before starting stgt vtl and point it to the tapeslot directory you create tape slot subdirectories like this, where you define at startup the directory /var/tape as the slot directory:
+
+/var/tape/slot-01
+...
+/var/tape/slot-24
+
+In the /var/tape directory there would be symbolic links like this
+
+/var/tape/drive-1 -&gt; /var/slot-01/A00001.LTO3
+
+if a tape is loaded into drive-1, when a drive is empty (startup setting) it does not have a symbolic link.
+
+Note that by creating these directories by hand you can define how many slots you have, but also leave existing &quot;tapes&quot; in the slots between restarts of the vtl stgt service. And stopping the service should delete the symbolic drive links, so the drives &quot;eject&quot; the virtual tape and start up &quot;empty&quot; next time.
+
+Well, just a thought.
+
+Albert
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000527.html">[Stgt-devel] [PATCH] some shortcut options missing from tgtadm
+</A></li>
+	<LI>Next message: <A HREF="000529.html">[Stgt-devel] Thoughts on vtl setup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#528">[ date ]</a>
+              <a href="thread.html#528">[ thread ]</a>
+              <a href="subject.html#528">[ subject ]</a>
+              <a href="author.html#528">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

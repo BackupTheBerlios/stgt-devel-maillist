@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20in%20tgt-setup-lun%3A%20fix%20check%20if%20tgtd%20daemon%20is%0A%09running&In-Reply-To=%3C47F24729.9020907%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001492.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20in%20tgt-setup-lun%3A%20fix%20check%20if%20tgtd%20daemon%20is%0A%09running&In-Reply-To=%3C47F24729.9020907%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running">dorons at voltaire.com
+       </A><BR>
+    <I>Tue Apr  1 16:31:05 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001492.html">[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1491">[ date ]</a>
+              <a href="thread.html#1491">[ thread ]</a>
+              <a href="subject.html#1491">[ subject ]</a>
+              <a href="author.html#1491">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Checking if the tgtd daemon is running should be
+done with pidof
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ scripts/tgt-setup-lun |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/scripts/tgt-setup-lun b/scripts/tgt-setup-lun
+index 53bb934..cefbec9 100755
+--- a/scripts/tgt-setup-lun
++++ b/scripts/tgt-setup-lun
+@@ -153,11 +153,14 @@ initiators=$*
+ 
+ verify_params
+ 
+-# Check if tgtd is running (we should have 2 daemons)
+-tgtd_count=$(ps aux|grep -c tgtd)
+-if [ $tgtd_count -ne 3 ]; then
+-	echo &quot;Starting tgtd&quot;
+-	tgtd
++
++# Check if tgtd is running
++pidof tgtd &amp;&gt;/dev/null
++ret=$?
++if [ $ret -ne 0 ]; then
++        echo &quot;tgtd is not running&quot;
++        echo &quot;Exiting...&quot;
++        exit 1
+ fi
+ 
+ tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$tgt_name&quot;
+-- 
+1.5.3.8
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001492.html">[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1491">[ date ]</a>
+              <a href="thread.html#1491">[ thread ]</a>
+              <a href="subject.html#1491">[ subject ]</a>
+              <a href="author.html#1491">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

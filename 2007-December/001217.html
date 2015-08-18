@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER - one too many rubber duckies in the mempool
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20-%20one%20too%20many%20rubber%20duckies%20in%20the%20mempool&In-Reply-To=%3C20071218104832.GA20044%40lemming.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001212.html">
+   <LINK REL="Next"  HREF="001221.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER - one too many rubber duckies in the mempool</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20-%20one%20too%20many%20rubber%20duckies%20in%20the%20mempool&In-Reply-To=%3C20071218104832.GA20044%40lemming.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER - one too many rubber duckies in the mempool">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Tue Dec 18 11:48:32 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001212.html">[Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests
+</A></li>
+        <LI>Next message: <A HREF="001221.html">[Stgt-devel] iSER - one too many rubber duckies in the mempool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1217">[ date ]</a>
+              <a href="thread.html#1217">[ thread ]</a>
+              <a href="subject.html#1217">[ subject ]</a>
+              <a href="author.html#1217">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+with &gt;=2 iSER clients I'm hitting these quite a lot:
+  tgtd: iscsi_rdma_malloc(1619) free list empty
+  tgtd: iscsi_rdma_alloc_data_buf(1647) free list empty
+     (the fn name depends on the tgtd version)
+after which the initiator node is pretty much toast :-/
+
+the code for this is in iscsi/iscsi_rdma.c --&gt;
+
+  static void *iscsi_rdma_alloc_data_buf(struct iscsi_connection *conn, size_t sz)
+  {       
+  ...
+          if (list_empty(&amp;dev-&gt;mempool_free)) {
+                  /* XXX: take slow path: allocate and register */
+                  eprintf(&quot;free list empty\n&quot;);
+                  exit(1);
+          }
+  ...
+
+which looks like an OO(rdma)M fallback that's just unimplemented at
+the moment?
+
+as a workaround I boosted:
+  static int mempool_num = 192;
+to 1920 which let 2 clients survive, but not the 15 or 100 that I'd
+ideally like.
+
+is dynamically adding more entries to the mempool the solution, or a
+separate list of non-mempool rdma bufs, or just telling the initiator to
+backoff for a while?
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001212.html">[Stgt-devel] [Scst-devel] some simple tgt / iSCSI-SCST	performance tests
+</A></li>
+	<LI>Next message: <A HREF="001221.html">[Stgt-devel] iSER - one too many rubber duckies in the mempool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1217">[ date ]</a>
+              <a href="thread.html#1217">[ thread ]</a>
+              <a href="subject.html#1217">[ subject ]</a>
+              <a href="author.html#1217">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

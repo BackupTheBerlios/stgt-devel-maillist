@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIscsitarget-devel%5D%20Re%3A%20stgt%20a%20new%20version%20of%20iscsi%20target%3F&In-Reply-To=%3C439B1965.90603%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000191.html">
+   <LINK REL="Next"  HREF="000205.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIscsitarget-devel%5D%20Re%3A%20stgt%20a%20new%20version%20of%20iscsi%20target%3F&In-Reply-To=%3C439B1965.90603%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Sat Dec 10 19:07:33 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000191.html">[Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000205.html">[Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#197">[ date ]</a>
+              <a href="thread.html#197">[ thread ]</a>
+              <a href="subject.html#197">[ subject ]</a>
+              <a href="author.html#197">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Vladislav Bolkhovitin wrote:
+&gt;<i> James Bottomley wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> On Fri, 2005-12-09 at 18:29 +0300, Vladislav Bolkhovitin wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Additionally, it's perfectly possible for all of this to be done zero
+</I>&gt;&gt;&gt;&gt;<i> copy on the data.  A user space target mmaps the data on its storage
+</I>&gt;&gt;&gt;&gt;<i> device and then does a SG_IO type scatter gather user virtual region
+</I>&gt;&gt;&gt;&gt;<i> pass to the underlying target infrastructure.  We already have this
+</I>&gt;&gt;&gt;&gt;<i> demonstrated in the SG_IO path, someone just needs to come up with the
+</I>&gt;&gt;&gt;&gt;<i> correct implementation for a target path.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> I'm not completely understand how it will work. Consider, there are 
+</I>&gt;&gt;&gt;<i> READ/WRITE commands with random data sizes arrive from an initiator. 
+</I>&gt;&gt;&gt;<i> Are you going to do map/unmap for each command individually or alloc 
+</I>&gt;&gt;&gt;<i> data buffers for commands from a premapped area and live with 
+</I>&gt;&gt;&gt;<i> possible its fragmentation? If map/unmap individually, then I should 
+</I>&gt;&gt;&gt;<i> say that those are very expensive operations.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> You do it the same way an array does:  the model for SPI is read command
+</I>&gt;&gt;<i> phase, disconnect, process command (i.e. set up areas) reconnect for
+</I>&gt;&gt;<i> data transfer.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> map/unmap are really only necessary if you're emulating the data store,
+</I>&gt;&gt;<i> but it's a fairly cheap operation on linux: it just causes the creation
+</I>&gt;&gt;<i> of a vm_area.  If it's a pass through, you can use SG_IO to pull it in
+</I>&gt;&gt;<i> and the SG_IO like output to shoot it out again, effectively using a
+</I>&gt;&gt;<i> piece of user memory as a zero copy buffer.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Fragmentation isn't an issue because the I/O goes via sg lists , all
+</I>&gt;&gt;<i> that's needed is a bunch of pages.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> OK, I see what you meant, thanks.
+</I>&gt;<i> 
+</I>&gt;&gt;<i> I do have to say that I consider operation in interrupt context (or even
+</I>&gt;&gt;<i> kernel context) to be a disadvantage.  Compared with the response times
+</I>&gt;&gt;<i> that most arrays have to SCSI commands, the kernel context switch time
+</I>&gt;&gt;<i> isn't that significant.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Are you sure that there are no now or will be available in the nearest 
+</I>&gt;<i> feature such (eg iSCSI) SCSI arrays with response time/latency so small 
+</I>&gt;<i> that having 5 (five) context switches or more per command, some of which 
+</I>&gt;<i> include map/unmap operations, will not increase the latency too much? I 
+</I>&gt;<i> mean, eg NFS server, which originally was user space daemon and many 
+</I>&gt;<i> people didn't want it in the kernel. Eventually, it's in. I don't see 
+</I>&gt;<i> any fundamental difference between NFS server and SCSI target server, 
+</I>
+Isn't the reason a NFS server is still in the kernel is becuase some of 
+the locking difficulties?
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000191.html">[Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000205.html">[Stgt-devel] [Iscsitarget-devel] Re: stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#197">[ date ]</a>
+              <a href="thread.html#197">[ thread ]</a>
+              <a href="subject.html#197">[ subject ]</a>
+              <a href="author.html#197">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

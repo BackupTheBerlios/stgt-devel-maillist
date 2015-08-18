@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070910024326H.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001005.html">
+   <LINK REL="Next"  HREF="001042.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi fix xmit param</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070910024326H.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi fix xmit param">tomof at acm.org
+       </A><BR>
+    <I>Mon Sep 10 19:31:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001005.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+        <LI>Next message: <A HREF="001042.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1039">[ date ]</a>
+              <a href="thread.html#1039">[ thread ]</a>
+              <a href="subject.html#1039">[ subject ]</a>
+              <a href="author.html#1039">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 4 Sep 2007 16:03:06 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> Repair one corner case in MaxRecvDataSegmentLength processing.  Default
+</I>&gt;<i> target has always kept data segments at 8k, even if the initiator asks
+</I>&gt;<i> for more.  Some target administrators may increase this by, e.g.:
+</I>&gt;<i> 
+</I>&gt;<i>     tgtadm --lld iscsi --mode target --op update --tid 1 \
+</I>&gt;<i> 	   --name MaxXmitDataSegmentLength --value 262144
+</I>&gt;<i> 
+</I>&gt;<i> so that target will generate up to min(initiator-specified RDSL, 256k).
+</I>&gt;<i> But if such a change is made, and the initiator does not specify RDSL,
+</I>&gt;<i> which is odd but specification compliant, the target will incorrectly
+</I>&gt;<i> use 256k instead of 8k.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/iscsid.c |   10 +++++++---
+</I>&gt;<i>  usr/iscsi/iscsid.h |    1 +
+</I>&gt;<i>  usr/iscsi/target.c |    2 +-
+</I>&gt;<i>  3 files changed, 9 insertions(+), 4 deletions(-)
+</I>
+What?
+
+As I explained before, I can't understand your description.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001005.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+	<LI>Next message: <A HREF="001042.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1039">[ date ]</a>
+              <a href="thread.html#1039">[ thread ]</a>
+              <a href="subject.html#1039">[ subject ]</a>
+              <a href="author.html#1039">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20iscsi%20tcp%20nodelay&In-Reply-To=%3C20080210020243J.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001371.html">
+   <LINK REL="Next"  HREF="001367.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/1%5D%20iscsi%20tcp%20nodelay&In-Reply-To=%3C20080210020243J.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay">tomof at acm.org
+       </A><BR>
+    <I>Sat Feb  9 18:01:48 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001371.html">[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+</A></li>
+        <LI>Next message: <A HREF="001367.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1377">[ date ]</a>
+              <a href="thread.html#1377">[ thread ]</a>
+              <a href="subject.html#1377">[ subject ]</a>
+              <a href="author.html#1377">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 8 Feb 2008 14:52:12 +0100
+&quot;Bart Van Assche&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bart.vanassche at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Feb 8, 2008 3:05 AM, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; Yeah, this is a must-have trick for low latency. IET has the same
+</I>&gt;<i> &gt; trick but somehow I forgot to add this to tgt.
+</I>&gt;<i> 
+</I>&gt;<i> I have retested tgt-20071227 with the TCP_NODELAY patch on an 1GB/s IB
+</I>&gt;<i> network with a RAM disk target. For realistic block transfer sizes (&lt;=
+</I>&gt;<i> 64 KB) latency is unchanged and throughput improved slightly (5% for
+</I>&gt;<i> reads and 9% for writes).
+</I>
+Sounds nice improvement.
+
+Thanks for testing,
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001371.html">[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+</A></li>
+	<LI>Next message: <A HREF="001367.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1377">[ date ]</a>
+              <a href="thread.html#1377">[ thread ]</a>
+              <a href="subject.html#1377">[ subject ]</a>
+              <a href="author.html#1377">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

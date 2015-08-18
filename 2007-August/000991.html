@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Can't compile the git version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Can%27t%20compile%20the%20git%20version&In-Reply-To=%3C200708311914.l7VJEDTM032198%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000989.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Can't compile the git version</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Can%27t%20compile%20the%20git%20version&In-Reply-To=%3C200708311914.l7VJEDTM032198%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Can't compile the git version">tomof at acm.org
+       </A><BR>
+    <I>Fri Aug 31 21:14:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000989.html">[Stgt-devel] Can't compile the git version
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#991">[ date ]</a>
+              <a href="thread.html#991">[ thread ]</a>
+              <a href="subject.html#991">[ subject ]</a>
+              <a href="author.html#991">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+Subject: [Stgt-devel] Can't compile the git version
+Date: Fri, 31 Aug 2007 20:41:55 +0200
+
+&gt;<i> I saw that there was an update in the repository so I updated my git 
+</I>&gt;<i> version of tgt (git-pull),
+</I>&gt;<i> as I always do.
+</I>&gt;<i> 
+</I>&gt;<i> Unfortunately, this new version it will not compile anymore.
+</I>&gt;<i> 
+</I>&gt;<i> Did something get messed up in the repository as of today (August 31st)?
+</I>&gt;<i> 
+</I>&gt;<i> Tried to make a new clone on my machine, but that didn't work either.
+</I>
+Sorry, I messed up when I added fc target mode support. Please try
+this patch.
+
+BTW, please use a plain-text mail format. I ignore html mails unless I
+find an important subject.
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 43565df..4c918d4 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -39,8 +39,8 @@ TGTD_OBJS += bs_sync.o
+ LIBS += -lcrypto -lpthread
+ endif
+ 
+-ifneq ($(FC),)
+-CFLAGS += -DFC -DUSE_KERNEL
++ifneq ($(FCP),)
++CFLAGS += -DFCP -DUSE_KERNEL
+ TGTD_OBJS += $(addprefix fc/, fc.o)
+ TGTD_OBJS += bs_mmap.o tgtif.o
+ endif
+diff --git a/usr/driver.c b/usr/driver.c
+index 2f6e154..068b410 100644
+--- a/usr/driver.c
++++ b/usr/driver.c
+@@ -39,7 +39,7 @@ struct tgt_driver *tgt_drivers[] = {
+ #ifdef XEN
+ 	&amp;xen,
+ #endif
+-#ifdef FC
++#ifdef FCP
+ 	&amp;fc,
+ #endif
+ 	NULL,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000989.html">[Stgt-devel] Can't compile the git version
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#991">[ date ]</a>
+              <a href="thread.html#991">[ thread ]</a>
+              <a href="subject.html#991">[ subject ]</a>
+              <a href="author.html#991">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

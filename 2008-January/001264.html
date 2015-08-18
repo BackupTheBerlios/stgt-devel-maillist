@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%20v2%5D%20iscsi%3A%20add%20setup_lun%20script&In-Reply-To=%3C20080103195607V.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001262.html">
+   <LINK REL="Next"  HREF="001266.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH v2] iscsi: add setup_lun script</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%20v2%5D%20iscsi%3A%20add%20setup_lun%20script&In-Reply-To=%3C20080103195607V.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH v2] iscsi: add setup_lun script">tomof at acm.org
+       </A><BR>
+    <I>Thu Jan  3 11:54:49 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001262.html">[Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+</A></li>
+        <LI>Next message: <A HREF="001266.html">[Stgt-devel] [PATCH v3] iscsi: add setup_lun script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1264">[ date ]</a>
+              <a href="thread.html#1264">[ thread ]</a>
+              <a href="subject.html#1264">[ subject ]</a>
+              <a href="author.html#1264">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 03 Jan 2008 09:08:31 +0200
+Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt; wrote:
+
+&gt;<i> Here's a better version that also installs the script:
+</I>&gt;<i> 
+</I>&gt;<i> Add a script that will create a target, add a device to
+</I>&gt;<i> the target and define the initiator that can connect to it.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/Makefile          |    2 +-
+</I>&gt;<i>  usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i>  2 files changed, 131 insertions(+), 1 deletions(-)
+</I>&gt;<i>  create mode 100644 usr/scripts/setup_lun
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/Makefile b/usr/Makefile
+</I>&gt;<i> index 6854057..16bd314 100644
+</I>&gt;<i> --- a/usr/Makefile
+</I>&gt;<i> +++ b/usr/Makefile
+</I>&gt;<i> @@ -51,7 +51,7 @@ CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i>  
+</I>&gt;<i>  LIBS += -lpthread
+</I>&gt;<i>  
+</I>&gt;<i> -PROGRAMS += tgtd tgtadm
+</I>&gt;<i> +PROGRAMS += tgtd tgtadm scripts/setup_lun
+</I>&gt;<i>  TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+</I>&gt;<i>  		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o bs.o
+</I>
+If you install this, it would be name 'tgt-hoge'. If you don't like
+it, I'm fine with this name.
+
+
+&gt;<i> diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+</I>&gt;<i> new file mode 100644
+</I>&gt;<i> index 0000000..e35d623
+</I>&gt;<i> --- /dev/null
+</I>&gt;<i> +++ b/usr/scripts/setup_lun
+</I>&gt;<i> @@ -0,0 +1,130 @@
+</I>&gt;<i> +# Copyright (C) Voltaire Ltd. 2001-2008.  ALL RIGHTS RESERVED.
+</I>&gt;<i> +#
+</I>&gt;<i> +# This source code (the &quot;Code&quot;) is a proprietary product of Voltaire Ltd.
+</I>&gt;<i> +# (the &quot;Company&quot;) and all right, title, and interest in and to the Code,
+</I>&gt;<i> +# including all associated intellectual property rights, are and shall
+</I>&gt;<i> +# remain exclusively with the Company.
+</I>&gt;<i> +#
+</I>&gt;<i> +# The Code is provided &quot;as is&quot;. To the maximum extent permitted by law,
+</I>&gt;<i> +# the Company disclaims any warranties of any kind, either expressed or
+</I>&gt;<i> +# implied, including, without limitation, implied warranties of
+</I>&gt;<i> +# merchantability, fitness for a particular purpose and non-infringement.
+</I>&gt;<i> +# The Company does not warrant that the Code will operate error free, or
+</I>&gt;<i> +# in an uninterrupted fashion or that it is compatible with any particular
+</I>&gt;<i> +# platform. In no event shall the Company be liable for any damages
+</I>&gt;<i> +# whatsoever (including, without limitation, incidental, direct, indirect,
+</I>&gt;<i> +# special and consequential damages, damages for loss of business profits,
+</I>&gt;<i> +# business interruption, loss of business information, or other pecuniary
+</I>&gt;<i> +# loss) arising out of the use or inability to use the Code, even if
+</I>&gt;<i> +# advised of the possibility of such damages.
+</I>&gt;<i> +#
+</I>&gt;<i> +# Author: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+</I>
+Why did you change the license from GPL2?
+
+If distribution people are ok with your license, I'll merge it. We
+need to make sure that they can merge tgt into their distributions
+without any problem.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001262.html">[Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+</A></li>
+	<LI>Next message: <A HREF="001266.html">[Stgt-devel] [PATCH v3] iscsi: add setup_lun script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1264">[ date ]</a>
+              <a href="thread.html#1264">[ thread ]</a>
+              <a href="subject.html#1264">[ subject ]</a>
+              <a href="author.html#1264">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

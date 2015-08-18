@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Ips] [ofa-general] Re: Calculating the VA iniSER	header
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIps%5D%20%5Bofa-general%5D%20Re%3A%20Calculating%20the%20VA%20iniSER%0A%09header&In-Reply-To=%3C694d48600805010718n7f02a30ev38d35c50e926d02%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001560.html">
+   <LINK REL="Next"  HREF="001561.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Ips] [ofa-general] Re: Calculating the VA iniSER	header</H1>
+    <B>Eli Dorfman</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BIps%5D%20%5Bofa-general%5D%20Re%3A%20Calculating%20the%20VA%20iniSER%0A%09header&In-Reply-To=%3C694d48600805010718n7f02a30ev38d35c50e926d02%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Ips] [ofa-general] Re: Calculating the VA iniSER	header">dorfman.eli at gmail.com
+       </A><BR>
+    <I>Thu May  1 16:18:45 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001560.html">[Stgt-devel] [Ips] [ofa-general] Re: Calculating the	VA	iniSER	header
+</A></li>
+        <LI>Next message: <A HREF="001561.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1562">[ date ]</a>
+              <a href="thread.html#1562">[ thread ]</a>
+              <a href="subject.html#1562">[ subject ]</a>
+              <a href="author.html#1562">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, May 1, 2008 at 11:24 AM, Ken Sandars &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">kensandars at hotmail.com</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> &gt;&gt; [Ken] It appears the current Linux iSER initiator does not send the HELLO
+</I>&gt;<i> message when
+</I>&gt;<i>
+</I>&gt;<i> &gt;&gt; the connection transits to full feature phase. The stgt target also
+</I>&gt;<i> ignores this
+</I>&gt;<i> &gt;&gt; message (if it were to appear).
+</I>&gt;<i> [Ken] The IBTA document does not mention the HELLO/HELLOREPLY messages.
+</I>&gt;<i> Implementing this message exchange gives a distinction between the current
+</I>&gt;<i> implementations
+</I>&gt;<i> and those that will correctly calculate the write_va (as per Pete Wyckoff's
+</I>&gt;<i> option 3).
+</I>
+I agree.
+
+&gt;<i>
+</I>&gt;<i> &gt;&gt; [Ken] Both of these implementations use a non-conformant iSER header
+</I>&gt;<i> (they add
+</I>&gt;<i>
+</I>&gt;<i> &gt;&gt; write_va and read_va fields, which incidentally do not appear to be
+</I>&gt;<i> used). Are
+</I>&gt;<i> &gt;&gt; these changes documented anywhere in the IB domain, or are these
+</I>&gt;<i> variations
+</I>&gt;<i> &gt;&gt; needed for another reason?
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; [Erez] Take a look at the iSER for IB annex:
+</I>&gt;<i>
+</I>&gt;<i> &gt; <A HREF="http://www.infinibandta.org/members/spec/Annex_iSER.PDF">http://www.infinibandta.org/members/spec/Annex_iSER.PDF</A>
+</I>&gt;<i>
+</I>&gt;<i> [Ken] Ouch. That link requires a username/password. Looks like it is only
+</I>&gt;<i> available to members
+</I>&gt;<i> of the Infiniband Trade Association. Fortunately I gained access to it with
+</I>&gt;<i> username &quot;open&quot; and
+</I>&gt;<i> password &quot;standard&quot;. ;-)
+</I>&gt;<i>
+</I>&gt;<i> [Ken] Neither of these implementations send or examine the iSER CM REQ/REP
+</I>&gt;<i> message private data.
+</I>&gt;<i> The document doesn't define what action to take when this message is
+</I>&gt;<i> absent. Interestingly,
+</I>&gt;<i> when the target reports that &quot;ZBVA shall be used for this connection&quot; and
+</I>&gt;<i> &quot;the target shall issue
+</I>&gt;<i> Send with Invalidate as needed&quot; then it appears the iSER header specified in
+</I>&gt;<i> RFC5046 should be
+</I>&gt;<i> used for control-type PDUs. Is there any plan to conform with the list of
+</I>&gt;<i> requirements for IBTA
+</I>&gt;<i> compliance?
+</I>
+At the moment these capabilities (ZBVA, Send Invalidate) are not
+supported in the driver,
+though they seem to be supported by the ConnectX HCA.
+Hence, iSER implementation do not send/examine them.
+This may be added to the CM REQ/REP with the current defaults but in
+order to use these capabilities a code
+should be added to the HCA driver and iser.
+
+&gt;<i>
+</I>&gt;<i> Cheers,
+</I>&gt;<i> Ken
+</I>&gt;<i>
+</I>&gt;<i> ________________________________
+</I>&gt;<i> Hotmail on your mobile. Never miss another e-mail with
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001560.html">[Stgt-devel] [Ips] [ofa-general] Re: Calculating the	VA	iniSER	header
+</A></li>
+	<LI>Next message: <A HREF="001561.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1562">[ date ]</a>
+              <a href="thread.html#1562">[ thread ]</a>
+              <a href="subject.html#1562">[ subject ]</a>
+              <a href="author.html#1562">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

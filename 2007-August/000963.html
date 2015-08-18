@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20save%20stag%20%26%20va%20for%20a%20scsi%20command%20on%0A%09the%09task%20object&In-Reply-To=%3C200708180518.l7I5IwN8030705%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000961.html">
+   <LINK REL="Next"  HREF="000965.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20save%20stag%20%26%20va%20for%20a%20scsi%20command%20on%0A%09the%09task%20object&In-Reply-To=%3C200708180518.l7I5IwN8030705%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object">tomof at acm.org
+       </A><BR>
+    <I>Sat Aug 18 07:18:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000961.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the	task object
+</A></li>
+        <LI>Next message: <A HREF="000965.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#963">[ date ]</a>
+              <a href="thread.html#963">[ thread ]</a>
+              <a href="subject.html#963">[ subject ]</a>
+              <a href="author.html#963">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the	task object
+Date: Fri, 17 Aug 2007 17:58:09 -0400
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Thu, 16 Aug 2007 17:44 +0300:
+</I>&gt;<i> &gt; When a command PDU is received, the iSER header contains the read/write
+</I>&gt;<i> &gt; va &amp; stag. This data was saved on the conn_info object. If another command PDU
+</I>&gt;<i> &gt; was received before this data was used, its va &amp; stag were written over the
+</I>&gt;<i> &gt; data for the previous command. This fix saves the va &amp; stag on the task object.
+</I>&gt;<i> 
+</I>&gt;<i> Good stuff.  I checked it in with minor modifications to keep trans
+</I>&gt;<i> data closer to the rest of the task fields and tweak debugging
+</I>&gt;<i> messages a bit:
+</I>&gt;<i> 
+</I>&gt;<i>     <A HREF="http://git.osc.edu/?p=tgt.git;a=commitdiff;h=e2be218b262e77776c681602320d598aa854e5e8">http://git.osc.edu/?p=tgt.git;a=commitdiff;h=e2be218b262e77776c681602320d598aa854e5e8</A>
+</I>
+With this, the iser patchset is ready for inclusion? Sorry, I've not
+read it but if it can't handle multiple outsanding commands, surely
+it's not ready.
+
+If it works for all the iSER people (not only OSD people), please
+resubmit a new version of the iSER patchset. And please the patch with
+the patch style checker (scripts/checkpatch.pl) prior to submission.
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000961.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on the	task object
+</A></li>
+	<LI>Next message: <A HREF="000965.html">[Stgt-devel] [PATCH] save stag &amp; va for a scsi command on	the	task object
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#963">[ date ]</a>
+              <a href="thread.html#963">[ thread ]</a>
+              <a href="subject.html#963">[ subject ]</a>
+              <a href="author.html#963">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

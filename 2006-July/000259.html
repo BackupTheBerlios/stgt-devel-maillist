@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Linux Kernel Version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Linux%20Kernel%20Version&In-Reply-To=%3C1152802833.8110.35.camel%40trinity.ogc.int%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000257.html">
+   <LINK REL="Next"  HREF="000260.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Linux Kernel Version</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Linux%20Kernel%20Version&In-Reply-To=%3C1152802833.8110.35.camel%40trinity.ogc.int%3E"
+       TITLE="[Stgt-devel] Linux Kernel Version">tom at opengridcomputing.com
+       </A><BR>
+    <I>Thu Jul 13 17:00:33 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000257.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+        <LI>Next message: <A HREF="000260.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#259">[ date ]</a>
+              <a href="thread.html#259">[ thread ]</a>
+              <a href="subject.html#259">[ subject ]</a>
+              <a href="author.html#259">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tomo:
+
+Thanks for the update. 
+
+[...snip...]
+
+&gt;<i> I made the tgt patch for 2.6.17. Would it help?
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://svn.berlios.de/svnroot/repos/stgt/trunk/patchset/tgt-2.6.17.patch">http://svn.berlios.de/svnroot/repos/stgt/trunk/patchset/tgt-2.6.17.patch</A>
+</I>&gt;<i> 
+</I>&gt;<i> Sorry. There is no instruction about it yet. I will write something
+</I>&gt;<i> later on.
+</I>
+Great, thanks. I'm not sure we really need instructions. I'll give it a
+whirl and see how it goes.
+
+&gt;<i> 
+</I>&gt;<i> As you said, it's complicated to run tgt right now. I've been working
+</I>&gt;<i> on it because some people might be interested in tgt after OLS. I want
+</I>&gt;<i> to make sure that everyone can run tgt without effort. I'm in the
+</I>&gt;<i> middle of large user-space rewrite (I've commited some last night).
+</I>&gt;<i> 
+</I>&gt;<i> Sorry for delay about iSER tgt stuff. I will work on it after OLS. 
+</I>
+The biggest thing I'd like some guidance on is how we want to plug into
+the transport switch. If connection management (not LOGIN, just the 
+listen/accept paths), is pushed into the kernel, then the user-mode
+code is insulated from the transport switch. This requires pushing the 
+current TCP connection management into the kernel though and adding netlink 
+messages for listen/accept. 
+
+Otherwise, we need to replicate the switch in user-mode. The TCP tgt can
+still use sockets in user mode, but he RDMA side will need to have the 
+netlink messages anyway. The issue is that unlike a socket, the RDMA 
+user-mode CM doesn't have the ability to have user-mode code and 
+kernel-mode code both doing I/O on the transport like a socket. 
+
+I've coded up the kernel-only approach, but haven't gotten much feedback 
+on it, so I'm assuming that it's not the preferred method ;-)
+&gt;<i>
+</I>&gt;<i> If
+</I>&gt;<i> you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+</I>&gt;<i> right after OLS. :)
+</I>
+Here's a How-To on bringing up the Chelsio code for RDMA
+
+============================================
+Setup kernel tree.
+============================================
+
+Pull your favorite post 2.6.16.18 kernel tree from kernel.org. 
+
+NOTE: The openib iwarp branch stays up to date with the latest 
+kernel.org release.
+
+============================================
+Checkout iWARP branch:
+============================================
+Pull the iwarp branch using svn.  You will need access to this code
+on your victim machine.
+
+# svn co <A HREF="https://openib.org/svn/gen2/branches/iwarp">https://openib.org/svn/gen2/branches/iwarp</A>
+
+
+============================================
+Apply the notifier patch.
+============================================
+
+To support MAC address changes and next hop routing changes, you need
+to install the notifier patch.
+
+# cd path_to_kernel
+# patch -p1 &lt; ${path_to_iwarp_branch}/src/linux-kernel/patches/cxgb3/notifier.patch
+
+Depending on the kernel you're using you may need to merge this patch.
+
+============================================
+Link the iWARP branch into your kernel tree
+============================================
+
+# cd ${path_to_kernel}/drivers
+# mv infiniband infinband.org
+# ln -s ${path_to_iwarp_branch}/src/linux-kernel/infiniband .
+
+# cd ${path_to_kernel}/include
+# mv rdma rdma.org
+# ln -s path_to_kernel/drivers/infiniband/include/rdma .
+
+Link in the cxgb3 LLD Driver:
+
+# cd ${path_to_kernel}/drivers/net
+
+If there is already a cxgb3 driver there, move it.
+# mv cxgb3 cxgb3.org
+
+# ln -sf path_to_iwarp_branch/src/linux-kernel/net/cxgb3 .
+
+Apply the kernel patches to build the cxgb3 LLD Driver:
+
+# cd ${path_to_kernel}
+# patch -p0 &lt; ${path_to_iwarp_branch}/src/linux-kernel/patches/cxgb3/cxgb3-Kconfig.patch
+# patch -p0 &lt; ${path_to_iwarp_branch}/src/linux-kernel/patches/cxgb3/cxgb3-Makefile.patch
+
+============================================
+Configure, build, install, and boot kernel and modules.
+============================================
+
+# cd ${path_to_kernel}
+# make menuconfig
+
+Device Drivers-&gt;Network device support-&gt;Ethernet (10000 Mbit)-&gt;
+&lt;M&gt; Chelsio T3 10Gb Ethernet support
+
+Make sure you turn on the &quot;Chelsio T3&quot; driver and turn OFF 
+any other Chelsio net driver that may be present. 
+
+Device Drivers-&gt;Infiniband support-&gt;
+&lt;M&gt; Infiniband support
+&lt;M&gt; Infiniband userspace MAD support
+&lt;M&gt; Infiniband userspace access (verbs &amp; cm)
+&lt;M&gt; Chelsio OpenIB module
+&lt;M&gt; Kernel RDMA Ping Module
+
+# make
+# make modules_install
+# make install
+# &lt;edit grub file if needed&gt;
+# reboot
+
+============================================
+Configure, build, and install userspace libraries
+============================================
+
+Here's a link to the OpenFabrics wiki on building userspace
+support. You can ignore the stuff in this wiki up to the point
+where you build the userspace libraries.
+
+BTW, I have seen issues with autogen.sh on some 64b distros. The symptom 
+is a failing configure script with an error like &quot;unable to determine 
+sizeof (long)&quot;. The work-around is to move the 
+AC_CHECK_SIZEOF(long) in the configure.in file up to just below
+AC_PROG_CC. 
+
+<A HREF="https://openib.org/tiki/tiki-index.php?page=Installation+Cheat+Sheet">https://openib.org/tiki/tiki-index.php?page=Installation+Cheat+Sheet</A>
+
+In addition to the libraries in the wiki, you need to
+build and install the following:
+
+# cd ${path_to_iwarp_branch}/src/userspace
+# (cd librdmacm &amp;&amp; ./autogen.sh &amp;&amp; ./configure &amp;&amp; make &amp;&amp; make install)
+# (cd libcxgb3 &amp;&amp; ./autogen.sh &amp;&amp; ./configure &amp;&amp; make &amp;&amp; make install)
+
+You need device files for kernel modules we just built.  We could add
+them later, manually, but udev is more convenient.
+
+Create a new file /etc/udev/rules.d/90-ib.rules:
+
+KERNEL=&quot;umad*&quot;, NAME=&quot;infiniband/%k&quot;
+KERNEL=&quot;issm*&quot;, NAME=&quot;infiniband/%k&quot;
+KERNEL=&quot;uverbs*&quot;, NAME=&quot;infiniband/%k&quot;, MODE=&quot;0666&quot;
+KERNEL=&quot;ucm*&quot;, NAME=&quot;infiniband/%k&quot;, MODE=&quot;0666&quot;
+KERNEL=&quot;rdma_cm&quot;, NAME=&quot;infiniband/%k&quot;, MODE=&quot;0666&quot;
+
+Load all the OpenIB Modules:
+
+# modprobe cxgb3
+# modprobe iw_cxgb3
+# modprobe ib_mad
+# modprobe rdma_cm
+# modprobe ib_umad
+# modprobe ib_uverbs
+# modprobe ib_ucm
+# modprobe rdma_ucm
+# modprobe rdma_krping
+# udevstart 2&gt;&amp;1 &gt;/dev/null &amp;
+
+============================================
+Test everything with rdma_krping:
+============================================
+
+Configure the Ethernet interfaces for your cxgb3 device. 
+
+Then on the server machine:
+
+echo &quot;verbose,server,addr=$server_ip_addr,port=9999&quot; &gt; /proc/krping
+
+And on the client machine:
+
+# echo &quot;verbose,client,addr=$server_ip_addr,port=9999&quot; &gt; /proc/krping
+
+If you cat /proc/krping, you'll see data indicating how many messages, 
+bytes, etc...have been sent for the various RDMA message types. 
+
+You can also tail -f /var/log/messages to see messages output there as well.
+
+Hope this helps, and don't hesitate to e-mail or call me (512-343-9196 x 108) 
+if you need help.
+
+Tom
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000257.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+	<LI>Next message: <A HREF="000260.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#259">[ date ]</a>
+              <a href="thread.html#259">[ thread ]</a>
+              <a href="subject.html#259">[ subject ]</a>
+              <a href="author.html#259">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS op	code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%206%20of%206%20-%20Implement%20READ%20ELEMENT%20STATUS%20op%0A%09code&In-Reply-To=%3Cf29db9a80705111936w376fdd4fs507fa976b70c561%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000634.html">
+   <LINK REL="Next"  HREF="000639.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS op	code</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%206%20of%206%20-%20Implement%20READ%20ELEMENT%20STATUS%20op%0A%09code&In-Reply-To=%3Cf29db9a80705111936w376fdd4fs507fa976b70c561%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS op	code">markh794 at gmail.com
+       </A><BR>
+    <I>Sat May 12 04:36:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000634.html">[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS	op	code
+</A></li>
+        <LI>Next message: <A HREF="000639.html">[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS	op	code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#637">[ date ]</a>
+              <a href="thread.html#637">[ thread ]</a>
+              <a href="subject.html#637">[ subject ]</a>
+              <a href="author.html#637">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 5/12/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> On Fri, 2007-05-11 at 13:23 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; SMC module is now useful enough to return a list of 'barcode' media in
+</I>&gt;<i> &gt; the changer.
+</I>&gt;<i>
+</I>&gt;<i> one potential issue for this command is the data can be larger than 1
+</I>&gt;<i> page if it is a large tl with thousands of elements. pls double check it
+</I>&gt;<i> is handled.
+</I>
+You are correct.
+
+Initially, I attempted to estimate at the amount of memory required
+(based on the number of slots * max record size), however I kept
+getting a core dump and eventually tracked it down to the following
+routine in iscsid.c
+   ======================================
+static void iscsi_free_cmd_task(struct iscsi_task *task)
+{
+        target_cmd_done(&amp;task-&gt;scmd);
+
+        list_del(&amp;task-&gt;c_hlist);
+        if (task-&gt;data) {
+                if ((unsigned long) task-&gt;data != task-&gt;addr)
+                        free((void *) (unsigned long) task-&gt;addr);
+        }
+        iscsi_free_task(task);
+}
+   ======================================
+
+I keept getting a glibc double free error and was not quite sure where
+to go from here.
+
+This was to be the subject of another email I had not written as yet,
+but since you brought it up :)
+
+&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Can't move them about yet. That will be next op code to be implemented.
+</I>&gt;<i> &gt; _______________________________________________
+</I>&gt;<i> &gt; Stgt-devel mailing list
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000634.html">[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS	op	code
+</A></li>
+	<LI>Next message: <A HREF="000639.html">[Stgt-devel] PATCH 6 of 6 - Implement READ ELEMENT STATUS	op	code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#637">[ date ]</a>
+              <a href="thread.html#637">[ thread ]</a>
+              <a href="subject.html#637">[ subject ]</a>
+              <a href="author.html#637">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

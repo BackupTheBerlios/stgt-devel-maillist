@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C200509091149.j89Bn7lZ015875%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000048.html">
+   <LINK REL="Next"  HREF="000051.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C200509091149.j89Bn7lZ015875%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Sep  9 13:49:06 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000048.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+        <LI>Next message: <A HREF="000051.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#49">[ date ]</a>
+              <a href="thread.html#49">[ thread ]</a>
+              <a href="subject.html#49">[ subject ]</a>
+              <a href="author.html#49">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+Date: Thu, 08 Sep 2005 15:44:10 -0500
+
+&gt;<i> &gt; 2. About task attribute, you can support only simple and ordered. You
+</I>&gt;<i> &gt; implement 'ordered task' to use bio barrier. So you don't have a
+</I>&gt;<i> &gt; complete code to handle all task attributes?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; stgt interface needs to be changed to support task attribute
+</I>&gt;<i> &gt; feature. I also think that we can simplify stgt_cmnd_* and buffer
+</I>&gt;<i> &gt; allocation interfaces. In short, I don't think that target drivers
+</I>&gt;<i> 
+</I>&gt;<i> Maybe we clean up the interfaces but I think that the stgt code will 
+</I>&gt;<i> have to become more complicated. I think we are going to have to add to 
+</I>&gt;<i> them to support correct scatterlist allocations for HW targets at least.
+</I>&gt;<i> 
+</I>&gt;<i> Also I think there will be some HW targets which cannot allocate the 
+</I>&gt;<i> commands from process context so some of that crud will have to stay - 
+</I>&gt;<i> is that what you got from looking at the qlogic driver too?
+</I>
+Yep. The qlogic driver allocates commands in interrupt context. My
+first intention was preallocate the specified number of commands using
+mempool (as session_init does). It works with iSCSI however, though
+I'm not sure about other protocols. However, preallocating some
+commands is a bit difficult now (please see the comment in
+stgt_cmnd_create). So perhaps, we needs delayed command allocation
+later on.
+
+
+&gt;<i> If you move IET to the same model open-iscsi uses, where it operates
+</I>&gt;<i> from the network's softirqs, then we will have to keep that delayed
+</I>&gt;<i> allocation code too.
+</I>
+Yes.
+
+
+&gt;<i> &gt; don't need to know or access the inside of stgt_cmnd structure. Mike,
+</I>&gt;<i> &gt; What do you think?
+</I>&gt;<i> 
+</I>&gt;<i> For SCSI drivers if we can decipher the offset and len from the SCSI cdb 
+</I>&gt;<i> then I think I agree, if there are going to be weird commands that do 
+</I>&gt;<i> not fit into a transport or protocol or some generic place then I guess 
+</I>&gt;<i> target drivers may have to touch some things. Although I think I got 
+</I>&gt;<i> some things wrong. Today we do
+</I>&gt;<i> 
+</I>&gt;<i> target driver (queue cmnd/ alloc buffer) -&gt; STGT (call protocol) 
+</I>&gt;<i> -&gt;protocol (SCSI stuff)
+</I>&gt;<i> 
+</I>&gt;<i> But I think we should go
+</I>&gt;<i> 
+</I>&gt;<i> target driver (queue cmnd alloc buffer) -&gt; protocol (SCSI stuff) -&gt; STGT
+</I>&gt;<i> 
+</I>&gt;<i> So then the target driver can pass some protocol specifc values like cdb 
+</I>&gt;<i> and lun (and lun decoder if necessary) without the stgt core having to 
+</I>&gt;<i> worry about that stuff. This will also allow you to make it so target 
+</I>&gt;<i> drivers do not have to touch things like the cdb field (I can move that 
+</I>&gt;<i> to a protocol specific cmnd data finally).
+</I>
+I agreed. Now we should remove all protocol specific stuff in stgt. I
+tried to do this (though I'm not sure whether I've done in a right way
+about some of the changes).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000048.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+	<LI>Next message: <A HREF="000051.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#49">[ date ]</a>
+              <a href="thread.html#49">[ thread ]</a>
+              <a href="subject.html#49">[ subject ]</a>
+              <a href="author.html#49">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

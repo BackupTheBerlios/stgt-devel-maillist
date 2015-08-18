@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 3/4 v2] iscsi: Add man page for tgt-setup-lun
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%20v2%5D%20iscsi%3A%20Add%20man%20page%20for%20tgt-setup-lun&In-Reply-To=%3C479498D8.1070300%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001301.html">
+   <LINK REL="Next"  HREF="001302.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 3/4 v2] iscsi: Add man page for tgt-setup-lun</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%20v2%5D%20iscsi%3A%20Add%20man%20page%20for%20tgt-setup-lun&In-Reply-To=%3C479498D8.1070300%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 3/4 v2] iscsi: Add man page for tgt-setup-lun">erezz at voltaire.com
+       </A><BR>
+    <I>Mon Jan 21 14:06:32 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001301.html">[Stgt-devel] [PATCH 3/4] iscsi: Add man page for tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001302.html">[Stgt-devel] [PATCH 4/4] iscsi: Add documentation installation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1304">[ date ]</a>
+              <a href="thread.html#1304">[ thread ]</a>
+              <a href="subject.html#1304">[ subject ]</a>
+              <a href="author.html#1304">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I just saw that man pages should be place under doc/manpages, so here's a fixed patch.
+
+Add man page for tgt-setup-lun
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ doc/manpages/tgt-setup-lun.8 |   45 ++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
+ create mode 100644 doc/manpages/tgt-setup-lun.8
+
+diff --git a/doc/manpages/tgt-setup-lun.8 b/doc/manpages/tgt-setup-lun.8
+new file mode 100644
+index 0000000..2c7c3b0
+--- /dev/null
++++ b/doc/manpages/tgt-setup-lun.8
+@@ -0,0 +1,45 @@
++.de Vb \&quot; Begin verbatim text
++.ft CW
++.nf
++.ne \\$1
++..
++
++.TH &quot;tgt-setup-lun&quot; 8
++.SH NAME
++tgt-setup-lun \- creates a target, adds a device to the target and defines initiators that can connect to the target
++.SH SYNOPSIS
++.B tgt-setup-lun -d device -n target_name [initiator_IP1 initiator_IP2 ...] [-h]
++
++.SH DESCRIPTION
++Starts tgtd if necessary and creates a target according to the supplied target_name. The format of the target name is as follows:
++.br
++iqn.2001-04.com.&lt;hostname&gt;-&lt;target_name&gt;
++The target name must be unique.
++
++The script then adds the requested device to the target. If specific IP addresses are defined, it adds them to the
++list of allowed initiators for that target. If no IP addresses is defined, it defines that the target accepts any
++initiator.
++
++.SH  EXAMPLES
++Create a target that uses /dev/sdb1 and allows connections only from 192.168.10.81:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target 192.168.10.81
++
++Create a target that uses /dev/sdb1 and allows connections only from 192.168.10.81 and 192.168.10.82:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target 192.168.10.81 192.168.10.82
++
++Create a target that uses /dev/sdb1 and allows connections from any initiator:
++.br
++tgt-setup-lun -d /dev/sdb1 -n my_target
++
++Display help:
++.br
++tgt-setup-lun -h
++
++.SH AUTHOR
++Written by Erez Zilber
++.SH &quot;REPORTING BUGS&quot;
++Report bugs to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;.
++.SH COPYRIGHT
++Copyright \(co Voltaire Ltd. 2008.
+-- 
+1.5.3.7
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001301.html">[Stgt-devel] [PATCH 3/4] iscsi: Add man page for tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001302.html">[Stgt-devel] [PATCH 4/4] iscsi: Add documentation installation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1304">[ date ]</a>
+              <a href="thread.html#1304">[ thread ]</a>
+              <a href="subject.html#1304">[ subject ]</a>
+              <a href="author.html#1304">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

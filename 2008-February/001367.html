@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER multiple readers
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080208020722.GA5146%40porcupine.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001377.html">
+   <LINK REL="Next"  HREF="001372.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER multiple readers</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20multiple%20readers&In-Reply-To=%3C20080208020722.GA5146%40porcupine.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER multiple readers">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Fri Feb  8 03:07:22 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001377.html">[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+</A></li>
+        <LI>Next message: <A HREF="001372.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1367">[ date ]</a>
+              <a href="thread.html#1367">[ thread ]</a>
+              <a href="subject.html#1367">[ subject ]</a>
+              <a href="author.html#1367">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I think I'm seeing iSER read corruption problems.
+a) in stock centos5.1 when not using kernel 2.6.22.6 I get read
+   corruption with just a single reader
+b) every kernel/OS/ofed combination that I've tried when there are
+   multiple simultaneous readers
+
+the multiple reader problem happens whether the data is read from
+multiple luns or clients or... well, just multiple reads to a single
+tgtd doing iSER seems to be enough to cause it.
+
+I'm hoping these problems are just something that I've broken in my
+setup... previously 2.6.18-52.el5 + centos5 worked (in the single
+reader case) but I can't make it work now.
+
+is anyone else seeing easy read corruption?
+
+the easiest way I can reproduce it is:
+ initiator side - write data:
+   lmdd if=internal of=/dev/sdc opat=1 bs=1M count=1000
+ target side - check that the file is ok (it is):
+   lmdd of=internal if=/mnt/ramdisk/file ipat=1 bs=1M count=1000 mismatch=1
+ initiator side - read and check data (is sometimes ok):
+   lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1
+ initiator side - read data with 2 processes at once (always fails):
+   lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1 &amp;
+   lmdd of=internal if=/dev/sdc ipat=1 bs=1M count=1000 mismatch=1 &amp;
+
+I'm using the kernel git tree of stgt.
+I don't see any problems when using TCP IPoIB.
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001377.html">[Stgt-devel] [PATCH 1/1] iscsi tcp nodelay
+</A></li>
+	<LI>Next message: <A HREF="001372.html">[Stgt-devel] iSER multiple readers
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1367">[ date ]</a>
+              <a href="thread.html#1367">[ thread ]</a>
+              <a href="subject.html#1367">[ subject ]</a>
+              <a href="author.html#1367">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

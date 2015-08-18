@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] support to close a connection by force and to shut down tgtd
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20support%20to%20close%20a%20connection%20by%20force%20and%20to%20shut%0A%20down%20tgtd&In-Reply-To=%3C20080731182153I.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001996.html">
+   <LINK REL="Next"  HREF="001998.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] support to close a connection by force and to shut down tgtd</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20support%20to%20close%20a%20connection%20by%20force%20and%20to%20shut%0A%20down%20tgtd&In-Reply-To=%3C20080731182153I.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] support to close a connection by force and to shut down tgtd">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jul 31 11:21:53 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001996.html">[Stgt-devel] support to close a connection by force and to shut down tgtd
+</A></li>
+        <LI>Next message: <A HREF="001998.html">[Stgt-devel] support to close a connection by force and to shut down tgtd
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1997">[ date ]</a>
+              <a href="thread.html#1997">[ thread ]</a>
+              <a href="subject.html#1997">[ subject ]</a>
+              <a href="author.html#1997">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 31 Jul 2008 09:59:47 +0200
+Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; On Wed, 30 Jul 2008 08:06:21 +0200
+</I>&gt;<i> &gt; Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt;&gt;&gt; On Tue, 29 Jul 2008 18:20:25 +0300
+</I>&gt;<i> &gt;&gt;&gt; Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at Voltaire.COM</A>&gt; wrote:
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt; Tomo - please note that the I_T nexus id is in hex but the tgtadm
+</I>&gt;<i> &gt;&gt;&gt;&gt; accepts only decimal values.  Please change the I_T nexus id to
+</I>&gt;<i> &gt;&gt;&gt;&gt; decimal.
+</I>&gt;<i> &gt;&gt;&gt; Ah, thanks a lot! I didn't notice this at all.
+</I>&gt;<i> &gt;&gt; BTW - can &quot;cid&quot; (&quot;Connection&quot;) have a different value than 0?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Yeah, it can. We just use the cid of a login request from an
+</I>&gt;<i> &gt; initiator.
+</I>&gt;<i> 
+</I>&gt;<i> So how would it look like?
+</I>&gt;<i> 
+</I>&gt;<i> 1) I assume like this:
+</I>&gt;<i> 
+</I>&gt;<i>     I_T nexus information:
+</I>&gt;<i>         I_T nexus: 64
+</I>&gt;<i>             Initiator: iqn.2006-08.net...
+</I>&gt;<i>             Connection: 2
+</I>&gt;<i>                 IP Address: 192.168.61.11
+</I>&gt;<i>         I_T nexus: 97
+</I>&gt;<i>             Initiator: iqn.2008-01.net...
+</I>&gt;<i>             Connection: 3
+</I>&gt;<i>                 IP Address: 192.168.61.10
+</I>&gt;<i>         I_T nexus: a7
+</I>&gt;<i>             Initiator: iqn.2007-06.net...
+</I>&gt;<i>             Connection: 0
+</I>&gt;<i>                 IP Address: 192.168.61.18
+</I>
+This can happen.
+
+
+&gt;<i> 2) But you can't have different connections in one session, i.e.:
+</I>&gt;<i> 
+</I>&gt;<i>     I_T nexus information:
+</I>&gt;<i>         I_T nexus: 64
+</I>&gt;<i>             Initiator: iqn.2006-08.net...
+</I>&gt;<i>             Connection: 2
+</I>&gt;<i>                 IP Address: 192.168.61.11
+</I>&gt;<i>             Initiator: iqn.2008-01.net...
+</I>&gt;<i>             Connection: 3
+</I>&gt;<i>                 IP Address: 192.168.61.10
+</I>&gt;<i>         I_T nexus: a7
+</I>&gt;<i>             Initiator: iqn.2007-06.net...
+</I>&gt;<i>             Connection: 0
+</I>&gt;<i>                 IP Address: 192.168.61.18
+</I>
+This can happen too with MC/S.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001996.html">[Stgt-devel] support to close a connection by force and to shut down tgtd
+</A></li>
+	<LI>Next message: <A HREF="001998.html">[Stgt-devel] support to close a connection by force and to shut down tgtd
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1997">[ date ]</a>
+              <a href="thread.html#1997">[ thread ]</a>
+              <a href="subject.html#1997">[ subject ]</a>
+              <a href="author.html#1997">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 3/4] (kernel) tgt_write process one entry
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/4%5D%20%28kernel%29%20tgt_write%20process%20one%20entry&In-Reply-To=%3C20071023213136.GD6091%40linux.vnet.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001108.html">
+   <LINK REL="Next"  HREF="001110.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 3/4] (kernel) tgt_write process one entry</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/4%5D%20%28kernel%29%20tgt_write%20process%20one%20entry&In-Reply-To=%3C20071023213136.GD6091%40linux.vnet.ibm.com%3E"
+       TITLE="[Stgt-devel] [Patch 3/4] (kernel) tgt_write process one entry">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Tue Oct 23 23:31:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001108.html">[Stgt-devel] [Patch 2/4] kreq_send threading
+</A></li>
+        <LI>Next message: <A HREF="001110.html">[Stgt-devel] [Patch 4/4] bs_mmap add O_SYNC to open()
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1109">[ date ]</a>
+              <a href="thread.html#1109">[ thread ]</a>
+              <a href="subject.html#1109">[ subject ]</a>
+              <a href="author.html#1109">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+The tgt_write operation will process only one target event when 
+it is called rather than processing all outstanding events.  Added
+locking to protect the ring index pointer.
+
+This will call copy_from_user or scsi_map_user_pages, both of which
+can sleep.  We need to operate in user context but by processing all
+outstanding requests before returning from the write in a single 
+thread, the user process is held in the write for a very long period 
+of time and we can't process more than one at a time.  With this change
+we can alter the userspace code to write from multiple threads.
+
+---
+ drivers/scsi/scsi_tgt_if.c |   31 +++++++++++++++++++------------
+ 1 file changed, 19 insertions(+), 12 deletions(-)
+
+Index: b/drivers/scsi/scsi_tgt_if.c
+===================================================================
+--- a/drivers/scsi/scsi_tgt_if.c
++++ b/drivers/scsi/scsi_tgt_if.c
+@@ -239,19 +239,26 @@ static ssize_t tgt_write(struct file *fi
+ {
+ 	struct tgt_event *ev;
+ 	struct tgt_ring *ring = &amp;rx_ring;
++	unsigned long flags;
++
++	spin_lock_irqsave(&amp;ring-&gt;tr_lock, flags);
++
++	ev = tgt_head_event(ring, ring-&gt;tr_idx);
++
++	if (!ev-&gt;hdr.status) {
++		spin_unlock_irqrestore(&amp;ring-&gt;tr_lock, flags);
++		eprintk(&quot;no valid tgt_event found during tgt_write\n&quot;);
++		return count;
++	}
++
++	tgt_ring_idx_inc(ring);
++
++	spin_unlock_irqrestore(&amp;ring-&gt;tr_lock, flags);
++
++	event_recv_msg(ev);
+ 
+-	while (1) {
+-		ev = tgt_head_event(ring, ring-&gt;tr_idx);
+-		/* do we need this? */
+-		flush_dcache_page(virt_to_page(ev));
+-
+-		if (!ev-&gt;hdr.status)
+-			break;
+-
+-		tgt_ring_idx_inc(ring);
+-		event_recv_msg(ev);
+-		ev-&gt;hdr.status = 0;
+-	};
++	ev-&gt;hdr.status = 0;
++	flush_dcache_page(virt_to_page(ev));
+ 
+ 	return count;
+ }
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001108.html">[Stgt-devel] [Patch 2/4] kreq_send threading
+</A></li>
+	<LI>Next message: <A HREF="001110.html">[Stgt-devel] [Patch 4/4] bs_mmap add O_SYNC to open()
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1109">[ date ]</a>
+              <a href="thread.html#1109">[ thread ]</a>
+              <a href="subject.html#1109">[ subject ]</a>
+              <a href="author.html#1109">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

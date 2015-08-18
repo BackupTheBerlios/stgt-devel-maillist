@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Improve SENSE reporting
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Improve%20SENSE%20reporting&In-Reply-To=%3C488980A5.1060307%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001867.html">
+   <LINK REL="Next"  HREF="001874.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Improve SENSE reporting</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Improve%20SENSE%20reporting&In-Reply-To=%3C488980A5.1060307%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Improve SENSE reporting">markh794 at gmail.com
+       </A><BR>
+    <I>Fri Jul 25 09:28:37 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001867.html">[Stgt-devel] segmentation fault trying to update LUN 0 ...
+</A></li>
+        <LI>Next message: <A HREF="001874.html">[Stgt-devel] [PATCH] Improve SENSE reporting
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1870">[ date ]</a>
+              <a href="thread.html#1870">[ thread ]</a>
+              <a href="subject.html#1870">[ subject ]</a>
+              <a href="author.html#1870">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From 43936f3da293e5a87e3ce30a1fb8fba1ae9e2e98 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Fri, 25 Jul 2008 06:50:22 +1000
+Subject: Improve SENSE reporting
+
+Attempt to return better SENSE codes.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/bs_ssc.c |   76 ++++++++++++++++++++++++---------------------------------
+ 1 files changed, 32 insertions(+), 44 deletions(-)
+
+diff --git a/usr/bs_ssc.c b/usr/bs_ssc.c
+index 3cfc89c..c1aa91e 100644
+--- a/usr/bs_ssc.c
++++ b/usr/bs_ssc.c
+@@ -19,32 +19,11 @@
+ #define LONG_BIT            2
+ #define BT_BIT              1
+ 
+-static void set_medium_error(int *result, uint8_t *key, uint16_t *asc)
+-{
+-	*result = SAM_STAT_CHECK_CONDITION;
+-	*key = MEDIUM_ERROR;
+-	*asc = ASC_READ_ERROR;
+-}
+-
+-static void ssc_sense_data_build(struct scsi_cmd *cmd, uint8_t key,
+-				 uint16_t asc)
+-{
+-	int len = 0xa;
+-	cmd-&gt;sense_buffer[0] = 0x70;
+-	cmd-&gt;sense_buffer[2] = NO_SENSE;
+-	cmd-&gt;sense_buffer[7] = len;
+-	cmd-&gt;sense_buffer[12] = (asc &gt;&gt; 8) &amp; 0xff;
+-	cmd-&gt;sense_buffer[13] = asc &amp; 0xff;
+-	cmd-&gt;sense_len = len + 8;
+-}
+-
+ static void rdwr_request(struct scsi_cmd *cmd)
+ {
+ 	int ret, fd = cmd-&gt;dev-&gt;fd, code;
+ 	uint32_t length, i, transfer_length, residue;
+ 	int result = SAM_STAT_GOOD;
+-	uint8_t key;
+-	uint16_t asc;
+ 	uint8_t buff[512];
+ 	char *buf;
+ 	off_t rew;
+@@ -54,8 +33,6 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 	ret = 0;
+ 	length = 0;
+ 	i = 0;
+-	key = 0;
+-	asc = 0;
+ 	transfer_length = 0;
+ 	residue = 0;
+ 	count = 0;
+@@ -65,8 +42,11 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 	case REZERO_UNIT:
+ 		rew = lseek(fd, 0, SEEK_SET);
+ 		curr_pos = lseek(fd, 0, SEEK_CUR);
+-		if (rew)
+-			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		if (rew) {
++			sense_data_build(cmd, MEDIUM_ERROR,
++					ASC_SEQUENTIAL_POSITION_ERR);
++			result = SAM_STAT_CHECK_CONDITION;
++		}
+ 		eprintf(&quot;Rewind Successful, File Pointer at %&quot; PRIu64&quot;,%m\n&quot;,
+ 			curr_pos);
+ 		break;
+@@ -74,9 +54,10 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 		length = sizeof(buff);
+ 		memset(buff, 28, sizeof(buff));
+ 		ret = write(fd, buff, length);
+-
+-		if (ret != length)
+-			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		if (ret != length) {
++			sense_data_build(cmd, MEDIUM_ERROR, ASC_WRITE_ERROR);
++			result = SAM_STAT_CHECK_CONDITION;
++		}
+ 		eprintf(&quot;Write Filemark Successfull %d\n&quot;, ret);
+ 		curr_pos = lseek(fd, 0, SEEK_CUR);
+ 		eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, curr_pos);
+@@ -86,15 +67,16 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 		ret = read(fd, scsi_get_in_buffer(cmd), length);
+ 		buf = (char *)(unsigned long)scsi_get_in_buffer(cmd);
+ 		/* buf = (char *)buf; */
+-		if (ret != length)
+-			set_medium_error(&amp;result, &amp;key, &amp;asc);
+-		else {
++		if (ret != length) {
++			sense_data_build(cmd, MEDIUM_ERROR, ASC_READ_ERROR);
++			result = SAM_STAT_CHECK_CONDITION;
++		} else {
+ 			for (i = 0; i &lt; ret; i += 512) {
+ 				eprintf(&quot;buf[%d]=%d&quot;, i, buf[i]);
+ 				if (buf[i] == 28) {
++					sense_data_build(cmd, NO_SENSE,
++							ASC_MARK);
+ 					result = SAM_STAT_CHECK_CONDITION;
+-					key = NO_SENSE;
+-					asc = ASC_MARK;
+ 					transfer_length = ((cmd-&gt;scb[2] &lt;&lt; 16) |
+ 							   (cmd-&gt;scb[3] &lt;&lt; 8) |
+ 							   (cmd-&gt;scb[4]));
+@@ -119,8 +101,10 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 	case WRITE_6:
+ 		length = scsi_get_out_length(cmd);
+ 		ret = write(fd, scsi_get_out_buffer(cmd), length);
+-		if (ret != length)
+-			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		if (ret != length) {
++			sense_data_build(cmd, MEDIUM_ERROR, ASC_WRITE_ERROR);
++			result = SAM_STAT_CHECK_CONDITION;
++		}
+ 		eprintf(&quot;Executed WRITE_6, writen %d bytes\n&quot;, ret);
+ 		curr_pos = lseek(fd, 0, SEEK_CUR);
+ 		eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;, curr_pos);
+@@ -133,17 +117,20 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 		if (code == 0) {
+ 			for (i = 0; i &lt; count; i++) {
+ 				ret = read(fd, buff, sizeof(buff));
+-				if (ret != sizeof(buff))
+-					set_medium_error(&amp;result, &amp;key, &amp;asc);
++				if (ret != sizeof(buff)) {
++					sense_data_build(cmd, MEDIUM_ERROR,
++						ASC_SEQUENTIAL_POSITION_ERR);
++					result = SAM_STAT_CHECK_CONDITION;
++				}
+ 
+ 				curr_pos = lseek(fd, 0, SEEK_CUR);
+ 				eprintf(&quot;File Pointer at %&quot; PRIu64&quot;,%m\n&quot;,
+ 					curr_pos);
+ 
+ 				if (buff[i*512] == 28) {
++					sense_data_build(cmd, NO_SENSE,
++						ASC_MARK);
+ 					result = SAM_STAT_CHECK_CONDITION;
+-					key = NO_SENSE;
+-					asc = ASC_MARK;
+ 				}
+ 			}
+ 		} else if (code == 1) {
+@@ -166,9 +153,12 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 		uint8_t *data;
+ 
+ 		eprintf(&quot;Size of in_buffer = %d &quot;, scsi_get_in_length(cmd));
+-		if (tclp == 1 || tclp != long_bit || (bt == 1 &amp;&amp; long_bit == 1))
++		if (tclp == 1 || tclp != long_bit ||
++						(bt == 1 &amp;&amp; long_bit == 1)) {
++			sense_data_build(cmd, ILLEGAL_REQUEST,
++						ASC_INVALID_FIELD_IN_CDB);
+ 			result = SAM_STAT_CHECK_CONDITION;
+-		else {
++		} else {
+ 			memset(buff, 0, sizeof(buff));
+ 			data = buff;
+ 			curr_pos = lseek(fd, 0, SEEK_CUR);
+@@ -189,11 +179,9 @@ static void rdwr_request(struct scsi_cmd *cmd)
+ 
+ 	scsi_set_result(cmd, result);
+ 
+-	if (result != SAM_STAT_GOOD) {
++	if (result != SAM_STAT_GOOD)
+ 		eprintf(&quot;io error %p %x %d %d %&quot; PRIu64 &quot;, %m\n&quot;,
+ 			cmd, cmd-&gt;scb[0], ret, length, cmd-&gt;offset);
+-		ssc_sense_data_build(cmd, key, asc);
+-	}
+ }
+ 
+ 
+-- 
+1.5.4.3
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001867.html">[Stgt-devel] segmentation fault trying to update LUN 0 ...
+</A></li>
+	<LI>Next message: <A HREF="001874.html">[Stgt-devel] [PATCH] Improve SENSE reporting
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1870">[ date ]</a>
+              <a href="thread.html#1870">[ thread ]</a>
+              <a href="subject.html#1870">[ subject ]</a>
+              <a href="author.html#1870">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

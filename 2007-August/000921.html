@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt backing store &amp; SSC
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20backing%20store%20%26%20SSC&In-Reply-To=%3Cf29db9a80708021807k23484ecfp94fc16ab469c20be%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000919.html">
+   <LINK REL="Next"  HREF="000922.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt backing store &amp; SSC</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20backing%20store%20%26%20SSC&In-Reply-To=%3Cf29db9a80708021807k23484ecfp94fc16ab469c20be%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] stgt backing store &amp; SSC">markh794 at gmail.com
+       </A><BR>
+    <I>Fri Aug  3 03:07:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000919.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+        <LI>Next message: <A HREF="000922.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#921">[ date ]</a>
+              <a href="thread.html#921">[ thread ]</a>
+              <a href="subject.html#921">[ subject ]</a>
+              <a href="author.html#921">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 8/3/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+&gt;<i> On Fri, 2007-08-03 at 10:53 +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; On 8/3/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; On Thu, 2007-08-02 at 14:58 -0400, Pete Wyckoff wrote:
+</I>&gt;<i> &gt; &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A> wrote on Tue, 31 Jul 2007 19:57 +1000:
+</I>&gt;<i> &gt; &gt; &gt; &gt; For Variable block SSC device, the block size written needs to be
+</I>&gt;<i> &gt; &gt; &gt; &gt; tracked.
+</I>&gt;<i> &gt; &gt; &gt; [..]
+</I>&gt;<i> &gt; &gt; &gt; &gt; My current thoughts of a solution:
+</I>&gt;<i> &gt; &gt; &gt; &gt; ========================
+</I>&gt;<i> &gt; &gt; &gt; &gt; A block header describes each block written -&gt; Analogy to the 'tar'
+</I>&gt;<i> &gt; &gt; &gt; &gt; format where a header is written, followed by the 'data' followed by
+</I>&gt;<i> &gt; &gt; &gt; &gt; another header, followed by more data...repeat...until blank header...
+</I>&gt;<i> &gt; &gt; &gt; [..]
+</I>&gt;<i> &gt; &gt; &gt; &gt; However the current implementation for iSCSI -&gt; bs_sync uses a
+</I>&gt;<i> &gt; &gt; &gt; &gt; pread64()/pwrite64() and writes data based on information stored in
+</I>&gt;<i> &gt; &gt; &gt; &gt; scsi_cmd -
+</I>&gt;<i> &gt; &gt; &gt; &gt;  pwrite64(fd, cmd-&gt;uaddr, cmd-&gt;len, cmd-&gt;offset)
+</I>&gt;<i> &gt; &gt; &gt; &gt;  pread64(fd, cmd-&gt;uaddr, cmd-&gt;len, cmd-&gt;offset)
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; Would it be OK to add a 'blk_header' structure to struct scsi_cmd and if
+</I>&gt;<i> &gt; &gt; &gt; &gt; blk_header is set, write this blk header as well ?
+</I>&gt;<i> &gt; &gt; &gt; &gt; I will attempt to put the above idea into code and submit for comment...
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; I think rather than trying to add stuff to existing backing stores
+</I>&gt;<i> &gt; &gt; &gt; that you should consider writing your own.  You need to store both
+</I>&gt;<i> &gt; &gt; &gt; &quot;metadata&quot; (block descriptors) and data, and none of the BSes are
+</I>&gt;<i> &gt; &gt; &gt; set up for that.
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; The complexity of trying to glue in the blk_header so that all BSes
+</I>&gt;<i> &gt; &gt; &gt; know how to tack that on top seems big.  Then you have to tell them
+</I>&gt;<i> &gt; &gt; &gt; to read the header, and consider fields in that when determining how
+</I>&gt;<i> &gt; &gt; &gt; much further data to read.  It gets messy fast.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; also considering tape can have compression and encryption, then each
+</I>&gt;<i> &gt; &gt; block is variable size even in fixed size mode. so support variable size
+</I>&gt;<i> &gt; &gt; is a must eventually.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Yep. The SSC metadata (header for each tape block) contains a
+</I>&gt;<i> &gt; structure with a 'block type' , size of original data &amp; size of data
+</I>&gt;<i> &gt; stored.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; All accounted for. Just no code for compression or encryption - as yet..
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; enum {
+</I>&gt;<i> &gt;         BLK_NOOP,
+</I>&gt;<i> &gt;         BLK_UNCOMPRESS_DATA,
+</I>&gt;<i> &gt;         BLK_COMPRESSED_DATA,
+</I>&gt;<i> &gt;         BLK_ENCRYPTED_DATA,
+</I>&gt;<i> &gt;         BLK_FILEMARK,
+</I>&gt;<i> &gt;         BLK_BOT,
+</I>&gt;<i> &gt;         BLK_EOD,
+</I>&gt;<i> &gt; };
+</I>&gt;<i>
+</I>&gt;<i> are these bits? can i have multiple bits set like compressed before
+</I>&gt;<i> encryption? also leave room for data deduplication for example storing a
+</I>&gt;<i> token. ;)
+</I>&gt;<i>
+</I>
+Arr.. no.
+
+Good catch.
+
+I'll re-do it so they are bits.
+
+Re: Data deduplication
+I was thinking a separate 'cache' file will be required and 'hashed'
+some way for this.
+
+I can not really see any advantage of storing a fixed deduplication
+method in the SSC block header.
+
+I have not thought this thru... So any input on this will be welcome.
+
+Cheers
+Mark
+
+&gt;<i>
+</I>&gt;<i> --
+</I>&gt;<i> Ming Zhang
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> @#$%^ purging memory... (*!%
+</I>&gt;<i> <A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+</I>&gt;<i> <A HREF="http://www.linkedin.com/in/blackmagic02881">http://www.linkedin.com/in/blackmagic02881</A>
+</I>&gt;<i> --------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000919.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+	<LI>Next message: <A HREF="000922.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#921">[ date ]</a>
+              <a href="thread.html#921">[ thread ]</a>
+              <a href="subject.html#921">[ subject ]</a>
+              <a href="author.html#921">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

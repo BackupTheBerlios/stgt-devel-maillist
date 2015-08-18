@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%205.1&In-Reply-To=%3C47CA6A52.3010208%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001419.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%205.1&In-Reply-To=%3C47CA6A52.3010208%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1">erezz at Voltaire.COM
+       </A><BR>
+    <I>Sun Mar  2 09:50:26 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001419.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1418">[ date ]</a>
+              <a href="thread.html#1418">[ thread ]</a>
+              <a href="subject.html#1418">[ subject ]</a>
+              <a href="author.html#1418">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mike Christie wrote:
+&gt;<i> Erez Zilber wrote:
+</I>&gt;&gt;<i> Hi,
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I'm using the latest stgt release (tgt-20071227) and I see different
+</I>&gt;&gt;<i> throughput numbers for READ commands on SLES 10  &amp; RHEL 5.1. I'm using
+</I>&gt;&gt;<i> stgt with iSCSI over iSER.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I'm using the same initiator (open-iscsi 865.15 from OFED 1.3 rc4) and
+</I>&gt;&gt;<i> the same target machine. The target machine has 2 partitions - one is
+</I>&gt;&gt;<i> SLES 10 &amp; the other is RHEL 5.1. When I run READ commands against the
+</I>&gt;&gt;<i> target on SLES 10, I get ~400 MB/sec (which is the throughput of the
+</I>&gt;&gt;<i> LUN). When I run the same READ commands from the same initiator against
+</I>&gt;&gt;<i> the target on RHEL 5.1, I get only 240 MB/sec.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Is there anything that I need to config on the RHEL 5.1 machine? BTW -
+</I>&gt;&gt;<i> if I run the same test directly from the target machine, I get 400
+</I>&gt;&gt;<i> MB/sec on both distros.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Here's the command that I use:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> sgp_dd if=/dev/sdc of=/dev/null bs=512 bpt=1024 thr=8 time=1
+</I>&gt;&gt;<i> count=20480000
+</I>&gt;&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Does this command try to keep 8 IOs running in parrallel, and if so
+</I>&gt;<i> did you try the noop scheduler (I think for SG_IO this will not make a
+</I>&gt;<i> difference)?
+</I>
+I tried noop &amp; cfq, but didn't see any dramatic change. BTW -
+if=/dev/sg3 (not /dev/sdc), so the command that I'm running is:
+
+sgp_dd if=/dev/sg3 of=/dev/null bs=512 bpt=1024 thr=8 time=1 count=20480000
+
+&gt;<i>
+</I>&gt;<i> Is the target by any chance running on a x86_64 box?
+</I>
+Yes. Which box are you using? BTW - our non-stgt target is also running
+on a x86_64 box successfully.
+
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001419.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1418">[ date ]</a>
+              <a href="thread.html#1418">[ thread ]</a>
+              <a href="subject.html#1418">[ subject ]</a>
+              <a href="author.html#1418">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

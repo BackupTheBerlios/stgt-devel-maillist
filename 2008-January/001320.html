@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801240236o2273be0bw24a2a61dcc781222%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001319.html">
+   <LINK REL="Next"  HREF="001321.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801240236o2273be0bw24a2a61dcc781222%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Thu Jan 24 11:36:45 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001319.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001321.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1320">[ date ]</a>
+              <a href="thread.html#1320">[ thread ]</a>
+              <a href="subject.html#1320">[ subject ]</a>
+              <a href="author.html#1320">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Jan 24, 2008 8:06 AM, Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+&gt;<i> On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;.............................................................................................
+</I>&gt;<i> &gt;.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+</I>&gt;<i> &gt;.                           .  performance   performance   .   performance    performance   .
+</I>&gt;<i> &gt;.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB &gt;MB/s)   (1 MB, MB/s)  .
+</I>&gt;<i> &gt;.............................................................................................
+</I>&gt;<i> &gt;. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+</I>&gt;<i> &gt;. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+</I>&gt;<i> &gt;. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+</I>&gt;<i> &gt;. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+</I>&gt;<i> &gt;............................................................................................
+</I>&gt;<i>
+</I>&gt;<i> how are write speeds with SCST SRP?
+</I>&gt;<i> for some kernels and tests tgt writes at &gt;2x the read speed.
+</I>&gt;<i>
+</I>&gt;<i> also I see much higher speeds that what you report in my DDR 4x IB tgt
+</I>&gt;<i> testing... which could be taken as inferring that tgt is scaling quite
+</I>&gt;<i> nicely on the faster fabric?
+</I>&gt;<i>   ib_write_bw of 1473 MB/s
+</I>&gt;<i>   ib_read_bw  of 1378 MB/s
+</I>&gt;<i>
+</I>&gt;<i> iSER to 7G ramfs, x86_64, centos4.6, 2.6.22 kernels, git tgtd,
+</I>&gt;<i> initiator end booted with mem=512M, target with 8G ram
+</I>&gt;<i>
+</I>&gt;<i>  direct i/o dd
+</I>&gt;<i>   write/read  800/751 MB/s
+</I>&gt;<i>     dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+</I>&gt;<i>     dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+</I>&gt;<i>
+</I>&gt;<i>  buffered i/o dd
+</I>&gt;<i>   write/read 1109/350 MB/s
+</I>&gt;<i>     dd if=/dev/zero of=/dev/sdc bs=1M count=5000
+</I>&gt;<i>     dd of=/dev/null if=/dev/sdc bs=1M count=5000
+</I>
+Hello Robin,
+
+The tests I performed were read performance tests with dd and with
+buffered I/O. For this test you obtained 350 MB/s with STGT on a DDR
+4x InfiniBand network, while I obtained 360 MB/s on a SDR 4x
+InfiniBand network. I don't think that we can call this &quot;scaling up&quot;
+...
+
+Regarding write performance: the write tests were performed with a
+real target (three disks in RAID-0, write bandwidth about 100 MB/s). I
+did not yet publish these numbers because it is not yet clear to me
+how much disk writing speed / InfiniBand transfer speed / target write
+buffering each contribute in the results. The results I obtained in
+the write tests (dd, buffered I/O) show the same trend as for the read
+tests: for large data transfers over a Gigabit Ethernet network the
+results for STGT and SCST are similar. For small transfer sizes (512
+bytes) or fast network technology (SRP / iSER) the write performance
+of SCST is significantly better than that of STGT.
+
+Bart.
+
+Bart.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001319.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001321.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1320">[ date ]</a>
+              <a href="thread.html#1320">[ thread ]</a>
+              <a href="subject.html#1320">[ subject ]</a>
+              <a href="author.html#1320">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

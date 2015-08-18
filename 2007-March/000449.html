@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] quiet gcc warnings
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20quiet%20gcc%20warnings&In-Reply-To=%3C20070318152324.GC20927%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000450.html">
+   <LINK REL="Next"  HREF="000451.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] quiet gcc warnings</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20quiet%20gcc%20warnings&In-Reply-To=%3C20070318152324.GC20927%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] quiet gcc warnings">pw at osc.edu
+       </A><BR>
+    <I>Sun Mar 18 16:23:24 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000450.html">[Stgt-devel] [PATCH] remove iscsi old files
+</A></li>
+        <LI>Next message: <A HREF="000451.html">[Stgt-devel] [PATCH] quiet gcc warnings
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#449">[ date ]</a>
+              <a href="thread.html#449">[ thread ]</a>
+              <a href="subject.html#449">[ subject ]</a>
+              <a href="author.html#449">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Quiet some useless gcc warnings about char signedness.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |    2 +-
+ usr/spc.c          |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 30892ce..e7e2d91 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1044,7 +1044,7 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+ 
+ 		if (ahs_extcdb-&gt;ahstype == ISCSI_AHSTYPE_CDB) {
+ 			int extcdb_len = ntohs(ahs_extcdb-&gt;ahslength) - 1;
+-			char *p = (void *)task-&gt;extdata;
++			uint8_t *p = (void *)task-&gt;extdata;
+ 
+ 			if (4 + extcdb_len &gt; ahslen) {
+ 				eprintf(&quot;AHS len %d too short for extcdb %d\n&quot;,
+diff --git a/usr/spc.c b/usr/spc.c
+index 7221915..80e6ce1 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -63,9 +63,9 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 		data[4] = 59;
+ 		data[7] = 0x02;
+ 		memset(data + 8, 0x20, 28);
+-		strncpy(data + 8, VENDOR_ID, 8);
+-		strncpy(data + 16, product_id, 16);
+-		strncpy(data + 32, PRODUCT_REV, 4);
++		strncpy((char *) data + 8, VENDOR_ID, 8);
++		strncpy((char *) data + 16, product_id, 16);
++		strncpy((char *) data + 32, PRODUCT_REV, 4);
+ 		data[58] = 0x03;
+ 		data[59] = 0x20;
+ 		data[60] = 0x09;
+-- 
+1.5.0.3
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000450.html">[Stgt-devel] [PATCH] remove iscsi old files
+</A></li>
+	<LI>Next message: <A HREF="000451.html">[Stgt-devel] [PATCH] quiet gcc warnings
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#449">[ date ]</a>
+              <a href="thread.html#449">[ thread ]</a>
+              <a href="subject.html#449">[ subject ]</a>
+              <a href="author.html#449">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

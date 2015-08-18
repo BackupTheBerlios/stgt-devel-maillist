@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Store persistent media data in extended attributes?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Store%20persistent%20media%20data%20in%20extended%20attributes%3F&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C03BCC0C1%40TUS1XCHCLUPIN06.enterprise.veritas.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001591.html">
+   <LINK REL="Next"  HREF="001592.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Store persistent media data in extended attributes?</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Store%20persistent%20media%20data%20in%20extended%20attributes%3F&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21C03BCC0C1%40TUS1XCHCLUPIN06.enterprise.veritas.com%3E"
+       TITLE="[Stgt-devel] Store persistent media data in extended attributes?">mark_harvey at symantec.com
+       </A><BR>
+    <I>Sat May  3 07:56:33 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001591.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+        <LI>Next message: <A HREF="001592.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1593">[ date ]</a>
+              <a href="thread.html#1593">[ thread ]</a>
+              <a href="subject.html#1593">[ subject ]</a>
+              <a href="author.html#1593">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hello Ronnie,
+
+A few months ago, I started on an SSC module. However I have failed to
+find the spare time to get a working proof of concept to post.... I
+still hope to finish this.
+
+
+I was embedding this information within the backing store of the virtual
+media disk file...
+e.g.
+struct MAM {
+        uint32_t tape_fmt_version;
+
+        uint64_t remaining_capacity;
+        uint64_t max_capacity;
+        uint64_t TapeAlert;
+        uint64_t load_count;
+[snip]
+};
+
+#define BLK_NOOP                0x00000000
+#define BLK_UNCOMPRESS_DATA     0x00000001
+#define BLK_COMPRESSED_DATA     0x00000002
+#define BLK_ENCRYPTED_DATA      0x00000004
+#define BLK_BOT                 0x00000010
+#define BLK_EOD                 0x00000020
+#define BLK_FILEMARK            0x00000040
+#define BLK_FILEMARK_DATA       0x00001000
+
+struct blk_header {
+        uint32_t blk_type;
+        uint32_t blk_size;
+        uint32_t disk_blk_size;
+        loff_t blk_number;
+        loff_t prev_blk;
+        loff_t curr_blk;
+        loff_t next_blk;
+};
+
+The virtual media disk layout of :
+
+struct blk_header (BLK_BOT)
+struct MAM
+struct blk_header (block 0)
+&lt;disk_blk_size&gt; block of data
+struct blk_header (block 1)
+&lt;disk_blk_size&gt; block of data
+(repeat for n blocks)
+struct blk_header (block n+1)
+&lt;disk_blk_size&gt; block of data
+struct blk_header (BLK_EOD)
+
+The prev_blk, curr_blk &amp; next_blk form pointers to previous, current &amp;
+next block of data (poor man's double linked list - if you like).
+
+
+The 'blk_size' &amp; disk_blk_size relates to uncompressed data block size &amp;
+size of data block within the virtual media.
+
+Initially I tried keeping this 'metadata' separate from the disk blocks
+of data. However this did not work with variable block reads &amp; writes,
+as I could not easily determine when a short (or long) block read was
+attempted.
+
+The Extended attributes information is kept within the MAM data
+structure (total bytes read / written during media life time, total
+mounts, media type, mdia serial number etc)
+
+Cheers
+Mark Harvey
+
+
+-----Original Message-----
+From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>
+[mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of ronnie
+sahlberg
+Sent: Saturday, May 03, 2008 3:26 PM
+To: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>
+Subject: [Stgt-devel] Store persistent media data in extended
+attributes?
+
+List,
+
+Please comment.
+
+A lot of SCSI device types contain a lot of persistent metadata.
+
+Some of these would be the medium auxiliary memory that is accessed by
+SPC : READ/WRITE ATTRIBUTE which is available for many device types.
+
+SMC contains things such as SEND VOLUME TAG.
+
+Many device types contain mode page settings, settable from the
+initiator and which are supposed to be &quot;persistent&quot; across power and
+unload/load cycles.
+For example SSC : WORM settings.
+
+UnitSerialNumber which all medias provide is similar, once I have
+specified the USN to a device, to me it would make sense if this USN
+would be persistent so next time I
+export that file as a SCSI device, it should automatically use the
+same USN that was previously attached to the device.
+Example:
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun
+$LUN  --params scsi_sn=FRED00,scsi_id=Fred
+Wouldnt it make sense that once this command is issued, the sn and the
+id is stored persistently with that backing store file   so that they
+apply automagically
+next time this volume is exported?
+I.e.   you specify/set the serial number once, and it remains
+persistent for the remainder of the lifetime of the backing store file
+itself. Not having to reapply the setting every single time
+you startup tgtd again.
+
+For MMC and SSC devices, this could include things like the barcode
+for the media.
+
+For SSC it could also include the metadata such as where the filemark
+markers are. (there is a lot of metadata required in ssc).
+
+
+Would it make sense to implement some smallish API to attach these
+kinds of metadata to extended attributes attached to the backing store
+file?
+
+
+regards
+ronnie sahlberg
+_______________________________________________
+Stgt-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001591.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+	<LI>Next message: <A HREF="001592.html">[Stgt-devel] Store persistent media data in extended attributes?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1593">[ date ]</a>
+              <a href="thread.html#1593">[ thread ]</a>
+              <a href="subject.html#1593">[ subject ]</a>
+              <a href="author.html#1593">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

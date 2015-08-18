@@ -1,0 +1,609 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] remove iscsi old files
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20remove%20iscsi%20old%20files&In-Reply-To=%3C20070318152032.GB20927%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000447.html">
+   <LINK REL="Next"  HREF="000450.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] remove iscsi old files</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20remove%20iscsi%20old%20files&In-Reply-To=%3C20070318152032.GB20927%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] remove iscsi old files">pw at osc.edu
+       </A><BR>
+    <I>Sun Mar 18 16:20:32 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000447.html">[Stgt-devel] moved the user-space code to git
+</A></li>
+        <LI>Next message: <A HREF="000450.html">[Stgt-devel] [PATCH] remove iscsi old files
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#448">[ date ]</a>
+              <a href="thread.html#448">[ thread ]</a>
+              <a href="subject.html#448">[ subject ]</a>
+              <a href="author.html#448">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Apparently a git conversion error.  Remove these old files.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/libistgt.c |   86 -------------
+ usr/iscsi/log.c      |  345 --------------------------------------------------
+ usr/iscsi/log.h      |   84 ------------
+ 3 files changed, 0 insertions(+), 515 deletions(-)
+ delete mode 100644 usr/iscsi/libistgt.c
+ delete mode 100644 usr/iscsi/log.c
+ delete mode 100644 usr/iscsi/log.h
+
+diff --git a/usr/iscsi/libistgt.c b/usr/iscsi/libistgt.c
+deleted file mode 100644
+index 50144c8..0000000
+--- a/usr/iscsi/libistgt.c
++++ /dev/null
+@@ -1,86 +0,0 @@
+-/*
+- * Copyright (C) 2006 FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
+- * Copyright (C) 2006 Mike Christie
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published
+- * by the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful, but
+- * WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+- * General Public License for more details.
+- *
+- * See the file COPYING included with this distribution for more details.
+- */
+-
+-#include &lt;ctype.h&gt;
+-#include &lt;errno.h&gt;
+-#include &lt;stdio.h&gt;
+-#include &lt;stdlib.h&gt;
+-#include &lt;string.h&gt;
+-#include &lt;unistd.h&gt;
+-#include &lt;dirent.h&gt;
+-
+-#include &lt;sys/ioctl.h&gt;
+-#include &lt;sys/types.h&gt;
+-#include &lt;sys/stat.h&gt;
+-#include &lt;sys/socket.h&gt;
+-#include &lt;sys/un.h&gt;
+-#include &lt;fcntl.h&gt;
+-#include &lt;linux/types.h&gt;
+-#include &lt;linux/netlink.h&gt;
+-
+-#include &quot;iscsid.h&quot;
+-#include &quot;tgtadm.h&quot;
+-
+-static int ipc_connect(void)
+-{
+-	int fd, err;
+-	struct sockaddr_un addr;
+-
+-	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+-	if (fd &lt; 0)
+-		return fd;
+-
+-	memset(&amp;addr, 0, sizeof(addr));
+-	addr.sun_family = AF_LOCAL;
+-	memcpy((char *) &amp;addr.sun_path + 1, ISTGT_NAMESPACE, strlen(ISTGT_NAMESPACE));
+-
+-	if ((err = connect(fd, (struct sockaddr *) &amp;addr, sizeof(addr))) &lt; 0)
+-		fd = err;
+-
+-	return fd;
+-}
+-
+-int ipc_mgmt(char *sbuf, char *rbuf)
+-{
+-	struct nlmsghdr *nlh = (struct nlmsghdr *) sbuf;
+-	struct tgtadm_req *req;
+-	int err = -EINVAL, fd;
+-	char *params;
+-
+-	req = NLMSG_DATA(nlh);
+-	params = (char *) req + sizeof(*req);
+-
+-	eprintf(&quot;%d %d %d %d %d %&quot; PRIx64 &quot; %&quot; PRIx64 &quot; %s\n&quot;, nlh-&gt;nlmsg_len,
+-		req-&gt;typeid, req-&gt;mode, req-&gt;op, req-&gt;tid, req-&gt;sid, req-&gt;lun, params);
+-
+-	fd = ipc_connect();
+-	if (fd &lt; 0) {
+-		eprintf(&quot;cannot connect istgtd\n&quot;);
+-		return fd;
+-	}
+-
+-	err = write(fd, sbuf, nlh-&gt;nlmsg_len);
+-	if (err &lt; 0) {
+-		eprintf(&quot;cannot connect istgtd\n&quot;);
+-		goto out;
+-	}
+-
+-out:
+-	close(fd);
+-
+-	return err;
+-}
+diff --git a/usr/iscsi/log.c b/usr/iscsi/log.c
+deleted file mode 100644
+index c85a967..0000000
+--- a/usr/iscsi/log.c
++++ /dev/null
+@@ -1,345 +0,0 @@
+-/*
+- * Copyright (C) 2002-2003 Ardis Technolgies &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">roman at ardistech.com</A>&gt;
+- *
+- * Released under the terms of the GNU GPL v2.0.
+- */
+-
+-#include &lt;ctype.h&gt;
+-#include &lt;string.h&gt;
+-#include &lt;stdarg.h&gt;
+-#include &lt;stdio.h&gt;
+-#include &lt;stdlib.h&gt;
+-#include &lt;unistd.h&gt;
+-#include &lt;syslog.h&gt;
+-#include &lt;signal.h&gt;
+-#include &lt;sys/shm.h&gt;
+-#include &lt;sys/ipc.h&gt;
+-#include &lt;sys/types.h&gt;
+-
+-#include &quot;log.h&quot;
+-
+-#define SEMKEY	0xA7L
+-#define LOGDBG 0
+-
+-#if LOGDBG
+-#define logdbg(file, fmt, args...) fprintf(file, fmt, ##args)
+-#else
+-#define logdbg(file, fmt, args...) do {} while (0)
+-#endif
+-
+-static char *log_name;
+-static int is_daemon, is_debug;
+-
+-static int logarea_init (int size)
+-{
+-	int shmid;
+-
+-	logdbg(stderr,&quot;enter logarea_init\n&quot;);
+-
+-	if ((shmid = shmget(IPC_PRIVATE, sizeof(struct logarea),
+-			    0644 | IPC_CREAT | IPC_EXCL)) == -1)
+-		return 1;
+-
+-	la = shmat(shmid, NULL, 0);
+-	if (!la)
+-		return 1;
+-
+-	if (size &lt; MAX_MSG_SIZE)
+-		size = LOG_SPACE_SIZE;
+-
+-	if ((shmid = shmget(IPC_PRIVATE, size,
+-			    0644 | IPC_CREAT | IPC_EXCL)) == -1) {
+-		shmdt(la);
+-		return 1;
+-	}
+-
+-	la-&gt;start = shmat(shmid, NULL, 0);
+-	if (!la-&gt;start) {
+-		shmdt(la);
+-		return 1;
+-	}
+-	memset(la-&gt;start, 0, size);
+-
+-	la-&gt;empty = 1;
+-	la-&gt;end = la-&gt;start + size;
+-	la-&gt;head = la-&gt;start;
+-	la-&gt;tail = la-&gt;start;
+-
+-	if ((shmid = shmget(IPC_PRIVATE, MAX_MSG_SIZE + sizeof(struct logmsg),
+-			    0644 | IPC_CREAT | IPC_EXCL)) == -1) {
+-		shmdt(la-&gt;start);
+-		shmdt(la);
+-		return 1;
+-	}
+-	la-&gt;buff = shmat(shmid, NULL, 0);
+-	if (!la-&gt;buff) {
+-		shmdt(la-&gt;start);
+-		shmdt(la);
+-		return 1;
+-	}
+-
+-	if ((la-&gt;semid = semget(SEMKEY, 1, 0666 | IPC_CREAT)) &lt; 0) {
+-		shmdt(la-&gt;buff);
+-		shmdt(la-&gt;start);
+-		shmdt(la);
+-		return 1;
+-	}
+-
+-	la-&gt;semarg.val=1;
+-	if (semctl(la-&gt;semid, 0, SETVAL, la-&gt;semarg) &lt; 0) {
+-		shmdt(la-&gt;buff);
+-		shmdt(la-&gt;start);
+-		shmdt(la);
+-		return 1;
+-	}
+-
+-	la-&gt;ops[0].sem_num = 0;
+-	la-&gt;ops[0].sem_flg = 0;
+-
+-	return 0;
+-
+-}
+-
+-static void free_logarea (void)
+-{
+-	semctl(la-&gt;semid, 0, IPC_RMID, la-&gt;semarg);
+-	shmdt(la-&gt;buff);
+-	shmdt(la-&gt;start);
+-	shmdt(la);
+-	return;
+-}
+-
+-#if LOGDBG
+-static void dump_logarea (void)
+-{
+-	struct logmsg * msg;
+-
+-	logdbg(stderr, &quot;\n==== area: start addr = %p, end addr = %p ====\n&quot;,
+-		la-&gt;start, la-&gt;end);
+-	logdbg(stderr, &quot;|addr     |next     |prio|msg\n&quot;);
+-
+-	for (msg = (struct logmsg *)la-&gt;head; (void *)msg != la-&gt;tail;
+-	     msg = msg-&gt;next)
+-		logdbg(stderr, &quot;|%p |%p |%i   |%s\n&quot;, (void *)msg, msg-&gt;next,
+-				msg-&gt;prio, (char *)&amp;msg-&gt;str);
+-
+-	logdbg(stderr, &quot;|%p |%p |%i   |%s\n&quot;, (void *)msg, msg-&gt;next,
+-			msg-&gt;prio, (char *)&amp;msg-&gt;str);
+-
+-	logdbg(stderr, &quot;\n\n&quot;);
+-}
+-#endif
+-
+-int log_enqueue (int prio, const char * fmt, va_list ap)
+-{
+-	int len, fwd;
+-	char buff[MAX_MSG_SIZE];
+-	struct logmsg * msg;
+-	struct logmsg * lastmsg;
+-
+-	lastmsg = (struct logmsg *)la-&gt;tail;
+-
+-	if (!la-&gt;empty) {
+-		fwd = sizeof(struct logmsg) +
+-		      strlen((char *)&amp;lastmsg-&gt;str) * sizeof(char) + 1;
+-		la-&gt;tail += fwd;
+-	}
+-	vsnprintf(buff, MAX_MSG_SIZE, fmt, ap);
+-	len = strlen(buff) * sizeof(char) + 1;
+-
+-	/* not enough space on tail : rewind */
+-	if (la-&gt;head &lt;= la-&gt;tail &amp;&amp;
+-	    (len + sizeof(struct logmsg)) &gt; (la-&gt;end - la-&gt;tail)) {
+-		logdbg(stderr, &quot;enqueue: rewind tail to %p\n&quot;, la-&gt;tail);
+-			la-&gt;tail = la-&gt;start;
+-	}
+-
+-	/* not enough space on head : drop msg */
+-	if (la-&gt;head &gt; la-&gt;tail &amp;&amp;
+-	    (len + sizeof(struct logmsg)) &gt; (la-&gt;head - la-&gt;tail)) {
+-		logdbg(stderr, &quot;enqueue: log area overrun, drop msg\n&quot;);
+-
+-		if (!la-&gt;empty)
+-			la-&gt;tail = lastmsg;
+-
+-		return 1;
+-	}
+-
+-	/* ok, we can stage the msg in the area */
+-	la-&gt;empty = 0;
+-	msg = (struct logmsg *)la-&gt;tail;
+-	msg-&gt;prio = prio;
+-	memcpy((void *)&amp;msg-&gt;str, buff, len);
+-	lastmsg-&gt;next = la-&gt;tail;
+-	msg-&gt;next = la-&gt;head;
+-
+-	logdbg(stderr, &quot;enqueue: %p, %p, %i, %s\n&quot;, (void *)msg, msg-&gt;next,
+-		msg-&gt;prio, (char *)&amp;msg-&gt;str);
+-
+-#if LOGDBG
+-	dump_logarea();
+-#endif
+-	return 0;
+-}
+-
+-int log_dequeue (void * buff)
+-{
+-	struct logmsg * src = (struct logmsg *)la-&gt;head;
+-	struct logmsg * dst = (struct logmsg *)buff;
+-	struct logmsg * lst = (struct logmsg *)la-&gt;tail;
+-
+-	if (la-&gt;empty)
+-		return 1;
+-
+-	int len = strlen((char *)&amp;src-&gt;str) * sizeof(char) +
+-		  sizeof(struct logmsg) + 1;
+-
+-	dst-&gt;prio = src-&gt;prio;
+-	memcpy(dst, src,  len);
+-
+-	if (la-&gt;tail == la-&gt;head)
+-		la-&gt;empty = 1; /* we purge the last logmsg */
+-	else {
+-		la-&gt;head = src-&gt;next;
+-		lst-&gt;next = la-&gt;head;
+-	}
+-	logdbg(stderr, &quot;dequeue: %p, %p, %i, %s\n&quot;,
+-		(void *)src, src-&gt;next, src-&gt;prio, (char *)&amp;src-&gt;str);
+-
+-	memset((void *)src, 0,  len);
+-
+-	return la-&gt;empty;
+-}
+-
+-/*
+- * this one can block under memory pressure
+- */
+-static void log_syslog (void * buff)
+-{
+-	struct logmsg * msg = (struct logmsg *)buff;
+-
+-	syslog(msg-&gt;prio, &quot;%s&quot;, (char *)&amp;msg-&gt;str);
+-}
+-
+-static void dolog(int prio, const char *fmt, va_list ap)
+-{
+-	if (is_daemon) {
+-		la-&gt;ops[0].sem_op = -1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
+-			syslog(LOG_ERR, &quot;semop up failed&quot;);
+-			return;
+-		}
+-
+-		log_enqueue(prio, fmt, ap);
+-
+-		la-&gt;ops[0].sem_op = 1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
+-			syslog(LOG_ERR, &quot;semop down failed&quot;);
+-			return;
+-		}
+-	} else {
+-		fprintf(stderr, &quot;%s: &quot;, log_name);
+-		vfprintf(stderr, fmt, ap);
+-		fflush(stderr);
+-	}
+-}
+-
+-void log_warning(const char *fmt, ...)
+-{
+-	va_list ap;
+-	va_start(ap, fmt);
+-	dolog(LOG_WARNING, fmt, ap);
+-	va_end(ap);
+-}
+-
+-void log_error(const char *fmt, ...)
+-{
+-	va_list ap;
+-	va_start(ap, fmt);
+-	dolog(LOG_ERR, fmt, ap);
+-	va_end(ap);
+-}
+-
+-void log_debug(const char *fmt, ...)
+-{
+-	if (!is_debug)
+-		return;
+-
+-	va_list ap;
+-	va_start(ap, fmt);
+-	dolog(LOG_DEBUG, fmt, ap);
+-	va_end(ap);
+-}
+-
+-static void log_flush(void)
+-{
+-	while (!la-&gt;empty) {
+-		la-&gt;ops[0].sem_op = -1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
+-			syslog(LOG_ERR, &quot;semop up failed&quot;);
+-			exit(1);
+-		}
+-		log_dequeue(la-&gt;buff);
+-		la-&gt;ops[0].sem_op = 1;
+-		if (semop(la-&gt;semid, la-&gt;ops, 1) &lt; 0) {
+-			syslog(LOG_ERR, &quot;semop down failed&quot;);
+-			exit(1);
+-		}
+-		log_syslog(la-&gt;buff);
+-	}
+-}
+-
+-int log_init(char *program_name, int size, int daemon, int debug)
+-{
+-	is_daemon = daemon;
+-	is_debug = debug;
+-
+-	logdbg(stderr,&quot;enter log_init\n&quot;);
+-	log_name = program_name;
+-	if (is_daemon) {
+-		struct sigaction sa_old;
+-		struct sigaction sa_new;
+-		pid_t pid;
+-
+-		openlog(log_name, 0, LOG_DAEMON);
+-		setlogmask (LOG_UPTO (LOG_DEBUG));
+-
+-		if (logarea_init(size)) {
+-			syslog(LOG_ERR, &quot;failed to initialize the logger\n&quot;);
+-			return 1;
+-		}
+-
+-		pid = fork();
+-		if (pid &lt; 0) {
+-			syslog(LOG_ERR, &quot;fail to fork the logger\n&quot;);
+-			return 1;
+-		} else if (pid) {
+-			syslog(LOG_WARNING,
+-			       &quot;Target daemon logger with pid=%d started!\n&quot;, pid);
+-			return 0;
+-		}
+-
+-		/* flush on daemon's crash */
+-		sa_new.sa_handler = (void*)log_flush;
+-		sigemptyset(&amp;sa_new.sa_mask);
+-		sa_new.sa_flags = 0;
+-		sigaction(SIGSEGV, &amp;sa_new, &amp;sa_old );
+-
+-		while(1) {
+-			log_flush();
+-			sleep(1);
+-		}
+-		exit(0);
+-	}
+-
+-	return 0;
+-}
+-
+-void log_close (void)
+-{
+-	if (is_daemon) {
+-		closelog();
+-		free_logarea();
+-	}
+-	return;
+-}
+diff --git a/usr/iscsi/log.h b/usr/iscsi/log.h
+deleted file mode 100644
+index 35ce374..0000000
+--- a/usr/iscsi/log.h
++++ /dev/null
+@@ -1,84 +0,0 @@
+-/*
+- * iSCSI Safe Logging and Tracing Library
+- *
+- * Copyright (C) 2004 Dmitry Yusupov, Alex Aizman
+- * maintained by <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">open-iscsi at googlegroups.com</A>
+- *
+- * circular buffer code based on log.c from dm-multipath project
+- *
+- * heavily based on code from log.c:
+- *   Copyright (C) 2002-2003 Ardis Technolgies &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">roman at ardistech.com</A>&gt;,
+- *   licensed under the terms of the GNU GPL v2.0,
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published
+- * by the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful, but
+- * WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+- * General Public License for more details.
+- *
+- * See the file COPYING included with this distribution for more details.
+- */
+-
+-#ifndef LOG_H
+-#define LOG_H
+-
+-#include &lt;sys/sem.h&gt;
+-
+-union semun {
+-	int val;
+-	struct semid_ds *buf;
+-	unsigned short int *array;
+-	struct seminfo *__buf;
+-};
+-
+-#define LOG_SPACE_SIZE 16384
+-#define MAX_MSG_SIZE 256
+-
+-extern int log_daemon;
+-extern int log_level;
+-
+-struct logmsg {
+-	short int prio;
+-	void *next;
+-	char *str;
+-};
+-
+-struct logarea {
+-	int empty;
+-	void *head;
+-	void *tail;
+-	void *start;
+-	void *end;
+-	char *buff;
+-	struct sembuf ops[1];
+-	int semid;
+-	union semun semarg;
+-};
+-
+-struct logarea *la;
+-
+-extern int log_init (char * progname, int size, int daemon, int debug);
+-extern void log_close (void);
+-extern void dump_logmsg (void *);
+-extern void log_warning(const char *fmt, ...)
+-	__attribute__ ((format (printf, 1, 2)));
+-extern void log_error(const char *fmt, ...)
+-	__attribute__ ((format (printf, 1, 2)));
+-extern void log_debug(const char *fmt, ...)
+-	__attribute__ ((format (printf, 1, 2)));
+-
+-#define eprintf(fmt, args...)						\
+-do {									\
+-	log_error(&quot;%s(%d) &quot; fmt, __FUNCTION__, __LINE__, ##args);	\
+-} while (0)
+-
+-#define dprintf(fmt, args...)						\
+-do {									\
+-	log_debug(&quot;%s(%d) &quot; fmt, __FUNCTION__, __LINE__, ##args);	\
+-} while (0)
+-
+-#endif	/* LOG_H */
+-- 
+1.5.0.3
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000447.html">[Stgt-devel] moved the user-space code to git
+</A></li>
+	<LI>Next message: <A HREF="000450.html">[Stgt-devel] [PATCH] remove iscsi old files
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#448">[ date ]</a>
+              <a href="thread.html#448">[ thread ]</a>
+              <a href="subject.html#448">[ subject ]</a>
+              <a href="author.html#448">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

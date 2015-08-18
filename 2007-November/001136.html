@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/4%5D%20bs_mmap%20/%20kreq_send%20threading&In-Reply-To=%3C20071106012928S.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001132.html">
+   <LINK REL="Next"  HREF="001157.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/4%5D%20bs_mmap%20/%20kreq_send%20threading&In-Reply-To=%3C20071106012928S.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading">tomof at acm.org
+       </A><BR>
+    <I>Mon Nov  5 17:27:10 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001132.html">[Stgt-devel] tgt disk and cd target with Microsoft initiator
+</A></li>
+        <LI>Next message: <A HREF="001157.html">[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1136">[ date ]</a>
+              <a href="thread.html#1136">[ thread ]</a>
+              <a href="subject.html#1136">[ subject ]</a>
+              <a href="author.html#1136">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Sorry about the delay.
+
+On Tue, 23 Oct 2007 16:14:01 -0500
+Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt; wrote:
+
+&gt;<i> A little threading work like we have in bs_sync for bs_mmap.  The mmap
+</I>&gt;<i> can be taken care of with a small pool of worker threads this way.
+</I>&gt;<i> 
+</I>&gt;<i> After the mmap the completed commands enter back into the main tgtd
+</I>&gt;<i> thread and would be sent to the kernel for in-kernel drivers through
+</I>&gt;<i> kreq_send.  Unfortunately kreq_send can sleep in blk_rq_map_user or
+</I>&gt;<i> scsi_map_user_pages and hold up processing in tgtd.  So kreq_send can
+</I>&gt;<i> add the command to a list and hand it off to a small thread pool to
+</I>&gt;<i> process sending the replies to the kernel.
+</I>
+tgtd is blocked when the data of a file isn't in page cache. So how
+about worker threads does access to the data before tgtd calls
+kreq_send? It works like the flush web server.
+
+Another possible improvement is avoiding mmap per command. Seems that
+with some distributions for POWER (at least debian), it's easy to
+build 64-bit binary. So we don't need to call mmap per command.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001132.html">[Stgt-devel] tgt disk and cd target with Microsoft initiator
+</A></li>
+	<LI>Next message: <A HREF="001157.html">[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1136">[ date ]</a>
+              <a href="thread.html#1136">[ thread ]</a>
+              <a href="subject.html#1136">[ subject ]</a>
+              <a href="author.html#1136">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

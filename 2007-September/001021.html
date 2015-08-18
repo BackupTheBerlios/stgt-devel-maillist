@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 14/18] iser transport mxdsl
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2014/18%5D%20iser%20transport%20mxdsl&In-Reply-To=%3C20070904201103.GR6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001020.html">
+   <LINK REL="Next"  HREF="001022.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 14/18] iser transport mxdsl</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2014/18%5D%20iser%20transport%20mxdsl&In-Reply-To=%3C20070904201103.GR6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 14/18] iser transport mxdsl">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:11:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001020.html">[Stgt-devel] [PATCH 13/18] iser close free
+</A></li>
+        <LI>Next message: <A HREF="001022.html">[Stgt-devel] [PATCH 15/18] iser rounding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1021">[ date ]</a>
+              <a href="thread.html#1021">[ thread ]</a>
+              <a href="subject.html#1021">[ subject ]</a>
+              <a href="author.html#1021">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>The RDMA transport chooses the size for data-in and data-out
+transfers, as these operations are not visible to the initiator.
+MaxXmitDataSegmentLength applies only to control-type PDUs, not
+to RDMA data transfers.  Add a per-connection parameter to hold
+the data transfer size chosen by the transport, with the proper
+default for TCP.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/conn.c   |    2 ++
+ usr/iscsi/iscsid.c |   17 +++++++++++------
+ usr/iscsi/iscsid.h |    1 +
+ 3 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index 9b0c3b9..b1d3937 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -65,6 +65,8 @@ struct iscsi_connection *conn_alloc(unsigned int trans_len)
+ 	conn-&gt;refcount = 1;
+ 	conn-&gt;state = STATE_FREE;
+ 	param_set_defaults(conn-&gt;session_param, session_keys);
++	conn-&gt;data_inout_max_size =
++		conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val;
+ 
+ 	INIT_LIST_HEAD(&amp;conn-&gt;clist);
+ 	INIT_LIST_HEAD(&amp;conn-&gt;tx_clist);
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index bf613f4..f72073b 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -478,6 +478,11 @@ static void login_finish(struct iscsi_connection *conn)
+ 			/* use spec default if he did not mention MRDSL */
+ 			conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val =
+ 				session_keys[ISCSI_PARAM_MAX_XMIT_DLENGTH].def;
++
++		/* update based on negotiations (but conn_init can override) */
++		conn-&gt;data_inout_max_size =
++			conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val;
++
+ 		/*
+ 		 * Allocate transport resources for this connection.
+ 		 */
+@@ -920,7 +925,6 @@ static int iscsi_data_rsp_build(struct iscsi_task *task)
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 	struct iscsi_data_rsp *rsp = (struct iscsi_data_rsp *) &amp;conn-&gt;rsp.bhs;
+ 	int datalen;
+-	int max_burst = conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val;
+ 
+ 	memset(rsp, 0, sizeof(*rsp));
+ 	rsp-&gt;opcode = ISCSI_OP_SCSI_DATA_IN;
+@@ -933,9 +937,10 @@ static int iscsi_data_rsp_build(struct iscsi_task *task)
+ 	datalen = min_t(uint32_t, task-&gt;read_len, task-&gt;len);
+ 	datalen -= task-&gt;offset;
+ 
+-	dprintf(&quot;%d %d %d %d %x\n&quot;, datalen, task-&gt;read_len, task-&gt;len, max_burst, rsp-&gt;itt);
++	dprintf(&quot;%d %d %d %d %x\n&quot;, datalen, task-&gt;read_len, task-&gt;len,
++		conn-&gt;data_inout_max_size, rsp-&gt;itt);
+ 
+-	if (datalen &lt;= max_burst) {
++	if (datalen &lt;= conn-&gt;data_inout_max_size) {
+ 		rsp-&gt;flags = ISCSI_FLAG_CMD_FINAL;
+ 
+ 		/* collapse status into final packet if successful */
+@@ -946,7 +951,7 @@ static int iscsi_data_rsp_build(struct iscsi_task *task)
+ 			calc_residual((struct iscsi_cmd_rsp *) rsp, task);
+ 		}
+ 	} else
+-		datalen = max_burst;
++		datalen = conn-&gt;data_inout_max_size;
+ 
+ 	rsp-&gt;exp_cmdsn = cpu_to_be32(conn-&gt;session-&gt;exp_cmd_sn);
+ 	rsp-&gt;max_cmdsn = cpu_to_be32(conn-&gt;session-&gt;exp_cmd_sn + MAX_QUEUE_CMD);
+@@ -965,7 +970,7 @@ static int iscsi_r2t_build(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 	struct iscsi_r2t_rsp *rsp = (struct iscsi_r2t_rsp *) &amp;conn-&gt;rsp.bhs;
+-	int length, max_burst = conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val;
++	int length;
+ 
+ 	memset(rsp, 0, sizeof(*rsp));
+ 
+@@ -977,7 +982,7 @@ static int iscsi_r2t_build(struct iscsi_task *task)
+ 	rsp-&gt;r2tsn = cpu_to_be32(task-&gt;exp_r2tsn++);
+ 	rsp-&gt;data_offset = cpu_to_be32(task-&gt;offset);
+ 	rsp-&gt;ttt = (unsigned long) task;
+-	length = min(task-&gt;r2t_count, max_burst);
++	length = min(task-&gt;r2t_count, conn-&gt;data_inout_max_size);
+ 	rsp-&gt;data_length = cpu_to_be32(length);
+ 
+ 	return 0;
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 8ef141a..99b8448 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -142,6 +142,7 @@ struct iscsi_connection {
+ 	int tid;
+ 	struct param session_param[ISCSI_PARAM_MAX];
+ 	int mxdsl_negotiated;
++	int data_inout_max_size;
+ 
+ 	char *initiator;
+ 	uint8_t isid[6];
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001020.html">[Stgt-devel] [PATCH 13/18] iser close free
+</A></li>
+	<LI>Next message: <A HREF="001022.html">[Stgt-devel] [PATCH 15/18] iser rounding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1021">[ date ]</a>
+              <a href="thread.html#1021">[ thread ]</a>
+              <a href="subject.html#1021">[ subject ]</a>
+              <a href="author.html#1021">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 7/7] iser core
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20iser%20core&In-Reply-To=%3C20070731181921.GA16612%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000904.html">
+   <LINK REL="Next"  HREF="000902.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 7/7] iser core</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20iser%20core&In-Reply-To=%3C20070731181921.GA16612%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 7/7] iser core">pw at osc.edu
+       </A><BR>
+    <I>Tue Jul 31 20:19:21 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000904.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+        <LI>Next message: <A HREF="000902.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#905">[ date ]</a>
+              <a href="thread.html#905">[ thread ]</a>
+              <a href="subject.html#905">[ subject ]</a>
+              <a href="author.html#905">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">agr at powerkom-dd.de</A> wrote on Tue, 31 Jul 2007 17:59 +0200:
+&gt;<i> Am Montag, den 30.07.2007, 15:01 -0400 schrieb Pete Wyckoff:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; +/* global connection list variables */
+</I>&gt;<i> &gt; +struct rdma_conn_list {
+</I>&gt;<i> &gt; +	struct conn_info conn[MAX_CONN];
+</I>&gt;<i> &gt; +	/*variables that all connections will share*/
+</I>&gt;<i> &gt; +	struct ibv_context	*ibv_hndl;
+</I>&gt;<i> &gt; +	struct rdma_event_channel *rdma_evt_channel;
+</I>&gt;<i> &gt; +	struct rdma_cm_id	*cma_listen_id;
+</I>&gt;<i> &gt; +	struct ibv_pd		*prot_id;
+</I>&gt;<i> &gt; +	struct ibv_cq		*cq_hndl;
+</I>&gt;<i> &gt; +	struct ibv_comp_channel *cq_channel;
+</I>&gt;<i> &gt; +	struct list_head conn_tx_ready;  /* conns with tasks ready to tx */
+</I>&gt;<i> &gt; +	/* prereg rdma bufs */
+</I>&gt;<i> &gt; +	void *regbuf;
+</I>&gt;<i> &gt; +	void *membuf;
+</I>&gt;<i> &gt; +	struct ibv_mr *regmr;
+</I>&gt;<i> &gt; +	struct list_head freel, allocl;
+</I>&gt;<i> &gt; +	int num_tx_ready;
+</I>&gt;<i> &gt; +};
+</I>&gt;<i> &gt; +static struct rdma_conn_list cl;
+</I>&gt;<i> 
+</I>&gt;<i> Haven't found it in the errata, but it seems that with this design only
+</I>&gt;<i> one HCA is supported?
+</I>
+Yes, correct.  We will need multiple event channels and PDs at
+least.  I will add this as an erratum.  Perhaps someone who is
+blessed with multiple HCAs will fix it for us.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000904.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+	<LI>Next message: <A HREF="000902.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#905">[ date ]</a>
+              <a href="thread.html#905">[ thread ]</a>
+              <a href="subject.html#905">[ subject ]</a>
+              <a href="author.html#905">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

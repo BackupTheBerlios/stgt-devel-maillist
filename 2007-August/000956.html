@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3Cmailman.18.1331738474.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000970.html">
+   <LINK REL="Next"  HREF="000972.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] iscsi fix xmit param</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3Cmailman.18.1331738474.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] iscsi fix xmit param">pw at osc.edu
+       </A><BR>
+    <I>Wed Aug 15 18:09:46 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000970.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+        <LI>Next message: <A HREF="000972.html">[Stgt-devel] [Patch 1/1] Remove non-alphabetic chars from iSCSI	target name
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#956">[ date ]</a>
+              <a href="thread.html#956">[ thread ]</a>
+              <a href="subject.html#956">[ subject ]</a>
+              <a href="author.html#956">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Repair one case in MaxRecvDataSegmentLength processing.  Default target
+has always limited data segments to 8k, even if the initiator asks for
+more.  It may be a good idea to increase this by, e.g:
+
+    tgtadm --lld iscsi --mode target --op update --tid 1 \
+	   --name MaxXmitDataSegmentLength --value 262144
+
+so that target will generate up to min(initiator RDSL, 256k).  But if
+you change this parameter, and initiator does not specify RDSL, target
+will incorrectly use 256k instead of 8k.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |   10 +++++++---
+ usr/iscsi/iscsid.h |    1 +
+ usr/iscsi/target.c |    2 +-
+ 3 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index e092462..0a1932a 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -286,8 +286,10 @@ static void text_scan_login(struct iscsi_connection *conn)
+ 			unsigned int val;
+ 			char buf[32];
+ 
+-			if (idx == ISCSI_PARAM_MAX_RECV_DLENGTH)
++			if (idx == ISCSI_PARAM_MAX_RECV_DLENGTH) {
+ 				idx = ISCSI_PARAM_MAX_XMIT_DLENGTH;
++				conn-&gt;mxdsl_negotiated = 1;
++			}
+ 
+ 			if (param_str_to_val(session_keys, idx, value, &amp;val) &lt; 0) {
+ 				if (conn-&gt;session_param[idx].state
+@@ -349,8 +351,6 @@ static int text_check_param(struct iscsi_connection *conn)
+ 		if (p[i].state == KEY_STATE_START &amp;&amp; p[i].val != session_keys[i].def) {
+ 			if (conn-&gt;state == STATE_LOGIN) {
+ 				if (i == ISCSI_PARAM_MAX_XMIT_DLENGTH) {
+-					if (p[i].val &gt; session_keys[i].def)
+-						p[i].val = session_keys[i].def;
+ 					p[i].state = KEY_STATE_DONE;
+ 					continue;
+ 				}
+@@ -471,6 +471,10 @@ static void login_finish(struct iscsi_connection *conn)
+ {
+ 	switch (conn-&gt;session_type) {
+ 	case SESSION_NORMAL:
++		if (!conn-&gt;mxdsl_negotiated)
++			/* use spec default if he did not mention MRDSL */
++			conn-&gt;session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val =
++				session_keys[ISCSI_PARAM_MAX_XMIT_DLENGTH].def;
+ 		if (!conn-&gt;session)
+ 			session_create(conn);
+ 		memcpy(conn-&gt;isid, conn-&gt;session-&gt;isid, sizeof(conn-&gt;isid));
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index a8c8cb1..2b08252 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -140,6 +140,7 @@ struct iscsi_connection {
+ 
+ 	int tid;
+ 	struct param session_param[ISCSI_PARAM_MAX];
++	int mxdsl_negotiated;
+ 
+ 	char *initiator;
+ 	uint8_t isid[6];
+diff --git a/usr/iscsi/target.c b/usr/iscsi/target.c
+index 2653839..53d8164 100644
+--- a/usr/iscsi/target.c
++++ b/usr/iscsi/target.c
+@@ -265,7 +265,7 @@ int iscsi_target_create(struct target *t)
+ 	struct iscsi_target *target;
+ 	struct param default_tgt_session_param[] = {
+ 		[ISCSI_PARAM_MAX_RECV_DLENGTH] = {0, 8192},
+-		[ISCSI_PARAM_MAX_XMIT_DLENGTH] = {0, 8192},  /* do not edit */
++		[ISCSI_PARAM_MAX_XMIT_DLENGTH] = {0, 8192},
+ 		[ISCSI_PARAM_HDRDGST_EN] = {0, DIGEST_NONE},
+ 		[ISCSI_PARAM_DATADGST_EN] = {0, DIGEST_NONE},
+ 		[ISCSI_PARAM_INITIAL_R2T_EN] = {0, 1},
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000970.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+	<LI>Next message: <A HREF="000972.html">[Stgt-devel] [Patch 1/1] Remove non-alphabetic chars from iSCSI	target name
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#956">[ date ]</a>
+              <a href="thread.html#956">[ thread ]</a>
+              <a href="subject.html#956">[ subject ]</a>
+              <a href="author.html#956">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

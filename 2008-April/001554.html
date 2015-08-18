@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bofa-general%5D%20Re%3A%20%5BIps%5D%20Calculating%20the%20VA%20in%20iSER%0A%09header&In-Reply-To=%3C20080429170516.GA8857%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001527.html">
+   <LINK REL="Next"  HREF="001557.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bofa-general%5D%20Re%3A%20%5BIps%5D%20Calculating%20the%20VA%20in%20iSER%0A%09header&In-Reply-To=%3C20080429170516.GA8857%40osc.edu%3E"
+       TITLE="[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header">pw at osc.edu
+       </A><BR>
+    <I>Tue Apr 29 19:05:16 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001527.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+</A></li>
+        <LI>Next message: <A HREF="001557.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in	iSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1554">[ date ]</a>
+              <a href="thread.html#1554">[ thread ]</a>
+              <a href="subject.html#1554">[ subject ]</a>
+              <a href="author.html#1554">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorfman.eli at gmail.com</A> wrote on Thu, 17 Apr 2008 14:13 +0300:
+&gt;<i> On Wed, Apr 16, 2008 at 6:46 PM, Roland Dreier &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rdreier at cisco.com</A>&gt; wrote:
+</I>&gt;<i> &gt;  &gt; Agree with the interpretation of the spec, and it's probably a bit
+</I>&gt;<i> &gt;   &gt; clearer that way too.  But we have working initiators and targets
+</I>&gt;<i> &gt;   &gt; that do it the &quot;wrong&quot; way.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Yes... I guess the key question is whether there are any initiators that
+</I>&gt;<i> &gt;  do things the &quot;right&quot; way.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   &gt; 1. Flag day: all initiators and targets change at the same time.
+</I>&gt;<i> &gt;   &gt; Will see data corruption if someone unluckily runs one or the other
+</I>&gt;<i> &gt;   &gt; using old non-fixed code.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Seems unacceptable to me... it doesn't make sense at all to break every
+</I>&gt;<i> &gt;  setup in the world just to be &quot;right&quot; according to the spec.
+</I>&gt;<i> 
+</I>&gt;<i> This will break only when both initiator and target will use
+</I>&gt;<i> InitialR2T=No, which means allow unsolicited data.
+</I>&gt;<i> As far as I know, STGT is not very common (and its version in RHEL5.1
+</I>&gt;<i> is considered experimental). Its default is also InitialR2T=Yes.
+</I>&gt;<i> Voltaire's iSCSI over iSER target also uses default InitialR2T=Yes.
+</I>&gt;<i> So it seems that nothing will break.
+</I>
+I finally got a chance to look at this just now.  I think you mean
+default is InitialR2T=No above, which means no unsolicited data.
+That is the default case, and true, the two different meanings
+of the initiator-supplied VA coincide.
+
+But you missed the impact of immediate data.  We run with the
+defaults (I think) that say the first write request packet should be
+filled with a bit of the coming data stream.  From iscsid.conf:
+
+    # To enable immediate data (i.e., the initiator sends unsolicited data
+    # with the iSCSI command packet), uncomment the following line:
+    #
+    # The default is Yes
+    node.session.iscsi.ImmediateData = Yes
+
+Looking at the offset printed out by your patch, it is indeed
+non-zero for the first RDMA read.  Please correct me if I am
+mistaken about this---you must have tested all four variations of
+with and without the patches on initiator and target side, but I did
+not.
+
+Hence I am still a bit unhappy about having to deal with the
+fallout, with no way to detect it.  For our local use, I'll keep an
+older version of stgt in use until we switch to a new kernel, then
+merge up the target side change.  It is a bother, but I can deal
+with it.  For other institutions, this lockstep upgrade requirement
+will not be obvious until they debug the resulting data corruption.
+
+Still, I do understand why it would be nice to conform to the spec,
+and it is maybe a bit cleaner that way too.  Maybe you can help with
+the bug reports on stgt-devel during the transition, and maintain
+and publish a patch to let it work with old kernels.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001527.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+</A></li>
+	<LI>Next message: <A HREF="001557.html">[Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in	iSER	header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1554">[ date ]</a>
+              <a href="thread.html#1554">[ thread ]</a>
+              <a href="subject.html#1554">[ subject ]</a>
+              <a href="author.html#1554">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

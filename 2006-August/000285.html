@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C20060802080118O.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000283.html">
+   <LINK REL="Next"  HREF="000288.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C20060802080118O.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] User-mode iSER">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Aug  2 01:01:18 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000283.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000288.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#285">[ date ]</a>
+              <a href="thread.html#285">[ thread ]</a>
+              <a href="subject.html#285">[ subject ]</a>
+              <a href="author.html#285">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt;
+Subject: Re: [Stgt-devel] User-mode iSER
+Date: Tue, 01 Aug 2006 18:56:29 -0400
+
+&gt;<i> On Wed, 2006-08-02 at 07:21 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+</I>&gt;<i> &gt; Subject: Re: [Stgt-devel] User-mode iSER
+</I>&gt;<i> &gt; Date: Tue, 01 Aug 2006 15:43:09 -0500
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; &gt; and it will be better if kernel/user space line is marked. so people
+</I>&gt;<i> &gt; &gt; &gt; know your intention and can comment in that if need. otherwise, i saw no
+</I>&gt;<i> &gt; &gt; &gt; difference from stgt or scst.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Attaches is a new picture with kernel/user boundaries. I think the
+</I>&gt;<i> &gt; &gt; boundary is somewhat fuzzy at the top and bottom due to the fact that
+</I>&gt;<i> &gt; &gt; the API is different for each target type and for each network provider
+</I>&gt;<i> &gt; &gt; type. 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; For example, the sd driver will use open /dev/sdN and submit ioctl to
+</I>&gt;<i> &gt; &gt; read/write the disk, whereas the file target will
+</I>&gt;<i> &gt; &gt; open(&quot;/home/thisandthat&quot;, ...) and submit lseek/read/write to read/write
+</I>&gt;<i> &gt; &gt; the file.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; On the network side, the TCP provider would use socket, listen, accept,
+</I>&gt;<i> &gt; &gt; send, recv (at least initially), the RMDA provider would use
+</I>&gt;<i> &gt; &gt; rdma_resolve_addr, rdma_resolve_route, rdma_listen, rdma_accept,
+</I>&gt;<i> &gt; &gt; rdma_create_qp, rdma_post_send, etc....
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; My only point is that the kernel/user interface is not a straight line
+</I>&gt;<i> &gt; &gt; since some of these interfaces are higher level than others.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Yes. Most of the tgt drivers (except for iSCSI tcp and iSER drivers)
+</I>&gt;<i> &gt; need their own in-kernel part. Oh, iSCSI hardware drivers (like
+</I>&gt;<i> &gt; qla4xxx) need the in-kernel part too.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> 
+</I>&gt;<i> so you want iscsi tcp in user space as well? 
+</I>
+Please read my first mail before sending mails.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000283.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000288.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#285">[ date ]</a>
+              <a href="thread.html#285">[ thread ]</a>
+              <a href="subject.html#285">[ subject ]</a>
+              <a href="author.html#285">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

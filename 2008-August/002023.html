@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] updating targets in tgt-admin
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20updating%20targets%20in%20tgt-admin&In-Reply-To=%3C20080809100535D.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002009.html">
+   <LINK REL="Next"  HREF="002010.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] updating targets in tgt-admin</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20updating%20targets%20in%20tgt-admin&In-Reply-To=%3C20080809100535D.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] updating targets in tgt-admin">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Aug  9 03:05:21 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002009.html">[Stgt-devel] [PATCH] updating targets in tgt-admin
+</A></li>
+        <LI>Next message: <A HREF="002010.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2023">[ date ]</a>
+              <a href="thread.html#2023">[ thread ]</a>
+              <a href="subject.html#2023">[ subject ]</a>
+              <a href="author.html#2023">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 01 Aug 2008 10:50:45 +0200
+Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+
+&gt;<i> This patch adds proper updating of targets to tgt-admin.
+</I>&gt;<i> 
+</I>&gt;<i> You have to add --force/-f option to update targets which are in use.
+</I>&gt;<i> 
+</I>&gt;<i> Updating consists of two things:
+</I>&gt;<i> - target is deleted
+</I>&gt;<i> - target is configured, basing on its config options
+</I>&gt;<i> 
+</I>&gt;<i> Updating a target which is no longer in a config file will result in the target's deletion.
+</I>&gt;<i> 
+</I>&gt;<i> The patch also changes the behaviour of --execute slightly - it now
+</I>&gt;<i> tries to delete the targets which are not in the config file; if the
+</I>&gt;<i> target is in use, it won't be touched (unless --force is used); if
+</I>&gt;<i> the target is not in use, it will be deleted.
+</I>
+Seems that no complaint about the changes so I've applied this patch
+(with some cleanups for whitespace).
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002009.html">[Stgt-devel] [PATCH] updating targets in tgt-admin
+</A></li>
+	<LI>Next message: <A HREF="002010.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2023">[ date ]</a>
+              <a href="thread.html#2023">[ thread ]</a>
+              <a href="subject.html#2023">[ subject ]</a>
+              <a href="author.html#2023">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

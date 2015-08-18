@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%0A%09common%09spc_inquiry%20routine.&In-Reply-To=%3C20070525203236.GC3065%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000699.html">
+   <LINK REL="Next"  HREF="000713.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%0A%09common%09spc_inquiry%20routine.&In-Reply-To=%3C20070525203236.GC3065%40osc.edu%3E"
+       TITLE="[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.">pw at osc.edu
+       </A><BR>
+    <I>Fri May 25 22:32:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000699.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+        <LI>Next message: <A HREF="000713.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#712">[ date ]</a>
+              <a href="thread.html#712">[ thread ]</a>
+              <a href="subject.html#712">[ subject ]</a>
+              <a href="author.html#712">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A> wrote on Wed, 23 May 2007 13:01 +1000:
+&gt;<i> Moved scsi_sn, scsi_id and d_sense (now sense_format) into a common
+</I>&gt;<i> struct with other INQUIRY related data.
+</I>[..]
+&gt;<i> +static int osd_device_init(struct scsi_lu *lu)
+</I>&gt;<i>  {
+</I>&gt;<i> -	lu-&gt;d_sense = 1;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (spc_device_init(lu))
+</I>&gt;<i> +		return -ENOMEM;
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;OSD&quot;, 16); 
+</I>&gt;<i> +	lu-&gt;attributes-&gt;sense_format = 1;
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc1 = 0x0340;	/* OSD */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc2 = 0x0960;	/* iSCSI */
+</I>&gt;<i> +	lu-&gt;attributes-&gt;version_desc3 = 0x0300;	/* SPC-3 */
+</I>&gt;<i> +
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>
+Good stuff.  I like the common INQUIRY handling.  It was something
+Tomo asked for once I added yet another inquiry handler for OSD.
+
+Another tweak that will be needed is the ability to support more
+page codes.  OSD needs to provide 0xb0 and 0xb1.  This means
+modifying 0x0 (supported VPD pages) to add two more supported pages
+to the list.  And it needs very OSD-internal code to produce the
+right responses for 0xb0 and 0xb1.  So I've been holding off pushing
+that change because it is difficult to generalize well.  If you have
+ideas, they would be most welcome.
+
+By all means, this patch is a step in the right direction, though.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000699.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+	<LI>Next message: <A HREF="000713.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#712">[ date ]</a>
+              <a href="thread.html#712">[ thread ]</a>
+              <a href="subject.html#712">[ subject ]</a>
+              <a href="author.html#712">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

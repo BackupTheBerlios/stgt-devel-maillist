@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Define a larger SCSI_SN_LEN
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Define%20a%20larger%20SCSI_SN_LEN&In-Reply-To=%3C487362F4.4000609%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001748.html">
+   <LINK REL="Next"  HREF="001749.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Define a larger SCSI_SN_LEN</H1>
+    <B>Doron Shoham</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Define%20a%20larger%20SCSI_SN_LEN&In-Reply-To=%3C487362F4.4000609%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Define a larger SCSI_SN_LEN">dorons at voltaire.com
+       </A><BR>
+    <I>Tue Jul  8 14:52:04 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001748.html">[Stgt-devel] [RFC] target configuration tool
+</A></li>
+        <LI>Next message: <A HREF="001749.html">[Stgt-devel] [PATCH] Define a larger SCSI_SN_LEN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1745">[ date ]</a>
+              <a href="thread.html#1745">[ thread ]</a>
+              <a href="subject.html#1745">[ subject ]</a>
+              <a href="author.html#1745">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+Today, SCSI_SN_LEN is defined as 8 chars only.
+I want to define a larger SCSI_SN_LEN in order to
+export the real device's serial number.
+This is required for using dm-multipath.
+When several targets export the same device to the initiator we
+will be able to use dm-multipath on the initiator. 
+
+Thanks,
+Doron
+
+
+
+Define a larger SCSI_SN_LEN in order to
+export the real device's serial number.
+
+Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+---
+ usr/tgtd.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 62e3821..2f53fb8 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -5,7 +5,7 @@
+ #include &quot;scsi_cmnd.h&quot;
+ 
+ #define SCSI_ID_LEN		24
+-#define SCSI_SN_LEN		8
++#define SCSI_SN_LEN		32
+ 
+ #define VENDOR_ID_LEN		8
+ #define PRODUCT_ID_LEN		16
+-- 
+1.5.2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001748.html">[Stgt-devel] [RFC] target configuration tool
+</A></li>
+	<LI>Next message: <A HREF="001749.html">[Stgt-devel] [PATCH] Define a larger SCSI_SN_LEN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1745">[ date ]</a>
+              <a href="thread.html#1745">[ thread ]</a>
+              <a href="subject.html#1745">[ subject ]</a>
+              <a href="author.html#1745">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

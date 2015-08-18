@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 13/18] iser close free
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2013/18%5D%20iser%20close%20free&In-Reply-To=%3C20070904201049.GQ6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001019.html">
+   <LINK REL="Next"  HREF="001021.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 13/18] iser close free</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2013/18%5D%20iser%20close%20free&In-Reply-To=%3C20070904201049.GQ6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 13/18] iser close free">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:10:49 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001019.html">[Stgt-devel] [PATCH 12/18] iser task transport data
+</A></li>
+        <LI>Next message: <A HREF="001021.html">[Stgt-devel] [PATCH 14/18] iser transport mxdsl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1020">[ date ]</a>
+              <a href="thread.html#1020">[ thread ]</a>
+              <a href="subject.html#1020">[ subject ]</a>
+              <a href="author.html#1020">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Separate transport close operation from the free operation, as RDMA will
+initiate a close, but must not free resources until all references to
+the connection have gone away.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/conn.c      |    3 ++-
+ usr/iscsi/iscsi_tcp.c |   12 +++++++++---
+ usr/iscsi/transport.h |    3 ++-
+ 3 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index 1e9dace..9b0c3b9 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -80,6 +80,7 @@ static void conn_free(struct iscsi_connection *conn)
+ 	struct iscsi_session *session = conn-&gt;session;
+ 
+ 	dprintf(&quot;freeing connection\n&quot;);
++	conn-&gt;tp-&gt;ep_conn_free(conn);
+ 	list_del(&amp;conn-&gt;clist);
+ 	free(conn-&gt;req_buffer);
+ 	free(conn-&gt;rsp_buffer);
+@@ -94,7 +95,7 @@ void conn_close(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_task *task, *tmp;
+ 
+-	conn-&gt;tp-&gt;ep_close(conn);
++	conn-&gt;tp-&gt;ep_conn_close(conn);
+ 
+ 	dprintf(&quot;connection closed\n&quot;);
+ 
+diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+index 53cf0e5..f03caa5 100644
+--- a/usr/iscsi/iscsi_tcp.c
++++ b/usr/iscsi/iscsi_tcp.c
+@@ -244,12 +244,17 @@ static void iscsi_tcp_write_end(struct iscsi_connection *conn)
+ 	setsockopt(tci-&gt;fd, SOL_TCP, TCP_CORK, &amp;opt, sizeof(opt));
+ }
+ 
+-static size_t iscsi_tcp_close(struct iscsi_connection *conn)
++static void iscsi_tcp_conn_close(struct iscsi_connection *conn)
+ {
+ 	struct tcp_conn_info *tci = conn-&gt;trans_data;
+ 
+ 	tgt_event_del(tci-&gt;fd);
+-	return close(tci-&gt;fd);
++	close(tci-&gt;fd);
++}
++
++static void iscsi_tcp_conn_free(struct iscsi_connection *conn
++				__attribute__((unused)))
++{
+ }
+ 
+ static int iscsi_tcp_show(struct iscsi_connection *conn, char *buf, int rest)
+@@ -327,7 +332,8 @@ struct iscsi_transport iscsi_tcp = {
+ 	.ep_read		= iscsi_tcp_read,
+ 	.ep_write_begin		= iscsi_tcp_write_begin,
+ 	.ep_write_end		= iscsi_tcp_write_end,
+-	.ep_close		= iscsi_tcp_close,
++	.ep_conn_close		= iscsi_tcp_conn_close,
++	.ep_conn_free		= iscsi_tcp_conn_free,
+ 	.ep_show		= iscsi_tcp_show,
+ 	.ep_event_modify	= iscsi_event_modify,
+ 	.ep_malloc		= iscsi_tcp_malloc,
+diff --git a/usr/iscsi/transport.h b/usr/iscsi/transport.h
+index a8b8680..f35d9d7 100644
+--- a/usr/iscsi/transport.h
++++ b/usr/iscsi/transport.h
+@@ -19,7 +19,8 @@ struct iscsi_transport {
+ 	size_t (*ep_write_begin) (struct iscsi_connection *conn, void *buf,
+ 				  size_t nbytes);
+ 	void (*ep_write_end) (struct iscsi_connection *conn);
+-	size_t (*ep_close) (struct iscsi_connection *conn);
++	void (*ep_conn_close) (struct iscsi_connection *conn);
++	void (*ep_conn_free) (struct iscsi_connection *conn);
+ 	int (*ep_show) (struct iscsi_connection *conn, char *buf, int rest);
+ 	void (*ep_event_modify) (struct iscsi_connection *conn, int events);
+ 	void *(*ep_malloc) (struct iscsi_connection *conn, size_t sz);
+-- 
+1.5.2.5
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001019.html">[Stgt-devel] [PATCH 12/18] iser task transport data
+</A></li>
+	<LI>Next message: <A HREF="001021.html">[Stgt-devel] [PATCH 14/18] iser transport mxdsl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1020">[ date ]</a>
+              <a href="thread.html#1020">[ thread ]</a>
+              <a href="subject.html#1020">[ subject ]</a>
+              <a href="author.html#1020">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

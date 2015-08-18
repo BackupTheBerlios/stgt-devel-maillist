@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] CRC32C not working
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20CRC32C%20not%20working&In-Reply-To=%3C129d1ff129d589.129d589129d1ff%40o2.ie%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000482.html">
+   <LINK REL="Next"  HREF="000488.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] CRC32C not working</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20CRC32C%20not%20working&In-Reply-To=%3C129d1ff129d589.129d589129d1ff%40o2.ie%3E"
+       TITLE="[Stgt-devel] CRC32C not working">pauw at o2.ie
+       </A><BR>
+    <I>Wed Mar 28 15:22:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000482.html">[Stgt-devel] [PATCH] invalid command operation code (0x20,0)
+</A></li>
+        <LI>Next message: <A HREF="000488.html">[Stgt-devel] CRC32C not working
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#487">[ date ]</a>
+              <a href="thread.html#487">[ thread ]</a>
+              <a href="subject.html#487">[ subject ]</a>
+              <a href="author.html#487">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I am new to stgt and am just starting playing with it since a few days.
+
+I am using stgt.r849 en open-iscsi.r779
+
+Here are my findings using HeaderDigest CRC32C:
+
+- Trying to set HeaderDigest in stgt to None,CRC32C it only stores CRC32C when I check it back
+
+- I am able to login with open-iscsi, stgt responds with a HeaderDigest CRC32C and the login continues to the next phase
+
+- From now on I see messages like:
+iscsi_tcp: hdrdgst error recv 0x42040000 calc 0x4d2da980
+ connection1:0: iscsi: detected conn error (1014)
+iscsi_tcp: hdrdgst error recv 0x42040000 calc 0x8a8a100a
+ connection1:0: iscsi: detected conn error (1014)
+iscsi_tcp: hdrdgst error recv 0x42040000 calc 0x7eb94a7c
+ connection1:0: iscsi: detected conn error (1014)
+iscsi_tcp: hdrdgst error recv 0x42040000 calc 0x2915ef
+ connection1:0: iscsi: detected conn error (1014)
+ connection1:0: iscsi: detected conn error (1011)
+ connection1:0: iscsi: detected conn error (1011)
+ connection1:0: iscsi: detected conn error (1011)
+ connection1:0: iscsi: detected conn error (1011)
+ connection1:0: iscsi: detected conn error (1011)
+ connection1:0: iscsi: detected conn error (1011)
+ connection1:0: iscsi: detected conn error (1011)
+
+So it seems that CRC32C for HeaderDigest is not working.
+
+For DataDigest more or less the same holds, except that I get the scsi disk info correct, here's the log of that:
+
+scsi 3:0:0:0: Direct-Access     IET      VIRTUAL-DISK     0    PQ: 0 ANSI: 4
+ connection2:0: iscsi: detected conn error (1015)
+SCSI device sdb: 2048000 512-byte hdwr sectors (1049 MB)
+ connection2:0: iscsi: detected conn error (1015)
+sdb: Write Protect is off
+sdb: Mode Sense: 77 00 00 08
+ connection2:0: iscsi: detected conn error (1015)
+ connection2:0: iscsi: detected conn error (1015)
+
+
+Albert
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000482.html">[Stgt-devel] [PATCH] invalid command operation code (0x20,0)
+</A></li>
+	<LI>Next message: <A HREF="000488.html">[Stgt-devel] CRC32C not working
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#487">[ date ]</a>
+              <a href="thread.html#487">[ thread ]</a>
+              <a href="subject.html#487">[ subject ]</a>
+              <a href="author.html#487">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

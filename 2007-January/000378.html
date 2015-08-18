@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1169308362.2762.24.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000377.html">
+   <LINK REL="Next"  HREF="000379.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] sg_turs on stgt iscsi drive is very slow</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20sg_turs%20on%20stgt%20iscsi%20drive%20is%20very%20slow&In-Reply-To=%3C1169308362.2762.24.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] sg_turs on stgt iscsi drive is very slow">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Sat Jan 20 16:52:42 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000377.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+        <LI>Next message: <A HREF="000379.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#378">[ date ]</a>
+              <a href="thread.html#378">[ thread ]</a>
+              <a href="subject.html#378">[ subject ]</a>
+              <a href="author.html#378">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 2007-01-21 at 00:47 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</I>&gt;<i> Date: Sat, 20 Jan 2007 10:30:58 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; On Sun, 2007-01-21 at 00:22 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; &gt; From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; &gt; Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</I>&gt;<i> &gt; &gt; Date: Mon, 11 Dec 2006 11:58:27 -0500
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+</I>&gt;<i> &gt; &gt; &gt; same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+</I>&gt;<i> &gt; &gt; &gt; r598.
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; Want to know how efficient stgt handle context switch. 
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; (snip)
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+</I>&gt;<i> &gt; &gt; &gt; operations/sec. yes, 250.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; OK. I did some tests too. As we know, aioepoll isn't effective.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The sg_turs test doesn't need AIO code. So I just tried epoll for
+</I>&gt;<i> &gt; &gt; event notification.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; - tgt (patched)
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; paris:~# sg_turs -t -n=1000 /dev/sg3
+</I>&gt;<i> &gt; &gt; time to perform commands was 0.125131 secs; 7991.62 operations/sec
+</I>&gt;<i> &gt; &gt; Completed 1000 Test Unit Ready commands with 0 errors
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; - IET
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; paris:~# sg_turs -t -n=1000 /dev/sg3
+</I>&gt;<i> &gt; &gt; time to perform commands was 0.128747 secs; 7767.17 operations/sec
+</I>&gt;<i> &gt; &gt; Completed 1000 Test Unit Ready commands with 0 errors
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Well, not bad at all. And I heard that kevent is more effective than
+</I>&gt;<i> &gt; &gt; epoll.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; the # looks pretty good. thanks for testing. maybe it is bounded by your
+</I>&gt;<i> &gt; network now? could you try a open-iscsi via loopback?
+</I>&gt;<i> 
+</I>&gt;<i> For what do we need to know the performance in unreal environments? I
+</I>&gt;<i> access Linux boxes remotely. So I don't want to crash them.
+</I>&gt;<i> 
+</I>&gt;<i> Anyway, the patch is available so you can try.
+</I>
+sure.
+
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; Note that aioepoll affects only user-mode target drivers (now only
+</I>&gt;<i> &gt; &gt; iSCSI). The kernel target drivers don't need AIO code (can use
+</I>&gt;<i> &gt; &gt; epoll). So they should have no performance problem. And as I said
+</I>&gt;<i> &gt; &gt; before, I think that the iSCSI target driver is ok in real workloads.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; do you have a road map for stgt? see, need to read your reply for Pete
+</I>&gt;<i> &gt; to know OSD is already under your plan.
+</I>&gt;<i> 
+</I>&gt;<i> Well, I decided not to plan anything. I was supposed to finish iSER
+</I>&gt;<i> target code however I'm playing with other stuff like sg v4.
+</I>
+this does not do good for stgt project in long term. u can always lay it
+out and people know how to contribute more efficiently.
+
+
+-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000377.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+	<LI>Next message: <A HREF="000379.html">[Stgt-devel] sg_turs on stgt iscsi drive is very slow
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#378">[ date ]</a>
+              <a href="thread.html#378">[ thread ]</a>
+              <a href="subject.html#378">[ subject ]</a>
+              <a href="author.html#378">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

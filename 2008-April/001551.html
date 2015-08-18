@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%20implementation&In-Reply-To=%3C20080429141513Y.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001549.html">
+   <LINK REL="Next"  HREF="001553.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Prototype%20MMC%20DVD-ROM%20and%20burnable%20DVD%2BR%0A%20implementation&In-Reply-To=%3C20080429141513Y.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Apr 29 07:14:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001549.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+        <LI>Next message: <A HREF="001553.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1551">[ date ]</a>
+              <a href="thread.html#1551">[ thread ]</a>
+              <a href="subject.html#1551">[ subject ]</a>
+              <a href="author.html#1551">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 29 Apr 2008 07:19:49 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Tue, Apr 29, 2008 at 3:47 AM, FUJITA Tomonori
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; On Mon, 28 Apr 2008 05:36:34 +1000
+</I>&gt;<i> &gt;  &quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  &gt; Hi,
+</I>&gt;<i> &gt;  &gt;
+</I>&gt;<i> &gt;  &gt; Please find attached a series of patches to enhance the MMC emulation
+</I>&gt;<i> &gt;  &gt; to allow writing to emulated DVD+R disks.
+</I>&gt;<i> &gt;  &gt; The emulation checks the backing store file when coming online and
+</I>&gt;<i> &gt;  &gt; decides which type of emulation profile should be used :
+</I>&gt;<i> &gt;  &gt; If there is no backingstore file   or the device is offline  this is
+</I>&gt;<i> &gt;  &gt; emulated as NO_PROFILE and behaves as if there is no media in the &quot;dvd
+</I>&gt;<i> &gt;  &gt; drive&quot;.
+</I>&gt;<i> &gt;  &gt; If the backing store file is &gt;0 bytes in size, this is emulated as
+</I>&gt;<i> &gt;  &gt; DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+</I>&gt;<i> &gt;  &gt; &quot;dvd drive&quot; that can be read from.
+</I>&gt;<i> &gt;  &gt; If the backing store file is ==0 bytes in size, this is emulated as if
+</I>&gt;<i> &gt;  &gt; there is a blank writeable DVD+R disk in the &quot;dvd drive&quot;, allowing a
+</I>&gt;<i> &gt;  &gt; user to burn to the device.
+</I>&gt;<i> &gt;  &gt; Once finished burning and the application issues a CLOSE_TRACK
+</I>&gt;<i> &gt;  &gt; command, the device morphs from DVD+R into the DVD_ROM profile.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Great, thanks!
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Can you merge this patchset with
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;  ?
+</I>&gt;<i> &gt;
+</I>&gt;<i> 
+</I>&gt;<i> Sure I can.
+</I>&gt;<i> How do I do this (I'm not very git-experienced)?
+</I>
+Ok, let me know if you will not use git. I'll merge patchset this
+time.
+
+
+&gt;<i> What git commands should I use to redo the diffs so they get the sign-off text?
+</I>
+<A HREF="http://www.kernel.org/pub/software/scm/git/docs/tutorial.html">http://www.kernel.org/pub/software/scm/git/docs/tutorial.html</A>
+
+You need to configure your name and email adreess:
+
+$ git config --global user.name &quot;Your Name Comes Here&quot;
+$ git config --global user.email <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">you at yourdomain.example.com</A>
+
+
+You can use git-commit as you did (but please commit each patch with
+an appropriate subject). Then git-format-patch with '-s' option
+produces a proper patchset (proper author and signed-off-by).  You
+need multiple patches, use git-format-patch with '-n' option, which
+gives [PATCH n/m] format subjects.
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at arbre</A>:~/git/tgt$ git-format-patch -s -n -o ~/submit HEAD~2
+
+After that, please use git-send-email to send patches.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001549.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+	<LI>Next message: <A HREF="001553.html">[Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1551">[ date ]</a>
+              <a href="thread.html#1551">[ thread ]</a>
+              <a href="subject.html#1551">[ subject ]</a>
+              <a href="author.html#1551">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

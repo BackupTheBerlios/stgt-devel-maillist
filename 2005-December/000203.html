@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C439B1C46.2070306%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000194.html">
+   <LINK REL="Next"  HREF="000185.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C439B1C46.2070306%40cs.wisc.edu%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Sat Dec 10 19:19:50 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000194.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000185.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Vladislav Bolkhovitin wrote:
+&gt;<i> Mike Christie wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;&gt;&gt;<i> There is still memory and scatterlist allocations. If we are not 
+</I>&gt;&gt;&gt;&gt;<i> going to allocate all the memory for a command buffer and request 
+</I>&gt;&gt;&gt;&gt;<i> with GFP_ATOMIC (and can then run from the the HW interrupt or soft 
+</I>&gt;&gt;&gt;&gt;<i> irq) we have to pass that on to a thread. I guess there is 
+</I>&gt;&gt;&gt;&gt;<i> disagreement whether that part is a feature or bad use of GFP_ATOMIC 
+</I>&gt;&gt;&gt;&gt;<i> though so... But I just mean to say there could be a little more to do.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Actually, there is the way to allocate sg vectors with buffers in 
+</I>&gt;&gt;&gt;<i> SIRQ and not with GFP_ATOMIC. This is the second major improvement, 
+</I>&gt;&gt;&gt;<i> which is pending in scst. I called it sgv_pool. This is a new 
+</I>&gt;&gt;&gt;<i> allocator in the kernel similar to mem_pool, but it contains 
+</I>&gt;&gt;&gt;<i> *complete* sg-vectors of some size with data buffers (pages). 
+</I>&gt;&gt;&gt;<i> Initiator sends data requests usually with some fixed size, like 
+</I>&gt;&gt;&gt;<i> 128K. After a data command completed, its sg vector will not be 
+</I>&gt;&gt;&gt;<i> immediately freed, but will be kept in 
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> We considered this, but what did you decide is the upper limit size 
+</I>&gt;&gt;<i> for the pool? Is it dynmaic? We also wanted something that the SCSI 
+</I>&gt;&gt;<i> ULDs could use for their allocations which could go up to 6 MB.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Why do you think it needs any upper limit size? Would you like also any 
+</I>&gt;<i> upper limits on sizes of the page or slab caches? I don't see any 
+</I>
+Considering I have not seen the code and am probably misunderstanding 
+what you wrote above, I will shutup and wait until it is out to see it.
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000194.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000185.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSCSI digest offload
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSCSI%20digest%20offload&In-Reply-To=%3C4685093C.1040008%40solarflare.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000850.html">
+   <LINK REL="Next"  HREF="000854.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSCSI digest offload</H1>
+    <B>Greg Law</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSCSI%20digest%20offload&In-Reply-To=%3C4685093C.1040008%40solarflare.com%3E"
+       TITLE="[Stgt-devel] iSCSI digest offload">glaw at solarflare.com
+       </A><BR>
+    <I>Fri Jun 29 15:29:32 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000850.html">[Stgt-devel] rework of smc module
+</A></li>
+        <LI>Next message: <A HREF="000854.html">[Stgt-devel] [Patch 0/2] Re-submit MODE SENSE &amp; SMC patches based	on latest head.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#853">[ date ]</a>
+              <a href="thread.html#853">[ thread ]</a>
+              <a href="subject.html#853">[ subject ]</a>
+              <a href="author.html#853">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi list,
+
+I posted the following yesterday to iet-devel, and they suggested I'd be 
+better off talking to you guys, as this is the place for &quot;hot iSCSI 
+target&quot; developments.
+
+My company, Solarflare, makes 10gig NICs.  We don't do full TCP offload, 
+but we do have support on the card for iSCSI digest offload. Essentially 
+this means that if your packets are conveniently formatted, you can have 
+iSCSI digests with a very small performance penalty (in terms of both 
+throughput and CPU hit).  I say &quot;if your packets are conveniently 
+formatted&quot; because the NIC can only offload the digest if an Ethernet 
+frame contains exactly one iSCSI PDU in exactly one TCP segment. 
+However, providing you use a MaxRecvDataSegmentLength of &lt;= MSS (less 
+headers) our experiments show this is almost always the case.
+
+We've implemented our own iSCSI initiator stack on Linux as a 
+proof-of-concept, and it gives the performance wins we'd hoped for.  Now 
+we want to patch the open-source stacks (target and initiator) to take 
+advantage of this feature.  We will also need to patch the Linux TCP 
+stack so that (a) we can pass meta data down (to tell the NIC to compute 
+and insert digests on tx) and pass meta data back up (to tell the iSCSI 
+stack whether the digests computed ok on rx); and (b) to make sure we 
+can handle edge-cases such as routing changes etc.
+
+We expect the patch to be quite small - both the TCP and iSCSI parts. We 
+plan to do the target first, and follow up with the initiator.
+
+I'd be really interested to hear the list's views on this.  Have you 
+heard of anything similar before?  Does it sound like a patch that you 
+might be interested in merging (of course, I'm not looking for a 
+definitive answer here, just a &quot;could be interesting, providing ....&quot;.)
+
+Also, do the tgt and open-iscsi share any code for the iSCSI protocol 
+processing?  If not, are there any plans to do so?
+
+
+Cheers,
+
+Greg
+-- 
+Greg Law               <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">glaw at solarflare.com</A>              +44 1223 518 040
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000850.html">[Stgt-devel] rework of smc module
+</A></li>
+	<LI>Next message: <A HREF="000854.html">[Stgt-devel] [Patch 0/2] Re-submit MODE SENSE &amp; SMC patches based	on latest head.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#853">[ date ]</a>
+              <a href="thread.html#853">[ thread ]</a>
+              <a href="subject.html#853">[ subject ]</a>
+              <a href="author.html#853">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

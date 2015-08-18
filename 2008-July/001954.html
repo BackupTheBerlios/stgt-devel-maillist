@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH]	tgt-admin:	support	persistent	device	binding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%0A%09tgt-admin%3A%09support%09persistent%09device%09binding&In-Reply-To=%3C488F07F6.3040501%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001953.html">
+   <LINK REL="Next"  HREF="001956.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH]	tgt-admin:	support	persistent	device	binding</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%0A%09tgt-admin%3A%09support%09persistent%09device%09binding&In-Reply-To=%3C488F07F6.3040501%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [PATCH]	tgt-admin:	support	persistent	device	binding">mangoo at wpkg.org
+       </A><BR>
+    <I>Tue Jul 29 14:07:18 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001953.html">[Stgt-devel] [PATCH]	tgt-admin:	support	persistent	device	binding
+</A></li>
+        <LI>Next message: <A HREF="001956.html">[Stgt-devel]	[PATCH]	tgt-admin:	support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1954">[ date ]</a>
+              <a href="thread.html#1954">[ thread ]</a>
+              <a href="subject.html#1954">[ subject ]</a>
+              <a href="author.html#1954">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Tue, 29 Jul 2008 13:21:45 +0200
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;&gt;&gt;<i> On Tue, 29 Jul 2008 13:51:55 +0300
+</I>&gt;&gt;&gt;<i> Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at Voltaire.COM</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Eli Dorfman wrote:
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> maybe use the following format :
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> &lt;target xyz&gt;
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>     &lt;backing-store /dev/sdb&gt;
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>           properties  custom # use properties specified below or
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> default (generate the deadbeaf id) or direct (get real serial number)
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>           serial-number 12345678
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>           vendor myvendor
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>     &lt;/backing-store&gt;
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> &lt;/target&gt;
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<i> what do you think?
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i> Hmm, 'properties custom' looks unnecessary for me. If a device file of
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i> a disk drive is used as backing-store and none of the properties are
+</I>&gt;&gt;&gt;&gt;&gt;&gt;<i> specified, we can use the physical properties.
+</I>&gt;&gt;&gt;&gt;&gt;<i> we need something like properties to differentiate between disk (read
+</I>&gt;&gt;&gt;&gt;&gt;<i> real props), file (generate unique serial number
+</I>&gt;&gt;&gt;&gt;&gt;<i> disk-sn-partition-filename) and custom (applicable to any case).
+</I>&gt;&gt;&gt;&gt;&gt;<i> we can call this attribute: &quot;type&quot; which can accept 3 values disk,
+</I>&gt;&gt;&gt;&gt;&gt;<i> file or custom (default).
+</I>&gt;&gt;&gt;&gt;<i> This is what I suggest:
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> &lt;target iqn.2007-04.com.example:san.monitoring&gt;
+</I>&gt;&gt;&gt;&gt;<i>    &lt;backing-store /tmp/ramdisk/lun1&gt;
+</I>&gt;&gt;&gt;&gt;<i>       type default
+</I>&gt;&gt;&gt;&gt;<i>       serial 12345678
+</I>&gt;&gt;&gt;&gt;<i>       vendor my_vendor
+</I>&gt;&gt;&gt;&gt;<i>       product_id my_id
+</I>&gt;&gt;&gt;&gt;<i>       product_rev my_rev
+</I>&gt;&gt;&gt;&gt;<i>    &lt;/backing-store&gt;
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i>    &lt;backing-store /dev/sdc&gt;
+</I>&gt;&gt;&gt;&gt;<i>       type disk
+</I>&gt;&gt;&gt;&gt;<i>    &lt;/backing-store&gt;
+</I>&gt;&gt;&gt;&gt;<i> &lt;/target&gt;
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> The reason we use XML is that the original implementation used XML.
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> We suggest two types:
+</I>&gt;&gt;&gt;&gt;<i> 1. disk: &quot;real&quot; physical devices, where we read the properties from the device itself - i.e. storage disks.
+</I>&gt;&gt;&gt;&gt;<i> 2. default - use default tgt values. 
+</I>&gt;&gt;&gt;&gt;<i>    We can also override the properties with user defined values (optional).
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> The reason for the type attribute is to differentiate between these two types.
+</I>&gt;&gt;&gt;<i> I don't know anything about XML but should it be something like?
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> &lt;target iqn.2007-04.com.example:san.monitoring&gt;
+</I>&gt;&gt;&gt;<i>    &lt;lun 0&gt;
+</I>&gt;&gt;&gt;<i>      type sbc
+</I>&gt;&gt;&gt;<i>      backing-store
+</I>&gt;&gt;<i> What we use currently in tgt-admin is a mix of XML and a flat config file, I would say.
+</I>&gt;&gt;<i> With the benefits of both (easy hand editing; it is clear where one target definition starts and where it ends).
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> If it was &quot;proper XML&quot;, it should look like:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> &lt;target iqn.2007-04.com.example:san.monitoring&gt;
+</I>&gt;&gt;<i> 	&lt;lun 0&gt;
+</I>&gt;&gt;<i> 		&lt;type sbc /&gt;
+</I>&gt;&gt;<i> 		&lt;backing-store /&gt;
+</I>&gt;&gt;<i> 	&lt;/lun&gt;
+</I>&gt;&gt;<i> &lt;/target&gt;
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Which is not that nice for hand editing anymore - forget one slash
+</I>&gt;&gt;<i> in one place (i.e., after &quot;type sbc&quot;), and your whole config file is
+</I>&gt;&gt;<i> invalid.
+</I>&gt;<i> 
+</I>&gt;<i> But it would be better to let administrators not to edit a
+</I>&gt;<i> configuration file by hand?
+</I>
+Why not? I prefer hand editing than &quot;wizards&quot; etc. (unless I have really lots of things to change; in that case, I would probably run some awk/perl script anyway).
+
+
+&gt;<i> And I guess that using a pure XML enables
+</I>&gt;<i> us to use perl XML libraries? I thought that that's the reason why
+</I>&gt;<i> people want to use XML.
+</I>
+I chose the apache-style format we have now because:
+- it was easy for hand or scripted editing,
+- perl provides a parser for it -&gt; no need to write an own parser
+- everyone agreed to it ;)
+
+&gt;<i> IMHO, it's much easier to edit a plain text file rather than a XML
+</I>&gt;<i> file.
+</I>
+The problem is the definition of a plain text file, and what happens when we have &quot;nested&quot; things with different values (i.e., different luns should have different parameters), detecting simple typos (see what will happen in &quot;other types&quot; below - target vs tagret - some other target will probably get luns which don't belong to it) in the text file etc.
+
+
+- apache-style plain text configuration - this is what we use now
+
+include /some/other/*.conf
+
+&lt;target iqn.2007-02.com.example:blah.blah&gt;
+backing-store /dev/blah/blah
+&lt;/target&gt;
+
+
+- INI files (used i.e. by Samba)
+
+[global]
+include = /some/other/*.conf
+
+[iqn.2007-02.com.example:blah.blah]
+backing-store = /dev/blah/blah
+
+
+
+- other types
+
+target iqn.2007-02.com.example:blah.blah
+backing-store /dev/blah/blah
+
+tagret iqn.2008-11.com.example:blah2.blah2
+backing-store /dev/some/other
+
+
+-- 
+Tomasz Chmielewski 
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001953.html">[Stgt-devel] [PATCH]	tgt-admin:	support	persistent	device	binding
+</A></li>
+	<LI>Next message: <A HREF="001956.html">[Stgt-devel]	[PATCH]	tgt-admin:	support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1954">[ date ]</a>
+              <a href="thread.html#1954">[ thread ]</a>
+              <a href="subject.html#1954">[ subject ]</a>
+              <a href="author.html#1954">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

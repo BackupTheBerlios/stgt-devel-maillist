@@ -1,0 +1,195 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 7/7] generic handling for array and single	elements
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20generic%20handling%20for%20array%20and%20single%0A%09elements&In-Reply-To=%3C46b8a8850807231550p57f18f34pa046c170dc736115%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001823.html">
+   <LINK REL="Next"  HREF="001826.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20generic%20handling%20for%20array%20and%20single%0A%09elements&In-Reply-To=%3C46b8a8850807231550p57f18f34pa046c170dc736115%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Thu Jul 24 00:50:51 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001823.html">[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements
+</A></li>
+        <LI>Next message: <A HREF="001826.html">[Stgt-devel] [PATCH 0/7] modify and add properties to tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1845">[ date ]</a>
+              <a href="thread.html#1845">[ thread ]</a>
+              <a href="subject.html#1845">[ subject ]</a>
+              <a href="author.html#1845">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Jul 22, 2008 at 4:22 AM, Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt; wrote:
+&gt;<i> make generic handling for array and single elements (e.g. devices)
+</I>&gt;<i> this makes code more compact and readable
+</I>&gt;<i>
+</I>&gt;<i> Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>
+Acked-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+
+&gt;<i> ---
+</I>&gt;<i>  scripts/tgt-admin |   75 ++++++++++++++++++++++++++---------------------------
+</I>&gt;<i>  1 files changed, 37 insertions(+), 38 deletions(-)
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+</I>&gt;<i> index 11e5552..28af47d 100755
+</I>&gt;<i> --- a/scripts/tgt-admin
+</I>&gt;<i> +++ b/scripts/tgt-admin
+</I>&gt;<i> @@ -133,19 +133,25 @@ sub add_targets {
+</I>&gt;<i>        }
+</I>&gt;<i>  }
+</I>&gt;<i>
+</I>&gt;<i> -
+</I>&gt;<i>  # Process options from the config file
+</I>&gt;<i>  sub process_options {
+</I>&gt;<i>        if ( $option eq &quot;backing-store&quot; ) {
+</I>&gt;<i> -               if (ref($value) eq &quot;ARRAY&quot;) {
+</I>&gt;<i> -                       my @value_arr = @$value;
+</I>&gt;<i> -                       my $i = 1;
+</I>&gt;<i> -                        foreach my $backing_store (@value_arr) {
+</I>&gt;<i> -                                execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
+</I>&gt;<i> +        # if we have one command, force it to be an array anyway
+</I>&gt;<i> +               unless (ref($value) eq 'ARRAY') {
+</I>&gt;<i> +                       $value = [ $value ];
+</I>&gt;<i> +               }
+</I>&gt;<i> +               my @value_arr = @$value;
+</I>&gt;<i> +               my $i = 1;
+</I>&gt;<i> +               foreach my $backing_store (@value_arr) {
+</I>&gt;<i> +                       # Check if device exists
+</I>&gt;<i> +                       if ( -e $backing_store) {
+</I>&gt;<i> +                               execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun $i -b $backing_store&quot;);
+</I>&gt;<i>                                $i += 1;
+</I>&gt;<i> -                        }
+</I>&gt;<i> -               } else {
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --op new --mode logicalunit --tid $next_tid --lun 1 -b $value&quot;);
+</I>&gt;<i> +                       }
+</I>&gt;<i> +                       else {
+</I>&gt;<i> +                               print(&quot;skipping device $backing_store\n&quot;);
+</I>&gt;<i> +                               print(&quot;$backing_store does not exist - please check the configuration file\n&quot;);
+</I>&gt;<i> +                       }
+</I>&gt;<i>                }
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i> @@ -182,16 +188,13 @@ sub process_options {
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i>        if ( $option eq &quot;incominguser&quot; ) {
+</I>&gt;<i> -               if (ref($value) eq &quot;ARRAY&quot;) {
+</I>&gt;<i> -                       my @value_arr = @$value;
+</I>&gt;<i> -                       foreach my $incominguser (@value_arr) {
+</I>&gt;<i> -                               my @userpass = split(/ /, $incominguser);
+</I>&gt;<i> -                               execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+</I>&gt;<i> -                               execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+</I>&gt;<i> -                               execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0]&quot;);
+</I>&gt;<i> -                       }
+</I>&gt;<i> -               } else {
+</I>&gt;<i> -                       my @userpass = split(/ /, $value);
+</I>&gt;<i> +               # if we have one command, force it to be an array anyway
+</I>&gt;<i> +               unless (ref($value) eq 'ARRAY') {
+</I>&gt;<i> +                       $value = [ $value ];
+</I>&gt;<i> +               }
+</I>&gt;<i> +               my @value_arr = @$value;
+</I>&gt;<i> +               foreach my $incominguser (@value_arr) {
+</I>&gt;<i> +                       my @userpass = split(/ /, $incominguser);
+</I>&gt;<i>                        execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+</I>&gt;<i>                        execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+</I>&gt;<i>                        execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0]&quot;);
+</I>&gt;<i> @@ -199,33 +202,29 @@ sub process_options {
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i>        if ( $option eq &quot;outgoinguser&quot; ) {
+</I>&gt;<i> -               if (ref($value) eq &quot;ARRAY&quot;) {
+</I>&gt;<i> -                       execute(&quot;# Warning: only one outgoinguser is allowed. Will only use the first one.&quot;);
+</I>&gt;<i> -                       my @userpass = split(/ /, @$value[0]);
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
+</I>&gt;<i> -               } else {
+</I>&gt;<i> -                       my @userpass = split(/ /, $value);
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
+</I>&gt;<i> +               # if we have one command, force it to be an array anyway
+</I>&gt;<i> +               unless (ref($value) eq 'ARRAY') {
+</I>&gt;<i> +                       $value = [ $value ];
+</I>&gt;<i>                }
+</I>&gt;<i> +               execute(&quot;# Warning: only one outgoinguser is allowed. Will only use the first one.&quot;);
+</I>&gt;<i> +               my @userpass = split(/ /, @$value[0]);
+</I>&gt;<i> +               execute(&quot;tgtadm --lld iscsi --mode account --op delete --user=$userpass[0]&quot;);
+</I>&gt;<i> +               execute(&quot;tgtadm --lld iscsi --mode account --op new --user=$userpass[0] --password=$userpass[1]&quot;);
+</I>&gt;<i> +               execute(&quot;tgtadm --lld iscsi --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing&quot;);
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i>        if ( $option eq &quot;initiator-address&quot; ) {
+</I>&gt;<i> -               if (ref($value) eq &quot;ARRAY&quot;) {
+</I>&gt;<i> -                       my @value_arr = @$value;
+</I>&gt;<i> -                       foreach my $initiator_address (@value_arr) {
+</I>&gt;<i> -                               execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $initiator_address&quot;);
+</I>&gt;<i> -                       }
+</I>&gt;<i> -               } else {
+</I>&gt;<i> -                       execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $value&quot;);
+</I>&gt;<i> +               # if we have one command, force it to be an array anyway
+</I>&gt;<i> +               unless (ref($value) eq 'ARRAY') {
+</I>&gt;<i> +                       $value = [ $value ];
+</I>&gt;<i> +               }
+</I>&gt;<i> +               my @value_arr = @$value;
+</I>&gt;<i> +               foreach my $initiator_address (@value_arr) {
+</I>&gt;<i> +                       execute(&quot;tgtadm --lld iscsi --op bind --mode target --tid $next_tid -I $initiator_address&quot;);
+</I>&gt;<i>                }
+</I>&gt;<i>        }
+</I>&gt;<i>  }
+</I>&gt;<i>
+</I>&gt;<i> -
+</I>&gt;<i>  # Look up which targets are configured
+</I>&gt;<i>  sub process_configs {
+</I>&gt;<i>        # We need to run as root
+</I>&gt;<i> --
+</I>&gt;<i> 1.5.3.8
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001823.html">[Stgt-devel] [PATCH 7/7] generic handling for array and single	elements
+</A></li>
+	<LI>Next message: <A HREF="001826.html">[Stgt-devel] [PATCH 0/7] modify and add properties to tgt-admin
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1845">[ date ]</a>
+              <a href="thread.html#1845">[ thread ]</a>
+              <a href="subject.html#1845">[ subject ]</a>
+              <a href="author.html#1845">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

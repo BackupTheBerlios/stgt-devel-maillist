@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt and large devices?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20and%20large%20devices%3F&In-Reply-To=%3C464AB6F7.2000105%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000657.html">
+   <LINK REL="Next"  HREF="000659.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt and large devices?</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20and%20large%20devices%3F&In-Reply-To=%3C464AB6F7.2000105%40wpkg.org%3E"
+       TITLE="[Stgt-devel] stgt and large devices?">mangoo at wpkg.org
+       </A><BR>
+    <I>Wed May 16 09:47:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000657.html">[Stgt-devel] stgt and large devices?
+</A></li>
+        <LI>Next message: <A HREF="000659.html">[Stgt-devel] stgt and large devices?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#658">[ date ]</a>
+              <a href="thread.html#658">[ thread ]</a>
+              <a href="subject.html#658">[ subject ]</a>
+              <a href="author.html#658">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> From: Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] stgt and large devices?
+</I>&gt;<i> Date: Tue, 15 May 2007 16:35:11 +0200
+</I>&gt;<i> 
+</I>&gt;&gt;<i> I have a large device (650 GB or so) which I used to export with IET 
+</I>&gt;&gt;<i> like that:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Target iqn.2006-08.net.syneticon:thecus.backup
+</I>&gt;&gt;<i> Lun 0 Path=/dev/mapper/LVM2-backup,Type=fileio
+</I>&gt;&gt;<i> Alias backup
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> As I wanted to try stgt, I stopped IET, started tgtd, and tgtadm:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> tgtadm --op new --mode target --tid 1 -T 
+</I>&gt;&gt;<i> iqn.2006-08.net.syneticon:thecus.backup
+</I>&gt;&gt;<i> tgtadm --op new --mode logicalunit --tid 1 --lun 0 -b 
+</I>&gt;&gt;<i> /dev/mapper/LVM2-backup
+</I>&gt;&gt;<i> tgtadm --op bind --mode target --tid 1 -I ALL
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> The initiator can connect, but the content of the disk is different from 
+</I>&gt;&gt;<i> that on the real disk - I can't mount the filesystem.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> when I browse through the beginning of a disk, I can see some familiar 
+</I>&gt;&gt;<i> content, but it is nevertheless different.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> With smaller targets (I tried up to 25 GB), everything is fine.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Was stgt tested with big devices?
+</I>&gt;<i> 
+</I>&gt;<i> Strage. It works for me.
+</I>
+Any thoughts what might be wrong with my setup?
+
+BTW, this was tested on LE ARM architecture (compilation was fine, no 
+problems at all).
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000657.html">[Stgt-devel] stgt and large devices?
+</A></li>
+	<LI>Next message: <A HREF="000659.html">[Stgt-devel] stgt and large devices?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#658">[ date ]</a>
+              <a href="thread.html#658">[ thread ]</a>
+              <a href="subject.html#658">[ subject ]</a>
+              <a href="author.html#658">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,917 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%0A%09Add-new-module-entry-points-for-configuration&In-Reply-To=%3Cf29db9a80705301929v3e828bb3l574a59cdee1e9dfd%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000729.html">
+   <LINK REL="Next"  HREF="000725.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%0A%09Add-new-module-entry-points-for-configuration&In-Reply-To=%3Cf29db9a80705301929v3e828bb3l574a59cdee1e9dfd%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration">markh794 at gmail.com
+       </A><BR>
+    <I>Thu May 31 04:29:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000729.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+</A></li>
+        <LI>Next message: <A HREF="000725.html">[Stgt-devel] [Patch 2/2]	Add-ability-to-dynamically-set-SCSI-Inquiry-params
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#724">[ date ]</a>
+              <a href="thread.html#724">[ thread ]</a>
+              <a href="subject.html#724">[ subject ]</a>
+              <a href="author.html#724">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add new module entry points.
+  &lt;module&gt;_lu_init(struct scsi_lu *lu) - called at setup time.
+  &lt;module&gt;_lu_exit(struct scsi_lu *lu) - called at shutdown time.
+  &lt;module&gt;_lu_config(struct scsi_lu *lu) - Any module unique configuration.
+
+Moved logical unit configuration from target -&gt; &lt;module&gt;
+  Along with above entry point &lt;module&gt;_lu_config(), will allow module
+  specific configuration.
+  No new functionality added yet.
+
+Add a dump_cdb(struct scsi_cmd *cmd) - Called from spc_illegal_op()
+
+Update - All modules use common INQUIRY routine.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh at laptop.</A>(none)&gt;
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index e9cc479..5c6c3d2 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -121,11 +121,32 @@ static int mmc_read_capacity(int host_no, struct
+scsi_cmd *cmd)
+        return SAM_STAT_GOOD;
+ }
+
++static int mmc_lu_init(struct scsi_lu *lu)
++{
++       if (spc_lu_init(lu))
++               return -ENOMEM;
++
++       memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;VIRTUAL-CDROM&quot;, 16);
++       lu-&gt;attributes-&gt;sense_format = 1;
++       lu-&gt;attributes-&gt;version_desc[0] = 0x02A0; /* MMC3, no version claimed */
++       lu-&gt;attributes-&gt;version_desc[1] = 0x0960; /* iSCSI */
++       lu-&gt;attributes-&gt;version_desc[2] = 0x0300; /* SPC-3 */
++
++       return 0;
++}
++
++static int mmc_lu_exit(struct scsi_lu *lu)
++{
++       return 0;
++}
++
+ struct device_type_template mmc_template = {
+-       .type   = TYPE_ROM,
+-       .name   = &quot;cdrom/dvd&quot;,
+-       .pid    = &quot;VIRTUAL-CDROM&quot;,
+-       .ops    = {
++       .type = TYPE_ROM,
++       .name = &quot;cdrom/dvd&quot;,
++       .lu_init = mmc_lu_init,
++       .lu_exit = mmc_lu_exit,
++       .lu_config = spc_lu_config,
++       .ops = {
+                {spc_test_unit,},
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+diff --git a/usr/osd.c b/usr/osd.c
+index 46bf0a0..1889d5e 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -20,6 +20,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  * 02110-1301 USA
+  */
++#include &lt;errno.h&gt;
+ #include &lt;inttypes.h&gt;
+ #include &lt;stdio.h&gt;
+ #include &lt;stdlib.h&gt;
+@@ -33,101 +34,6 @@
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+
+-#define PRODUCT_ID     &quot;OSD&quot;
+-#define PRODUCT_REV    &quot;0&quot;
+-
+-static int osd_inquiry(int host_no, struct scsi_cmd *cmd)
+-{
+-       uint8_t *data, *scb = cmd-&gt;scb;
+-       int len, ret = SAM_STAT_CHECK_CONDITION;
+-       unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
+-
+-       /* EVPD means need a page code */
+-       if ((scb[1] &amp; 0x3) == 0 &amp;&amp; scb[2] != 0)
+-               goto sense;
+-
+-       data = valloc(pagesize);
+-       if (!data) {
+-               key = HARDWARE_ERROR;
+-               asc = 0;
+-               goto sense;
+-       }
+-       memset(data, 0, pagesize);
+-
+-       dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+-
+-       data[0] = TYPE_OSD;
+-       if (!cmd-&gt;dev)
+-               data[0] = TYPE_NO_LUN;
+-
+-       if ((scb[1] &amp; 0x1) == 0) {
+-               data[2] = 5;  /* modern version */
+-               data[3] = 0x02;  /* modern response format */
+-               data[7] = 0x02;  /* support command queueing */
+-               memset(data + 8, 0x20, 28);
+-               memcpy(data + 8,
+-                      VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
+-               memcpy(data + 16,
+-                      PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
+-               memcpy(data + 32,
+-                      PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
+-               len = 36;
+-               if (cmd-&gt;dev) {
+-                       data[58] = 0x03;
+-                       data[59] = 0x40;  /* osd */
+-                       data[60] = 0x09;
+-                       data[61] = 0x60;  /* iscsi */
+-                       data[62] = 0x03;
+-                       data[63] = 0x00;  /* spc3 */
+-                       len = 64;
+-               }
+-               data[4] = len - 5;  /* additional length */
+-               ret = SAM_STAT_GOOD;
+-       } else {
+-               if (!cmd-&gt;dev)
+-                       goto sense;
+-
+-               data[1] = scb[2];
+-               if (scb[2] == 0x0) {
+-                       /* supported VPD pages */
+-                       data[3] = 3;
+-                       data[4] = 0x0;
+-                       data[5] = 0x80;
+-                       data[6] = 0x83;
+-                       len = 7;
+-                       ret = SAM_STAT_GOOD;
+-               } else if (scb[2] == 0x80) {
+-                       /* unit serial number &quot;    &quot; */
+-                       data[3] = 4;
+-                       memset(data + 4, 0x20, 4);
+-                       len = 8;
+-                       ret = SAM_STAT_GOOD;
+-               } else if (scb[2] == 0x83) {
+-                       /* device identification */
+-                       data[3] = SCSI_ID_LEN + 4;
+-                       data[4] = 0x1;
+-                       data[5] = 0x1;
+-                       data[7] = SCSI_ID_LEN;
+-                       if (cmd-&gt;dev)
+-                               memcpy(data + 8, cmd-&gt;dev-&gt;scsi_id,
+SCSI_ID_LEN);
+-                       len = SCSI_ID_LEN + 8;
+-                       ret = SAM_STAT_GOOD;
+-               }
+-       }
+-
+-       if (ret != SAM_STAT_GOOD)
+-               goto sense;
+-
+-       cmd-&gt;len = min_t(int, len, scb[4]);
+-       cmd-&gt;uaddr = (unsigned long) data;
+-
+-       return SAM_STAT_GOOD;
+-sense:
+-       sense_data_build(cmd, key, asc, 0);
+-       cmd-&gt;len = 0;
+-       return SAM_STAT_CHECK_CONDITION;
+-}
+-
+ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+ {
+        unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
+@@ -145,22 +51,37 @@ static int osd_varlen_cdb(int host_no, struct
+scsi_cmd *cmd)
+        return cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
+ }
+
+-static void device_osd_init(struct scsi_lu *lu)
++static int osd_lu_init(struct scsi_lu *lu)
++{
++       if (spc_lu_init(lu))
++               return -ENOMEM;
++
++       memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;OSD&quot;, 16);
++       lu-&gt;attributes-&gt;sense_format = 1;
++       lu-&gt;attributes-&gt;version_desc[0] = 0x0340; /* OSD */
++       lu-&gt;attributes-&gt;version_desc[1] = 0x0960; /* iSCSI */
++       lu-&gt;attributes-&gt;version_desc[2] = 0x0300; /* SPC-3 */
++
++       return 0;
++}
++
++static int osd_lu_exit(struct scsi_lu *lu)
+ {
+-       lu-&gt;d_sense = 1;
++       return 0;
+ }
+
+ struct device_type_template osd_template = {
+-       .type           = TYPE_OSD,
+-       .name           = &quot;osd&quot;,
+-       .device_init    = device_osd_init,
+-       .ops            = {
++       .type = TYPE_OSD,
++       .name = &quot;osd&quot;,
++       .lu_init = osd_lu_init,
++       .lu_exit = osd_lu_exit,
++       .ops = {
+                [0x00 ... 0x0f] = {spc_illegal_op},
+
+                /* 0x10 */
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+-               {osd_inquiry,},
++               {spc_inquiry,},
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+diff --git a/usr/parser.h b/usr/parser.h
+index 1ff6016..bf210bf 100644
+--- a/usr/parser.h
++++ b/usr/parser.h
+@@ -17,7 +17,7 @@ struct match_token {
+ typedef struct match_token match_table_t[];
+
+ /* Maximum number of arguments that match_token will find in a pattern */
+-enum {MAX_OPT_ARGS = 3};
++enum {MAX_OPT_ARGS = 17};
+
+ /* Describe the location within a string of a substring */
+ typedef struct {
+diff --git a/usr/sbc.c b/usr/sbc.c
+index a22d3b0..111f2a7 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -337,11 +337,31 @@ sense:
+        return SAM_STAT_CHECK_CONDITION;
+ }
+
++static int sbc_lu_init(struct scsi_lu *lu)
++{
++       if (spc_lu_init(lu))
++               return -ENOMEM;
++
++       memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;VIRTUAL-DISK&quot;, 16);
++       lu-&gt;attributes-&gt;version_desc[0] = 0x04C0; /* SBC-3 no version claimed */
++       lu-&gt;attributes-&gt;version_desc[1] = 0x0960; /* iSCSI */
++       lu-&gt;attributes-&gt;version_desc[2] = 0x0300; /* SPC-3 */
++
++       return 0;
++}
++
++static int sbc_lu_exit(struct scsi_lu *lu)
++{
++       return 0;
++}
++
+ struct device_type_template sbc_template = {
+-       .type   = TYPE_DISK,
+-       .name   = &quot;disk&quot;,
+-       .pid    = &quot;VIRTUAL-DISK&quot;,
+-       .ops    = {
++       .type = TYPE_DISK,
++       .name = &quot;disk&quot;,
++       .lu_init = sbc_lu_init,
++       .lu_exit = sbc_lu_exit,
++       .lu_config = spc_lu_config,
++       .ops = {
+                {spc_test_unit,},
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 1a6929f..728dfe9 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -40,7 +40,7 @@
+
+ void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint8_t asc,
+uint8_t asq)
+ {
+-       if (cmd-&gt;dev &amp;&amp; cmd-&gt;dev-&gt;d_sense) {
++       if (cmd-&gt;dev &amp;&amp; cmd-&gt;dev-&gt;attributes-&gt;sense_format) {
+                /* descriptor format */
+
+                cmd-&gt;sense_buffer[0] = 0x72;  /* current, not deferred */
+@@ -121,3 +121,4 @@ int scsi_cmd_perform(int host_no, struct scsi_cmd *cmd)
+        unsigned char op = cmd-&gt;scb[0];
+        return cmd-&gt;c_target-&gt;dev_type_template.ops[op].cmd_perform(host_no,
+cmd);
+ }
++
+diff --git a/usr/spc.c b/usr/spc.c
+index b922a45..ab633a4 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  * 02110-1301 USA
+  */
++#include &lt;errno.h&gt;
+ #include &lt;stdio.h&gt;
+ #include &lt;stdlib.h&gt;
+ #include &lt;string.h&gt;
+@@ -27,12 +28,15 @@
+ #include &quot;list.h&quot;
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
++#include &quot;parser.h&quot;
+ #include &quot;target.h&quot;
+ #include &quot;driver.h&quot;
++#include &quot;tgtadm_error.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+
+ #define PRODUCT_REV    &quot;0&quot;
++#define BLK_SHIFT      9
+
+ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ {
+@@ -40,7 +44,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+        uint8_t *data;
+        uint8_t *scb = cmd-&gt;scb;
+        unsigned char device_type = cmd-&gt;c_target-&gt;dev_type_template.type;
+-       char *product_id = cmd-&gt;c_target-&gt;dev_type_template.pid;
++       struct physicalAttributes * attributes = cmd-&gt;dev-&gt;attributes;
+        unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+
+        if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+@@ -57,22 +61,21 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+        dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+
+        if (!(scb[1] &amp; 0x3)) {
++               int i;
+                data[0] = device_type;
+-               data[2] = 4;
++               data[1] = (attributes-&gt;isRemovable) ? 0x80 : 0;
++               data[2] = 5;    /* SPC-3 */
+                data[3] = 0x42;
+-               data[4] = 59;
+                data[7] = 0x02;
+                memset(data + 8, 0x20, 28);
+-               strncpy((char *)data + 8, VENDOR_ID, 8);
+-               strncpy((char *)data + 16, product_id, 16);
+-               strncpy((char *)data + 32, PRODUCT_REV, 4);
+-               data[58] = 0x03;
+-               data[59] = 0x20;
+-               data[60] = 0x09;
+-               data[61] = 0x60;
+-               data[62] = 0x03;
+-               data[63] = 0x00;
+-               len = 64;
++               strncpy((char *)data + 8, attributes-&gt;VendorIdent, 8);
++               strncpy((char *)data + 16, attributes-&gt;ProductIdent, 16);
++               strncpy((char *)data + 32, attributes-&gt;ProductRev, 4);
++               for (i=0, len=58; i &lt; VERSION_DESCRIPTOR_LEN; i++, len += 2) {
++                       data[len] = (attributes-&gt;version_desc[i] &gt;&gt; 8) &amp; 0xff;
++                       data[len+1] = attributes-&gt;version_desc[i] &amp; 0xff;
++               }
++               data[4] = len - 5;      /* Additional Length */
+                ret = SAM_STAT_GOOD;
+        } else if (scb[1] &amp; 0x2) {
+                /* CmdDt bit is set */
+@@ -101,13 +104,13 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+                        len = 4 + SCSI_SN_LEN;
+                        ret = SAM_STAT_GOOD;
+
+-                       if (cmd-&gt;dev &amp;&amp; strlen(cmd-&gt;dev-&gt;scsi_sn)) {
++                       if (cmd-&gt;dev &amp;&amp; strlen(cmd-&gt;dev-&gt;attributes-&gt;scsi_sn)) {
+                                uint8_t *p;
+                                char *q;
+
+                                p = data + 4 + tmp - 1;
+-                               q = cmd-&gt;dev-&gt;scsi_sn + SCSI_SN_LEN - 1;
+-
++                               q = cmd-&gt;dev-&gt;attributes-&gt;scsi_sn +
++                                                               SCSI_SN_LEN - 1;
+                                for (; tmp &gt; 0; tmp--, q)
+                                        *(p--) = *(q--);
+                        }
+@@ -120,7 +123,8 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+                        data[5] = 0x1;
+                        data[7] = tmp;
+                        if (cmd-&gt;dev)
+-                               strncpy((char *) data + 8, cmd-&gt;dev-&gt;scsi_id,
++                               strncpy((char *) data + 8,
++                                       cmd-&gt;dev-&gt;attributes-&gt;scsi_id,
+                                        SCSI_ID_LEN);
+                        len = tmp + 8;
+                        ret = SAM_STAT_GOOD;
+@@ -238,9 +242,98 @@ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+        return SAM_STAT_GOOD;
+ }
+
++void dump_cdb(struct scsi_cmd *cmd)
++{
++       uint8_t * cdb = cmd-&gt;scb;
++
++       switch(cmd-&gt;scb_len) {
++       case 6:
++               dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;,
++                       cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5]);
++               break;
++       case 10:
++               dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
++                               &quot; %02x %02x %02x %02x&quot;,
++                       cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
++                       cdb[6], cdb[7], cdb[8], cdb[9]);
++               break;
++       case 12:
++               dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
++                               &quot; %02x %02x %02x %02x %02x %02x&quot;,
++                       cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
++                       cdb[6], cdb[7], cdb[8], cdb[9], cdb[10], cdb[11]);
++               break;
++       case 16:
++               dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
++                               &quot; %02x %02x %02x %02x %02x %02x&quot;
++                               &quot; %02x %02x %02x %02x&quot;,
++                       cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
++                       cdb[6], cdb[7], cdb[8], cdb[9], cdb[10], cdb[11],
++                       cdb[12], cdb[13], cdb[14], cdb[15]);
++               break;
++       }
++}
++
+ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+ {
++       dump_cdb(cmd);
+        cmd-&gt;len = 0;
+        sense_data_build(cmd, ILLEGAL_REQUEST, 0x20, 0);
+        return SAM_STAT_CHECK_CONDITION;
+ }
++
++enum {
++       Opt_scsiid, Opt_scsisn, Opt_err,
++};
++
++static match_table_t tokens = {
++       {Opt_scsiid, &quot;scsi_id=%s&quot;},
++       {Opt_scsisn, &quot;scsi_sn=%s&quot;},
++       {Opt_err, NULL},
++};
++
++int spc_lu_config(struct scsi_lu *lu, char * params) {
++       int err = 0;
++       char *p;
++
++       if (! strncmp(&quot;targetOps&quot;, params, 9))
++               params = params + 10;
++
++       while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
++               substring_t args[MAX_OPT_ARGS];
++               int token;
++               if (!*p)
++                       continue;
++               dprintf(&quot;*p : %s\n&quot;, p);
++               token = match_token(p, tokens, args);
++               switch (token) {
++               case Opt_scsiid:
++                       match_strncpy(lu-&gt;attributes-&gt;scsi_id, &amp;args[0],
++                                     sizeof(lu-&gt;attributes-&gt;scsi_id) - 1);
++                       break;
++               case Opt_scsisn:
++                       match_strncpy(lu-&gt;attributes-&gt;scsi_sn, &amp;args[0],
++                                     sizeof(lu-&gt;attributes-&gt;scsi_sn) - 1);
++                       break;
++               default:
++                       err = TGTADM_INVALID_REQUEST;
++               }
++       }
++       return err;
++}
++
++int spc_lu_init(struct scsi_lu * lu)
++{
++       lu-&gt;attributes = zalloc(sizeof(struct physicalAttributes));
++       if(! lu-&gt;attributes)
++               return -ENOMEM;
++
++       memcpy(lu-&gt;attributes-&gt;VendorIdent, VENDOR_ID, 8);
++       memcpy(lu-&gt;attributes-&gt;ProductRev, &quot;0001&quot;, 4);
++       lu-&gt;attributes-&gt;isRemovable = 0;
++       lu-&gt;attributes-&gt;sense_format = 0;
++       lu-&gt;attributes-&gt;onLine = 0;
++       lu-&gt;attributes-&gt;reset = 1;
++
++       return 0;
++}
+diff --git a/usr/spc.h b/usr/spc.h
+index f81e74c..1036b70 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -7,5 +7,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+ extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+ extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
++extern int spc_lu_init(struct scsi_lu *lu);
++extern int spc_lu_config(struct scsi_lu *lu, char * params);
++extern void dump_cdb(struct scsi_cmd *cmd);
+
+ #endif
+diff --git a/usr/target.c b/usr/target.c
+index 23f450f..8eb0cd7 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -29,7 +29,6 @@
+ #include &lt;sys/socket.h&gt;
+
+ #include &quot;list.h&quot;
+-#include &quot;parser.h&quot;
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;driver.h&quot;
+@@ -247,13 +246,19 @@ int tgt_device_create(int tid, uint64_t lun, char *args)
+        lu-&gt;lun = lun;
+        lu-&gt;lu_state = SCSI_LU_RUNNING;
+
+-       snprintf(lu-&gt;scsi_id, sizeof(lu-&gt;scsi_id),
+-                &quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
+-
+        tgt_cmd_queue_init(&amp;lu-&gt;cmd_queue);
+
+-       if (target-&gt;dev_type_template.device_init)
+-               target-&gt;dev_type_template.device_init(lu);
++       if (target-&gt;dev_type_template.lu_init)
++               err = target-&gt;dev_type_template.lu_init(lu);
++
++       if(! err) {
++               snprintf(lu-&gt;attributes-&gt;scsi_id,
++                       sizeof(lu-&gt;attributes-&gt;scsi_id),
++                       &quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
++               snprintf(lu-&gt;attributes-&gt;scsi_sn,
++                       sizeof(lu-&gt;attributes-&gt;scsi_sn),
++                       &quot;beaf%d%&quot; PRIu64, tid, lun);
++       }
+
+        list_for_each_entry(pos, &amp;target-&gt;device_list, device_siblings) {
+                if (lu-&gt;lun &lt; pos-&gt;lun)
+@@ -262,13 +267,14 @@ int tgt_device_create(int tid, uint64_t lun, char *args)
+        list_add_tail(&amp;lu-&gt;device_siblings, &amp;pos-&gt;device_siblings);
+
+        dprintf(&quot;Add a logical unit %&quot; PRIu64 &quot; to the target %d\n&quot;, lun, tid);
+-       return 0;
++       return err;
+ }
+
+ int tgt_device_destroy(int tid, uint64_t lun)
+ {
+        struct target *target;
+        struct scsi_lu *lu;
++       int     err;
+
+        dprintf(&quot;%u %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+
+@@ -281,12 +287,14 @@ int tgt_device_destroy(int tid, uint64_t lun)
+        if (!list_empty(&amp;lu-&gt;cmd_queue.queue) || lu-&gt;cmd_queue.active_cmd)
+                return TGTADM_LUN_ACTIVE;
+
++       err = target-&gt;dev_type_template.lu_exit(lu);
++
+        free(lu-&gt;path);
+        list_del(&amp;lu-&gt;device_siblings);
+
+        target-&gt;bst-&gt;bs_close(lu);
+        free(lu);
+-       return 0;
++       return err;
+ }
+
+ int device_reserve(struct scsi_cmd *cmd)
+@@ -339,20 +347,9 @@ int device_reserved(struct scsi_cmd *cmd)
+        return -EBUSY;
+ }
+
+-enum {
+-       Opt_scsiid, Opt_scsisn, Opt_err,
+-};
+-
+-static match_table_t tokens = {
+-       {Opt_scsiid, &quot;scsi_id=%s&quot;},
+-       {Opt_scsisn, &quot;scsi_sn=%s&quot;},
+-       {Opt_err, NULL},
+-};
+-
+ int tgt_device_update(int tid, uint64_t dev_id, char *params)
+ {
+-       int err = 0;
+-       char *p;
++       int err = TGTADM_INVALID_REQUEST;
+        struct target *target;
+        struct scsi_lu *lu;
+
+@@ -366,26 +363,8 @@ int tgt_device_update(int tid, uint64_t dev_id,
+char *params)
+                return TGTADM_NO_LUN;
+        }
+
+-       while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+-               substring_t args[MAX_OPT_ARGS];
+-               int token;
+-               if (!*p)
+-                       continue;
+-               token = match_token(p, tokens, args);
+-
+-               switch (token) {
+-               case Opt_scsiid:
+-                       match_strncpy(lu-&gt;scsi_id, &amp;args[0],
+-                                     sizeof(lu-&gt;scsi_id) - 1);
+-                       break;
+-               case Opt_scsisn:
+-                       match_strncpy(lu-&gt;scsi_sn, &amp;args[0],
+-                                     sizeof(lu-&gt;scsi_sn) - 1);
+-                       break;
+-               default:
+-                       err = TGTADM_INVALID_REQUEST;
+-               }
+-       }
++       if (target-&gt;dev_type_template.lu_config)
++               err = target-&gt;dev_type_template.lu_config(lu, params);
+
+        return err;
+ }
+@@ -474,8 +453,8 @@ int target_cmd_queue(int tid, struct scsi_cmd *cmd)
+                cmd_post_perform(q, cmd);
+
+                dprintf(&quot;%&quot; PRIx64 &quot; %x %&quot; PRIx64 &quot; %&quot; PRIu64 &quot; %u %d %d\n&quot;,
+-                       cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;uaddr,
+cmd-&gt;offset, cmd-&gt;len,
+-                       result, cmd-&gt;async);
++                       cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;uaddr, cmd-&gt;offset,
++                       cmd-&gt;len, result, cmd-&gt;async);
+
+                set_cmd_processed(cmd);
+                if (!cmd-&gt;async)
+@@ -483,7 +462,8 @@ int target_cmd_queue(int tid, struct scsi_cmd *cmd)
+        } else {
+                set_cmd_queued(cmd);
+                dprintf(&quot;blocked %&quot; PRIx64 &quot; %x %&quot; PRIu64 &quot; %d\n&quot;,
+-                       cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;dev ?
+cmd-&gt;dev-&gt;lun : UINT64_MAX,
++                       cmd-&gt;tag, cmd-&gt;scb[0],
++                       cmd-&gt;dev ? cmd-&gt;dev-&gt;lun : UINT64_MAX,
+                        q-&gt;active_cmd);
+
+                list_add_tail(&amp;cmd-&gt;qlist, &amp;q-&gt;queue);
+@@ -1148,8 +1128,8 @@ int tgt_target_show_all(char *buf, int rest)
+                                 _TAB3 &quot;Size: %s\n&quot;
+                                 _TAB3 &quot;Backing store: %s\n&quot;,
+                                 lu-&gt;lun,
+-                                lu-&gt;scsi_id,
+-                                lu-&gt;scsi_sn,
++                                lu-&gt;attributes-&gt;scsi_id,
++                                lu-&gt;attributes-&gt;scsi_sn,
+                                 print_disksize(lu-&gt;size),
+                                 lu-&gt;path);
+
+diff --git a/usr/tgtadm.c b/usr/tgtadm.c
+index e55a785..3d551cc 100644
+--- a/usr/tgtadm.c
++++ b/usr/tgtadm.c
+@@ -103,6 +103,7 @@ struct option const long_options[] = {
+        {&quot;initiator-address&quot;, required_argument, NULL, 'I'},
+        {&quot;user&quot;, required_argument, NULL, 'u'},
+        {&quot;password&quot;, required_argument, NULL, 'p'},
++       {&quot;params&quot;, required_argument, NULL, 'P'},
+
+        {&quot;bus&quot;, required_argument, NULL, 'B'},
+        {&quot;target-type&quot;, required_argument, NULL, 'Y'},
+@@ -110,7 +111,7 @@ struct option const long_options[] = {
+        {NULL, 0, NULL, 0},
+ };
+
+-static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:B:Y:O&quot;;
++static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:P:B:Y:O&quot;;
+
+ static void usage(int status)
+ {
+@@ -355,7 +356,7 @@ int main(int argc, char **argv)
+        int op, total, tid, rest, mode, t_type, ac_dir;
+        uint32_t cid, hostno;
+        uint64_t sid, lun;
+-       char *name, *value, *path, *targetname, *params, *address;
++       char *name, *value, *path, *targetname, *params, *address, *targetOps;
+        char *user, *password;
+        char buf[BUFSIZE + sizeof(struct tgtadm_req)];
+        struct tgtadm_req *req;
+@@ -365,7 +366,7 @@ int main(int argc, char **argv)
+        t_type = TYPE_DISK;
+        ac_dir = ACCOUNT_TYPE_INCOMING;
+        rest = BUFSIZE;
+-       name = value = path = targetname = address = NULL;
++       name = value = path = targetname = address = targetOps = NULL;
+        user = password = NULL;
+
+        memset(buf, 0, sizeof(buf));
+@@ -396,6 +397,9 @@ int main(int argc, char **argv)
+                case 'l':
+                        lun = strtoull(optarg, NULL, 10);
+                        break;
++               case 'P':
++                       targetOps = optarg;
++                       break;
+                case 'n':
+                        name = optarg;
+                        break;
+@@ -570,6 +574,10 @@ int main(int argc, char **argv)
+        if (password)
+                shprintf(total, params, rest, &quot;%spassword=%s&quot;,
+                         rest == BUFSIZE ? &quot;&quot; : &quot;,&quot;, password);
++       // Trailing ',' makes parsing params in modules easier..
++       if (targetOps)
++               shprintf(total, params, rest, &quot;%stargetOps %s,&quot;,
++                        rest == BUFSIZE ? &quot;&quot; : &quot;,&quot;, targetOps);
+
+        req-&gt;len = sizeof(*req) + total;
+
+diff --git a/usr/tgtadm.h b/usr/tgtadm.h
+index fb83753..d53cb40 100644
+--- a/usr/tgtadm.h
++++ b/usr/tgtadm.h
+@@ -4,31 +4,7 @@
+ #define TGT_IPC_NAMESPACE      &quot;TGT_IPC_ABSTRACT_NAMESPACE&quot;
+ #define TGT_LLD_NAME_LEN       64
+
+-enum tgtadm_errno {
+-       TGTADM_SUCCESS,
+-       TGTADM_UNKNOWN_ERR,
+-       TGTADM_NOMEM,
+-       TGTADM_NO_DRIVER,
+-       TGTADM_NO_TARGET,
+-
+-       TGTADM_NO_LUN,
+-       TGTADM_NO_SESSION,
+-       TGTADM_NO_CONNECTION,
+-       TGTADM_TARGET_EXIST,
+-       TGTADM_LUN_EXIST,
+-
+-       TGTADM_ACL_EXIST,
+-       TGTADM_USER_EXIST,
+-       TGTADM_NO_USER,
+-       TGTADM_TOO_MANY_USER,
+-       TGTADM_INVALID_REQUEST,
+-
+-       TGTADM_OUTACCOUNT_EXIST,
+-       TGTADM_TARGET_ACTIVE,
+-       TGTADM_LUN_ACTIVE,
+-       TGTADM_UNSUPPORTED_OPERATION,
+-       TGTADM_UNKNOWN_PARAM,
+-};
++#include &quot;tgtadm_error.h&quot;
+
+ enum tgtadm_op {
+        OP_NEW,
+diff --git a/usr/tgtadm_error.h b/usr/tgtadm_error.h
+new file mode 100644
+index 0000000..319a4ad
+--- /dev/null
++++ b/usr/tgtadm_error.h
+@@ -0,0 +1,30 @@
++#ifndef TGTADM_ERROR_H
++#define TGTADM_ERROR_H
++
++enum tgtadm_errno {
++       TGTADM_SUCCESS,
++       TGTADM_UNKNOWN_ERR,
++       TGTADM_NOMEM,
++       TGTADM_NO_DRIVER,
++       TGTADM_NO_TARGET,
++
++       TGTADM_NO_LUN,
++       TGTADM_NO_SESSION,
++       TGTADM_NO_CONNECTION,
++       TGTADM_TARGET_EXIST,
++       TGTADM_LUN_EXIST,
++
++       TGTADM_ACL_EXIST,
++       TGTADM_USER_EXIST,
++       TGTADM_NO_USER,
++       TGTADM_TOO_MANY_USER,
++       TGTADM_INVALID_REQUEST,
++
++       TGTADM_OUTACCOUNT_EXIST,
++       TGTADM_TARGET_ACTIVE,
++       TGTADM_LUN_ACTIVE,
++       TGTADM_UNSUPPORTED_OPERATION,
++       TGTADM_UNKNOWN_PARAM,
++};
++
++#endif
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 06e0dd9..8cda864 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -5,6 +5,7 @@
+
+ #define SCSI_ID_LEN    24
+ #define SCSI_SN_LEN    8
++#define VERSION_DESCRIPTOR_LEN 8
+
+ #define VENDOR_ID      &quot;IET&quot;
+
+@@ -29,13 +30,27 @@ struct tgt_cmd_queue {
+        struct list_head queue;
+ };
+
++struct physicalAttributes {
++       char    scsi_id[SCSI_ID_LEN];
++       char    scsi_sn[SCSI_SN_LEN];
++
++       /* SCSI Inquiry Params */
++       char    VendorIdent[9];
++       char    ProductIdent[17];
++       char    ProductRev[5];
++       uint16_t        version_desc[VERSION_DESCRIPTOR_LEN];
++
++       char    isRemovable;    /* Removable media */
++       char    onLine;
++       char    reset;          /* Power-on or reset */
++       char    sense_format;   /* sense data format */
++};
++
+ struct scsi_lu {
+        int fd;
+        uint64_t addr; /* persistent mapped address */
+        uint64_t size;
+        uint64_t lun;
+-       char scsi_id[SCSI_ID_LEN];
+-       char scsi_sn[SCSI_SN_LEN];
+        char *path;
+
+        /* the list of devices belonging to a target */
+@@ -48,7 +63,7 @@ struct scsi_lu {
+        uint64_t reserve_id;
+
+        /* TODO: needs a structure for lots of device parameters */
+-       uint8_t d_sense;
++       struct physicalAttributes * attributes;
+ };
+
+ struct scsi_cmd {
+@@ -121,7 +136,9 @@ struct device_type_template {
+        char *name;
+        char *pid;
+
+-       void (*device_init)(struct scsi_lu *dev);
++       int (*lu_init)(struct scsi_lu *lu);
++       int (*lu_exit)(struct scsi_lu *lu);
++       int (*lu_config)(struct scsi_lu *lu, char *arg);
+
+        struct device_type_operations ops[256];
+ };
+-- 
+1.5.1.3
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh at laptop</A>:~/patch/2007-5-31$
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000729.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch.
+</A></li>
+	<LI>Next message: <A HREF="000725.html">[Stgt-devel] [Patch 2/2]	Add-ability-to-dynamically-set-SCSI-Inquiry-params
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#724">[ date ]</a>
+              <a href="thread.html#724">[ thread ]</a>
+              <a href="subject.html#724">[ subject ]</a>
+              <a href="author.html#724">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

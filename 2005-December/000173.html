@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%20version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C439A03E2.7030308%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000166.html">
+   <LINK REL="Next"  HREF="000177.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%20version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C439A03E2.7030308%40cs.wisc.edu%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Fri Dec  9 23:23:30 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000166.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000177.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#173">[ date ]</a>
+              <a href="thread.html#173">[ thread ]</a>
+              <a href="subject.html#173">[ subject ]</a>
+              <a href="author.html#173">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Vladislav Bolkhovitin wrote:
+&gt;<i> Mike Christie wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> Vladislav Bolkhovitin wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>  - Scst has some performance advantages over stgt, at least, on 
+</I>&gt;&gt;&gt;<i> hardware targets, because it allows internal handling in SIRQ context 
+</I>&gt;&gt;&gt;<i> as well as doesn't need user space program, so it eliminates additi
+</I>&gt;&gt;&gt;<i> switches (at least 3 per command for WRITEs and 2 per command for 
+</I>&gt;&gt;&gt;<i> reads plus switches to user space daemon, probably, 2 per command). 5 
+</I>&gt;&gt;&gt;<i> context switches per command looks too much for me, especially 
+</I>&gt;&gt;&gt;<i> considering how little work is done on each context. It means ~15000 
+</I>&gt;&gt;&gt;<i> CS/sec on regular 200Mb/sec link with 64K block size. Additionally, 
+</I>&gt;&gt;&gt;<i> kernel only commands execution allows direct access to page cache, 
+</I>&gt;&gt;&gt;<i> which is GREAT performance improvement, because in architecture with 
+</I>&gt;&gt;&gt;<i> user space daemon the data should be copied several times between 
+</I>&gt;&gt;&gt;<i> kernel and user space. Or, do I miss anything?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Userspace only occurs for READ/WRITEs. So for REPORT_LUNS, TUR, etc 
+</I>&gt;&gt;<i> where performance is not a factor.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> So, do you mean that READ/WRITE operations are (or will be) performed in 
+</I>&gt;<i>  kernel space only? I don't see that from the code.
+</I>
+
+They are today. I think they have always been that way. Look again :)
+
+
+&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>  From other side, stgt has not too much advantages over scst. 
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Hey, we just started and have not had too much time.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> No offense, please, you wrote stgt and scst are the same, I wrote, they 
+</I>&gt;<i> aren't :-)
+</I>&gt;<i> 
+</I>
+Yeah, I know. It was my mistake. If you read other mails, you would see 
+I mentioned that we do not have any type of eh and I make Tomo mess up 
+the serialization stuff becase I asked him to try to reuse some block 
+layer code.
+
+If you read other mails, you would also see I reccomended scst to people 
+requesting something stable :)
+
+&gt;&gt;&gt;<i> Actually, we would greatly appreciate if Mike or Christoph will tell 
+</I>&gt;&gt;&gt;<i> us what is so wrong in scst on their opinion, so they started they 
+</I>&gt;&gt;&gt;<i> own new project. (I'm not considering motivation like &quot;I want to make 
+</I>&gt;&gt;&gt;<i> my own in any case&quot; seriously). Is scst too complicated? Do you think 
+</I>&gt;&gt;&gt;<i> stgt will be simpler with all those features implemented?
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Didn't we go over this? To get SCST ready for mainline we would have 
+</I>&gt;&gt;<i> had a large cleanup effort. I started this and sent you a patch to 
+</I>&gt;&gt;<i> begin the cleanup. In the end some of the scsi people liked the idea 
+</I>&gt;&gt;<i> of throwing the non-read/write command to userspace and to do this we 
+</I>&gt;&gt;<i> just decided to start over but I have been cutting and pasting your 
+</I>&gt;&gt;<i> code and cleaning it up as I add more stuff.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> The patches that I've seen were just pretty mechanic cleanups and 
+</I>&gt;<i> renames, which could be done in a half of hour time and which I'm going 
+</I>
+Yeah it was the beginning of the easy work. I did not mean that as an 
+example of evertthing. I thought you would remember when we discussed 
+this on linux-scsi before.
+
+
+&gt;<i> to do in any case before preparing the patch. So, that reason doesn't 
+</I>&gt;<i> look convincing for me to throw away a big chunk of working code. Doing 
+</I>&gt;<i> so you delayed SCSI targets development for at least to a year-two, 
+</I>
+Hey, looked how long it took iscsi to get in becuase we wasted so much 
+time cleaning up iscsi-sfnet :)
+
+&gt;<i> because there are too much features for you to implement in stgt, which 
+</I>&gt;<i> are already working and useful in scst.
+</I>
+Well, there was more when you asked on linux-scsi. You have other things 
+like refcouting (we only are adding that in today, but we do get 
+references to the scsi_host when we access the qla2xxx ha at least). If 
+someone ripps out a qla2xxx card you will oops.
+
+We also did not want to hook in as a SCSI ULD interface becuase we did 
+not want to worry about what happens when poeple start using 
+usb-mass-storage for targets and LUNs. Look how many times we see Alan 
+Stern pop up for just the initiator side :) And to be honest DM would do 
+a lot of what tgt and scst want as far as giving us a reference to the 
+devive we want to use as a LUN and handling all the setup work so we 
+probably both messed up there :(
+
+&gt;<i> 
+</I>&gt;<i>  From other side, if you look on scst closely you will see that:
+</I>&gt;<i> 
+</I>&gt;<i> - The user space gate could be easily and clearly done using existing 
+</I>&gt;<i> dev handler's hooks
+</I>
+Yeah and the problem is that we just do not believe those are 
+implemented in the correct place. We do not like class interface SCSI 
+hook in, when we can do the same thing from userspace.
+
+&gt;<i> 
+</I>&gt;<i> - There is nothing in current SCST that could be moved in user space 
+</I>&gt;<i> without sacrificing performance. Neither task management, nor UA 
+</I>&gt;<i> processing, nor RESERVE/RELEASE emulation. Otherwise, you will have to 
+</I>&gt;<i> pass *all* the commands to the user space to check allowed this command 
+</I>&gt;<i> for processing or it shall be returned with an error.
+</I>
+For non READ/WRITE, we are ok with that performance drops. Even for 
+doing READ/WRITEs in the kernel from interrupt context, we were going to 
+run from a softirq, but we thought allocating the whole command with 
+GFP_ATOMIC would not be liked so we pass it to the thread. And for when 
+we do pass through (using elv_add_request/blk_rq_execute_nowait), we can 
+do it in just the context swith needed for the memory allocation. But to 
+do GFP_ATOMOIC softirq or hw irq would not be a problem, although I do 
+not think we want to submit IO from the hw interrupt incase the queue 
+gets unplugged at the same time :)
+
+For non READ/WRITEs look how far open-iscsi went. And from James's 
+reply, you see that he thinks READs and WRITEs can go to userspace too, 
+so you know this is an uphill battle to get everything in the kernel.
+
+
+  SCST core is just
+&gt;<i> about 7500 lines of code. Is it too much?
+</I>
+Ask the people that have to review the code? :) After sfnet, I learned 
+that it is sometimes best to get the basics in the kernel first so we do 
+not burn out the christoph robot :) I think part of this stems from the 
+fact that I touched pretty much every line in that driver to clean it up 
+and it took me about a year. And while I was beginning to clean up scst 
+I began to remember sfnet.
+
+But there are other cleanups like moving some of the state to per 
+target, cleaningup the scattlist allocation code and moving it to 
+scsi-ml so the SCSI ULDs can use them and convert them. There is also 
+thing like converting to the right APIs for 2.6 (rm kernel_thread, rm 
+scsi_request, rm proc, fixup class interface refcouting problems, fixup 
+scsi_device lack of refcounting usage, etc).
+
+
+&gt;<i> 
+</I>&gt;&gt;<i> Simmer down :) If you had just gotton your code ready when christoph 
+</I>&gt;&gt;<i> asked a year ago we would never have had this problem and I would be 
+</I>&gt;&gt;<i> sending you patches to remove the scsi_request usage as we speak.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Christoph didn't ask me to do anything. Actually, nobody contacted and 
+</I>
+What? Look at the review comments you got on the list when you first 
+posted scst. It asked you to take out the 2.4ish code out and clean it 
+up didn't it?
+
+&gt;<i> asked anything about that me when you with Christoph conceived stgt.
+</I>&gt;<i> 
+</I>
+I do not think Christoph and I conceived stgt. Tomo and I did or 
+actually Tomo did the original code to push things to userspace. I just 
+bugged him about getting something in mainlin. We only asked Christoph 
+what we would should do to get things in mainline. After seeing what 
+open-iscsi did and the comments from Arjan about IET, we thought we 
+would have to follow a similar route as open-iscsi.
+
+
+At this point I do not care what we do. I just want to get something in 
+mainline for everyone to use and so I can use it at home becuase I am 
+lazy and do not want to drive to work in the snow to test FC card 
+updates :) If we can come to some conclusions on some of these issues I 
+am sure Tomo and I would be happy to work together.
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000166.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000177.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#173">[ date ]</a>
+              <a href="thread.html#173">[ thread ]</a>
+              <a href="subject.html#173">[ subject ]</a>
+              <a href="author.html#173">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,4138 @@
+From fujita.tomonori at lab.ntt.co.jp  Fri Aug  1 01:02:38 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 1 Aug 2008 08:02:38 +0900
+Subject: [Stgt-devel] Small inconsistency in ssc.c
+In-Reply-To: <f29db9a80807311442s50cb290by715e5b7acce193b1@mail.gmail.com>
+References: <46b8a8850807310930q3c4f6f8ds144febd9e919948e@mail.gmail.com>
+	<f29db9a80807311442s50cb290by715e5b7acce193b1@mail.gmail.com>
+Message-ID: <20080801080234X.fujita.tomonori@lab.ntt.co.jp>
+
+On Fri, 1 Aug 2008 07:42:37 +1000
+"Mark Harvey" <markh794 at gmail.com> wrote:
+
+> On Fri, Aug 1, 2008 at 2:30 AM, Richard Sharpe
+> <realrichardsharpe at gmail.com> wrote:
+> > Hi,
+> >
+> > I just noticed this ...
+> >
+> >        ssc = zalloc(sizeof(struct ssc_info));
+> >        if (ssc)
+> >                dtype_priv(lu) = ssc;
+> >        else
+> >                return -ENOMEM;
+> >
+> >        if (spc_lu_init(lu))
+> >                return TGTADM_NOMEM;
+> >
+> > What should be returned during the creation of an LU?
+> 
+> Good spotting..
+> 
+> Attached is a patch to fix this.
+> (Sorry for the attachment but I don't have pop/imap access)
+> 
+> It's a one liner..
+> Included in-line - you never know maybe cut/paste between vim &
+> firefox 3 on Windows won't destroy the tabs..
+> 
+> From 105df4ed0ff479e93a15261397d638575b11b840 Mon Sep 17 00:00:00 2001
+> From: Mark Harvey <markh794 at gmail.com>
+> Date: Fri, 1 Aug 2008 06:21:39 +1000
+> Subject: Return correct error code on malloc() failure
+> 
+> Reported-by: Richard Sharpe <realrichardsharpe at gmail.com>
+> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+
+Applied, thanks.
+
+
+From industrials at bigworking.com  Fri Aug  1 03:38:13 2008
+From: industrials at bigworking.com (Agrawal Carvalho)
+Date: Fri, 01 Aug 2008 01:38:13 +0000
+Subject: [Stgt-devel] :o)
+Message-ID: <1096557037.20080801012234@bigworking.com>
+
+Hey,  
+	
+	
+ 
+ 
+	
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080801/43da2409/attachment.html>
+
+From sparry at disenovital.com  Fri Aug  1 10:32:37 2008
+From: sparry at disenovital.com (Docimo Paytes)
+Date: Fri, 01 Aug 2008 08:32:37 +0000
+Subject: [Stgt-devel] :o)
+Message-ID: <2583651928.20080801082925@tophinke.ch>
+
+Salut,  
+	
+	
+ 
+ 
+	
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080801/07a7be26/attachment.html>
+
+From mangoo at wpkg.org  Fri Aug  1 10:50:45 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Fri, 01 Aug 2008 10:50:45 +0200
+Subject: [Stgt-devel] [PATCH] updating targets in tgt-admin
+Message-ID: <4892CE65.8040902@wpkg.org>
+
+This patch adds proper updating of targets to tgt-admin.
+
+You have to add --force/-f option to update targets which are in use.
+
+Updating consists of two things:
+- target is deleted
+- target is configured, basing on its config options
+
+Updating a target which is no longer in a config file will result in the target's deletion.
+
+
+The patch also changes the behaviour of --execute slightly - it now tries to delete the targets which are not in the config file; if the target is in use, it won't be touched (unless --force is used); if the target is not in use, it will be deleted.
+
+
+On my TO DO list are still:
+- don't assume cid is 0 when removing targets (check for a proper cid)
+- some code cleanups
+- shutting down tgtd (only if there are no targets)
+- adding some more options (disabling write-cache etc.)
+
+
+
+
+
+Signed-off-by: Tomasz Chmielewski <mangoo at wpkg.org>
+
+diff --git a/scripts/tgt-admin b/scripts/tgt-admin
+index fe95723..354dc9c 100755
+--- a/scripts/tgt-admin
++++ b/scripts/tgt-admin
+@@ -30,6 +30,8 @@ This tool configures tgt targets.
+ 				(see "--offline help" for more info)
+       --ready <value>		put all or selected targets in ready state
+ 				(see "--ready help" for more info)
++      --update <value>		update configuration for all or selected targets
++				(see "--update help" for more info)
+   -s, --show			show all the targets
+   -c, --conf <conf file>	specify an alternative configuration file
+       --ignore-errors		continue even if tgtadm exits with non-zero code
+@@ -49,6 +51,7 @@ my $execute = 0;
+ my $delete = 0;
+ my $offline = 0;
+ my $ready = 0;
++my $update = 0;
+ my $show = 0;
+ my $alternate_conf="0";
+ my $ignore_errors = 0;
+@@ -62,6 +65,7 @@ my $result = GetOptions (
+ 	"delete=s"      => \$delete,
+ 	"offline=s"     => \$offline,
+ 	"ready=s"       => \$ready,
++	"update=s"      => \$update,
+ 	"s|show"        => \$show,
+ 	"c|conf=s"      => \$alternate_conf,
+ 	"ignore-errors" => \$ignore_errors,
+@@ -147,7 +151,10 @@ my $option;
+ my $value;
+ 
+ sub add_targets {
+-
++	my $single_target = $_[0];
++	my $configured = $_[1];
++	my $connected = $_[2];
++	my $in_configfile = $_[3];
+ 	foreach my $k (sort keys %conf) {
+ 
+ 		if ( $k eq "default-driver" ) {
+@@ -166,61 +173,84 @@ sub add_targets {
+ 		execute("# default-driver not defined, defaulting to iscsi.\n");
+ 		$default_driver = "iscsi";
+ 	}
+-
++	
+ 	foreach my $k (sort keys %conf) {
+ 		if ( $k eq "target" ) {
+ 			foreach my $k2 (sort keys %{$conf{$k}}) {
+-				$target = $k2;
+-				my $allowall = 1;
+-				if ( not defined $tgtadm_output{$k2} ) {
+-					# We have to find available tid
+-					$next_tid = $next_tid + 1;
++				# Do we run update or execute?
++				if (length $single_target) {
++					if ($single_target ne $k2) {
++						next;
++					} else {
++						$target = $single_target;
++					}
++				} else {
++					$target = $k2;
+ 				}
+-				else {
+-					execute("# Target $target already exist!");
+-					execute("# Updating Target $target");
+-					execute("tgtadm --op update --mode target --tid=$next_tid -n state -v offline");
+-					execute("tgtadm --mode target --op delete --tid=$next_tid");
++				if (length $single_target) {
++					&main_delete($target);
+ 				}
++				my $allowall = 1;
++				if ((not defined $tgtadm_output{$k2}) || (length $single_target && $force == 1)) {
++					# We have to find available tid
++					if (($in_configfile == 1) && ($configured == 0)) {
++						my $maxtid = &find_max_tid;
++						$next_tid = $maxtid + 1;
++					} elsif (length $single_target) {
++						$next_tid = $tgtadm_output_tid{$target};
++					} else {
++						$next_tid = $next_tid + 1;
++					}
++					# Before we add a target, we need to know its type
++					my $driver;
++					foreach my $k3 (sort keys %{$conf{$k}{$k2}}) {
++						$option = $k3;
++						$value = $conf{$k}{$k2}{$k3};
++						&check_value($value);
++						if ($option eq "driver") {
++							if (ref($value) eq "ARRAY") {
++							print "Multiple driver definitions not allowed!\n";
++							print "Check your config file for errors (target: $target).\n";
++							exit 1;
++							}
++						$driver = $value;
++						}
++					}
++
++					if (not defined $driver) {
++						$driver = $default_driver;
++					}
+ 
+-				# Before we add a target, we need to know its type
+-				my $driver;
+-				foreach my $k3 (sort keys %{$conf{$k}{$k2}}) {
+-					$option = $k3;
+-					$value = $conf{$k}{$k2}{$k3};
+-					&check($value);
+-					if ( $option eq "driver" ) {
+-						if (ref($value) eq "ARRAY") {
+-						print "Multiple driver definitions not allowed!\n";
+-						print "Check your config file for errors (target: $target).\n";
+-						exit 1;
++					execute("# Adding target: $target");
++					execute("tgtadm --lld $driver --op new --mode target --tid $next_tid -T $target");
++					foreach my $k3 (sort keys %{$conf{$k}{$k2}}) {
++						$option = $k3;
++						$value = $conf{$k}{$k2}{$k3};
++						&check_value($value);
++						&process_options($driver);
++						# If there was no option called "initiator-address", it means
++						# we want to allow ALL initiators for this target
++						if ($option eq "initiator-address") {
++							$allowall = 0;
+ 						}
+-					$driver = $value;
+ 					}
+-				}
+ 
+-				if ( not defined $driver ) {
+-					$driver = $default_driver;
+-				}
+-				execute("# Adding target: $target");
+-				execute("tgtadm --lld $driver --op new --mode target --tid $next_tid -T $target");
+-				foreach my $k3 (sort keys %{$conf{$k}{$k2}}) {
+-					$option = $k3;
+-					$value = $conf{$k}{$k2}{$k3};
+-					&check($value);
+-					&process_options($driver);
+-					# If there was no option called "initiator-address", it means
+-					# we want to allow ALL initiators for this target
+-					if ( $option eq "initiator-address" ) {
+-						$allowall = 0;
++					if ($allowall == 1) {
++						execute("tgtadm --lld $driver --op bind --mode target --tid $next_tid -I ALL");
+ 					}
+-				}
+ 
+-				if ( $allowall == 1 ) {
+-					execute("tgtadm --lld $driver --op bind --mode target --tid $next_tid -I ALL");
++				} else {
++					if (not length $update) {
++						execute("# Target $target already exists!");
++					}
+ 				}
+-				execute();
+ 			}
++			if (length $single_target && $in_configfile == 0 && $configured == 0) {
++				print "Target $single_target is $connected currently not configured\n";
++				print "and does not exist in the config file - can't continue!\n";
++				exit 1;
++			}
++			execute();
+ 		}
+ 	}
+ }
+@@ -289,7 +319,7 @@ sub process_options {
+ 		my @value_arr = @$value;
+ 		foreach my $incominguser (@value_arr) {
+ 			my @userpass = split(/ /, $incominguser);
+-			&check($userpass[1]);
++			&check_value($userpass[1]);
+ 			execute("tgtadm --lld $driver --mode account --op delete --user=$userpass[0]");
+ 			execute("tgtadm --lld $driver --mode account --op new --user=$userpass[0] --password=$userpass[1]");
+ 			execute("tgtadm --lld $driver --mode account --op bind --tid=$next_tid --user=$userpass[0]");
+@@ -303,7 +333,7 @@ sub process_options {
+ 		}
+ 		execute("# Warning: only one outgoinguser is allowed. Will only use the first one.");
+ 		my @userpass = split(/ /, @$value[0]);
+-		&check($userpass[1]);
++		&check_value($userpass[1]);
+ 		execute("tgtadm --lld $driver --mode account --op delete --user=$userpass[0]");
+ 		execute("tgtadm --lld $driver --mode account --op new --user=$userpass[0] --password=$userpass[1]");
+ 		execute("tgtadm --lld $driver --mode account --op bind --tid=$next_tid --user=$userpass[0] --outgoing");
+@@ -340,13 +370,8 @@ sub remove_targets {
+ 				}
+ 
+ 				if ( $dontremove == 0 ) {
+-					# Right now, it is not possible to remove a target if any initiators
+-					# are connected to it. We'll do our best - offline the target first
+-					# (so it won't accept any new connections), and remove.
+-					# Note that remove will only work if no initiator is connected.
+-					execute("# Removing target: $existing_target");
+-					execute("tgtadm --op update --mode target --tid=$tgtadm_output_tid{$existing_target} -n state -v offline");
+-					execute("tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$existing_target}");
++					# Remove the target
++					&main_delete($existing_target);
+ 				}
+ 			}
+ 		}
+@@ -498,48 +523,60 @@ sub show_target_info {
+ 	}
+ }
+ 
+-# Delete the targets which are not in use
+-sub delete_targets {
+-
+-	# Check if the target is used by an initiator
+-	sub check_in_use {
+-		my $existing_target = $_[0];
+-		my $cur_option = $_[1];
+-		my $cur_tid = $_[2];
+-		if ($tgtadm_output{$existing_target} =~ m/\s+Connection:/) {
+-			if ($force == 1) {
+-				# Remove ACLs first
+-				my @acl_info = &show_target_info($existing_target, "acl_information");
+-				foreach my $acl (@acl_info) {
+-					execute("tgtadm --op unbind --mode target --tid $tgtadm_output_tid{$existing_target} -I $acl");
+-				}
+-				# Now, remove all sessions / connections from that tid
+-				my @sessions = &show_target_info($existing_target, "sessions");
+-				foreach my $session (@sessions) {
+-					execute("tgtadm --op delete --mode conn --tid $tgtadm_output_tid{$existing_target} --sid $session --cid 0");
+-				}
+-				execute("tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$existing_target}");
+-			} else {
+-				execute("# Target with tid $tgtadm_output_tid{$existing_target} ($existing_target) is in use, it won't be deleted.");
++# Main subroutine for deleting targets
++sub main_delete {
++	my $current_target = $_[0];
++	my $current_tid = $_[1];
++	my $configured = &check_configured($current_target);
++	my $del_upd_text;
++	# Check if the target has initiators connected
++	if ($tgtadm_output{$current_target} =~ m/\s+Connection:/) {
++		if ($force == 1) {
++			execute("# Removing target: $current_target");
++			# Remove ACLs first
++			my @acl_info = &show_target_info($current_target, "acl_information");
++			foreach my $acl (@acl_info) {
++				execute("tgtadm --op unbind --mode target --tid $tgtadm_output_tid{$current_target} -I $acl");
++			}
++			# Now, remove all sessions / connections from that tid
++			my @sessions = &show_target_info($current_target, "sessions");
++			foreach my $session (@sessions) {
++				execute("tgtadm --op delete --mode conn --tid $tgtadm_output_tid{$current_target} --sid $session --cid 0");
+ 			}
+-		} elsif (length $tgtadm_output_tid{$existing_target}) {
+-			execute("tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$existing_target}");
++			execute("tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$current_target}");
+ 		} else {
+-			if ($cur_option eq "tid") {
+-				execute("# Target with tid $cur_tid does not exist!");
++			if ($update ne 0) {
++				$del_upd_text = "updated";
+ 			} else {
+-				execute("# Target $existing_target does not exist!");
++				$del_upd_text = "deleted";
+ 			}
++			execute("# Target with tid $tgtadm_output_tid{$current_target} ($current_target) is in use, it won't be $del_upd_text.");
++		}
++	} elsif (length $tgtadm_output_tid{$current_target}) {
++		execute("# Removing target: $current_target");
++		execute("tgtadm --mode target --op delete --tid=$tgtadm_output_tid{$current_target}");
++	} else {
++		if (length $current_tid) {
++			execute("# Target with $current_target tid $current_tid does not exist!");
++		} else {
++			execute("# Target with name $current_target does not exist!");
+ 		}
+ 	}
++	if ($configured ne 0) {
++		execute();
++	}
++}
+ 
++# Delete the targets
++sub delete_targets {
++	
+ 	if ($delete eq "help") {
+ 		print <<EOF;
+       --delete <value>		delete all or selected targets
+-				The target will be deleted only if it's not used
++      				The target will be deleted only if it's not used
+ 				(no initiator is connected to it).
+ 				If you want to delete targets which are in use,
+-				you have to add "--force" flag
++				you have to add "--force" flag.
+ 
+ Example usage:
+       --delete help	      - display this help
+@@ -551,26 +588,130 @@ EOF
+ 		exit;
+ 	} elsif ($delete eq "ALL") {
+ 		&process_targets;
+-		# Run over all targets and delete them if they are not in use
++		# Run over all targets and delete them
+ 		my @all_targets = keys %tgtadm_output_tid;
+-		foreach my $existing_target (@all_targets) {
+-		&check_in_use($existing_target);
++		foreach my $current_target (@all_targets) {
++			&main_delete($current_target);
+ 		}
+-	} elsif ($delete =~ m/tid=(.+)/) {
++	} elsif ($delete =~ m/^tid=(.+)/) {
+ 		# Delete by tid
+ 		&process_targets;
+-		my $existing_target = $1;
+-		&check_in_use($tgtadm_output_name{$existing_target}, "tid", $existing_target);
++		my $current_target = $tgtadm_output_name{$1};
++		&main_delete($current_target, $1);
+ 	} else {
+ 		# Delete by name
+ 		&process_targets;
+-		my $existing_target = $delete;
+-		&check_in_use($existing_target);
++		my $current_target = $delete;
++		&main_delete($current_target);
++	}
++}
++
++# Update targets
++sub update_targets {
++	if ($update eq "help") {
++		print <<EOF;
++      --update <value>		update all or selected targets
++      				The target will be update only if it's not used
++				(no initiator is connected to it).
++				If you want to update targets which are in use,
++				you have to add "--force" flag.
++
++Example usage:
++      --update help	      - display this help
++      --update ALL	      - update all targets
++      --update tid=4	      - update target 4 (target with tid 4)
++      --update iqn.2008-08.com.example:some.target - update this target
++
++EOF
++		exit;
++	} elsif ($update eq "ALL") {
++		# Run over all targets and delete them if they are not in use
++		&parse_configs;
++		&process_targets;
++#		my @all_targets = keys %tgtadm_output_tid;
++		my @targets_combined = &combine_targets;
++		foreach my $current_target (@targets_combined) {
++			my $configured = &check_configured($current_target);
++			my $connected = &check_connected($current_target);
++			my $in_configfile = &check_in_configfile($current_target);
++			&combine_targets;
++			if (($in_configfile == 0) && ($configured == 1)) {
++				# Delete the target if it's not in the config file
++				&main_delete($current_target);
++			} else {
++				&add_targets($current_target, $configured, $connected, $in_configfile);
++			}
++
++		}
++	} elsif ($update =~ m/^tid=(.+)/) {
++		# Update by tid
++		&parse_configs;
++		&process_targets;
++		my $current_target = $tgtadm_output_name{$1};
++		my $configured = &check_configured($current_target);
++		my $connected = &check_connected($current_target);
++		my $in_configfile = &check_in_configfile($current_target);
++		if (($in_configfile == 0) && ($configured == 1)) {
++			# Delete the target if it's not in the config file
++			&main_delete($current_target);
++		} elsif ($configured == 1) {
++			&add_targets($current_target, $configured, $connected);
++		} else {
++			print "There is no target with tid $1, can't continue!\n";
++			exit 1;
++		}
++	} else {
++		# Update by name
++		&parse_configs;
++		&process_targets;
++		my $current_target = $update;
++		my $configured = &check_configured($current_target);
++		my $connected = &check_connected($current_target);
++		my $in_configfile = &check_in_configfile($current_target);
++		if (($in_configfile == 0) && ($configured == 1)) {
++			# Delete the target if it's not in the config file
++			&main_delete($current_target);
++		} else {
++			&add_targets($current_target, $configured, $connected);
++		}
++	}
++}
++
++# Find the biggest tid
++sub find_max_tid {
++	my @all_targets = keys %tgtadm_output_tid;
++	my $maxtid = 0;
++	foreach my $var (@all_targets) {
++		if ($tgtadm_output_tid{$var} > $maxtid) {
++			$maxtid = $tgtadm_output_tid{$var};
++		}
++		return $maxtid;
++	}
++}
++
++# Combine targets from the config file and currently configured targets
++sub combine_targets {
++	my @targets_in_configfile;
++	my @all_targets = keys %tgtadm_output_tid;
++	my @targets_combined;
++	# Make an array of targets in the config file
++	foreach my $k (sort keys %conf) {
++		if ( $k eq "target" ) {
++			foreach my $k2 (sort keys %{$conf{$k}}) {
++				push(@targets_in_configfile, $k2)
++			}
++		}
++	}
++	# Use only unique elements from bot arrays
++	foreach my $target (@all_targets) {
++		push (@targets_combined, $target) unless grep { $_ eq $target } @targets_in_configfile;
+ 	}
++	@targets_combined = (@targets_combined, @targets_in_configfile);
++	return @targets_combined;
+ }
+ 
+-# Some checks
+-sub check {
++# Check if a value is correct
++sub check_value {
+ 	if ( not defined $_[0] or not length $_[0] ) {
+ 		print "\nOption $option has a missing value!\n";
+ 		print "Check your config file for errors (target: $target)\n";
+@@ -578,6 +719,42 @@ sub check {
+ 	}
+ }
+ 
++# Check if the target is in the config file
++sub check_in_configfile {
++	my $current_target = $_[0];
++	my $result;
++	foreach my $k (sort keys %conf) {
++		if ( $k eq "target" ) {
++			foreach my $k2 (sort keys %{$conf{$k}}) {
++				if ($k2 eq $current_target) {
++					return 1;
++				}
++			}
++			# If we're here, we didn't find a match
++			return 0;
++		}
++	}
++}
++
++# Check if the target is configured in tgtd
++sub check_configured {
++	my $current_target = $_[0];
++	if (length $tgtadm_output_tid{$current_target}) {
++		return 1;
++	} else {
++		return 0;
++	}
++}
++
++# Check if any initiators are connected to the target
++sub check_connected {
++	my $current_target = $_[0];
++	if ($tgtadm_output{$current_target} =~ m/\s+Connection:/) {
++		return 1;
++	} else {
++		return 0;
++	}
++}
+ 
+ # Execute or just print (or both) everything we start or would start
+ sub execute {
+@@ -612,6 +789,8 @@ if ($execute == 1) {
+ 	&remove_targets;
+ } elsif ($delete ne 0) {
+ 	&delete_targets;
++} elsif ($update ne 0) {
++	&update_targets;
+ } elsif ($dump == 1) {
+ 	&dump_config;
+ } elsif ($offline ne 0) {
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From realrichardsharpe at gmail.com  Fri Aug  1 18:39:21 2008
+From: realrichardsharpe at gmail.com (Richard Sharpe)
+Date: Fri, 1 Aug 2008 09:39:21 -0700
+Subject: [Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+Message-ID: <46b8a8850808010939t56b75cdfh47ede522594cf242@mail.gmail.com>
+
+Hi,
+
+I discovered Bacula's btape command and started using that to verify
+my SSC implementation, and then discovered that I would have to
+implement variable block size records in any case, so I switched.
+
+I can now pass all the important Bacula btest tests, and many of the
+unimportant ones like back space file, back space record, but there is
+still at least one unimportant test that my code fails (space to just
+past the very last record on the tape, but fixing that required a
+careful reading of the spec ... :-). The code I have at the moment is
+pretty crappy, and I might post it in a couple of weeks when I get
+back from a cruise we are taking next week.
+
+However, I thought I would describe the approach I have taken.
+
+I keep all the metadata separate from the data. I have a separate
+array of filemarks/setmarks (actually, I only implement filemarks at
+the moment, but setmarks are not hard). This array can be small since
+we don't expect many of them, and the cost of realloc to double its
+size from 20 to 40 entries is not expensive and is only needed with
+the WITE FILEMARKS(6) command.
+
+I also have a separate array of record lengths. I size it for 1M
+records at the moment, but the sizing of this array will depend on the
+size of tape you are emulating and the record sizes you expect to
+support. It seems that the default in programs like NetBackup is 64kB,
+but they routinely recommend that you use 512kB or larger. 1M records
+with 1MB record sizes means we can support 1TB backup tapes. Since
+uncompressed LTO4s are 800GB (I am being a little loose here with MB
+and MiB etc), and since compression can be done below the tape level,
+1M records seems fine and requires 4MB per tape emulated. I would
+probably return 64kB or more as the min Block Size (although I wonder
+how many apps would support a granularity larger than 9 (16, for
+example ...).
+
+Every write writes its length to the next available record slot.
+
+When reading, we keep track of the current record (starting at 0) and
+read only the bytes of data the current record slot tells us
+(actually, we should read the min of current record and the requested
+size) and then deal with under-length or over-length reads as the spec
+requests.
+
+The filemarks array is used in this way. Marks occur before records.
+If a mark is at the same offset as a record, the mark is first, and I
+keep two variables, next_mark and next_record to tell me what I am up
+to.
+
+So, during a read, if there is a mark at the current offset, then a
+CHECK_CONDITION should be returned with NO_SENSE and ASC_MARK.
+However, if the request was an over-length read and there is a MARK
+immediately after the read, a CHECK_CONDITION with NO_SENSE and NO_ASC
+should be returned (at least by my reading of the spec).
+Unfortunately, there are no programs that I am aware of that test for
+these things (perhaps a useful additional tool for STGT would be a
+program that does these sorts of tests). I am not sure that my code
+handles this condition correctly, yet, as there is no test for it.
+
+Spacing forward is a simple matter of lseeking using the block lengths
+that I keep in my array of record sizes, and spacing backward is much
+the same ...
+
+My code currently does not handle writing over a MARK yet, but that is
+only a matter of time, and I will probably write a stress test tool
+first.
+
+Also, I am not currently saving the metadata to files/xattrs nor
+reading them in when a tape if mounted, but that is the easy part.
+
+I have chosen this representation because performance in the data path
+is important to me, especially during writing, but it is clear that
+other representations can be used.
+
+
+From markh794 at gmail.com  Sat Aug  2 04:44:01 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Sat, 2 Aug 2008 12:44:01 +1000
+Subject: [Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+In-Reply-To: <46b8a8850808010939t56b75cdfh47ede522594cf242@mail.gmail.com>
+References: <46b8a8850808010939t56b75cdfh47ede522594cf242@mail.gmail.com>
+Message-ID: <f29db9a80808011944t53a1a96fq40387479eae063bf@mail.gmail.com>
+
+On Sat, Aug 2, 2008 at 2:39 AM, Richard Sharpe
+<realrichardsharpe at gmail.com> wrote:
+> Hi,
+>
+> I discovered Bacula's btape command and started using that to verify
+> my SSC implementation, and then discovered that I would have to
+> implement variable block size records in any case, so I switched.
+>
+> I can now pass all the important Bacula btest tests, and many of the
+> unimportant ones like back space file, back space record, but there is
+> still at least one unimportant test that my code fails (space to just
+> past the very last record on the tape, but fixing that required a
+> careful reading of the spec ... :-). The code I have at the moment is
+> pretty crappy, and I might post it in a couple of weeks when I get
+> back from a cruise we are taking next week.
+>
+> However, I thought I would describe the approach I have taken.
+>
+> I keep all the metadata separate from the data. I have a separate
+> array of filemarks/setmarks (actually, I only implement filemarks at
+> the moment, but setmarks are not hard). This array can be small since
+> we don't expect many of them, and the cost of realloc to double its
+> size from 20 to 40 entries is not expensive and is only needed with
+> the WITE FILEMARKS(6) command.
+>
+> I also have a separate array of record lengths. I size it for 1M
+> records at the moment, but the sizing of this array will depend on the
+> size of tape you are emulating and the record sizes you expect to
+> support. It seems that the default in programs like NetBackup is 64kB,
+> but they routinely recommend that you use 512kB or larger. 1M records
+> with 1MB record sizes means we can support 1TB backup tapes. Since
+> uncompressed LTO4s are 800GB (I am being a little loose here with MB
+> and MiB etc), and since compression can be done below the tape level,
+> 1M records seems fine and requires 4MB per tape emulated. I would
+> probably return 64kB or more as the min Block Size (although I wonder
+> how many apps would support a granularity larger than 9 (16, for
+> example ...).
+
+NetBackup uses a 1k block for media header and image header information.
+
+On a tape load, the 'bptm' process requests a '64k read'. If it
+receives anything other then 1k of data, it rejects the tape as not
+being in NetBackups format.
+
+>
+> Every write writes its length to the next available record slot.
+>
+> When reading, we keep track of the current record (starting at 0) and
+> read only the bytes of data the current record slot tells us
+> (actually, we should read the min of current record and the requested
+> size) and then deal with under-length or over-length reads as the spec
+> requests.
+>
+> The filemarks array is used in this way. Marks occur before records.
+> If a mark is at the same offset as a record, the mark is first, and I
+> keep two variables, next_mark and next_record to tell me what I am up
+> to.
+>
+> So, during a read, if there is a mark at the current offset, then a
+> CHECK_CONDITION should be returned with NO_SENSE and ASC_MARK.
+> However, if the request was an over-length read and there is a MARK
+> immediately after the read, a CHECK_CONDITION with NO_SENSE and NO_ASC
+> should be returned (at least by my reading of the spec).
+> Unfortunately, there are no programs that I am aware of that test for
+> these things (perhaps a useful additional tool for STGT would be a
+> program that does these sorts of tests). I am not sure that my code
+> handles this condition correctly, yet, as there is no test for it.
+>
+> Spacing forward is a simple matter of lseeking using the block lengths
+> that I keep in my array of record sizes, and spacing backward is much
+> the same ...
+>
+> My code currently does not handle writing over a MARK yet, but that is
+> only a matter of time, and I will probably write a stress test tool
+> first.
+I've yet to find any program that uses setmarks..
+
+>
+> Also, I am not currently saving the metadata to files/xattrs nor
+> reading them in when a tape if mounted, but that is the easy part.
+>
+> I have chosen this representation because performance in the data path
+> is important to me, especially during writing, but it is clear that
+> other representations can be used.
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+>
+
+Mark
+
+
+From ronniesahlberg at gmail.com  Sat Aug  2 05:56:16 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Sat, 2 Aug 2008 13:56:16 +1000
+Subject: [Stgt-devel] [Patch : 0/2] Passthrough devices.
+Message-ID: <c9a3e4540808012056n34fe1ee9s2bfba6127daef935@mail.gmail.com>
+
+List,
+
+Following are two patches that adds support for passthrough devices to tgtd.
+This is useful for developers that want an easy way to "export" a
+direct attach device to iSCSI and use wireshark to capture and see
+what/how the device responds to certain scenarios.
+(using wireshark to decode the scsi protocol is often easier than
+writing your own scsi decoder)
+
+To "export" a direct attach device onot iSCSI, use :
+tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+--device-type=pt -b /dev/sg0
+
+
+
+regards
+ronnie sahlberg
+
+
+From ronniesahlberg at gmail.com  Sat Aug  2 05:57:52 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Sat, 2 Aug 2008 13:57:52 +1000
+Subject: [Stgt-devel] [Patch : 1/2] Passthrough devices.
+Message-ID: <c9a3e4540808012057v7783c639t54f0b7cb93600b7f@mail.gmail.com>
+
+
+From ronniesahlberg at gmail.com  Sat Aug  2 05:38:33 2008
+From: ronniesahlberg at gmail.com (Ronnie Sahlberg)
+Date: Sat, 2 Aug 2008 13:38:33 +1000
+Subject: [PATCH] Adding a new backend for opening a /dev/sg device for
+Message-ID: <mailman.47.1331738484.12506.stgt-devel@lists.berlios.de>
+
+passthrough mode
+
+Adding a nev device type for passthrough operation
+
+To use this mode use something like this :
+tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+--device-type=pt
+-b /dev/sg0
+
+Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+---
+ usr/Makefile |    9 +++++----
+ usr/target.c |    9 ++++-----
+ usr/tgtd.h   |    2 +-
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 4245709..7081642 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -11,7 +11,7 @@ CFLAGS += -DISCSI
+ TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o \
+ 		iscsid.o target.o chap.o transport.o iscsi_tcp.o \
+ 		isns.o libcrc32c.o)
+-TGTD_OBJS += bs_rdwr.o bs_aio.o
++TGTD_OBJS += bs_rdwr.o bs_aio.o bs_passthrough.o
+
+ LIBS += -lcrypto
+ ifneq ($(ISCSI_RDMA),)
+@@ -43,21 +43,22 @@ TGTD_OBJS += $(addprefix fcoe/,\
+ 	fcoe_if.o fcoe_dev.o \
+ 	sa_event.o sa_timer.o sa_hash_kern.o sa_state.o\
+ 	crc32_le.o crc32_le_tab.o)
+-TGTD_OBJS += bs_rdwr.o
++TGTD_OBJS += bs_rdwr.o bs_passthrough.o
+ endif
+
+ INCLUDES += -I. -I../include -I$(KERNELSRC)/include
+
+ CFLAGS += -D_GNU_SOURCE
+ CFLAGS += $(INCLUDES)
+-CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
++CFLAGS += -g -O0 -Wall -Wstrict-prototypes -fPIC
+
+ LIBS += -lpthread
+
+ PROGRAMS += tgtd tgtadm
+ SCRIPTS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+-		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o ssc.o bs_ssc.o bs.o
++		parser.o spc.o sbc.o mmc.o osd.o passthrough.o scc.o \
++		smc.o ssc.o bs_ssc.o bs.o
+ MANPAGES = ../doc/manpages/tgtadm.8 ../doc/manpages/tgt-setup-lun.8
+
+ TGTD_DEP = $(TGTD_OBJS:.o=.d)
+diff --git a/usr/target.c b/usr/target.c
+index 70bf72a..e200471 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -1524,21 +1524,20 @@ static struct {
+ 	{TYPE_ENCLOSURE, "enclosure"},
+ 	{TYPE_RBC, "rbc"},
+ 	{TYPE_OSD, "osd"},
+-	{TYPE_NO_LUN, "No LUN"}
++	{TYPE_NO_LUN, "No LUN"},
++	{TYPE_SPT, "passthrough"}
+ };
+
+ static char *print_type(int type)
+ {
+ 	int i;
+-	char *name = NULL;
+
+ 	for (i = 0; i < ARRAY_SIZE(disk_type_names); i++) {
+ 		if (disk_type_names[i].value == type) {
+-			name = disk_type_names[i].name;
+-			break;
++			return disk_type_names[i].name;
+ 		}
+ 	}
+-	return name;
++	return "Unknown type";
+ }
+
+
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 4febcd3..a649129 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -60,7 +60,7 @@ struct lu_phy_attr {
+
+ 	uint16_t version_desc[VERSION_DESCRIPTOR_LEN];
+
+-	char device_type;	/* Peripheral device type */
++	unsigned char device_type;/* Peripheral device type */
+ 	char qualifier;		/* Peripheral Qualifier */
+ 	char removable;		/* Removable media */
+ 	char online;		/* Logical Unit online */
+-- 
+1.5.5
+
+------=_Part_14240_3265295.1217649472661
+Content-Type: application/x-gzip;
+ name=0001-Adding-a-new-backend-for-opening-a-dev-sg-device-fo.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fjdoucv80
+Content-Disposition: attachment;
+ filename=0001-Adding-a-new-backend-for-opening-a-dev-sg-device-fo.patch.gz
+
+H4sIALjYk0gAA5VW63PaRhD/jP6KHU8+QEBC4mnjuBOCiUuLgYJpJ00zmpN0ElcknXIn2fGk/t+7
+dwIHv5KWsU97+9Ltbx+n94InQGi73wta3gnpOD3ihaTb7ZC+3ac9O+z2KDkOW62TdrcLlzyFFc3A
+6YNtD/QftGzbMd6jmwEseZoyCiuyiT0qIngjNEPu9m+jhLDY8nnyk3FOcjpAzbwBLRgWkXJzDE57
+0D4etNtQd2zbNlaF9zf18wF8XAyvRj9/gmEQsDQCAim9AY/4W5oGEHIBPKNpKWkG9LopI8AH86kW
+ZkTKfCN4EW0g4QE1jAM/13vN/DZ7qo5+BckZTw3jikMhUW3DpPaid5InFDnoK2bbnXBg5FFOggRM
+M44DYNKXDGltE/OI+SQuUpYji2c6ENPMWQCO0i9ScAzTLI9kqiOdZblhevuwbMNYsSilgcnD0PRu
+/xfmpmkaeGrRvCRbGrKYwj+AvxOoq595L86JiGhu+Ydi80Ac5YG1QYkWt6CO/DYofxL8DUkjGjTA
+sYGlkgqFnazWa5oT0JiWDLNmGAELQ4w5QihI88GxvAdbg6UB/QKdVqfbt08sq28fO71OCx3avU5H
+RfXI3sDzPvbx9i2YjtPoY2WpFbej99PhxQrqZ2CeT1aj1cSAq4urc3f+7hfNfVUlQZAJNP9S5rDZ
+AB+xtThWiCAJPiWVEsNB6i8DKhWtFeBuByBXcGRqL0gqMy4USyu5uZ99s0ol0jHzfOG3W77Fa4b5
+4CSedEVwI1AJKcK4xY36DxQUcVDHaAEGTCfvynhjX9xmOfJYmNLPUH1V1QC4y/PLYa1R02B12o2W
+A3X1aCm4XsQm9DltNlQoinJZiG/XFFbsLkZJXHpNUxU+kjlLqCjJDZEbd0tFWm5ljlPB4spEY+HG
+VIG4I92ceN8B53uYPIICpwYLFSKT2Wi6Ph+XqEws9W81WerHBfaqOXlV/XW8nI2nq+Wotmcrs8PS
+cS9ma3c1Xy9H40MBQrrzjQc+0I/AnLfA/IPEMa4yF8zPzUzwnKtml2CGi8nIqD+ysH9o8SC9GcZK
+SaCYi+X8Yjm81ALVuFDOJgNWo+VkcaX5GLP0BctyqXrblDQvMjWKHjWE7nsOSZTkhzWu6lnVL49w
+DQS71sktcpw6HG642OoiMCsV7BpZJj7z1eqpNUnUymWgPWm+5kjpl6nbEyrB/8HHg0zvPP6lLF92
+C5fD2WJ4gVWgoQi430xImpGIajwQLev4OcE3oKxjBbUG63y8AJX9e+QGFj+zgtrTaXc/Zb0H2920
+69te2G8Ry6J4MXb6ztNpd2/wbdrds/S067Y6uoVLwlZNrBqM+fgQhZ/DV+yzr1cfFmN3jLU6X62X
+4wYcUaxzLgtBj+4a9wrLdyMUCc8/ZM5X58hE3BXT3DFnc3e6niF/xgGJozsE/wVJ4160Wlwh/yB3
+aAZ3pwrV3ZFxkgp4nQmW5q6q+yoS+squGToOtWWneIpSMSUJxTzM1tOp9lJRF3uVIcs+BQZvYLhc
+Dj+4q8mf42rA5Fb7dJWVrKFCvV7TXisshMfyj+yTdY1XOPo/K0+Aqljeld07n1FXxKnW8bAvt6eq
+HisCq0ekL6vj2xEE/Df3qiW/vt8erdNtym9SfYgjNLhTkT5TaOV97R1s9ldqSD0/aFsW6XVOnNbJ
+M0VWqh+UWMlQBdaz1XWqV11auqbiws02ty7Jc6EQxAAKTI3Tc3PAwaBuS7wXpP/x9/FyNZnPsF/K
+QTRfutPx7JNK1i6H5TeQhua00nwNC4ojaoOfY/GDL7bXTUSkSKX+KoInlt81hPJNnwsSs5BRcVp5
+9KLf9pIDbUETfk28mJbay/0WEhowcqDI05ilO61p+d0Ha/XhVwqUJuJsOFbX6hrGv5rpTZeJCwAA
+
+------=_Part_14240_3265295.1217649472661--
+
+
+From ronniesahlberg at gmail.com  Sat Aug  2 05:58:30 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Sat, 2 Aug 2008 13:58:30 +1000
+Subject: [Stgt-devel] [Patch : 2/2] Passthrough devices.
+Message-ID: <c9a3e4540808012058y78ca9918t7413affb69a577d9@mail.gmail.com>
+
+
+From ronniesahlberg at gmail.com  Sat Aug  2 05:44:12 2008
+From: ronniesahlberg at gmail.com (Ronnie Sahlberg)
+Date: Sat, 2 Aug 2008 13:44:12 +1000
+Subject: [PATCH] Add the file for the backend and the file for the device type
+Message-ID: <mailman.48.1331738484.12506.stgt-devel@lists.berlios.de>
+
+Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+---
+ usr/bs_passthrough.c |  200 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/passthrough.c    |  199 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 399 insertions(+), 0 deletions(-)
+ create mode 100644 usr/bs_passthrough.c
+ create mode 100644 usr/passthrough.c
+
+diff --git a/usr/bs_passthrough.c b/usr/bs_passthrough.c
+new file mode 100644
+index 0000000..9b7487a
+--- /dev/null
++++ b/usr/bs_passthrough.c
+@@ -0,0 +1,200 @@
++/*
++ * Backing store for passthrough devices
++ *
++ * Copyright (C) 2008 Ronnie Sahlberg <ronniesahlberg at gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#define _XOPEN_SOURCE 500
++
++#include <errno.h>
++#include <fcntl.h>
++#include <inttypes.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++#include <linux/fs.h>
++#include <sys/epoll.h>
++#include <sys/ioctl.h>
++#include <scsi/sg.h>
++
++#include "list.h"
++#include "util.h"
++#include "tgtd.h"
++#include "scsi.h"
++#include "bs_thread.h"
++
++static void set_medium_error(int *result, uint8_t *key, uint16_t *asc)
++{
++	*result = SAM_STAT_CHECK_CONDITION;
++	*key = MEDIUM_ERROR;
++	*asc = ASC_READ_ERROR;
++}
++
++static void bs_sync_sync_range(struct scsi_cmd *cmd, uint32_t length,
++			       int *result, uint8_t *key, uint16_t *asc)
++{
++	int ret;
++	unsigned int flags = SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE;
++
++	ret = __sync_file_range(cmd->dev->fd, cmd->offset, length, flags);
++	if (ret)
++		set_medium_error(result, key, asc);
++}
++
++static void bs_rdwr_request(struct scsi_cmd *cmd)
++{
++	int ret, fd = cmd->dev->fd;
++	uint32_t length;
++	int result = SAM_STAT_GOOD;
++	uint8_t key;
++	uint16_t asc;
++
++	ret = 0;
++	length = 0;
++	key = 0;
++	asc = 0;
++
++	switch (cmd->scb[0]) {
++	case SYNCHRONIZE_CACHE:
++	case SYNCHRONIZE_CACHE_16:
++		/* TODO */
++		length = (cmd->scb[0] == SYNCHRONIZE_CACHE) ? 0 : 0;
++
++		if (cmd->scb[1] & 0x2) {
++			result = SAM_STAT_CHECK_CONDITION;
++			key = ILLEGAL_REQUEST;
++			asc = ASC_INVALID_FIELD_IN_CDB;
++		} else
++			bs_sync_sync_range(cmd, length, &result, &key, &asc);
++		break;
++	case WRITE_6:
++	case WRITE_10:
++	case WRITE_12:
++	case WRITE_16:
++		length = scsi_get_out_length(cmd);
++		ret = pwrite64(fd, scsi_get_out_buffer(cmd), length,
++			       cmd->offset);
++		if (ret == length) {
++			/*
++			 * it would be better not to access to pg
++			 * directy.
++			 */
++			struct mode_pg *pg = cmd->dev->mode_pgs[0x8];
++
++			if (((cmd->scb[0] != WRITE_6) && (cmd->scb[1] & 0x8)) ||
++			    !(pg->mode_data[0] & 0x04))
++				bs_sync_sync_range(cmd, length, &result, &key,
++						   &asc);
++		} else
++			set_medium_error(&result, &key, &asc);
++
++		break;
++	case READ_6:
++	case READ_10:
++	case READ_12:
++	case READ_16:
++		length = scsi_get_in_length(cmd);
++		ret = pread64(fd, scsi_get_in_buffer(cmd), length,
++			      cmd->offset);
++
++		if (ret != length)
++			set_medium_error(&result, &key, &asc);
++		break;
++	default:
++		break;
++	}
++
++	dprintf("io done %p %x %d %u\n", cmd, cmd->scb[0], ret, length);
++
++	scsi_set_result(cmd, result);
++
++	if (result != SAM_STAT_GOOD) {
++		eprintf("io error %p %x %d %d %" PRIu64 ", %m\n",
++			cmd, cmd->scb[0], ret, length, cmd->offset);
++		sense_data_build(cmd, key, asc);
++	}
++}
++
++static int open_scsi_device(const char *dev)
++{
++	int fd, vers;
++
++	fd = open(dev, O_RDWR);
++	if (fd < 0) {
++		dprintf("ERROR could not open device %s\n", dev);
++		return -1;
++	}
++	if ((ioctl(fd, SG_GET_VERSION_NUM, &vers) < 0) || (vers < 30000)) {
++		dprintf("/dev is not an sg device, or old sg driver\n");
++		close(fd);
++		return -1;
++	}
++
++	return fd;
++}
++
++
++static int bs_passthrough_open(struct scsi_lu *lu, char *path, int *fd,
++	uint64_t *size)
++{
++	int ret;
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++
++	*fd = open_scsi_device(path);
++	if (*fd < 0)
++		return *fd;
++
++	ret = bs_thread_open(info, bs_rdwr_request);
++	if (ret) {
++		close(*fd);
++		return -1;
++	}
++	if (size)
++		*size = 0;
++
++	return 0;
++}
++
++static void bs_passthrough_close(struct scsi_lu *lu)
++{
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++
++	bs_thread_close(info);
++
++	close(lu->fd);
++}
++
++static int bs_passthrough_cmd_done(struct scsi_cmd *cmd)
++{
++	return 0;
++}
++
++static struct backingstore_template passthrough_bst = {
++	.bs_name		= "passthrough",
++	.bs_datasize		= sizeof(struct bs_thread_info),
++	.bs_open		= bs_passthrough_open,
++	.bs_close		= bs_passthrough_close,
++	.bs_cmd_submit		= bs_thread_cmd_submit,
++	.bs_cmd_done		= bs_passthrough_cmd_done,
++};
++
++__attribute__((constructor)) static void bs_passthrough_constructor(void)
++{
++	register_backingstore_template(&passthrough_bst);
++}
+diff --git a/usr/passthrough.c b/usr/passthrough.c
+new file mode 100644
+index 0000000..3f9350f
+--- /dev/null
++++ b/usr/passthrough.c
+@@ -0,0 +1,199 @@
++/*
++ * SCSI passthrough module
++ *
++ * Copyright (C) 2008 Ronnie Sahlberg <ronniesahlberg at gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#include <errno.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdint.h>
++#include <unistd.h>
++#include <linux/fs.h>
++#include <sys/stat.h>
++
++#include "list.h"
++#include "util.h"
++#include "tgtd.h"
++#include <fcntl.h>
++#include "target.h"
++#include "tgtadm_error.h"
++#include "driver.h"
++#include "scsi.h"
++#include "spc.h"
++#include "tgtadm_error.h"
++#include <sys/ioctl.h>
++#include <scsi/sg.h>
++
++
++static unsigned char scsi_command_size[8] = {6, 10, 10, 12, 16, 12, 10, 10};
++
++#define COMMAND_SIZE(opcode) scsi_command_size[((opcode) >> 5) & 7]
++#define CDB_SIZE(cmd) (((((cmd)->scb[0] >> 5) & 7) < 6) ? \
++				COMMAND_SIZE((cmd)->scb[0]) : (cmd)->scb_len)
++
++#define SCSI_TIMEOUT 5000 /* ms */
++
++
++int scsi_io(int fd, unsigned char *cdb, unsigned char cdb_size,
++	    int xfer_dir, unsigned char *data, int *data_size,
++	    unsigned char *sense, unsigned int *sense_len)
++{
++	sg_io_hdr_t io_hdr;
++
++	memset(&io_hdr, 0, sizeof(sg_io_hdr_t));
++	io_hdr.interface_id = 'S';
++
++	/* CDB */
++	io_hdr.cmdp = cdb;
++	io_hdr.cmd_len = cdb_size;
++
++	/* Where to store the sense_data, if there was an error */
++	io_hdr.sbp = sense;
++	io_hdr.mx_sb_len = *sense_len;
++	*sense_len = 0;
++
++	/* Transfer direction, either in or out. Linux does not yet
++	   support bidirectional SCSI transfers ?
++	 */
++	io_hdr.dxfer_direction = xfer_dir;
++
++	/* Where to store the DATA IN/OUT from the device and how big the
++	   buffer is
++	 */
++	io_hdr.dxferp = data;
++	io_hdr.dxfer_len = *data_size;
++
++	/* SCSI timeout in ms */
++	io_hdr.timeout = SCSI_TIMEOUT;
++
++
++	if (ioctl(fd, SG_IO, &io_hdr) < 0)
++		return -1;
++
++	/* now for the error processing */
++	if ((io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK) {
++		if (io_hdr.sb_len_wr > 0) {
++			*sense_len = io_hdr.sb_len_wr;
++			return 0;
++		}
++	}
++	if (io_hdr.masked_status)
++		return -2;
++
++	if (io_hdr.host_status)
++		return -3;
++
++	if (io_hdr.driver_status)
++		return -4;
++
++	return 0;
++}
++
++
++
++
++static int scsi_passthrough(int host_no, struct scsi_cmd *cmd)
++{
++	unsigned int sense_len = 32;
++	unsigned char sense[sense_len];
++	int alloc_len;
++	uint8_t *data;
++	int direction;
++
++	alloc_len = scsi_get_in_length(cmd);
++	if (alloc_len > 0) {
++		direction = SG_DXFER_FROM_DEV;
++		data = scsi_get_in_buffer(cmd);
++	} else {
++		alloc_len = scsi_get_out_length(cmd);
++		if (alloc_len > 0) {
++			direction = SG_DXFER_TO_DEV;
++			data = scsi_get_out_buffer(cmd);
++		} else {
++			direction = SG_DXFER_NONE;
++			data = NULL;
++		}
++	}
++
++	scsi_io(cmd->dev->fd,
++		cmd->scb,
++		COMMAND_SIZE(cmd->scb[0]),
++		direction,
++		data, &alloc_len, sense, &sense_len);
++	if (sense_len) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, sense[2], sense[12]<<8);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	if (direction == SG_DXFER_FROM_DEV)
++		scsi_set_in_resid_by_actual(cmd, alloc_len);
++
++	return SAM_STAT_GOOD;
++}
++
++static int passthrough_lu_init(struct scsi_lu *lu)
++{
++	struct backingstore_template *bst;
++
++	/* passthrough devices always use passthrough backingstore */
++	bst = get_backingstore_template("passthrough");
++	if (!bst) {
++		eprintf("failed to find bstype, passthrough\n");
++		return TGTADM_INVALID_REQUEST;
++	}
++	lu->bst = bst;
++
++	lu->attrs.device_type = TYPE_SPT;
++
++	return 0;
++}
++
++static int passthrough_lu_online(struct scsi_lu *lu)
++{
++	lu->attrs.online = 1;
++
++	return 0;
++}
++
++static int passthrough_lu_offline(struct scsi_lu *lu)
++{
++	lu->attrs.online = 0;
++	return 0;
++}
++
++static struct device_type_template passthrough_template = {
++	.type		= TYPE_SPT,
++	.lu_init	= passthrough_lu_init,
++	.lu_config	= spc_lu_config,
++	.lu_online	= passthrough_lu_online,
++	.lu_offline	= passthrough_lu_offline,
++	.lu_exit	= spc_lu_exit,
++	.ops		= {
++		[0x00 ... 0x9F] = {scsi_passthrough,},
++		/* 0xA0 */
++		{spc_report_luns,},
++		[0xA1 ... 0xFF] = {scsi_passthrough,},
++	}
++};
++
++__attribute__((constructor)) static void passthrough_init(void)
++{
++	device_type_register(&passthrough_template);
++}
+-- 
+1.5.5
+
+------=_Part_14243_33234650.1217649510936
+Content-Type: application/x-gzip;
+ name=0002-Add-the-file-for-the-backend-and-the-file-for-the-de.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fjdovylq0
+Content-Disposition: attachment;
+ filename=0002-Add-the-file-for-the-backend-and-the-file-for-the-de.patch.gz
+
+H4sIAMLYk0gAA+0a23baSPIZvqKSPfEABizwJY6deEIAO5yxwQt4MpmMj46QWqCNkFi1FNs7yb9v
+VXdLSEI48e6+7Ti+0KXq6rp13ZTzwF9Cy943tMNZ2zw8Ng8040gzX+7vt14eGPYr7aVlztpHR7bR
+br2EK9+DCVsBftS0E/ENbU1rlc+RzAmMfc9zGEyMhTtjwRxeBwLA1frtfGk4btP0l2flnhGyE8QM
+69CGTjQnMsfQ2j85ODhptWG3pWlaeRLN/sHM8AQ+XXem3fe30LEsCBcMbMfFX34gFjPD/Mw8Cwyv
+4KHFvjgmg/BhxcrliTP3mNXwbbsxe3gSu41GowwRD/ZmXF8ZnIeLwI/mi6YJX4FYh90nf0l6WWL4
+hfRar149nV4Z9UiSczAXhjdnVh32kY7jcRaEju/xym61DhoqxGVy3aiWwQwYGgKWvsUAVX50cFAo
+5VbELFbZcmwbGo25E4KxV6iuWSG47LE7abfUAWXHs9g9Opr4ajZfzV4eHL80yBawh3bd8yLXLaPo
+24i+fQsNrY62adXJRG/flnf3auVdqME7dBnHmwMP/UD6Smqn8hlOmAK7668eAme+CKHSrUpHfYLr
+xFSmC4fDKvDngbEE/GgHjAH37fDOCNgpPPgRmIYHAbMcHgbOLEJ1kx49a88PBAXUjWM/EDBCzUj/
+Dlmw5ODbYnExvIEL5rHAcOE6mrmOCZcoCboAGEIcWBGUL5gFswex5Zy4mCgu4NxHyga5Rx2+sIDj
+B3QrSV3sV+SaW6VaM2+h74kjFv4K+VwYIXF+57guzBg6D7Mjtw6IKeh8GEzfj26m0Bl+hA+d8bgz
+nH48Rexw4UchsC9M0nKWK9dB0shtYHjhA/Imtl/1x933uKfzbnA5mH4EtOj5YDrsTyZwPhpDB647
+4+mge3PZGcP1zfh6NOk3MZKxWG2CyBbVkXssyU8sFqJV+Vr4j2gzjgy6FiyMLwxtZzLnC7JngIk+
+832zCCqG66MrkqiIvdbmKTg2eD4GyLvAQV8I/U2Dif1pow08s1mHwxaiGd5nFy0wQQLnjo3Ez13f
+D+rwzkevR9SrjtittVstrdHa11pwMxGgvfLu3yxmOx4D/bfRdX+oT0Y3424fDjEk7+JDxzPdCK/p
+axYEnt9cnKVhtumFbg7meCEFYJ4D89By8tsR5jqzDWCAtzUHjDx0NUsA02CUObrfszfOeuB7bOW7
+edYI7vjmBsvc5M4en+fJP8fbEzYXz9OgKMSrngWFc+IsAyKCORAGLAw5zJCo5V0eohVN+OI7FnAW
+6ksMBdFSRy37QQV1CLWA8chFg0a4OtYR8Jk9yFXriJYGN6vl3T/LuyWFCm9g0rnSJ9POVO++73d/
+0bujYW8wHYyGp4SF+xHlqt8b3Fzp/fF4NBZgpIPgzqSrj/udXvLgW55LlIA/eKb8FVDaqaCtIjME
+Elc3lxbU8Jdkcb+NLLrMm4eLOh5SKoH8eqJkhB6wkPiMPC4yuiBhu8ack7wfh139fHDZ1zGIXPT1
+D53BVH/XxzDQ/7rxbDyY9k9JqhKSxM26FIVSkZIH2W+cYUZonNkoh1hh/YDmqceyyJOrxBDe2AoS
+qpJ4GxaMRRSSkTxbNBpYd4EesH9GjIeF6swqAs+3kPM0n0I3WY2fJhvybnExGvXiDaR5ZC9eCtUj
+p2kNafRQ0oxX0onER+k4mtzAMaaZC5Aq5Obsk3ZbBeLcNDCski3ej0fDwe99vdtB5zzZ+kRvHdHD
+0h7mm1FvJEJUac1E+gB482ZzfxV+xsrnJOZLmCnZ07qFHdDu25K1UumHLk5JCT24vOxfdC7xmvz9
+pj+Zykfr2zMY/tq5HPTQ5fqXPVzp3d47gfMNmEvhH7EL7pC4MrF37cR+syMcZ0d5Dm7E0PH5NFaa
+cGX96CS7bml5QDsPkKpNlCk8bY6+i3lXl1DiRx4pXWAlEtLRQYVuRAZ/Ftk2CwR+veiqp66PJKgu
+DFlNosdWoEKN9tVE0SBSLFYNMxZiwUNZkdKhYWKVxunTah5jWw4m4fChqdbCUUrqElFtqa/mUMOf
+9IVRcP5Juz++VS4iOKtkPOvZm1jJVdjZ2fSg42oVvn5NxH1WWc0VbczOBlEgLO2gKsLDUw0v9wjS
+axdIudFGuNniN5ueI0L82nHEMuU3ct3Orbd5jeNtcxpKdHmfQezvuEzOY9I+8yzxmScpICU+VjkG
+YpxkgCIkl6wVlhyhXXnu+GD5WAq9WMGLe3hhwYvoD++5yAQqHUj3qMtYrDhSAZDkJL4kJ9K88rPC
+kLKIgPMsF5PVTWApRoRcKU7w+zlcjwfR0QEgSy+WxJlQxqPc1TfvIadqVPgpGsRxLclqOlORXtLZ
+ipIJFvaeLoSULVPFxL4ypAY0gBqCUomKzE4dhRRbZCzaXUGsOoz0ce/DOMmg+PQ1aEr+xBCiCMG6
+mkIBBQDaHrf3L7iwCR0Zu1wUeNBoKcblbRZ1nnDAyYV+0Z/qv/bHEwzo+vDmCv2D2KvKk79+hQot
+cbVPzWc1zwz1n9TuECPYtPG54qROnYePHBIkwF4gQMYkT6brc4anF3Mo8yuBRPoWkIyus92tLpSX
+Lg7cCGpuVFfKXxlkZlFZobwqnR8dUCXFnX+xzVJKkUpKUryatg818fsNvJvo0/fi4g8qbqR8t5ZY
+MeMDdHRiypqyZUrkmhAwqSfWJwqR6MB6vgrK1FbSElKbtW3qFNhK0lJJyLyuSxSytqX+SqtZHrOp
+Z6XA/0Bra1xJm3DVIwlwIyrh8sVhgQvgFdUpND1WI24RNeZbjkHEFEQPGfbWNONJnzHjZCOi1MTT
+PWPJSqU38DyFIgIOPaTgQXomBPrr25VC9VTjDWRvQi7w7BhFaKQAR8ATJNQDj2ZLJ1SYsX4TeBqT
+NFZEUT1C1G/CGrpuhGqSoesVGdlIGj/AYPCYx6wRK/Q8McQcO0cW6IU6r+zklC7NvzFOK5qlPX2Q
+tm+/2j/U7K2DtK1TNBpMpqZok+5kkBmc4ZmRy/6am/01N/t/nZs9Ohr77+ZdtNsLtw/BfmgERoHr
+fzbTKpr1PQ+NACv7zb2Gpery3CNZJX1/WMZX5g8T/cGpXpIOkzmSKJ5kHvWXSwwhOmWyT8e3lASP
+6hhP1U8bf47UXwGTSSOem3ZHV1edYU+fDH7vV/yVibG4WkC3kjw7O4ND7Crh5W2KSO+dJEDpnJpR
+0Y5Wk3402UNF6xHNOP6QTWLm9MyeKpzAGkCdWjXNNgV0fTq46lNEOcRcAXsYPblwbfpHRYiQwvEr
+cVGf1V3NtGZ5GIKEuJSF43nfPfZ8OvbqG/upilCFq+hG0htzqKJnSREQm2QjIwUTFdocmdUXVoCl
+r/wga60lW2LzU9mRsDqgEeOiZb2jKgtPsWoieRbYhsl0h+renyY/SUqoIrSUHDUoVNTwiiYM1uw0
+AyS+JFzIlez/sGCBCFTyfRSFq3VDVqd4FgqMO4NTtyHbwPSBfEbniT2pE5f3Op+pM9eKEQPeZLWu
+imm4hsGPo2XUFEVERubQ2ZSTqLOJwibGYAwv2BQz2f48sFDah0erlR9gueck2zFwiyIhVIQ5/Ey4
+adat2BXkDuQnBjymnl5n2oHBcI8c1aZX2Kl3vfQeeOHfIR9zmX+JOTlmwExbeD5pj3R9mudLKS9x
+xYQnKZazZJRmUTnqlsS74ydvMnfqVF4j0ZxkmtHBCPtPubWa75dETyMP9VCq+MW2dALMeTQDo3eZ
+8njZ5yqHxS5kR5Afno/00S/6VWfyS1UMGhKYaqckR8qXSGr9LoCzpAnPOkwe8VTNTZNWoyRasG+J
+pNIbDf6ZYeDDkBvxjIDt05RWBO4Cc20R5v4GpkwfRbgHxc3eRmMtAlqqihWRTTDgYSf6SG+VCTxp
+/ey3My8nZFKh558SrNt4Hm+4rm/G1zJ5+ZH4ImIkV0PKk2x4fOpGKlqjri2ZvmjoBb3fzvtj/Xw8
+utJ7/V+F6ejsHO3UjE7012LqKOkVslM0Ot7GUDFH01HCzwZDuUFzahD6GMXhaNjP0BveXF6mfTWe
+12Fuy7zzEdMGNUkTi0x6Tb/bqGcUXI+VSaPHWPA6qKy1s05UsbnWEClHMj1ECwSMO5Y+e9ANM4wM
+V47ntMdmd9Lh2rfxp1b79vXr48y05LEXHN+Si5bSZoHLVH+I00T+auZS5t9B5Qce6abYjZC6E35/
+FlM406hhT52E0YL/64Ec3hkPnNqrzOM0NRlh5USE/LC4k8/MRhLbPqOePjfQtbEpwvCAeQ2LL5oj
+0Dvyevr4ZHao9DW9mHZ6V8lbpdRLJ/JhGhxJ7hJhCURjDN6Ucup0BCJMP1739cn19NF5WIEFfA97
+i0fmYevzJCYe1XryGbb95ENE0nl81pVSQPGoKwGqeRdh0qAo1pUYIikvRHCBb8YYpu/ZzpzGYCtT
+T9bxU8n0JgUJT7CkFgrQ5IMYj90LbtRJtBJP/BUn3oXDfdLusZJvNpug3b86F61MPufVv4lohXdD
+u+9o6rXZn0Q0YFTTIW2PKyQk12kpcuePkfv25FFaWlRx2VMDtLT94mFadmwWG1DOzhoNKLeah83D
+cvnfo4A6wuQoAAA=
+------=_Part_14243_33234650.1217649510936--
+
+
+From ronniesahlberg at gmail.com  Sat Aug  2 06:20:43 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Sat, 2 Aug 2008 14:20:43 +1000
+Subject: [Stgt-devel] Passthrough devices
+Message-ID: <c9a3e4540808012120j1eabbfd9p6d5521d80832cf41@mail.gmail.com>
+
+List,
+
+I have sent a working, but still work-in-progress and incomplete
+patchset for passthrough devices to the list.
+
+I dont think I will have time to work more on this in the next few
+weeks and complete it, so if anyone urgently wants to be able to use
+passthrough devices,
+please have a look at my patches and maybe finish them...
+
+Othervise Ill look into completing them in a few weeks time.
+
+
+regards
+ronnie sahlberg
+
+
+From murderously at ff-wanlo.de  Sat Aug  2 06:50:58 2008
+From: murderously at ff-wanlo.de (Pilgreen Digeorgio)
+Date: Sat, 02 Aug 2008 04:50:58 +0000
+Subject: [Stgt-devel] :o)
+Message-ID: <3485255912.20080802044739@dunnlumber.com>
+
+Hi,
+	
+  
+
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080802/b10de3bb/attachment.html>
+
+From nezhinsky at gmail.com  Wed Aug  6 17:06:26 2008
+From: nezhinsky at gmail.com (Alexander Nezhinsky)
+Date: Wed, 6 Aug 2008 18:06:26 +0300
+Subject: [Stgt-devel] [PATCH] Make changes so that VTL stuff works
+	properly ...
+In-Reply-To: <20080730160405U.fujita.tomonori@lab.ntt.co.jp>
+References: <20080730115246D.fujita.tomonori@lab.ntt.co.jp>
+	<f29db9a80807292028y12ac380bk6f9eaa65a24678b6@mail.gmail.com>
+	<f29db9a80807292040w22d206f2w7365fe3c9320febf@mail.gmail.com>
+	<20080730160405U.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <5eb093080808060806g4d21b5dfv42314e527badcddd@mail.gmail.com>
+
+On Wed, Jul 30, 2008 at 10:04 AM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+
+> the future... We have it just because Linux AIO is not good enough
+> now.
+
+Can you explain a bit what's wrong with the current Linux AIO implementation.
+Why bs_aio.c is implemented using syscall(__NR_io_*)?
+What is wrong with the aio_read/aio_write and friends?
+Is there a minimal linux kernel that supports this kind of AIO calls?
+Minimal RedHat distro?
+
+Thanx,
+Alexander Nezhinsky
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Aug  7 20:14:32 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 8 Aug 2008 03:14:32 +0900
+Subject: [Stgt-devel] [PATCH] Make changes so that VTL stuff
+	works	properly ...
+In-Reply-To: <5eb093080808060806g4d21b5dfv42314e527badcddd@mail.gmail.com>
+References: <f29db9a80807292040w22d206f2w7365fe3c9320febf@mail.gmail.com>
+	<20080730160405U.fujita.tomonori@lab.ntt.co.jp>
+	<5eb093080808060806g4d21b5dfv42314e527badcddd@mail.gmail.com>
+Message-ID: <20080808031426X.tomof@acm.org>
+
+On Wed, 6 Aug 2008 18:06:26 +0300
+"Alexander Nezhinsky" <nezhinsky at gmail.com> wrote:
+
+> On Wed, Jul 30, 2008 at 10:04 AM, FUJITA Tomonori
+> <fujita.tomonori at lab.ntt.co.jp> wrote:
+> 
+> > the future... We have it just because Linux AIO is not good enough
+> > now.
+> 
+> Can you explain a bit what's wrong with the current Linux AIO implementation.
+> Why bs_aio.c is implemented using syscall(__NR_io_*)?
+> What is wrong with the aio_read/aio_write and friends?
+
+
+I think that that's Posix AIO, which glibc implemented. It's slower
+than the kernel AIO support. A big problem about it for us is event
+notification. We can't get AIO completion events via a file descriptor
+(so that we can't use poll/epoll with it). How can we wait for both
+network events and AIO events at the same time?
+
+The Linux kernel AIO works only with Direct I/O (that is, we can't use
+page cache with AIO). It's a huge problem for us so we don't use AIO
+now.
+
+
+> Is there a minimal linux kernel that supports this kind of AIO calls?
+> Minimal RedHat distro?
+
+I guess that all the distributions supports the kernel AIO. There is
+no kernel option to disable it now.
+
+
+From ronniesahlberg at gmail.com  Fri Aug  8 00:04:11 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Fri, 8 Aug 2008 08:04:11 +1000
+Subject: [Stgt-devel] [PATCH] Make changes so that VTL stuff works
+	properly ...
+In-Reply-To: <20080808031426X.tomof@acm.org>
+References: <f29db9a80807292040w22d206f2w7365fe3c9320febf@mail.gmail.com>
+	<20080730160405U.fujita.tomonori@lab.ntt.co.jp>
+	<5eb093080808060806g4d21b5dfv42314e527badcddd@mail.gmail.com>
+	<20080808031426X.tomof@acm.org>
+Message-ID: <c9a3e4540808071504t5ffa58bbm97a4d520234b7b7b@mail.gmail.com>
+
+On Fri, Aug 8, 2008 at 4:14 AM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+> On Wed, 6 Aug 2008 18:06:26 +0300
+> "Alexander Nezhinsky" <nezhinsky at gmail.com> wrote:
+>
+>> On Wed, Jul 30, 2008 at 10:04 AM, FUJITA Tomonori
+>> <fujita.tomonori at lab.ntt.co.jp> wrote:
+>>
+>> > the future... We have it just because Linux AIO is not good enough
+>> > now.
+>>
+>> Can you explain a bit what's wrong with the current Linux AIO implementation.
+>> Why bs_aio.c is implemented using syscall(__NR_io_*)?
+>> What is wrong with the aio_read/aio_write and friends?
+>
+>
+> I think that that's Posix AIO, which glibc implemented. It's slower
+> than the kernel AIO support. A big problem about it for us is event
+> notification. We can't get AIO completion events via a file descriptor
+> (so that we can't use poll/epoll with it). How can we wait for both
+> network events and AIO events at the same time?
+
+What about setting up a pipe, forking, doing the the i/o in the child
+and then writing a byte of data to the pipe when the command completed.
+The parent can then "wait for the 'AIO' to complete by waiting on a
+file descriptor" like normal.
+
+forks are cheap under linux.
+
+I do this all the time in ctdb which is very hard real time and which
+can not ever call any function that may block from the main daemon.
+(== read/write/fcntl/waitpid,...)
+
+
+This is how samba 3 does AIO as well   since the real AIO layer on
+many distribution versions
+are "suboptimal".
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Aug  8 02:12:37 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 8 Aug 2008 09:12:37 +0900
+Subject: [Stgt-devel] [PATCH] Make changes so that VTL stuff
+	works	properly ...
+In-Reply-To: <c9a3e4540808071504t5ffa58bbm97a4d520234b7b7b@mail.gmail.com>
+References: <5eb093080808060806g4d21b5dfv42314e527badcddd@mail.gmail.com>
+	<20080808031426X.tomof@acm.org>
+	<c9a3e4540808071504t5ffa58bbm97a4d520234b7b7b@mail.gmail.com>
+Message-ID: <20080808091248Y.fujita.tomonori@lab.ntt.co.jp>
+
+On Fri, 8 Aug 2008 08:04:11 +1000
+"ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+
+> On Fri, Aug 8, 2008 at 4:14 AM, FUJITA Tomonori
+> <fujita.tomonori at lab.ntt.co.jp> wrote:
+> > On Wed, 6 Aug 2008 18:06:26 +0300
+> > "Alexander Nezhinsky" <nezhinsky at gmail.com> wrote:
+> >
+> >> On Wed, Jul 30, 2008 at 10:04 AM, FUJITA Tomonori
+> >> <fujita.tomonori at lab.ntt.co.jp> wrote:
+> >>
+> >> > the future... We have it just because Linux AIO is not good enough
+> >> > now.
+> >>
+> >> Can you explain a bit what's wrong with the current Linux AIO implementation.
+> >> Why bs_aio.c is implemented using syscall(__NR_io_*)?
+> >> What is wrong with the aio_read/aio_write and friends?
+> >
+> >
+> > I think that that's Posix AIO, which glibc implemented. It's slower
+> > than the kernel AIO support. A big problem about it for us is event
+> > notification. We can't get AIO completion events via a file descriptor
+> > (so that we can't use poll/epoll with it). How can we wait for both
+> > network events and AIO events at the same time?
+> 
+> What about setting up a pipe, forking, doing the the i/o in the child
+> and then writing a byte of data to the pipe when the command completed.
+> The parent can then "wait for the 'AIO' to complete by waiting on a
+> file descriptor" like normal.
+
+We did the similar thing. We don't fork every time we get a
+request. Instead we keep several processes to perform requests.
+
+But using a pipe is not the fastest way. I really like to move to the
+real AIO solution.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sat Aug  9 03:05:21 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 9 Aug 2008 10:05:21 +0900
+Subject: [Stgt-devel] [PATCH] updating targets in tgt-admin
+In-Reply-To: <4892CE65.8040902@wpkg.org>
+References: <4892CE65.8040902@wpkg.org>
+Message-ID: <20080809100535D.fujita.tomonori@lab.ntt.co.jp>
+
+On Fri, 01 Aug 2008 10:50:45 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> This patch adds proper updating of targets to tgt-admin.
+> 
+> You have to add --force/-f option to update targets which are in use.
+> 
+> Updating consists of two things:
+> - target is deleted
+> - target is configured, basing on its config options
+> 
+> Updating a target which is no longer in a config file will result in the target's deletion.
+> 
+> The patch also changes the behaviour of --execute slightly - it now
+> tries to delete the targets which are not in the config file; if the
+> target is in use, it won't be touched (unless --force is used); if
+> the target is not in use, it will be deleted.
+
+Seems that no complaint about the changes so I've applied this patch
+(with some cleanups for whitespace).
+
+Thanks,
+
+
+From realrichardsharpe at gmail.com  Fri Aug 15 05:56:29 2008
+From: realrichardsharpe at gmail.com (Richard Sharpe)
+Date: Thu, 14 Aug 2008 20:56:29 -0700
+Subject: [Stgt-devel] Testing ... 123
+Message-ID: <46b8a8850808142056xba707b2nb43a3499e516ce2d@mail.gmail.com>
+
+Hi,
+
+Sun allows you to download a trial version of BakBone's NetVault ...
+very useful.
+
+
+From realrichardsharpe at gmail.com  Sun Aug 17 20:51:00 2008
+From: realrichardsharpe at gmail.com (Richard Sharpe)
+Date: Sun, 17 Aug 2008 11:51:00 -0700
+Subject: [Stgt-devel] Dealing with virtual tapes when they are moved out of
+	a drive ...
+Message-ID: <46b8a8850808171151y79b481ajde1a2d02deb03885@mail.gmail.com>
+
+Hi,
+
+It strikes me that one might want to deal with virtual tapes when they
+are moved out of a virtual tape drive and back to a slot.
+
+This might take the form of a script that the sys admin provides that
+does something special with the tape or whatever.
+
+Here is one possible approach to doing that (I have not fully
+implemented it, I only throw this out as a possibility):
+
+--- smc.c       2008-08-15 16:12:26.000000000 -0700
++++ smc.c.dispose-tape  2008-08-17 11:47:33.000000000 -0700
+@@ -457,9 +457,21 @@
+                        asc = ASC_MECHANICAL_POSITIONING_ERROR;
+                        goto sense;
+                }
+-       } else
++       } else {
+                set_slot_full(dest_slot, src, NULL);
+
++               /*
++                * Now, if the source slot was a data transfer element
++                * execute any unload script provided ...
++                */
++               if (src_slot->element_type == ELEMENT_DATA_TRANSFER) {
++
++                       /*
++                        * execve etc ...
++                        */
++               }
++       }
++
+        set_slot_empty(src_slot);
+
+        scsi_set_in_resid_by_actual(cmd, 0);
+
+
+From realrichardsharpe at gmail.com  Sun Aug 17 21:33:42 2008
+From: realrichardsharpe at gmail.com (Richard Sharpe)
+Date: Sun, 17 Aug 2008 12:33:42 -0700
+Subject: [Stgt-devel] SSC Changes that allow BakBone NetVault to work ...
+Message-ID: <46b8a8850808171233nccf808ftd28e3f08eef339ed@mail.gmail.com>
+
+Hi,
+
+Attached are the diffs for my current SSC implementation. These
+changes, along with the diffs I posted for SMC, allow BakBone to work,
+to see a Tape Library, and to backup to tapes in the library.
+
+There are undoubtedly many problems with the code, not the least of
+which is that it is pretty ugly :-)
+
+One thing I note is that the latest drafts of SSC and SMC support the
+READ_ATTRIBUTES command, with SMC allowing the reading of attributes
+from tapes in media slots. Thus, the current ssc.h definitions for MAM
+seem incomplete. I would suggest a common set of routines for dealing
+MAM in bot SSC and SMC.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: ssc.h.diff
+Type: application/octet-stream
+Size: 810 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080817/531fd777/attachment.obj>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: ssc.c.diff
+Type: application/octet-stream
+Size: 5197 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080817/531fd777/attachment-0001.obj>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: bs_ssc.c.diff
+Type: application/octet-stream
+Size: 15380 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080817/531fd777/attachment-0002.obj>
+
+From markh794 at gmail.com  Tue Aug 19 01:47:53 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Tue, 19 Aug 2008 09:47:53 +1000
+Subject: [Stgt-devel] [PATCH 2/2] Implement smc INITIALIZE ELEMENT STATUS
+	WITH RANGE
+Message-ID: <48AA0A29.9060303@gmail.com>
+
+
+From markh794 at gmail.com  Tue Aug 19 01:41:47 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Tue, 19 Aug 2008 09:41:47 +1000
+Subject: Implement smc INITIALIZE ELEMENT STATUS WITH RANGE as NO-OP
+Message-ID: <mailman.49.1331738485.12506.stgt-devel@lists.berlios.de>
+
+Signed-off-by: Mark Harvey <markh794 at gmail.com>
+---
+ usr/smc.c |   39 ++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 38 insertions(+), 1 deletions(-)
+
+diff --git a/usr/smc.c b/usr/smc.c
+index a04e905..d2dda4f 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -225,6 +225,22 @@ static int build_element_descriptors(uint8_t *data, struct list_head *head,
+ }
+ 
+ /**
++ * smc_initialize_element_status with range
++ *                      - INITIALIZE ELEMENT STATUS WITH RANGE op code
++ *
++ * Support the SCSI op code INITIALIZE_ELEMENT_STATUS_WITH_RANGE
++ * Ref: smc3r11, 6.5
++ */
++static int smc_initialize_element_status_range(int host_no, struct scsi_cmd *cmd)
++{
++	/*
++	 * Should do some error checking here ... the spec says some stuff
++	 * about having a reservation
++	 */
++	return SAM_STAT_GOOD;
++}
++
++/**
+  * smc_initialize_element_status - INITIALIZE ELEMENT STATUS op code
+  *
+  * Some backup libraries seem to require this.
+@@ -795,7 +811,28 @@ struct device_type_template smc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 
+-		[0x20 ... 0x4f] = {spc_illegal_op,},
++		[0x20 ... 0x2f] = {spc_illegal_op,},
++
++		/* 0x30 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{smc_initialize_element_status_range,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		[0x40 ... 0x4f] = {spc_illegal_op,},
+ 
+ 		/* 0x50 */
+ 		{spc_illegal_op,},
+-- 
+1.5.4.3
+
+
+
+From markh794 at gmail.com  Wed Aug 20 01:09:24 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 09:09:24 +1000
+Subject: [Stgt-devel] vger mailing list
+Message-ID: <f29db9a80808191609oef6a399r5ba733bcdf7a202d@mail.gmail.com>
+
+I am a little concerned I am not seeing all email sent to the
+stgt at vger.kernel.org list.
+
+I have subscribed from both gmail and work email addresses. I have yet
+to see an email arrive in my work's inbox (they have aggressive email
+filtering and hence may be a different issue)
+
+An attempt to query Majordomo at vger.kernel.org to either request a list
+of users (message advising functionality disabled) or 'which'
+   ========================
+>>>> which
+The string 'mark_harvey at symantec.com' appears in the following entries
+in lists served by Majordomo at vger.kernel.org:
+**** No matches found
+   ========================
+>>>> which
+The string 'markh794 at gmail.com' appears in the following
+entries in lists served by Majordomo at vger.kernel.org:
+**** No matches found
+   ========================
+
+To date, I have submitted a couple of patches. I know at least one was
+seen by Richard Sharpe (as he commented)..
+
+I subscribed using a netscape email address, and have seen nothing
+arrive at that address either. In fact, the only email I've seen
+arrive at the netscape address was an incorrect posting of "[PATCH
+2/2] Implement smc INITIALIZE ELEMENT STATUS WITH RANGE" to the old
+stgt-devel at lists.berlios.de (which I re-sent to vger list a few hrs
+later when I realised my mistake).
+
+
+Cheers
+Mark
+
+
+From davem at davemloft.net  Wed Aug 20 01:12:27 2008
+From: davem at davemloft.net (David Miller)
+Date: Tue, 19 Aug 2008 16:12:27 -0700 (PDT)
+Subject: [Stgt-devel] vger mailing list
+In-Reply-To: <f29db9a80808191609oef6a399r5ba733bcdf7a202d@mail.gmail.com>
+References: <f29db9a80808191609oef6a399r5ba733bcdf7a202d@mail.gmail.com>
+Message-ID: <20080819.161227.136034228.davem@davemloft.net>
+
+From: "Mark Harvey" <markh794 at gmail.com>
+Date: Wed, 20 Aug 2008 09:09:24 +1000
+
+> An attempt to query Majordomo at vger.kernel.org to either request a list
+> of users (message advising functionality disabled) or 'which'
+>    ========================
+> >>>> which
+> The string 'mark_harvey at symantec.com' appears in the following entries
+> in lists served by Majordomo at vger.kernel.org:
+> **** No matches found
+>    ========================
+> >>>> which
+> The string 'markh794 at gmail.com' appears in the following
+> entries in lists served by Majordomo at vger.kernel.org:
+> **** No matches found
+>    ========================
+> 
+> To date, I have submitted a couple of patches. I know at least one was
+> seen by Richard Sharpe (as he commented)..
+
+Checking just now I see that markh794 at gmail.com is subscribed, while
+the other address, the mark_harvey at symantec.com one, is not.
+
+
+From markh794 at gmail.com  Wed Aug 20 03:08:18 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 11:08:18 +1000
+Subject: [Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE ELEMENT
+	STATUS
+Message-ID: <f29db9a80808191808n7ab01d14g4dd10bcfbd4cdc2f@mail.gmail.com>
+
+Added test for SCSI RESERVATION.
+
+Still implemented as a no-op.
+
+(Attached patch due to gmail web mangling whitespaces).
+
+
+commit de9949ce821ed1bca9d60e8d98ec806c3c80ec6b
+Author: Mark Harvey <markh794 at gmail.com>
+Date:   Wed Aug 20 10:48:57 2008 +1000
+
+    Implement smc INITIALIZE ELEMENT STATUS op code as NO-OP
+
+    Re-submit Richard Sharpe's patch in git format
+
+    Added test for reservation.
+
+    Reported-by: Richard Sharpe <realrichardsharpe at gmail.com>
+    Signed-off-by: Mark Harvey <markh794 at gmail.com>
+
+diff --git a/usr/smc.c b/usr/smc.c
+index 9d7f681..e735deb 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -225,6 +225,24 @@ static int build_element_descriptors(uint8_t *data, struct
+list_head *head,
+ }
+
+ /**
++ * smc_initialize_element_status - INITIALIZE ELEMENT STATUS op code
++ *
++ * Some backup libraries seem to require this.
++ *
++ * Support the SCSI op code INITIALIZE_ELEMENT_STATUS
++ * Ref: smc3r10a, 6.2
++ */
++static int smc_initialize_element_status(int host_no, struct scsi_cmd *cmd)
++{
++       scsi_set_in_resid_by_actual(cmd, 0);
++
++       if (device_reserved(cmd))
++               return SAM_STAT_RESERVATION_CONFLICT;
++       else
++               return SAM_STAT_GOOD;
++}
++
++/**
+  * smc_read_element_status  -  READ ELEMENT STATUS op code
+  *
+  * Support the SCSI op code READ ELEMENT STATUS
+@@ -748,7 +766,7 @@ struct device_type_template smc_template = {
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+-               {spc_illegal_op,},
++               {smc_initialize_element_status,},
+
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0001-Implement-smc-INITIALIZE-ELEMENT-STATUS-op-code-as-N.patch
+Type: application/octet-stream
+Size: 1497 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080820/4d9bb16e/attachment.obj>
+
+From markh794 at gmail.com  Wed Aug 20 03:38:27 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 11:38:27 +1000
+Subject: [Stgt-devel] [PATCH 2/2] Take 2: Implement smc INITIALIZE ELEMENT
+	STATUS WITH RANGE
+Message-ID: <f29db9a80808191838i7121f4e9gdb0b7b251eb1a634@mail.gmail.com>
+
+commit d8c5617849c15d54c0ebd2efbc9f16161a6f2e56
+Author: Mark Harvey <markh794 at gmail.com>
+Date:   Wed Aug 20 10:58:02 2008 +1000
+
+    Implement smc INITIALIZE ELEMENT STATUS WITH RANGE op code as NO-OP
+
+    - Implemented INITIALIZE ELEMENT STATUS WITH RANGE as a No Operation.
+
+    Reported-by: Richard Sharpe <realrichardsharpe at gmail.com>
+    Signed-off-by: Mark Harvey <markh794 at gmail.com>
+
+diff --git a/usr/smc.c b/usr/smc.c
+index e735deb..ab36e9c 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -225,6 +225,23 @@ static int build_element_descriptors(uint8_t *data, struct
+list_head *head,
+ }
+
+ /**
++ * smc_initialize_element_status with range
++ *                      - INITIALIZE ELEMENT STATUS WITH RANGE op code
++ *
++ * Support the SCSI op code INITIALIZE_ELEMENT_STATUS_WITH_RANGE
++ * Ref: smc3r11, 6.5
++ */
++static int smc_initialize_element_status_range(int host_no, struct scsi_cmd *cm
+d)
++{
++       scsi_set_in_resid_by_actual(cmd, 0);
++
++       if (device_reserved(cmd))
++               return SAM_STAT_RESERVATION_CONFLICT;
++       else
++               return SAM_STAT_GOOD;
++}
++
++/**
+  * smc_initialize_element_status - INITIALIZE ELEMENT STATUS op code
+  *
+  * Some backup libraries seem to require this.
+@@ -796,7 +813,28 @@ struct device_type_template smc_template = {
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+
+-               [0x20 ... 0x4f] = {spc_illegal_op,},
++               [0x20 ... 0x2f] = {spc_illegal_op,},
++
++               /* 0x30 */
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {smc_initialize_element_status_range,},
++
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++               {spc_illegal_op,},
++
++               [0x40 ... 0x4f] = {spc_illegal_op,},
+
+                /* 0x50 */
+                {spc_illegal_op,},
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0002-Implement-smc-INITIALIZE-ELEMENT-STATUS-WITH-RANGE-o.patch
+Type: application/octet-stream
+Size: 1969 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080820/35f51473/attachment.obj>
+
+From markh794 at gmail.com  Wed Aug 20 07:01:44 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 15:01:44 +1000
+Subject: [Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+Message-ID: <f29db9a80808192201i5b72ca41he5eb9387fc556d28@mail.gmail.com>
+
+Apologies for sending as an attachment... gmail and all.
+
+This is an initial attempt to implement PERSISTENT RESERVE IN and
+PERSISTENT RESERVE OUT.
+
+Currently only READ KEY service action will actually return anything.
+It returns a hard-coded 'ABC1234'.
+
+This post is a request for comment before I get too far into coding effort.
+
+# lsscsi -g
+[3:0:0:0]    disk    USB-HS   HTS726060M9AT00  0.01  /dev/sda  /dev/sg0
+[7:0:0:0]    storage IET      Controller       0001  -         /dev/sg1
+[7:0:0:1]    disk    QUANTUM  HD100            0010  /dev/sdb  /dev/sg2
+[7:0:0:2]    tape    QUANTUM  DLT6000          0010  /dev/st0  /dev/sg3
+[7:0:0:3]    tape    QUANTUM  DLT6000          0010  /dev/st1  /dev/sg4
+[7:0:0:4]    tape    QUANTUM  DLT6000          0010  /dev/st2  /dev/sg5
+[7:0:0:5]    mediumx STK      L700             0010  -         /dev/sg6
+
+# sg_persist -i /dev/sg3
+>> No service action given; assume Persistent Reservations In command
+>> with Read Keys service action
+  QUANTUM  DLT6000  0010
+  Peripheral device type: tape
+  PR generation=0x0, 4 registered reservation keys follow:
+    0x4142433132333400
+    0x0
+    0x0
+    0x0
+
+
+I'll include in-line for viewing pleasure :)
+
+[PATCH 1/2]
+
+From markh794 at gmail.com  Wed Aug 20 06:42:27 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 14:42:27 +1000
+Subject: RFC - Implement PERSISTENT RESERVE IN/OUT
+Message-ID: <mailman.50.1331738485.12506.stgt-devel@lists.berlios.de>
+
+Implement service action 'READ KEY' which returns
+a hard-coded string 'ABC1234'
+
+Signed-off-by: Mark Harvey <markh794 at gmail.com>
+---
+ usr/scsi.h |    5 ++
+ usr/spc.c  |  231 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/spc.h  |    2 +
+ usr/tgtd.h |   13 ++++
+ 4 files changed, 251 insertions(+), 0 deletions(-)
+
+diff --git a/usr/scsi.h b/usr/scsi.h
+index 84fadff..a9481a1 100644
+--- a/usr/scsi.h
++++ b/usr/scsi.h
+@@ -208,6 +208,11 @@
+ #define ASC_POSITION_PAST_BOM			0x3b0c
+ #define ASC_MEDIUM_REMOVAL_PREVENTED		0x5302
+ #define ASC_BAD_MICROCODE_DETECTED		0x8283
++#define ASC_INSUFFICENT_RESERVE_RESOURCE	0x5502
++#define ASC_INSUFFICENT_RESOURCE		0x5503
++#define ASC_INSUFFICENT_REGISTRAT_RESOURCE	0x5504
++#define ASC_INSUFFICENT_AC_RESOURCE		0x5505
++#define ASC_AUX_MEMORY_OUT_OF_SPACE		0x5506
+
+ /* Key 6: Unit Attention */
+ #define ASC_NOT_READY_TO_TRANSITION		0x2800
+diff --git a/usr/spc.c b/usr/spc.c
+index bd2c975..cc088bf 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -880,6 +880,237 @@ void dump_cdb(struct scsi_cmd *cmd)
+ 	}
+ }
+
++/**
++ * SCSI Persistent Reservation
++ *
++ * Reference: spc4r16 Ch 5.7
++ *
++ * Interesting points:
++ *  - Persistent reservations are not reset by hard reset, lu reset ot I_T loss
++ *  - Optionally, may be retained when power to target is lost
++ */
++
++/**
++ * PERSISTENT RESERVE IN - 5Eh
++ * Ref: 6.13
++ *
++ */
++#define PR_IN_READ_KEYS 0
++#define PR_IN_READ_RESERVATION 1
++#define PR_IN_REPORT_CAPABILITIES 2
++#define PR_IN_READ_FULL_STATUS 3
++static int spc_pr_read_keys(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t *buf;
++	int len;
++	int cdb_alloc_len;
++	struct scsi_pr *pr;
++
++	cdb_alloc_len = ((cmd->scb[7] & 0xff) << 8) | (cmd->scb[8] & 0xff);
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++
++	buf = scsi_get_in_buffer(cmd);
++	len = sizeof(cmd->dev->pr.pr_key);
++	memset(buf, 0, len + 8);
++
++	dprintf("Buf: %p, len: %d, cdb_alloc_len: %d\n",
++			 buf, len, cdb_alloc_len);
++
++	buf[0] = (pr->PRgeneration >> 24) & 0xff;
++	buf[1] = (pr->PRgeneration >> 16) & 0xff;
++	buf[2] = (pr->PRgeneration >>  8) & 0xff;
++	buf[3] = pr->PRgeneration & 0xff;
++	buf[4] = (len >> 24) & 0xff;
++	buf[5] = (len >> 16) & 0xff;
++	buf[6] = (len >>  8) & 0xff;
++	buf[7] = len & 0xff;
++
++	strcpy(buf + 8, "ABC1234");
++	memcpy(scsi_get_in_buffer(cmd), buf, min(cdb_alloc_len, len + 8));
++
++	scsi_set_in_resid_by_actual(cmd, len + 8);
++
++	return SAM_STAT_GOOD;
++}
++
++static int spc_pr_read_reservation(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf("**** Called ****\n");
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_report_capabilities(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf("**** Called ****\n");
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_read_full_status(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf("**** Called ****\n");
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++struct service_action pr_in_service_actions[] = {
++	{PR_IN_READ_KEYS, spc_pr_read_keys},
++	{PR_IN_READ_RESERVATION, spc_pr_read_reservation},
++	{PR_IN_REPORT_CAPABILITIES, spc_pr_report_capabilities},
++	{PR_IN_READ_FULL_STATUS, spc_pr_read_full_status},
++	{0, NULL}
++};
++
++int persistent_reserve_in(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t action;
++	struct service_action *service_action;
++
++	action = cmd->scb[1] & 0x1f;
++	service_action = find_service_action(pr_in_service_actions, action);
++
++	if (!service_action) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++				ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	return service_action->cmd_perform(host_no, cmd);
++}
++
++/**
++ * PERSISTENT RESERVE OUT - 5Fh
++ * Ref: 6.14
++ */
++#define PR_OUT_REGISTER 0
++#define PR_OUT_RESERVE 1
++#define PR_OUT_RELEASE 2
++#define PR_OUT_CLEAR 3
++#define PR_OUT_PREEMPT 4
++#define PR_OUT_PREEMPT_ABORT 5
++#define PR_OUT_REGISTER_IGNORE 6
++#define PR_OUT_REGISTER_MOVE 7
++
++static int spc_pr_register(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++	pr->PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_reserve(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf("**** Called ****\n");
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_release(int host_no, struct scsi_cmd *cmd)
++{
++	dprintf("**** Called ****\n");
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_clear(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++	pr->PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_preempt(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++	pr->PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_preempt_abort(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++	pr->PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_register_ignore(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++	pr->PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++static int spc_pr_register_move(int host_no, struct scsi_cmd *cmd)
++{
++	struct scsi_pr *pr;
++
++	dprintf("**** Called ****\n");
++	pr = &cmd->dev->pr;
++	pr->PRgeneration += 1;
++
++	sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++struct service_action pr_out_service_actions[] = {
++	{PR_OUT_REGISTER, spc_pr_register},
++	{PR_OUT_RESERVE, spc_pr_reserve},
++	{PR_OUT_RELEASE, spc_pr_release},
++	{PR_OUT_CLEAR, spc_pr_clear},
++	{PR_OUT_PREEMPT, spc_pr_preempt},
++	{PR_OUT_PREEMPT_ABORT, spc_pr_preempt_abort},
++	{PR_OUT_REGISTER_IGNORE, spc_pr_register_ignore},
++	{PR_OUT_REGISTER_MOVE, spc_pr_register_move},
++	{0, NULL}
++};
++
++int persistent_reserve_out(int host_no, struct scsi_cmd *cmd)
++{
++	uint8_t action;
++	struct service_action *service_action;
++
++	action = cmd->scb[1] & 0x1f;
++	service_action = find_service_action(pr_out_service_actions, action);
++
++	if (!service_action) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, ILLEGAL_REQUEST,
++				ASC_INVALID_FIELD_IN_CDB);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	return service_action->cmd_perform(host_no, cmd);
++}
++
+ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+ {
+ 	dump_cdb(cmd);
+diff --git a/usr/spc.h b/usr/spc.h
+index 8fe3e3c..bdc3c1f 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -9,6 +9,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+ extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+ extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+ extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
++extern int persistent_reserve_in(int host_no, struct scsi_cmd *cmd);
++extern int persistent_reserve_out(int host_no, struct scsi_cmd *cmd);
+ extern int spc_lu_init(struct scsi_lu *lu);
+
+ typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 4febcd3..d2c7135 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -19,6 +19,11 @@
+
+ #define VENDOR_ID	"IET"
+
++/* 8 byte reservation key size */
++#define PR_KEY_SZ 8
++/* Number of PR keys we can store at any one time */
++#define PR_RESERVATION_SZ 4
++
+ #define _TAB1 "    "
+ #define _TAB2 _TAB1 _TAB1
+ #define _TAB3 _TAB1 _TAB1 _TAB1
+@@ -126,6 +131,12 @@ struct mode_pg {
+ 	uint8_t mode_data[0];	/* Rest of mode page info */
+ };
+
++struct scsi_pr {
++	/* Persistent Reservation Generation */
++	uint32_t PRgeneration;
++	uint8_t pr_key[PR_RESERVATION_SZ][PR_KEY_SZ];
++};
++
+ struct scsi_lu {
+ 	int fd;
+ 	uint64_t addr; /* persistent mapped address */
+@@ -150,6 +161,8 @@ struct scsi_lu {
+ 	uint8_t	mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+ 	struct mode_pg *mode_pgs[0x3f];
+
++	struct scsi_pr pr;
++
+ 	struct lu_phy_attr attrs;
+
+ 	/* A pointer for each modules private use.
+-- 
+1.5.6
+
+[PATCH 2/2]
+
+From markh794 at gmail.com  Wed Aug 20 06:45:30 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 14:45:30 +1000
+Subject: Add persistent reserve in/out to ssc module
+Message-ID: <mailman.51.1331738485.12506.stgt-devel@lists.berlios.de>
+
+Signed-off-by: Mark Harvey <markh794 at gmail.com>
+---
+ usr/ssc.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/usr/ssc.c b/usr/ssc.c
+index 2630a6a..6dbdc0b 100644
+--- a/usr/ssc.c
++++ b/usr/ssc.c
+@@ -251,8 +251,8 @@ static struct device_type_template ssc_template = {
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+ 		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{persistent_reserve_in,},
++		{persistent_reserve_out,},
+
+ 		[0x60 ... 0x7f] = {spc_illegal_op,},
+
+-- 
+1.5.6
+
+------=_Part_16753_6747950.1219208504315
+Content-Type: application/octet-stream;
+ name=0001-RFC-Implement-PERSISTENT-RESERVE-IN-OUT.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fk3gsehm0
+Content-Disposition: attachment;
+ filename=0001-RFC-Implement-PERSISTENT-RESERVE-IN-OUT.patch
+
+RnJvbSAxMWFkOWVlMjA5NzA4ZjUxYmQyODg0NTk4ZDMwOWIxZTcwNzljZGNlIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJrIEhhcnZleSA8bWFya2g3OTRAZ21haWwuY29tPgpEYXRl
+OiBXZWQsIDIwIEF1ZyAyMDA4IDE0OjQyOjI3ICsxMDAwClN1YmplY3Q6IFJGQyAtIEltcGxlbWVu
+dCBQRVJTSVNURU5UIFJFU0VSVkUgSU4vT1VUCgpJbXBsZW1lbnQgc2VydmljZSBhY3Rpb24gJ1JF
+QUQgS0VZJyB3aGljaCByZXR1cm5zCmEgaGFyZC1jb2RlZCBzdHJpbmcgJ0FCQzEyMzQnCgpTaWdu
+ZWQtb2ZmLWJ5OiBNYXJrIEhhcnZleSA8bWFya2g3OTRAZ21haWwuY29tPgotLS0KIHVzci9zY3Np
+LmggfCAgICA1ICsrCiB1c3Ivc3BjLmMgIHwgIDIzMSArKysrKysrKysrKysrKysrKysrKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysKIHVzci9zcGMuaCAgfCAgICAyICsK
+IHVzci90Z3RkLmggfCAgIDEzICsrKysKIDQgZmlsZXMgY2hhbmdlZCwgMjUxIGluc2VydGlvbnMo
+KyksIDAgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvdXNyL3Njc2kuaCBiL3Vzci9zY3NpLmgK
+aW5kZXggODRmYWRmZi4uYTk0ODFhMSAxMDA2NDQKLS0tIGEvdXNyL3Njc2kuaAorKysgYi91c3Iv
+c2NzaS5oCkBAIC0yMDgsNiArMjA4LDExIEBACiAjZGVmaW5lIEFTQ19QT1NJVElPTl9QQVNUX0JP
+TQkJCTB4M2IwYwogI2RlZmluZSBBU0NfTUVESVVNX1JFTU9WQUxfUFJFVkVOVEVECQkweDUzMDIK
+ICNkZWZpbmUgQVNDX0JBRF9NSUNST0NPREVfREVURUNURUQJCTB4ODI4MworI2RlZmluZSBBU0Nf
+SU5TVUZGSUNFTlRfUkVTRVJWRV9SRVNPVVJDRQkweDU1MDIKKyNkZWZpbmUgQVNDX0lOU1VGRklD
+RU5UX1JFU09VUkNFCQkweDU1MDMKKyNkZWZpbmUgQVNDX0lOU1VGRklDRU5UX1JFR0lTVFJBVF9S
+RVNPVVJDRQkweDU1MDQKKyNkZWZpbmUgQVNDX0lOU1VGRklDRU5UX0FDX1JFU09VUkNFCQkweDU1
+MDUKKyNkZWZpbmUgQVNDX0FVWF9NRU1PUllfT1VUX09GX1NQQUNFCQkweDU1MDYKIAogLyogS2V5
+IDY6IFVuaXQgQXR0ZW50aW9uICovCiAjZGVmaW5lIEFTQ19OT1RfUkVBRFlfVE9fVFJBTlNJVElP
+TgkJMHgyODAwCmRpZmYgLS1naXQgYS91c3Ivc3BjLmMgYi91c3Ivc3BjLmMKaW5kZXggYmQyYzk3
+NS4uY2MwODhiZiAxMDA2NDQKLS0tIGEvdXNyL3NwYy5jCisrKyBiL3Vzci9zcGMuYwpAQCAtODgw
+LDYgKzg4MCwyMzcgQEAgdm9pZCBkdW1wX2NkYihzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKIAl9CiB9
+CiAKKy8qKgorICogU0NTSSBQZXJzaXN0ZW50IFJlc2VydmF0aW9uCisgKgorICogUmVmZXJlbmNl
+OiBzcGM0cjE2IENoIDUuNworICoKKyAqIEludGVyZXN0aW5nIHBvaW50czoKKyAqICAtIFBlcnNp
+c3RlbnQgcmVzZXJ2YXRpb25zIGFyZSBub3QgcmVzZXQgYnkgaGFyZCByZXNldCwgbHUgcmVzZXQg
+b3QgSV9UIGxvc3MKKyAqICAtIE9wdGlvbmFsbHksIG1heSBiZSByZXRhaW5lZCB3aGVuIHBvd2Vy
+IHRvIHRhcmdldCBpcyBsb3N0CisgKi8KKworLyoqCisgKiBQRVJTSVNURU5UIFJFU0VSVkUgSU4g
+LSA1RWgKKyAqIFJlZjogNi4xMworICoKKyAqLworI2RlZmluZSBQUl9JTl9SRUFEX0tFWVMgMAor
+I2RlZmluZSBQUl9JTl9SRUFEX1JFU0VSVkFUSU9OIDEKKyNkZWZpbmUgUFJfSU5fUkVQT1JUX0NB
+UEFCSUxJVElFUyAyCisjZGVmaW5lIFBSX0lOX1JFQURfRlVMTF9TVEFUVVMgMworc3RhdGljIGlu
+dCBzcGNfcHJfcmVhZF9rZXlzKGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sK
+Kwl1aW50OF90ICpidWY7CisJaW50IGxlbjsKKwlpbnQgY2RiX2FsbG9jX2xlbjsKKwlzdHJ1Y3Qg
+c2NzaV9wciAqcHI7CisKKwljZGJfYWxsb2NfbGVuID0gKChjbWQtPnNjYls3XSAmIDB4ZmYpIDw8
+IDgpIHwgKGNtZC0+c2NiWzhdICYgMHhmZik7CisKKwlkcHJpbnRmKCIqKioqIENhbGxlZCAqKioq
+XG4iKTsKKwlwciA9ICZjbWQtPmRldi0+cHI7CisKKwlidWYgPSBzY3NpX2dldF9pbl9idWZmZXIo
+Y21kKTsKKwlsZW4gPSBzaXplb2YoY21kLT5kZXYtPnByLnByX2tleSk7CisJbWVtc2V0KGJ1Ziwg
+MCwgbGVuICsgOCk7CisKKwlkcHJpbnRmKCJCdWY6ICVwLCBsZW46ICVkLCBjZGJfYWxsb2NfbGVu
+OiAlZFxuIiwKKwkJCSBidWYsIGxlbiwgY2RiX2FsbG9jX2xlbik7CisKKwlidWZbMF0gPSAocHIt
+PlBSZ2VuZXJhdGlvbiA+PiAyNCkgJiAweGZmOworCWJ1ZlsxXSA9IChwci0+UFJnZW5lcmF0aW9u
+ID4+IDE2KSAmIDB4ZmY7CisJYnVmWzJdID0gKHByLT5QUmdlbmVyYXRpb24gPj4gIDgpICYgMHhm
+ZjsKKwlidWZbM10gPSBwci0+UFJnZW5lcmF0aW9uICYgMHhmZjsKKwlidWZbNF0gPSAobGVuID4+
+IDI0KSAmIDB4ZmY7CisJYnVmWzVdID0gKGxlbiA+PiAxNikgJiAweGZmOworCWJ1Zls2XSA9IChs
+ZW4gPj4gIDgpICYgMHhmZjsKKwlidWZbN10gPSBsZW4gJiAweGZmOworCisJc3RyY3B5KGJ1ZiAr
+IDgsICJBQkMxMjM0Iik7CisJbWVtY3B5KHNjc2lfZ2V0X2luX2J1ZmZlcihjbWQpLCBidWYsIG1p
+bihjZGJfYWxsb2NfbGVuLCBsZW4gKyA4KSk7CisKKwlzY3NpX3NldF9pbl9yZXNpZF9ieV9hY3R1
+YWwoY21kLCBsZW4gKyA4KTsKKworCXJldHVybiBTQU1fU1RBVF9HT09EOworfQorCitzdGF0aWMg
+aW50IHNwY19wcl9yZWFkX3Jlc2VydmF0aW9uKGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQg
+KmNtZCkKK3sKKwlkcHJpbnRmKCIqKioqIENhbGxlZCAqKioqXG4iKTsKKwlzZW5zZV9kYXRhX2J1
+aWxkKGNtZCwgSUxMRUdBTF9SRVFVRVNULCBBU0NfSU5WQUxJRF9PUF9DT0RFKTsKKwlyZXR1cm4g
+U0FNX1NUQVRfQ0hFQ0tfQ09ORElUSU9OOworfQorCitzdGF0aWMgaW50IHNwY19wcl9yZXBvcnRf
+Y2FwYWJpbGl0aWVzKGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwlkcHJp
+bnRmKCIqKioqIENhbGxlZCAqKioqXG4iKTsKKwlzZW5zZV9kYXRhX2J1aWxkKGNtZCwgSUxMRUdB
+TF9SRVFVRVNULCBBU0NfSU5WQUxJRF9PUF9DT0RFKTsKKwlyZXR1cm4gU0FNX1NUQVRfQ0hFQ0tf
+Q09ORElUSU9OOworfQorCitzdGF0aWMgaW50IHNwY19wcl9yZWFkX2Z1bGxfc3RhdHVzKGludCBo
+b3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwlkcHJpbnRmKCIqKioqIENhbGxlZCAq
+KioqXG4iKTsKKwlzZW5zZV9kYXRhX2J1aWxkKGNtZCwgSUxMRUdBTF9SRVFVRVNULCBBU0NfSU5W
+QUxJRF9PUF9DT0RFKTsKKwlyZXR1cm4gU0FNX1NUQVRfQ0hFQ0tfQ09ORElUSU9OOworfQorCitz
+dHJ1Y3Qgc2VydmljZV9hY3Rpb24gcHJfaW5fc2VydmljZV9hY3Rpb25zW10gPSB7CisJe1BSX0lO
+X1JFQURfS0VZUywgc3BjX3ByX3JlYWRfa2V5c30sCisJe1BSX0lOX1JFQURfUkVTRVJWQVRJT04s
+IHNwY19wcl9yZWFkX3Jlc2VydmF0aW9ufSwKKwl7UFJfSU5fUkVQT1JUX0NBUEFCSUxJVElFUywg
+c3BjX3ByX3JlcG9ydF9jYXBhYmlsaXRpZXN9LAorCXtQUl9JTl9SRUFEX0ZVTExfU1RBVFVTLCBz
+cGNfcHJfcmVhZF9mdWxsX3N0YXR1c30sCisJezAsIE5VTEx9Cit9OworCitpbnQgcGVyc2lzdGVu
+dF9yZXNlcnZlX2luKGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwl1aW50
+OF90IGFjdGlvbjsKKwlzdHJ1Y3Qgc2VydmljZV9hY3Rpb24gKnNlcnZpY2VfYWN0aW9uOworCisJ
+YWN0aW9uID0gY21kLT5zY2JbMV0gJiAweDFmOworCXNlcnZpY2VfYWN0aW9uID0gZmluZF9zZXJ2
+aWNlX2FjdGlvbihwcl9pbl9zZXJ2aWNlX2FjdGlvbnMsIGFjdGlvbik7CisKKwlpZiAoIXNlcnZp
+Y2VfYWN0aW9uKSB7CisJCXNjc2lfc2V0X2luX3Jlc2lkX2J5X2FjdHVhbChjbWQsIDApOworCQlz
+ZW5zZV9kYXRhX2J1aWxkKGNtZCwgSUxMRUdBTF9SRVFVRVNULAorCQkJCUFTQ19JTlZBTElEX0ZJ
+RUxEX0lOX0NEQik7CisJCXJldHVybiBTQU1fU1RBVF9DSEVDS19DT05ESVRJT047CisJfQorCisJ
+cmV0dXJuIHNlcnZpY2VfYWN0aW9uLT5jbWRfcGVyZm9ybShob3N0X25vLCBjbWQpOworfQorCisv
+KioKKyAqIFBFUlNJU1RFTlQgUkVTRVJWRSBPVVQgLSA1RmgKKyAqIFJlZjogNi4xNAorICovCisj
+ZGVmaW5lIFBSX09VVF9SRUdJU1RFUiAwCisjZGVmaW5lIFBSX09VVF9SRVNFUlZFIDEKKyNkZWZp
+bmUgUFJfT1VUX1JFTEVBU0UgMgorI2RlZmluZSBQUl9PVVRfQ0xFQVIgMworI2RlZmluZSBQUl9P
+VVRfUFJFRU1QVCA0CisjZGVmaW5lIFBSX09VVF9QUkVFTVBUX0FCT1JUIDUKKyNkZWZpbmUgUFJf
+T1VUX1JFR0lTVEVSX0lHTk9SRSA2CisjZGVmaW5lIFBSX09VVF9SRUdJU1RFUl9NT1ZFIDcKKwor
+c3RhdGljIGludCBzcGNfcHJfcmVnaXN0ZXIoaW50IGhvc3Rfbm8sIHN0cnVjdCBzY3NpX2NtZCAq
+Y21kKQoreworCXN0cnVjdCBzY3NpX3ByICpwcjsKKworCWRwcmludGYoIioqKiogQ2FsbGVkICoq
+KipcbiIpOworCXByID0gJmNtZC0+ZGV2LT5wcjsKKwlwci0+UFJnZW5lcmF0aW9uICs9IDE7CisK
+KwlzZW5zZV9kYXRhX2J1aWxkKGNtZCwgSUxMRUdBTF9SRVFVRVNULCBBU0NfSU5WQUxJRF9PUF9D
+T0RFKTsKKwlyZXR1cm4gU0FNX1NUQVRfQ0hFQ0tfQ09ORElUSU9OOworfQorCitzdGF0aWMgaW50
+IHNwY19wcl9yZXNlcnZlKGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwlk
+cHJpbnRmKCIqKioqIENhbGxlZCAqKioqXG4iKTsKKwlzZW5zZV9kYXRhX2J1aWxkKGNtZCwgSUxM
+RUdBTF9SRVFVRVNULCBBU0NfSU5WQUxJRF9PUF9DT0RFKTsKKwlyZXR1cm4gU0FNX1NUQVRfQ0hF
+Q0tfQ09ORElUSU9OOworfQorCitzdGF0aWMgaW50IHNwY19wcl9yZWxlYXNlKGludCBob3N0X25v
+LCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwlkcHJpbnRmKCIqKioqIENhbGxlZCAqKioqXG4i
+KTsKKwlzZW5zZV9kYXRhX2J1aWxkKGNtZCwgSUxMRUdBTF9SRVFVRVNULCBBU0NfSU5WQUxJRF9P
+UF9DT0RFKTsKKwlyZXR1cm4gU0FNX1NUQVRfQ0hFQ0tfQ09ORElUSU9OOworfQorCitzdGF0aWMg
+aW50IHNwY19wcl9jbGVhcihpbnQgaG9zdF9ubywgc3RydWN0IHNjc2lfY21kICpjbWQpCit7CisJ
+c3RydWN0IHNjc2lfcHIgKnByOworCisJZHByaW50ZigiKioqKiBDYWxsZWQgKioqKlxuIik7CisJ
+cHIgPSAmY21kLT5kZXYtPnByOworCXByLT5QUmdlbmVyYXRpb24gKz0gMTsKKworCXNlbnNlX2Rh
+dGFfYnVpbGQoY21kLCBJTExFR0FMX1JFUVVFU1QsIEFTQ19JTlZBTElEX09QX0NPREUpOworCXJl
+dHVybiBTQU1fU1RBVF9DSEVDS19DT05ESVRJT047Cit9CisKK3N0YXRpYyBpbnQgc3BjX3ByX3By
+ZWVtcHQoaW50IGhvc3Rfbm8sIHN0cnVjdCBzY3NpX2NtZCAqY21kKQoreworCXN0cnVjdCBzY3Np
+X3ByICpwcjsKKworCWRwcmludGYoIioqKiogQ2FsbGVkICoqKipcbiIpOworCXByID0gJmNtZC0+
+ZGV2LT5wcjsKKwlwci0+UFJnZW5lcmF0aW9uICs9IDE7CisKKwlzZW5zZV9kYXRhX2J1aWxkKGNt
+ZCwgSUxMRUdBTF9SRVFVRVNULCBBU0NfSU5WQUxJRF9PUF9DT0RFKTsKKwlyZXR1cm4gU0FNX1NU
+QVRfQ0hFQ0tfQ09ORElUSU9OOworfQorCitzdGF0aWMgaW50IHNwY19wcl9wcmVlbXB0X2Fib3J0
+KGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwlzdHJ1Y3Qgc2NzaV9wciAq
+cHI7CisKKwlkcHJpbnRmKCIqKioqIENhbGxlZCAqKioqXG4iKTsKKwlwciA9ICZjbWQtPmRldi0+
+cHI7CisJcHItPlBSZ2VuZXJhdGlvbiArPSAxOworCisJc2Vuc2VfZGF0YV9idWlsZChjbWQsIElM
+TEVHQUxfUkVRVUVTVCwgQVNDX0lOVkFMSURfT1BfQ09ERSk7CisJcmV0dXJuIFNBTV9TVEFUX0NI
+RUNLX0NPTkRJVElPTjsKK30KKworc3RhdGljIGludCBzcGNfcHJfcmVnaXN0ZXJfaWdub3JlKGlu
+dCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKK3sKKwlzdHJ1Y3Qgc2NzaV9wciAqcHI7
+CisKKwlkcHJpbnRmKCIqKioqIENhbGxlZCAqKioqXG4iKTsKKwlwciA9ICZjbWQtPmRldi0+cHI7
+CisJcHItPlBSZ2VuZXJhdGlvbiArPSAxOworCisJc2Vuc2VfZGF0YV9idWlsZChjbWQsIElMTEVH
+QUxfUkVRVUVTVCwgQVNDX0lOVkFMSURfT1BfQ09ERSk7CisJcmV0dXJuIFNBTV9TVEFUX0NIRUNL
+X0NPTkRJVElPTjsKK30KKworc3RhdGljIGludCBzcGNfcHJfcmVnaXN0ZXJfbW92ZShpbnQgaG9z
+dF9ubywgc3RydWN0IHNjc2lfY21kICpjbWQpCit7CisJc3RydWN0IHNjc2lfcHIgKnByOworCisJ
+ZHByaW50ZigiKioqKiBDYWxsZWQgKioqKlxuIik7CisJcHIgPSAmY21kLT5kZXYtPnByOworCXBy
+LT5QUmdlbmVyYXRpb24gKz0gMTsKKworCXNlbnNlX2RhdGFfYnVpbGQoY21kLCBJTExFR0FMX1JF
+UVVFU1QsIEFTQ19JTlZBTElEX09QX0NPREUpOworCXJldHVybiBTQU1fU1RBVF9DSEVDS19DT05E
+SVRJT047Cit9CisKK3N0cnVjdCBzZXJ2aWNlX2FjdGlvbiBwcl9vdXRfc2VydmljZV9hY3Rpb25z
+W10gPSB7CisJe1BSX09VVF9SRUdJU1RFUiwgc3BjX3ByX3JlZ2lzdGVyfSwKKwl7UFJfT1VUX1JF
+U0VSVkUsIHNwY19wcl9yZXNlcnZlfSwKKwl7UFJfT1VUX1JFTEVBU0UsIHNwY19wcl9yZWxlYXNl
+fSwKKwl7UFJfT1VUX0NMRUFSLCBzcGNfcHJfY2xlYXJ9LAorCXtQUl9PVVRfUFJFRU1QVCwgc3Bj
+X3ByX3ByZWVtcHR9LAorCXtQUl9PVVRfUFJFRU1QVF9BQk9SVCwgc3BjX3ByX3ByZWVtcHRfYWJv
+cnR9LAorCXtQUl9PVVRfUkVHSVNURVJfSUdOT1JFLCBzcGNfcHJfcmVnaXN0ZXJfaWdub3JlfSwK
+Kwl7UFJfT1VUX1JFR0lTVEVSX01PVkUsIHNwY19wcl9yZWdpc3Rlcl9tb3ZlfSwKKwl7MCwgTlVM
+TH0KK307CisKK2ludCBwZXJzaXN0ZW50X3Jlc2VydmVfb3V0KGludCBob3N0X25vLCBzdHJ1Y3Qg
+c2NzaV9jbWQgKmNtZCkKK3sKKwl1aW50OF90IGFjdGlvbjsKKwlzdHJ1Y3Qgc2VydmljZV9hY3Rp
+b24gKnNlcnZpY2VfYWN0aW9uOworCisJYWN0aW9uID0gY21kLT5zY2JbMV0gJiAweDFmOworCXNl
+cnZpY2VfYWN0aW9uID0gZmluZF9zZXJ2aWNlX2FjdGlvbihwcl9vdXRfc2VydmljZV9hY3Rpb25z
+LCBhY3Rpb24pOworCisJaWYgKCFzZXJ2aWNlX2FjdGlvbikgeworCQlzY3NpX3NldF9pbl9yZXNp
+ZF9ieV9hY3R1YWwoY21kLCAwKTsKKwkJc2Vuc2VfZGF0YV9idWlsZChjbWQsIElMTEVHQUxfUkVR
+VUVTVCwKKwkJCQlBU0NfSU5WQUxJRF9GSUVMRF9JTl9DREIpOworCQlyZXR1cm4gU0FNX1NUQVRf
+Q0hFQ0tfQ09ORElUSU9OOworCX0KKworCXJldHVybiBzZXJ2aWNlX2FjdGlvbi0+Y21kX3BlcmZv
+cm0oaG9zdF9ubywgY21kKTsKK30KKwogaW50IHNwY19pbGxlZ2FsX29wKGludCBob3N0X25vLCBz
+dHJ1Y3Qgc2NzaV9jbWQgKmNtZCkKIHsKIAlkdW1wX2NkYihjbWQpOwpkaWZmIC0tZ2l0IGEvdXNy
+L3NwYy5oIGIvdXNyL3NwYy5oCmluZGV4IDhmZTNlM2MuLmJkYzNjMWYgMTAwNjQ0Ci0tLSBhL3Vz
+ci9zcGMuaAorKysgYi91c3Ivc3BjLmgKQEAgLTksNiArOSw4IEBAIGV4dGVybiBpbnQgc3BjX3N0
+YXJ0X3N0b3AoaW50IGhvc3Rfbm8sIHN0cnVjdCBzY3NpX2NtZCAqY21kKTsKIGV4dGVybiBpbnQg
+c3BjX3Rlc3RfdW5pdChpbnQgaG9zdF9ubywgc3RydWN0IHNjc2lfY21kICpjbWQpOwogZXh0ZXJu
+IGludCBzcGNfcmVxdWVzdF9zZW5zZShpbnQgaG9zdF9ubywgc3RydWN0IHNjc2lfY21kICpjbWQp
+OwogZXh0ZXJuIGludCBzcGNfaWxsZWdhbF9vcChpbnQgaG9zdF9ubywgc3RydWN0IHNjc2lfY21k
+ICpjbWQpOworZXh0ZXJuIGludCBwZXJzaXN0ZW50X3Jlc2VydmVfaW4oaW50IGhvc3Rfbm8sIHN0
+cnVjdCBzY3NpX2NtZCAqY21kKTsKK2V4dGVybiBpbnQgcGVyc2lzdGVudF9yZXNlcnZlX291dChp
+bnQgaG9zdF9ubywgc3RydWN0IHNjc2lfY21kICpjbWQpOwogZXh0ZXJuIGludCBzcGNfbHVfaW5p
+dChzdHJ1Y3Qgc2NzaV9sdSAqbHUpOwogCiB0eXBlZGVmIGludCAobWF0Y2hfZm5fdCkoc3RydWN0
+IHNjc2lfbHUgKmx1LCBjaGFyICpwYXJhbXMpOwpkaWZmIC0tZ2l0IGEvdXNyL3RndGQuaCBiL3Vz
+ci90Z3RkLmgKaW5kZXggNGZlYmNkMy4uZDJjNzEzNSAxMDA2NDQKLS0tIGEvdXNyL3RndGQuaAor
+KysgYi91c3IvdGd0ZC5oCkBAIC0xOSw2ICsxOSwxMSBAQAogCiAjZGVmaW5lIFZFTkRPUl9JRAki
+SUVUIgogCisvKiA4IGJ5dGUgcmVzZXJ2YXRpb24ga2V5IHNpemUgKi8KKyNkZWZpbmUgUFJfS0VZ
+X1NaIDgKKy8qIE51bWJlciBvZiBQUiBrZXlzIHdlIGNhbiBzdG9yZSBhdCBhbnkgb25lIHRpbWUg
+Ki8KKyNkZWZpbmUgUFJfUkVTRVJWQVRJT05fU1ogNAorCiAjZGVmaW5lIF9UQUIxICIgICAgIgog
+I2RlZmluZSBfVEFCMiBfVEFCMSBfVEFCMQogI2RlZmluZSBfVEFCMyBfVEFCMSBfVEFCMSBfVEFC
+MQpAQCAtMTI2LDYgKzEzMSwxMiBAQCBzdHJ1Y3QgbW9kZV9wZyB7CiAJdWludDhfdCBtb2RlX2Rh
+dGFbMF07CS8qIFJlc3Qgb2YgbW9kZSBwYWdlIGluZm8gKi8KIH07CiAKK3N0cnVjdCBzY3NpX3By
+IHsKKwkvKiBQZXJzaXN0ZW50IFJlc2VydmF0aW9uIEdlbmVyYXRpb24gKi8KKwl1aW50MzJfdCBQ
+UmdlbmVyYXRpb247CisJdWludDhfdCBwcl9rZXlbUFJfUkVTRVJWQVRJT05fU1pdW1BSX0tFWV9T
+Wl07Cit9OworCiBzdHJ1Y3Qgc2NzaV9sdSB7CiAJaW50IGZkOwogCXVpbnQ2NF90IGFkZHI7IC8q
+IHBlcnNpc3RlbnQgbWFwcGVkIGFkZHJlc3MgKi8KQEAgLTE1MCw2ICsxNjEsOCBAQCBzdHJ1Y3Qg
+c2NzaV9sdSB7CiAJdWludDhfdAltb2RlX2Jsb2NrX2Rlc2NyaXB0b3JbQkxPQ0tfREVTQ1JJUFRP
+Ul9MRU5dOwogCXN0cnVjdCBtb2RlX3BnICptb2RlX3Bnc1sweDNmXTsKIAorCXN0cnVjdCBzY3Np
+X3ByIHByOworCiAJc3RydWN0IGx1X3BoeV9hdHRyIGF0dHJzOwogCiAJLyogQSBwb2ludGVyIGZv
+ciBlYWNoIG1vZHVsZXMgcHJpdmF0ZSB1c2UuCi0tIAoxLjUuNgoK
+------=_Part_16753_6747950.1219208504315
+Content-Type: application/octet-stream;
+ name=0002-Add-persistent-reserve-in-out-to-ssc-module.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fk3gtoum1
+Content-Disposition: attachment;
+ filename=0002-Add-persistent-reserve-in-out-to-ssc-module.patch
+
+RnJvbSA2OGM0NTRkMmQ3ZjFiNjRmOWRiY2U5NDEwZTVjMmM4NTAwZDZjZWIzIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJrIEhhcnZleSA8bWFya2g3OTRAZ21haWwuY29tPgpEYXRl
+OiBXZWQsIDIwIEF1ZyAyMDA4IDE0OjQ1OjMwICsxMDAwClN1YmplY3Q6IEFkZCBwZXJzaXN0ZW50
+IHJlc2VydmUgaW4vb3V0IHRvIHNzYyBtb2R1bGUKClNpZ25lZC1vZmYtYnk6IE1hcmsgSGFydmV5
+IDxtYXJraDc5NEBnbWFpbC5jb20+Ci0tLQogdXNyL3NzYy5jIHwgICAgNCArKy0tCiAxIGZpbGVz
+IGNoYW5nZWQsIDIgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS91
+c3Ivc3NjLmMgYi91c3Ivc3NjLmMKaW5kZXggMjYzMGE2YS4uNmRiZGMwYiAxMDA2NDQKLS0tIGEv
+dXNyL3NzYy5jCisrKyBiL3Vzci9zc2MuYwpAQCAtMjUxLDggKzI1MSw4IEBAIHN0YXRpYyBzdHJ1
+Y3QgZGV2aWNlX3R5cGVfdGVtcGxhdGUgc3NjX3RlbXBsYXRlID0gewogCQl7c3BjX2lsbGVnYWxf
+b3AsfSwKIAkJe3NwY19pbGxlZ2FsX29wLH0sCiAJCXtzcGNfaWxsZWdhbF9vcCx9LAotCQl7c3Bj
+X2lsbGVnYWxfb3AsfSwKLQkJe3NwY19pbGxlZ2FsX29wLH0sCisJCXtwZXJzaXN0ZW50X3Jlc2Vy
+dmVfaW4sfSwKKwkJe3BlcnNpc3RlbnRfcmVzZXJ2ZV9vdXQsfSwKIAogCQlbMHg2MCAuLi4gMHg3
+Zl0gPSB7c3BjX2lsbGVnYWxfb3AsfSwKIAotLSAKMS41LjYKCg==
+------=_Part_16753_6747950.1219208504315--
+
+
+From ronniesahlberg at gmail.com  Wed Aug 20 07:18:26 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Wed, 20 Aug 2008 15:18:26 +1000
+Subject: [Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+In-Reply-To: <f29db9a80808192201i5b72ca41he5eb9387fc556d28@mail.gmail.com>
+References: <f29db9a80808192201i5b72ca41he5eb9387fc556d28@mail.gmail.com>
+Message-ID: <c9a3e4540808192218t1992050bwb36b3574aa52f07a@mail.gmail.com>
+
+Hi Mark
+
+Just one suggestion.
+These two commands take service actions, and are thus reported in
+"ReportSupportedOperactionCodes" with one entry for each
+opcode/service_action combination.
+
+
+Please have a look at how I implemented service actions by looking at
+the maint_in_service_actions example :
+sbc.c:          {spc_maint_in, maint_in_service_actions,},
+
+If you add a similar structure for your service actions it means that
+ReportedSupportedOperationCodes will return correct
+data for your PersistentReservation opcode.
+
+regards
+ronnie sahlberg
+
+
+
+On Wed, Aug 20, 2008 at 3:01 PM, Mark Harvey <markh794 at gmail.com> wrote:
+> Apologies for sending as an attachment... gmail and all.
+>
+> This is an initial attempt to implement PERSISTENT RESERVE IN and
+> PERSISTENT RESERVE OUT.
+>
+> Currently only READ KEY service action will actually return anything.
+> It returns a hard-coded 'ABC1234'.
+>
+> This post is a request for comment before I get too far into coding effort.
+>
+> # lsscsi -g
+> [3:0:0:0]    disk    USB-HS   HTS726060M9AT00  0.01  /dev/sda  /dev/sg0
+> [7:0:0:0]    storage IET      Controller       0001  -         /dev/sg1
+> [7:0:0:1]    disk    QUANTUM  HD100            0010  /dev/sdb  /dev/sg2
+> [7:0:0:2]    tape    QUANTUM  DLT6000          0010  /dev/st0  /dev/sg3
+> [7:0:0:3]    tape    QUANTUM  DLT6000          0010  /dev/st1  /dev/sg4
+> [7:0:0:4]    tape    QUANTUM  DLT6000          0010  /dev/st2  /dev/sg5
+> [7:0:0:5]    mediumx STK      L700             0010  -         /dev/sg6
+>
+> # sg_persist -i /dev/sg3
+>>> No service action given; assume Persistent Reservations In command
+>>> with Read Keys service action
+>  QUANTUM  DLT6000  0010
+>  Peripheral device type: tape
+>  PR generation=0x0, 4 registered reservation keys follow:
+>    0x4142433132333400
+>    0x0
+>    0x0
+>    0x0
+>
+>
+> I'll include in-line for viewing pleasure :)
+>
+> [PATCH 1/2]
+> From 11ad9ee209708f51bd2884598d309b1e7079cdce Mon Sep 17 00:00:00 2001
+> From: Mark Harvey <markh794 at gmail.com>
+> Date: Wed, 20 Aug 2008 14:42:27 +1000
+> Subject: RFC - Implement PERSISTENT RESERVE IN/OUT
+>
+> Implement service action 'READ KEY' which returns
+> a hard-coded string 'ABC1234'
+>
+> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+> ---
+>  usr/scsi.h |    5 ++
+>  usr/spc.c  |  231 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  usr/spc.h  |    2 +
+>  usr/tgtd.h |   13 ++++
+>  4 files changed, 251 insertions(+), 0 deletions(-)
+>
+> diff --git a/usr/scsi.h b/usr/scsi.h
+> index 84fadff..a9481a1 100644
+> --- a/usr/scsi.h
+> +++ b/usr/scsi.h
+> @@ -208,6 +208,11 @@
+>  #define ASC_POSITION_PAST_BOM                  0x3b0c
+>  #define ASC_MEDIUM_REMOVAL_PREVENTED           0x5302
+>  #define ASC_BAD_MICROCODE_DETECTED             0x8283
+> +#define ASC_INSUFFICENT_RESERVE_RESOURCE       0x5502
+> +#define ASC_INSUFFICENT_RESOURCE               0x5503
+> +#define ASC_INSUFFICENT_REGISTRAT_RESOURCE     0x5504
+> +#define ASC_INSUFFICENT_AC_RESOURCE            0x5505
+> +#define ASC_AUX_MEMORY_OUT_OF_SPACE            0x5506
+>
+>  /* Key 6: Unit Attention */
+>  #define ASC_NOT_READY_TO_TRANSITION            0x2800
+> diff --git a/usr/spc.c b/usr/spc.c
+> index bd2c975..cc088bf 100644
+> --- a/usr/spc.c
+> +++ b/usr/spc.c
+> @@ -880,6 +880,237 @@ void dump_cdb(struct scsi_cmd *cmd)
+>        }
+>  }
+>
+> +/**
+> + * SCSI Persistent Reservation
+> + *
+> + * Reference: spc4r16 Ch 5.7
+> + *
+> + * Interesting points:
+> + *  - Persistent reservations are not reset by hard reset, lu reset ot I_T loss
+> + *  - Optionally, may be retained when power to target is lost
+> + */
+> +
+> +/**
+> + * PERSISTENT RESERVE IN - 5Eh
+> + * Ref: 6.13
+> + *
+> + */
+> +#define PR_IN_READ_KEYS 0
+> +#define PR_IN_READ_RESERVATION 1
+> +#define PR_IN_REPORT_CAPABILITIES 2
+> +#define PR_IN_READ_FULL_STATUS 3
+> +static int spc_pr_read_keys(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       uint8_t *buf;
+> +       int len;
+> +       int cdb_alloc_len;
+> +       struct scsi_pr *pr;
+> +
+> +       cdb_alloc_len = ((cmd->scb[7] & 0xff) << 8) | (cmd->scb[8] & 0xff);
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +
+> +       buf = scsi_get_in_buffer(cmd);
+> +       len = sizeof(cmd->dev->pr.pr_key);
+> +       memset(buf, 0, len + 8);
+> +
+> +       dprintf("Buf: %p, len: %d, cdb_alloc_len: %d\n",
+> +                        buf, len, cdb_alloc_len);
+> +
+> +       buf[0] = (pr->PRgeneration >> 24) & 0xff;
+> +       buf[1] = (pr->PRgeneration >> 16) & 0xff;
+> +       buf[2] = (pr->PRgeneration >>  8) & 0xff;
+> +       buf[3] = pr->PRgeneration & 0xff;
+> +       buf[4] = (len >> 24) & 0xff;
+> +       buf[5] = (len >> 16) & 0xff;
+> +       buf[6] = (len >>  8) & 0xff;
+> +       buf[7] = len & 0xff;
+> +
+> +       strcpy(buf + 8, "ABC1234");
+> +       memcpy(scsi_get_in_buffer(cmd), buf, min(cdb_alloc_len, len + 8));
+> +
+> +       scsi_set_in_resid_by_actual(cmd, len + 8);
+> +
+> +       return SAM_STAT_GOOD;
+> +}
+> +
+> +static int spc_pr_read_reservation(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       dprintf("**** Called ****\n");
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_report_capabilities(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       dprintf("**** Called ****\n");
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_read_full_status(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       dprintf("**** Called ****\n");
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +struct service_action pr_in_service_actions[] = {
+> +       {PR_IN_READ_KEYS, spc_pr_read_keys},
+> +       {PR_IN_READ_RESERVATION, spc_pr_read_reservation},
+> +       {PR_IN_REPORT_CAPABILITIES, spc_pr_report_capabilities},
+> +       {PR_IN_READ_FULL_STATUS, spc_pr_read_full_status},
+> +       {0, NULL}
+> +};
+> +
+> +int persistent_reserve_in(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       uint8_t action;
+> +       struct service_action *service_action;
+> +
+> +       action = cmd->scb[1] & 0x1f;
+> +       service_action = find_service_action(pr_in_service_actions, action);
+> +
+> +       if (!service_action) {
+> +               scsi_set_in_resid_by_actual(cmd, 0);
+> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+> +                               ASC_INVALID_FIELD_IN_CDB);
+> +               return SAM_STAT_CHECK_CONDITION;
+> +       }
+> +
+> +       return service_action->cmd_perform(host_no, cmd);
+> +}
+> +
+> +/**
+> + * PERSISTENT RESERVE OUT - 5Fh
+> + * Ref: 6.14
+> + */
+> +#define PR_OUT_REGISTER 0
+> +#define PR_OUT_RESERVE 1
+> +#define PR_OUT_RELEASE 2
+> +#define PR_OUT_CLEAR 3
+> +#define PR_OUT_PREEMPT 4
+> +#define PR_OUT_PREEMPT_ABORT 5
+> +#define PR_OUT_REGISTER_IGNORE 6
+> +#define PR_OUT_REGISTER_MOVE 7
+> +
+> +static int spc_pr_register(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       struct scsi_pr *pr;
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +       pr->PRgeneration += 1;
+> +
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_reserve(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       dprintf("**** Called ****\n");
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_release(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       dprintf("**** Called ****\n");
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_clear(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       struct scsi_pr *pr;
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +       pr->PRgeneration += 1;
+> +
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_preempt(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       struct scsi_pr *pr;
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +       pr->PRgeneration += 1;
+> +
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_preempt_abort(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       struct scsi_pr *pr;
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +       pr->PRgeneration += 1;
+> +
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_register_ignore(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       struct scsi_pr *pr;
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +       pr->PRgeneration += 1;
+> +
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +static int spc_pr_register_move(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       struct scsi_pr *pr;
+> +
+> +       dprintf("**** Called ****\n");
+> +       pr = &cmd->dev->pr;
+> +       pr->PRgeneration += 1;
+> +
+> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+> +       return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +struct service_action pr_out_service_actions[] = {
+> +       {PR_OUT_REGISTER, spc_pr_register},
+> +       {PR_OUT_RESERVE, spc_pr_reserve},
+> +       {PR_OUT_RELEASE, spc_pr_release},
+> +       {PR_OUT_CLEAR, spc_pr_clear},
+> +       {PR_OUT_PREEMPT, spc_pr_preempt},
+> +       {PR_OUT_PREEMPT_ABORT, spc_pr_preempt_abort},
+> +       {PR_OUT_REGISTER_IGNORE, spc_pr_register_ignore},
+> +       {PR_OUT_REGISTER_MOVE, spc_pr_register_move},
+> +       {0, NULL}
+> +};
+> +
+> +int persistent_reserve_out(int host_no, struct scsi_cmd *cmd)
+> +{
+> +       uint8_t action;
+> +       struct service_action *service_action;
+> +
+> +       action = cmd->scb[1] & 0x1f;
+> +       service_action = find_service_action(pr_out_service_actions, action);
+> +
+> +       if (!service_action) {
+> +               scsi_set_in_resid_by_actual(cmd, 0);
+> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+> +                               ASC_INVALID_FIELD_IN_CDB);
+> +               return SAM_STAT_CHECK_CONDITION;
+> +       }
+> +
+> +       return service_action->cmd_perform(host_no, cmd);
+> +}
+> +
+>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+>  {
+>        dump_cdb(cmd);
+> diff --git a/usr/spc.h b/usr/spc.h
+> index 8fe3e3c..bdc3c1f 100644
+> --- a/usr/spc.h
+> +++ b/usr/spc.h
+> @@ -9,6 +9,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+> +extern int persistent_reserve_in(int host_no, struct scsi_cmd *cmd);
+> +extern int persistent_reserve_out(int host_no, struct scsi_cmd *cmd);
+>  extern int spc_lu_init(struct scsi_lu *lu);
+>
+>  typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+> diff --git a/usr/tgtd.h b/usr/tgtd.h
+> index 4febcd3..d2c7135 100644
+> --- a/usr/tgtd.h
+> +++ b/usr/tgtd.h
+> @@ -19,6 +19,11 @@
+>
+>  #define VENDOR_ID      "IET"
+>
+> +/* 8 byte reservation key size */
+> +#define PR_KEY_SZ 8
+> +/* Number of PR keys we can store at any one time */
+> +#define PR_RESERVATION_SZ 4
+> +
+>  #define _TAB1 "    "
+>  #define _TAB2 _TAB1 _TAB1
+>  #define _TAB3 _TAB1 _TAB1 _TAB1
+> @@ -126,6 +131,12 @@ struct mode_pg {
+>        uint8_t mode_data[0];   /* Rest of mode page info */
+>  };
+>
+> +struct scsi_pr {
+> +       /* Persistent Reservation Generation */
+> +       uint32_t PRgeneration;
+> +       uint8_t pr_key[PR_RESERVATION_SZ][PR_KEY_SZ];
+> +};
+> +
+>  struct scsi_lu {
+>        int fd;
+>        uint64_t addr; /* persistent mapped address */
+> @@ -150,6 +161,8 @@ struct scsi_lu {
+>        uint8_t mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+>        struct mode_pg *mode_pgs[0x3f];
+>
+> +       struct scsi_pr pr;
+> +
+>        struct lu_phy_attr attrs;
+>
+>        /* A pointer for each modules private use.
+> --
+> 1.5.6
+>
+> [PATCH 2/2]
+> From 68c454d2d7f1b64f9dbce9410e5c2c8500d6ceb3 Mon Sep 17 00:00:00 2001
+> From: Mark Harvey <markh794 at gmail.com>
+> Date: Wed, 20 Aug 2008 14:45:30 +1000
+> Subject: Add persistent reserve in/out to ssc module
+>
+> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+> ---
+>  usr/ssc.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+>
+> diff --git a/usr/ssc.c b/usr/ssc.c
+> index 2630a6a..6dbdc0b 100644
+> --- a/usr/ssc.c
+> +++ b/usr/ssc.c
+> @@ -251,8 +251,8 @@ static struct device_type_template ssc_template = {
+>                {spc_illegal_op,},
+>                {spc_illegal_op,},
+>                {spc_illegal_op,},
+> -               {spc_illegal_op,},
+> -               {spc_illegal_op,},
+> +               {persistent_reserve_in,},
+> +               {persistent_reserve_out,},
+>
+>                [0x60 ... 0x7f] = {spc_illegal_op,},
+>
+> --
+> 1.5.6
+>
+
+
+From markh794 at gmail.com  Wed Aug 20 07:23:14 2008
+From: markh794 at gmail.com (Mark Harvey)
+Date: Wed, 20 Aug 2008 15:23:14 +1000
+Subject: [Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+In-Reply-To: <c9a3e4540808192218t1992050bwb36b3574aa52f07a@mail.gmail.com>
+References: <f29db9a80808192201i5b72ca41he5eb9387fc556d28@mail.gmail.com>
+	<c9a3e4540808192218t1992050bwb36b3574aa52f07a@mail.gmail.com>
+Message-ID: <f29db9a80808192223m185c6cabrcbc2248b746a364b@mail.gmail.com>
+
+On Wed, Aug 20, 2008 at 3:18 PM, ronnie sahlberg
+<ronniesahlberg at gmail.com> wrote:
+> Hi Mark
+>
+> Just one suggestion.
+> These two commands take service actions, and are thus reported in
+> "ReportSupportedOperactionCodes" with one entry for each
+> opcode/service_action combination.
+>
+>
+> Please have a look at how I implemented service actions by looking at
+> the maint_in_service_actions example :
+> sbc.c:          {spc_maint_in, maint_in_service_actions,},
+>
+> If you add a similar structure for your service actions it means that
+> ReportedSupportedOperationCodes will return correct
+> data for your PersistentReservation opcode.
+
+Many thanks.
+
+I'll check it out.
+
+>
+> regards
+> ronnie sahlberg
+>
+>
+>
+> On Wed, Aug 20, 2008 at 3:01 PM, Mark Harvey <markh794 at gmail.com> wrote:
+>> Apologies for sending as an attachment... gmail and all.
+>>
+>> This is an initial attempt to implement PERSISTENT RESERVE IN and
+>> PERSISTENT RESERVE OUT.
+>>
+>> Currently only READ KEY service action will actually return anything.
+>> It returns a hard-coded 'ABC1234'.
+>>
+>> This post is a request for comment before I get too far into coding effort.
+>>
+>> # lsscsi -g
+>> [3:0:0:0]    disk    USB-HS   HTS726060M9AT00  0.01  /dev/sda  /dev/sg0
+>> [7:0:0:0]    storage IET      Controller       0001  -         /dev/sg1
+>> [7:0:0:1]    disk    QUANTUM  HD100            0010  /dev/sdb  /dev/sg2
+>> [7:0:0:2]    tape    QUANTUM  DLT6000          0010  /dev/st0  /dev/sg3
+>> [7:0:0:3]    tape    QUANTUM  DLT6000          0010  /dev/st1  /dev/sg4
+>> [7:0:0:4]    tape    QUANTUM  DLT6000          0010  /dev/st2  /dev/sg5
+>> [7:0:0:5]    mediumx STK      L700             0010  -         /dev/sg6
+>>
+>> # sg_persist -i /dev/sg3
+>>>> No service action given; assume Persistent Reservations In command
+>>>> with Read Keys service action
+>>  QUANTUM  DLT6000  0010
+>>  Peripheral device type: tape
+>>  PR generation=0x0, 4 registered reservation keys follow:
+>>    0x4142433132333400
+>>    0x0
+>>    0x0
+>>    0x0
+>>
+>>
+>> I'll include in-line for viewing pleasure :)
+>>
+>> [PATCH 1/2]
+>> From 11ad9ee209708f51bd2884598d309b1e7079cdce Mon Sep 17 00:00:00 2001
+>> From: Mark Harvey <markh794 at gmail.com>
+>> Date: Wed, 20 Aug 2008 14:42:27 +1000
+>> Subject: RFC - Implement PERSISTENT RESERVE IN/OUT
+>>
+>> Implement service action 'READ KEY' which returns
+>> a hard-coded string 'ABC1234'
+>>
+>> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+>> ---
+>>  usr/scsi.h |    5 ++
+>>  usr/spc.c  |  231 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  usr/spc.h  |    2 +
+>>  usr/tgtd.h |   13 ++++
+>>  4 files changed, 251 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/usr/scsi.h b/usr/scsi.h
+>> index 84fadff..a9481a1 100644
+>> --- a/usr/scsi.h
+>> +++ b/usr/scsi.h
+>> @@ -208,6 +208,11 @@
+>>  #define ASC_POSITION_PAST_BOM                  0x3b0c
+>>  #define ASC_MEDIUM_REMOVAL_PREVENTED           0x5302
+>>  #define ASC_BAD_MICROCODE_DETECTED             0x8283
+>> +#define ASC_INSUFFICENT_RESERVE_RESOURCE       0x5502
+>> +#define ASC_INSUFFICENT_RESOURCE               0x5503
+>> +#define ASC_INSUFFICENT_REGISTRAT_RESOURCE     0x5504
+>> +#define ASC_INSUFFICENT_AC_RESOURCE            0x5505
+>> +#define ASC_AUX_MEMORY_OUT_OF_SPACE            0x5506
+>>
+>>  /* Key 6: Unit Attention */
+>>  #define ASC_NOT_READY_TO_TRANSITION            0x2800
+>> diff --git a/usr/spc.c b/usr/spc.c
+>> index bd2c975..cc088bf 100644
+>> --- a/usr/spc.c
+>> +++ b/usr/spc.c
+>> @@ -880,6 +880,237 @@ void dump_cdb(struct scsi_cmd *cmd)
+>>        }
+>>  }
+>>
+>> +/**
+>> + * SCSI Persistent Reservation
+>> + *
+>> + * Reference: spc4r16 Ch 5.7
+>> + *
+>> + * Interesting points:
+>> + *  - Persistent reservations are not reset by hard reset, lu reset ot I_T loss
+>> + *  - Optionally, may be retained when power to target is lost
+>> + */
+>> +
+>> +/**
+>> + * PERSISTENT RESERVE IN - 5Eh
+>> + * Ref: 6.13
+>> + *
+>> + */
+>> +#define PR_IN_READ_KEYS 0
+>> +#define PR_IN_READ_RESERVATION 1
+>> +#define PR_IN_REPORT_CAPABILITIES 2
+>> +#define PR_IN_READ_FULL_STATUS 3
+>> +static int spc_pr_read_keys(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       uint8_t *buf;
+>> +       int len;
+>> +       int cdb_alloc_len;
+>> +       struct scsi_pr *pr;
+>> +
+>> +       cdb_alloc_len = ((cmd->scb[7] & 0xff) << 8) | (cmd->scb[8] & 0xff);
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +
+>> +       buf = scsi_get_in_buffer(cmd);
+>> +       len = sizeof(cmd->dev->pr.pr_key);
+>> +       memset(buf, 0, len + 8);
+>> +
+>> +       dprintf("Buf: %p, len: %d, cdb_alloc_len: %d\n",
+>> +                        buf, len, cdb_alloc_len);
+>> +
+>> +       buf[0] = (pr->PRgeneration >> 24) & 0xff;
+>> +       buf[1] = (pr->PRgeneration >> 16) & 0xff;
+>> +       buf[2] = (pr->PRgeneration >>  8) & 0xff;
+>> +       buf[3] = pr->PRgeneration & 0xff;
+>> +       buf[4] = (len >> 24) & 0xff;
+>> +       buf[5] = (len >> 16) & 0xff;
+>> +       buf[6] = (len >>  8) & 0xff;
+>> +       buf[7] = len & 0xff;
+>> +
+>> +       strcpy(buf + 8, "ABC1234");
+>> +       memcpy(scsi_get_in_buffer(cmd), buf, min(cdb_alloc_len, len + 8));
+>> +
+>> +       scsi_set_in_resid_by_actual(cmd, len + 8);
+>> +
+>> +       return SAM_STAT_GOOD;
+>> +}
+>> +
+>> +static int spc_pr_read_reservation(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       dprintf("**** Called ****\n");
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_report_capabilities(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       dprintf("**** Called ****\n");
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_read_full_status(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       dprintf("**** Called ****\n");
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +struct service_action pr_in_service_actions[] = {
+>> +       {PR_IN_READ_KEYS, spc_pr_read_keys},
+>> +       {PR_IN_READ_RESERVATION, spc_pr_read_reservation},
+>> +       {PR_IN_REPORT_CAPABILITIES, spc_pr_report_capabilities},
+>> +       {PR_IN_READ_FULL_STATUS, spc_pr_read_full_status},
+>> +       {0, NULL}
+>> +};
+>> +
+>> +int persistent_reserve_in(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       uint8_t action;
+>> +       struct service_action *service_action;
+>> +
+>> +       action = cmd->scb[1] & 0x1f;
+>> +       service_action = find_service_action(pr_in_service_actions, action);
+>> +
+>> +       if (!service_action) {
+>> +               scsi_set_in_resid_by_actual(cmd, 0);
+>> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+>> +                               ASC_INVALID_FIELD_IN_CDB);
+>> +               return SAM_STAT_CHECK_CONDITION;
+>> +       }
+>> +
+>> +       return service_action->cmd_perform(host_no, cmd);
+>> +}
+>> +
+>> +/**
+>> + * PERSISTENT RESERVE OUT - 5Fh
+>> + * Ref: 6.14
+>> + */
+>> +#define PR_OUT_REGISTER 0
+>> +#define PR_OUT_RESERVE 1
+>> +#define PR_OUT_RELEASE 2
+>> +#define PR_OUT_CLEAR 3
+>> +#define PR_OUT_PREEMPT 4
+>> +#define PR_OUT_PREEMPT_ABORT 5
+>> +#define PR_OUT_REGISTER_IGNORE 6
+>> +#define PR_OUT_REGISTER_MOVE 7
+>> +
+>> +static int spc_pr_register(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       struct scsi_pr *pr;
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +       pr->PRgeneration += 1;
+>> +
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_reserve(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       dprintf("**** Called ****\n");
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_release(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       dprintf("**** Called ****\n");
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_clear(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       struct scsi_pr *pr;
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +       pr->PRgeneration += 1;
+>> +
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_preempt(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       struct scsi_pr *pr;
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +       pr->PRgeneration += 1;
+>> +
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_preempt_abort(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       struct scsi_pr *pr;
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +       pr->PRgeneration += 1;
+>> +
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_register_ignore(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       struct scsi_pr *pr;
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +       pr->PRgeneration += 1;
+>> +
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +static int spc_pr_register_move(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       struct scsi_pr *pr;
+>> +
+>> +       dprintf("**** Called ****\n");
+>> +       pr = &cmd->dev->pr;
+>> +       pr->PRgeneration += 1;
+>> +
+>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>> +       return SAM_STAT_CHECK_CONDITION;
+>> +}
+>> +
+>> +struct service_action pr_out_service_actions[] = {
+>> +       {PR_OUT_REGISTER, spc_pr_register},
+>> +       {PR_OUT_RESERVE, spc_pr_reserve},
+>> +       {PR_OUT_RELEASE, spc_pr_release},
+>> +       {PR_OUT_CLEAR, spc_pr_clear},
+>> +       {PR_OUT_PREEMPT, spc_pr_preempt},
+>> +       {PR_OUT_PREEMPT_ABORT, spc_pr_preempt_abort},
+>> +       {PR_OUT_REGISTER_IGNORE, spc_pr_register_ignore},
+>> +       {PR_OUT_REGISTER_MOVE, spc_pr_register_move},
+>> +       {0, NULL}
+>> +};
+>> +
+>> +int persistent_reserve_out(int host_no, struct scsi_cmd *cmd)
+>> +{
+>> +       uint8_t action;
+>> +       struct service_action *service_action;
+>> +
+>> +       action = cmd->scb[1] & 0x1f;
+>> +       service_action = find_service_action(pr_out_service_actions, action);
+>> +
+>> +       if (!service_action) {
+>> +               scsi_set_in_resid_by_actual(cmd, 0);
+>> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+>> +                               ASC_INVALID_FIELD_IN_CDB);
+>> +               return SAM_STAT_CHECK_CONDITION;
+>> +       }
+>> +
+>> +       return service_action->cmd_perform(host_no, cmd);
+>> +}
+>> +
+>>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+>>  {
+>>        dump_cdb(cmd);
+>> diff --git a/usr/spc.h b/usr/spc.h
+>> index 8fe3e3c..bdc3c1f 100644
+>> --- a/usr/spc.h
+>> +++ b/usr/spc.h
+>> @@ -9,6 +9,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+>>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+>>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+>>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+>> +extern int persistent_reserve_in(int host_no, struct scsi_cmd *cmd);
+>> +extern int persistent_reserve_out(int host_no, struct scsi_cmd *cmd);
+>>  extern int spc_lu_init(struct scsi_lu *lu);
+>>
+>>  typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+>> diff --git a/usr/tgtd.h b/usr/tgtd.h
+>> index 4febcd3..d2c7135 100644
+>> --- a/usr/tgtd.h
+>> +++ b/usr/tgtd.h
+>> @@ -19,6 +19,11 @@
+>>
+>>  #define VENDOR_ID      "IET"
+>>
+>> +/* 8 byte reservation key size */
+>> +#define PR_KEY_SZ 8
+>> +/* Number of PR keys we can store at any one time */
+>> +#define PR_RESERVATION_SZ 4
+>> +
+>>  #define _TAB1 "    "
+>>  #define _TAB2 _TAB1 _TAB1
+>>  #define _TAB3 _TAB1 _TAB1 _TAB1
+>> @@ -126,6 +131,12 @@ struct mode_pg {
+>>        uint8_t mode_data[0];   /* Rest of mode page info */
+>>  };
+>>
+>> +struct scsi_pr {
+>> +       /* Persistent Reservation Generation */
+>> +       uint32_t PRgeneration;
+>> +       uint8_t pr_key[PR_RESERVATION_SZ][PR_KEY_SZ];
+>> +};
+>> +
+>>  struct scsi_lu {
+>>        int fd;
+>>        uint64_t addr; /* persistent mapped address */
+>> @@ -150,6 +161,8 @@ struct scsi_lu {
+>>        uint8_t mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+>>        struct mode_pg *mode_pgs[0x3f];
+>>
+>> +       struct scsi_pr pr;
+>> +
+>>        struct lu_phy_attr attrs;
+>>
+>>        /* A pointer for each modules private use.
+>> --
+>> 1.5.6
+>>
+>> [PATCH 2/2]
+>> From 68c454d2d7f1b64f9dbce9410e5c2c8500d6ceb3 Mon Sep 17 00:00:00 2001
+>> From: Mark Harvey <markh794 at gmail.com>
+>> Date: Wed, 20 Aug 2008 14:45:30 +1000
+>> Subject: Add persistent reserve in/out to ssc module
+>>
+>> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+>> ---
+>>  usr/ssc.c |    4 ++--
+>>  1 files changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/usr/ssc.c b/usr/ssc.c
+>> index 2630a6a..6dbdc0b 100644
+>> --- a/usr/ssc.c
+>> +++ b/usr/ssc.c
+>> @@ -251,8 +251,8 @@ static struct device_type_template ssc_template = {
+>>                {spc_illegal_op,},
+>>                {spc_illegal_op,},
+>>                {spc_illegal_op,},
+>> -               {spc_illegal_op,},
+>> -               {spc_illegal_op,},
+>> +               {persistent_reserve_in,},
+>> +               {persistent_reserve_out,},
+>>
+>>                [0x60 ... 0x7f] = {spc_illegal_op,},
+>>
+>> --
+>> 1.5.6
+>>
+>
+
+
+From ronniesahlberg at gmail.com  Wed Aug 20 07:27:07 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Wed, 20 Aug 2008 15:27:07 +1000
+Subject: [Stgt-devel] RFC [PATCH] Implement PERSISTENT RESERVE IN/OUT
+In-Reply-To: <f29db9a80808192223m185c6cabrcbc2248b746a364b@mail.gmail.com>
+References: <f29db9a80808192201i5b72ca41he5eb9387fc556d28@mail.gmail.com>
+	<c9a3e4540808192218t1992050bwb36b3574aa52f07a@mail.gmail.com>
+	<f29db9a80808192223m185c6cabrcbc2248b746a364b@mail.gmail.com>
+Message-ID: <c9a3e4540808192227m7b5624c0v7848a47fd7bd3540@mail.gmail.com>
+
+Mark,
+
+I played a little with persistent reservations a long time ago for a
+different project.
+
+If you download the tarball for ctdb and build it
+http://ctdb.samba.org/packages/redhat/RHEL5/
+
+it will build a command called 'scsi_io'
+
+With this command you can issue many different persistent reservation
+calls to a device and it will (mostly) print the data you get back in
+a very nice and easy
+to read format.
+It might be useful.
+
+
+regards
+ronnie sahlberg
+
+
+
+On Wed, Aug 20, 2008 at 3:23 PM, Mark Harvey <markh794 at gmail.com> wrote:
+> On Wed, Aug 20, 2008 at 3:18 PM, ronnie sahlberg
+> <ronniesahlberg at gmail.com> wrote:
+>> Hi Mark
+>>
+>> Just one suggestion.
+>> These two commands take service actions, and are thus reported in
+>> "ReportSupportedOperactionCodes" with one entry for each
+>> opcode/service_action combination.
+>>
+>>
+>> Please have a look at how I implemented service actions by looking at
+>> the maint_in_service_actions example :
+>> sbc.c:          {spc_maint_in, maint_in_service_actions,},
+>>
+>> If you add a similar structure for your service actions it means that
+>> ReportedSupportedOperationCodes will return correct
+>> data for your PersistentReservation opcode.
+>
+> Many thanks.
+>
+> I'll check it out.
+>
+>>
+>> regards
+>> ronnie sahlberg
+>>
+>>
+>>
+>> On Wed, Aug 20, 2008 at 3:01 PM, Mark Harvey <markh794 at gmail.com> wrote:
+>>> Apologies for sending as an attachment... gmail and all.
+>>>
+>>> This is an initial attempt to implement PERSISTENT RESERVE IN and
+>>> PERSISTENT RESERVE OUT.
+>>>
+>>> Currently only READ KEY service action will actually return anything.
+>>> It returns a hard-coded 'ABC1234'.
+>>>
+>>> This post is a request for comment before I get too far into coding effort.
+>>>
+>>> # lsscsi -g
+>>> [3:0:0:0]    disk    USB-HS   HTS726060M9AT00  0.01  /dev/sda  /dev/sg0
+>>> [7:0:0:0]    storage IET      Controller       0001  -         /dev/sg1
+>>> [7:0:0:1]    disk    QUANTUM  HD100            0010  /dev/sdb  /dev/sg2
+>>> [7:0:0:2]    tape    QUANTUM  DLT6000          0010  /dev/st0  /dev/sg3
+>>> [7:0:0:3]    tape    QUANTUM  DLT6000          0010  /dev/st1  /dev/sg4
+>>> [7:0:0:4]    tape    QUANTUM  DLT6000          0010  /dev/st2  /dev/sg5
+>>> [7:0:0:5]    mediumx STK      L700             0010  -         /dev/sg6
+>>>
+>>> # sg_persist -i /dev/sg3
+>>>>> No service action given; assume Persistent Reservations In command
+>>>>> with Read Keys service action
+>>>  QUANTUM  DLT6000  0010
+>>>  Peripheral device type: tape
+>>>  PR generation=0x0, 4 registered reservation keys follow:
+>>>    0x4142433132333400
+>>>    0x0
+>>>    0x0
+>>>    0x0
+>>>
+>>>
+>>> I'll include in-line for viewing pleasure :)
+>>>
+>>> [PATCH 1/2]
+>>> From 11ad9ee209708f51bd2884598d309b1e7079cdce Mon Sep 17 00:00:00 2001
+>>> From: Mark Harvey <markh794 at gmail.com>
+>>> Date: Wed, 20 Aug 2008 14:42:27 +1000
+>>> Subject: RFC - Implement PERSISTENT RESERVE IN/OUT
+>>>
+>>> Implement service action 'READ KEY' which returns
+>>> a hard-coded string 'ABC1234'
+>>>
+>>> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+>>> ---
+>>>  usr/scsi.h |    5 ++
+>>>  usr/spc.c  |  231 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>>  usr/spc.h  |    2 +
+>>>  usr/tgtd.h |   13 ++++
+>>>  4 files changed, 251 insertions(+), 0 deletions(-)
+>>>
+>>> diff --git a/usr/scsi.h b/usr/scsi.h
+>>> index 84fadff..a9481a1 100644
+>>> --- a/usr/scsi.h
+>>> +++ b/usr/scsi.h
+>>> @@ -208,6 +208,11 @@
+>>>  #define ASC_POSITION_PAST_BOM                  0x3b0c
+>>>  #define ASC_MEDIUM_REMOVAL_PREVENTED           0x5302
+>>>  #define ASC_BAD_MICROCODE_DETECTED             0x8283
+>>> +#define ASC_INSUFFICENT_RESERVE_RESOURCE       0x5502
+>>> +#define ASC_INSUFFICENT_RESOURCE               0x5503
+>>> +#define ASC_INSUFFICENT_REGISTRAT_RESOURCE     0x5504
+>>> +#define ASC_INSUFFICENT_AC_RESOURCE            0x5505
+>>> +#define ASC_AUX_MEMORY_OUT_OF_SPACE            0x5506
+>>>
+>>>  /* Key 6: Unit Attention */
+>>>  #define ASC_NOT_READY_TO_TRANSITION            0x2800
+>>> diff --git a/usr/spc.c b/usr/spc.c
+>>> index bd2c975..cc088bf 100644
+>>> --- a/usr/spc.c
+>>> +++ b/usr/spc.c
+>>> @@ -880,6 +880,237 @@ void dump_cdb(struct scsi_cmd *cmd)
+>>>        }
+>>>  }
+>>>
+>>> +/**
+>>> + * SCSI Persistent Reservation
+>>> + *
+>>> + * Reference: spc4r16 Ch 5.7
+>>> + *
+>>> + * Interesting points:
+>>> + *  - Persistent reservations are not reset by hard reset, lu reset ot I_T loss
+>>> + *  - Optionally, may be retained when power to target is lost
+>>> + */
+>>> +
+>>> +/**
+>>> + * PERSISTENT RESERVE IN - 5Eh
+>>> + * Ref: 6.13
+>>> + *
+>>> + */
+>>> +#define PR_IN_READ_KEYS 0
+>>> +#define PR_IN_READ_RESERVATION 1
+>>> +#define PR_IN_REPORT_CAPABILITIES 2
+>>> +#define PR_IN_READ_FULL_STATUS 3
+>>> +static int spc_pr_read_keys(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       uint8_t *buf;
+>>> +       int len;
+>>> +       int cdb_alloc_len;
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       cdb_alloc_len = ((cmd->scb[7] & 0xff) << 8) | (cmd->scb[8] & 0xff);
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +
+>>> +       buf = scsi_get_in_buffer(cmd);
+>>> +       len = sizeof(cmd->dev->pr.pr_key);
+>>> +       memset(buf, 0, len + 8);
+>>> +
+>>> +       dprintf("Buf: %p, len: %d, cdb_alloc_len: %d\n",
+>>> +                        buf, len, cdb_alloc_len);
+>>> +
+>>> +       buf[0] = (pr->PRgeneration >> 24) & 0xff;
+>>> +       buf[1] = (pr->PRgeneration >> 16) & 0xff;
+>>> +       buf[2] = (pr->PRgeneration >>  8) & 0xff;
+>>> +       buf[3] = pr->PRgeneration & 0xff;
+>>> +       buf[4] = (len >> 24) & 0xff;
+>>> +       buf[5] = (len >> 16) & 0xff;
+>>> +       buf[6] = (len >>  8) & 0xff;
+>>> +       buf[7] = len & 0xff;
+>>> +
+>>> +       strcpy(buf + 8, "ABC1234");
+>>> +       memcpy(scsi_get_in_buffer(cmd), buf, min(cdb_alloc_len, len + 8));
+>>> +
+>>> +       scsi_set_in_resid_by_actual(cmd, len + 8);
+>>> +
+>>> +       return SAM_STAT_GOOD;
+>>> +}
+>>> +
+>>> +static int spc_pr_read_reservation(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       dprintf("**** Called ****\n");
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_report_capabilities(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       dprintf("**** Called ****\n");
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_read_full_status(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       dprintf("**** Called ****\n");
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +struct service_action pr_in_service_actions[] = {
+>>> +       {PR_IN_READ_KEYS, spc_pr_read_keys},
+>>> +       {PR_IN_READ_RESERVATION, spc_pr_read_reservation},
+>>> +       {PR_IN_REPORT_CAPABILITIES, spc_pr_report_capabilities},
+>>> +       {PR_IN_READ_FULL_STATUS, spc_pr_read_full_status},
+>>> +       {0, NULL}
+>>> +};
+>>> +
+>>> +int persistent_reserve_in(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       uint8_t action;
+>>> +       struct service_action *service_action;
+>>> +
+>>> +       action = cmd->scb[1] & 0x1f;
+>>> +       service_action = find_service_action(pr_in_service_actions, action);
+>>> +
+>>> +       if (!service_action) {
+>>> +               scsi_set_in_resid_by_actual(cmd, 0);
+>>> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+>>> +                               ASC_INVALID_FIELD_IN_CDB);
+>>> +               return SAM_STAT_CHECK_CONDITION;
+>>> +       }
+>>> +
+>>> +       return service_action->cmd_perform(host_no, cmd);
+>>> +}
+>>> +
+>>> +/**
+>>> + * PERSISTENT RESERVE OUT - 5Fh
+>>> + * Ref: 6.14
+>>> + */
+>>> +#define PR_OUT_REGISTER 0
+>>> +#define PR_OUT_RESERVE 1
+>>> +#define PR_OUT_RELEASE 2
+>>> +#define PR_OUT_CLEAR 3
+>>> +#define PR_OUT_PREEMPT 4
+>>> +#define PR_OUT_PREEMPT_ABORT 5
+>>> +#define PR_OUT_REGISTER_IGNORE 6
+>>> +#define PR_OUT_REGISTER_MOVE 7
+>>> +
+>>> +static int spc_pr_register(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +       pr->PRgeneration += 1;
+>>> +
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_reserve(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       dprintf("**** Called ****\n");
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_release(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       dprintf("**** Called ****\n");
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_clear(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +       pr->PRgeneration += 1;
+>>> +
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_preempt(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +       pr->PRgeneration += 1;
+>>> +
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_preempt_abort(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +       pr->PRgeneration += 1;
+>>> +
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_register_ignore(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +       pr->PRgeneration += 1;
+>>> +
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +static int spc_pr_register_move(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       struct scsi_pr *pr;
+>>> +
+>>> +       dprintf("**** Called ****\n");
+>>> +       pr = &cmd->dev->pr;
+>>> +       pr->PRgeneration += 1;
+>>> +
+>>> +       sense_data_build(cmd, ILLEGAL_REQUEST, ASC_INVALID_OP_CODE);
+>>> +       return SAM_STAT_CHECK_CONDITION;
+>>> +}
+>>> +
+>>> +struct service_action pr_out_service_actions[] = {
+>>> +       {PR_OUT_REGISTER, spc_pr_register},
+>>> +       {PR_OUT_RESERVE, spc_pr_reserve},
+>>> +       {PR_OUT_RELEASE, spc_pr_release},
+>>> +       {PR_OUT_CLEAR, spc_pr_clear},
+>>> +       {PR_OUT_PREEMPT, spc_pr_preempt},
+>>> +       {PR_OUT_PREEMPT_ABORT, spc_pr_preempt_abort},
+>>> +       {PR_OUT_REGISTER_IGNORE, spc_pr_register_ignore},
+>>> +       {PR_OUT_REGISTER_MOVE, spc_pr_register_move},
+>>> +       {0, NULL}
+>>> +};
+>>> +
+>>> +int persistent_reserve_out(int host_no, struct scsi_cmd *cmd)
+>>> +{
+>>> +       uint8_t action;
+>>> +       struct service_action *service_action;
+>>> +
+>>> +       action = cmd->scb[1] & 0x1f;
+>>> +       service_action = find_service_action(pr_out_service_actions, action);
+>>> +
+>>> +       if (!service_action) {
+>>> +               scsi_set_in_resid_by_actual(cmd, 0);
+>>> +               sense_data_build(cmd, ILLEGAL_REQUEST,
+>>> +                               ASC_INVALID_FIELD_IN_CDB);
+>>> +               return SAM_STAT_CHECK_CONDITION;
+>>> +       }
+>>> +
+>>> +       return service_action->cmd_perform(host_no, cmd);
+>>> +}
+>>> +
+>>>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+>>>  {
+>>>        dump_cdb(cmd);
+>>> diff --git a/usr/spc.h b/usr/spc.h
+>>> index 8fe3e3c..bdc3c1f 100644
+>>> --- a/usr/spc.h
+>>> +++ b/usr/spc.h
+>>> @@ -9,6 +9,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+>>>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+>>>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+>>>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+>>> +extern int persistent_reserve_in(int host_no, struct scsi_cmd *cmd);
+>>> +extern int persistent_reserve_out(int host_no, struct scsi_cmd *cmd);
+>>>  extern int spc_lu_init(struct scsi_lu *lu);
+>>>
+>>>  typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+>>> diff --git a/usr/tgtd.h b/usr/tgtd.h
+>>> index 4febcd3..d2c7135 100644
+>>> --- a/usr/tgtd.h
+>>> +++ b/usr/tgtd.h
+>>> @@ -19,6 +19,11 @@
+>>>
+>>>  #define VENDOR_ID      "IET"
+>>>
+>>> +/* 8 byte reservation key size */
+>>> +#define PR_KEY_SZ 8
+>>> +/* Number of PR keys we can store at any one time */
+>>> +#define PR_RESERVATION_SZ 4
+>>> +
+>>>  #define _TAB1 "    "
+>>>  #define _TAB2 _TAB1 _TAB1
+>>>  #define _TAB3 _TAB1 _TAB1 _TAB1
+>>> @@ -126,6 +131,12 @@ struct mode_pg {
+>>>        uint8_t mode_data[0];   /* Rest of mode page info */
+>>>  };
+>>>
+>>> +struct scsi_pr {
+>>> +       /* Persistent Reservation Generation */
+>>> +       uint32_t PRgeneration;
+>>> +       uint8_t pr_key[PR_RESERVATION_SZ][PR_KEY_SZ];
+>>> +};
+>>> +
+>>>  struct scsi_lu {
+>>>        int fd;
+>>>        uint64_t addr; /* persistent mapped address */
+>>> @@ -150,6 +161,8 @@ struct scsi_lu {
+>>>        uint8_t mode_block_descriptor[BLOCK_DESCRIPTOR_LEN];
+>>>        struct mode_pg *mode_pgs[0x3f];
+>>>
+>>> +       struct scsi_pr pr;
+>>> +
+>>>        struct lu_phy_attr attrs;
+>>>
+>>>        /* A pointer for each modules private use.
+>>> --
+>>> 1.5.6
+>>>
+>>> [PATCH 2/2]
+>>> From 68c454d2d7f1b64f9dbce9410e5c2c8500d6ceb3 Mon Sep 17 00:00:00 2001
+>>> From: Mark Harvey <markh794 at gmail.com>
+>>> Date: Wed, 20 Aug 2008 14:45:30 +1000
+>>> Subject: Add persistent reserve in/out to ssc module
+>>>
+>>> Signed-off-by: Mark Harvey <markh794 at gmail.com>
+>>> ---
+>>>  usr/ssc.c |    4 ++--
+>>>  1 files changed, 2 insertions(+), 2 deletions(-)
+>>>
+>>> diff --git a/usr/ssc.c b/usr/ssc.c
+>>> index 2630a6a..6dbdc0b 100644
+>>> --- a/usr/ssc.c
+>>> +++ b/usr/ssc.c
+>>> @@ -251,8 +251,8 @@ static struct device_type_template ssc_template = {
+>>>                {spc_illegal_op,},
+>>>                {spc_illegal_op,},
+>>>                {spc_illegal_op,},
+>>> -               {spc_illegal_op,},
+>>> -               {spc_illegal_op,},
+>>> +               {persistent_reserve_in,},
+>>> +               {persistent_reserve_out,},
+>>>
+>>>                [0x60 ... 0x7f] = {spc_illegal_op,},
+>>>
+>>> --
+>>> 1.5.6
+>>>
+>>
+>
+
+
+From soup at dlkaviation.com  Wed Aug 20 20:20:02 2008
+From: soup at dlkaviation.com (Seddon Seher)
+Date: Wed, 20 Aug 2008 18:20:02 +0000
+Subject: [Stgt-devel] Rolex, Rado, Patek Philippe,  Omegga, Gucci
+Message-ID: <9188155104.20080820181906@t3al.com>
+
+Heyello,	
+
+   New watchees here:
+http://www.watch.ru
+
+
+   
+Mind filled with great anxiety in consequence to me also
+to approach the table. The others stood was never meant
+to cut whiskers. However, in the at the top were three circles
+of different colours, and voluntarily subjected themselves
+and the nation, tell me all this without vaisampayana continued,
+to the measure of their might and courage, against of ours,
+fie on our prowess, fie on the practices a peoplewatcher
+all right. No question about that. I, o krishna, have been
+chosen as the great antagonist. 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080820/01542917/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Aug 21 07:48:24 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 21 Aug 2008 14:48:24 +0900
+Subject: [Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE
+	ELEMENT STATUS
+In-Reply-To: <f29db9a80808191808n7ab01d14g4dd10bcfbd4cdc2f@mail.gmail.com>
+References: <f29db9a80808191808n7ab01d14g4dd10bcfbd4cdc2f@mail.gmail.com>
+Message-ID: <20080821144739G.fujita.tomonori@lab.ntt.co.jp>
+
+On Wed, 20 Aug 2008 11:08:18 +1000
+"Mark Harvey" <markh794 at gmail.com> wrote:
+
+> Added test for SCSI RESERVATION.
+> 
+> Still implemented as a no-op.
+> 
+> (Attached patch due to gmail web mangling whitespaces).
+> 
+> 
+> commit de9949ce821ed1bca9d60e8d98ec806c3c80ec6b
+> Author: Mark Harvey <markh794 at gmail.com>
+> Date:   Wed Aug 20 10:48:57 2008 +1000
+> 
+>     Implement smc INITIALIZE ELEMENT STATUS op code as NO-OP
+> 
+>     Re-submit Richard Sharpe's patch in git format
+> 
+>     Added test for reservation.
+> 
+>     Reported-by: Richard Sharpe <realrichardsharpe at gmail.com>
+>     Signed-off-by: Mark Harvey <markh794 at gmail.com>
+
+Applied, thanks, Richard and Mark.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Aug 21 07:48:25 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 21 Aug 2008 14:48:25 +0900
+Subject: [Stgt-devel] [PATCH 2/2] Take 2: Implement smc INITIALIZE
+ ELEMENT STATUS WITH RANGE
+In-Reply-To: <f29db9a80808191838i7121f4e9gdb0b7b251eb1a634@mail.gmail.com>
+References: <f29db9a80808191838i7121f4e9gdb0b7b251eb1a634@mail.gmail.com>
+Message-ID: <20080821144833J.fujita.tomonori@lab.ntt.co.jp>
+
+On Wed, 20 Aug 2008 11:38:27 +1000
+"Mark Harvey" <markh794 at gmail.com> wrote:
+
+> commit d8c5617849c15d54c0ebd2efbc9f16161a6f2e56
+> Author: Mark Harvey <markh794 at gmail.com>
+> Date:   Wed Aug 20 10:58:02 2008 +1000
+> 
+>     Implement smc INITIALIZE ELEMENT STATUS WITH RANGE op code as NO-OP
+> 
+>     - Implemented INITIALIZE ELEMENT STATUS WITH RANGE as a No Operation.
+> 
+>     Reported-by: Richard Sharpe <realrichardsharpe at gmail.com>
+>     Signed-off-by: Mark Harvey <markh794 at gmail.com>
+> 
+> diff --git a/usr/smc.c b/usr/smc.c
+> index e735deb..ab36e9c 100644
+
+Applied, thanks!
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Aug 21 08:21:32 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 21 Aug 2008 15:21:32 +0900
+Subject: [Stgt-devel] the old mailing list will be closed
+Message-ID: <20080821152219C.fujita.tomonori@lab.ntt.co.jp>
+
+Hi,
+
+As I noticed a week ago, we moved stgt mailing list to
+vger.kernel.org. If you have not subscribed to the new mailing list,
+please subscribe:
+
+http://vger.kernel.org/vger-lists.html#stgt
+
+
+I'll change the configuration that nobody can post to the old mailing
+list, stgt-devel at lists.berlios.de.
+
+
+Thanks,
+
+

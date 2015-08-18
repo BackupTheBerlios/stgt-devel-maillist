@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080303212047.GB27058%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001425.html">
+   <LINK REL="Next"  HREF="001432.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080303212047.GB27058%40osc.edu%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">pw at osc.edu
+       </A><BR>
+    <I>Mon Mar  3 22:20:47 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001425.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001432.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1426">[ date ]</a>
+              <a href="thread.html#1426">[ thread ]</a>
+              <a href="subject.html#1426">[ subject ]</a>
+              <a href="author.html#1426">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Mon, 03 Mar 2008 23:00 +0200:
+&gt;<i> &gt; &gt; Another thing that looks strange - from looking at the logs, I don't see
+</I>&gt;<i> &gt; &gt; that work is done in parallel. A command is received, iSCSI processing
+</I>&gt;<i> &gt; &gt; is done and it is sent to bs processing (which seems to be idle until
+</I>&gt;<i> &gt; &gt; that point in time). Now, nothing happens until bs processing is
+</I>&gt;<i> &gt; &gt; complete. I will try to look more into the code and try to understand
+</I>&gt;<i> &gt; &gt; it, but can someone try to elaborate on this?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; sgp_dd issues only one SCSI command at a time?
+</I>&gt;<i>  
+</I>&gt;<i> We run sgp_dd &amp; disktest with more than a single thread, so I expect to see more than a single cmd in parallel. Note that if I run the same cmd directly on the device (on the target machine), I see better numbers. It means that the benchmark is ok.
+</I>
+Even just a single dd will kick off lots of readahead requests.  The
+queue depth is 128 for iser initiator, I think.  If you're not
+seeing more than one command at a time in the target, that would be
+a problem.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001425.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001432.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1426">[ date ]</a>
+              <a href="thread.html#1426">[ thread ]</a>
+              <a href="subject.html#1426">[ subject ]</a>
+              <a href="author.html#1426">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

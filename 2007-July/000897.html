@@ -1,0 +1,349 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 3/7] iser transport buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/7%5D%20iser%20transport%20buf&In-Reply-To=%3C20070730190015.GQ12789%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000896.html">
+   <LINK REL="Next"  HREF="000898.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 3/7] iser transport buf</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/7%5D%20iser%20transport%20buf&In-Reply-To=%3C20070730190015.GQ12789%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 3/7] iser transport buf">pw at osc.edu
+       </A><BR>
+    <I>Mon Jul 30 21:00:15 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000896.html">[Stgt-devel] [PATCH 2/7] iser counter events
+</A></li>
+        <LI>Next message: <A HREF="000898.html">[Stgt-devel] [PATCH 4/7] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#897">[ date ]</a>
+              <a href="thread.html#897">[ thread ]</a>
+              <a href="subject.html#897">[ subject ]</a>
+              <a href="author.html#897">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>For RDMA, it is often nice to use data from a pool of pre-registered
+buffers.  To do this, the transport allocates memory for a response and
+passes it down to the devices to fill.  Some operations, though, allocate
+their own buffer and return that new memory instead.  These are usually
+small and the allocation is just done for convenience to avoid error
+checking.  Copy the data into the provided transport buffer instead.
+
+If the transport does not provide a buffer at cmd-&gt;uaddr, the newly
+alloced buffer is returned as before.
+
+Also fixes some leaks of these extra buffers in error paths, and cleans
+up unreachable code in ibmvio inquiry.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/ibmvio/ibmvio.c |   25 +++++++++----------------
+ usr/mmc.c           |    6 ++----
+ usr/sbc.c           |    3 +--
+ usr/smc.c           |    9 +++++----
+ usr/spc.c           |   36 +++++++++++++++++++++++++++---------
+ usr/spc.h           |    1 +
+ 6 files changed, 45 insertions(+), 35 deletions(-)
+
+diff --git a/usr/ibmvio/ibmvio.c b/usr/ibmvio/ibmvio.c
+index cdd3782..a0002cf 100644
+--- a/usr/ibmvio/ibmvio.c
++++ b/usr/ibmvio/ibmvio.c
+@@ -143,10 +143,16 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	uint8_t *data, *scb = cmd-&gt;scb;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
++	uint32_t len;
+ 
+ 	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+ 		goto sense;
+ 
++	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
++
++	if (scb[1] &amp; 0x3)
++		return spc_inquiry(host_no, cmd);
++
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+@@ -155,23 +161,12 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	}
+ 	memset(data, 0, pagesize);
+ 
+-	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+-
+-	if (!(scb[1] &amp; 0x3)) {
+-		cmd-&gt;len = __ibmvio_inquiry(host_no, cmd, data);
+-		ret = SAM_STAT_GOOD;
+-	} else
+-		return spc_inquiry(host_no, cmd);
+-
+-	if (ret != SAM_STAT_GOOD)
+-		goto sense;
+-
+-	cmd-&gt;len = min_t(int, cmd-&gt;len, scb[4]);
+-	cmd-&gt;uaddr = (unsigned long) data;
++	len = __ibmvio_inquiry(host_no, cmd, data);
+ 
+ 	if (cmd-&gt;dev-&gt;lun != cmd-&gt;dev_id)
+ 		data[0] = TYPE_NO_LUN;
+ 
++	spc_return_buf(cmd, data, min_t(int, len, scb[4]));
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+@@ -194,7 +189,6 @@ static int ibmvio_report_luns(int host_no, struct scsi_cmd *cmd)
+ 	struct list_head *dev_list = &amp;cmd-&gt;c_target-&gt;device_list;
+ 	uint64_t lun, *data;
+ 	int idx, alen, oalen, nr_luns, rbuflen = 4096;
+-	int *len = &amp;cmd-&gt;len;
+ 	uint8_t *lun_buf = cmd-&gt;lun;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+@@ -210,7 +204,6 @@ static int ibmvio_report_luns(int host_no, struct scsi_cmd *cmd)
+ 		goto sense;
+ 	}
+ 	memset(data, 0, pagesize);
+-	cmd-&gt;uaddr = (unsigned long)data;
+ 
+ 	alen &amp;= ~(8 - 1);
+ 	oalen = alen;
+@@ -240,7 +233,7 @@ static int ibmvio_report_luns(int host_no, struct scsi_cmd *cmd)
+ 
+ done:
+ 	*((uint32_t *) data) = __cpu_to_be32(nr_luns * 8);
+-	*len = min(oalen, nr_luns * 8 + 8);
++	spc_return_buf(cmd, data, min(oalen, nr_luns * 8 + 8));
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	*len = 0;
+diff --git a/usr/mmc.c b/usr/mmc.c
+index 7f70943..74968fb 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -75,7 +75,6 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	}
+ 	memset(data, 0, pagesize);
+-	cmd-&gt;uaddr = (unsigned long) data;
+ 
+ 	/* forged for single session data cd only. all iso file fall into this */
+ 	if (cmd-&gt;scb[1] &amp; 0x2) {
+@@ -94,7 +93,7 @@ static int mmc_read_toc(int host_no, struct scsi_cmd *cmd)
+ 		data[6] = 0x01;
+ 	}
+ 
+-	cmd-&gt;len = data[1] + 2;
++	spc_return_buf(cmd, data, data[1] + 2);
+ 
+ 	return SAM_STAT_GOOD;
+ }
+@@ -111,14 +110,13 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+ 		return SAM_STAT_CHECK_CONDITION;
+ 	}
+ 	memset(data, 0, pagesize);
+-	cmd-&gt;uaddr = (unsigned long) data;
+ 
+ 	size = cmd-&gt;dev-&gt;size &gt;&gt; MMC_BLK_SHIFT;
+ 
+ 	data[0] = (size &gt;&gt; 32) ?
+ 		__cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
+ 	data[1] = __cpu_to_be32(1U &lt;&lt; MMC_BLK_SHIFT);
+-	cmd-&gt;len = 8;
++	spc_return_buf(cmd, data, 8);
+ 
+ 	return SAM_STAT_GOOD;
+ }
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 33485e6..32100a6 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -121,15 +121,14 @@ static int sbc_read_capacity(int host_no, struct scsi_cmd *cmd)
+ 		asc = ASC_INTERNAL_TGT_FAILURE;
+ 		goto sense;
+ 	}
+-	cmd-&gt;uaddr = (unsigned long) data;
+ 
+ 	size = cmd-&gt;dev-&gt;size &gt;&gt; BLK_SHIFT;
+ 
+ 	data[0] = (size &gt;&gt; 32) ?
+ 		__cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
+ 	data[1] = __cpu_to_be32(1U &lt;&lt; BLK_SHIFT);
+-	cmd-&gt;len = 8;
+ 
++	spc_return_buf(cmd, data, 8);
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+diff --git a/usr/smc.c b/usr/smc.c
+index 4f0ee4b..4397523 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -282,8 +282,10 @@ static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+ 	}
+ 	memset(data, 0, pagesize);
+ 
+-	if (scb[11])	/* Reserved byte */
++	if (scb[11]) {	/* Reserved byte */
++		free(data);
+ 		goto sense;
++	}
+ 
+ 	switch(element_type) {
+ 	case ELEMENT_ANY:
+@@ -333,6 +335,7 @@ static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+ 						  dvcid, voltag);
+ 		break;
+ 	default:
++		free(data);
+ 		goto sense;
+ 		break;
+ 	}
+@@ -340,10 +343,8 @@ static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+ 	/* Lastly, fill in data header */
+ 	len = element_status_data_hdr(data, dvcid, voltag, first, count);
+ 
+-	cmd-&gt;len = min_t(int, len, alloc_len);
+-	cmd-&gt;uaddr = (unsigned long) data;
+ 	cmd-&gt;rw = READ;
+-
++	spc_return_buf(cmd, data, min_t(int, len, alloc_len));
+ 	return SAM_STAT_GOOD;
+ 
+ sense:
+diff --git a/usr/spc.c b/usr/spc.c
+index b56c0b3..d01836e 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -38,6 +38,22 @@
+ #define PRODUCT_REV	&quot;0&quot;
+ #define BLK_SHIFT	9
+ 
++/*
++ * Helper to move return data into read result buffer allocated by transport,
++ * if one exists.
++ */
++void spc_return_buf(struct scsi_cmd *cmd, void *data, uint32_t len)
++{
++	if (cmd-&gt;uaddr) {
++		memcpy((void *) (unsigned long) cmd-&gt;uaddr, data,
++		       min(cmd-&gt;len, len));
++		free(data);
++	} else {
++		cmd-&gt;uaddr = (unsigned long) data;
++	}
++	cmd-&gt;len = len;
++}
++
+ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int len = 0, ret = SAM_STAT_CHECK_CONDITION;
+@@ -139,15 +155,17 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 		}
+ 	}
+ 
+-	if (ret != SAM_STAT_GOOD)
++	if (ret != SAM_STAT_GOOD) {
++		free(data);
+ 		goto sense;
++	}
+ 
+-	cmd-&gt;len = min_t(int, len, scb[4]);
+-	cmd-&gt;uaddr = (unsigned long) data;
+-
++	if (scb[4] &lt; len)
++	    len = scb[4];
+ 	if (cmd-&gt;dev-&gt;lun != cmd-&gt;dev_id)
+ 		data[0] = TYPE_NO_LUN;
+ 
++	spc_return_buf(cmd, data, len);
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+@@ -202,9 +220,8 @@ int spc_report_luns(int host_no, struct scsi_cmd *cmd)
+ 		}
+ 	}
+ 
+-	cmd-&gt;uaddr = (unsigned long)data;
+ 	*((uint32_t *) data) = __cpu_to_be32(nr_luns * 8);
+-	cmd-&gt;len = min(oalen, nr_luns * 8 + 8);
++	spc_return_buf(cmd, data, min(oalen, nr_luns * 8 + 8));
+ 	return SAM_STAT_GOOD;
+ sense:
+ 	cmd-&gt;len = 0;
+@@ -278,7 +295,7 @@ static int build_mode_page(uint8_t *data, struct mode_pg *pg)
+ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int len = 0;
+-	uint8_t *data, *scb, mode6, dbd, pcode, subpcode;
++	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode;
+ 	uint16_t alloc_len;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+@@ -341,11 +358,12 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 		data[7] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
+ 	}
+ 
+-	cmd-&gt;len = len;
+-	cmd-&gt;uaddr = (unsigned long)data;
++	spc_return_buf(cmd, data, len);
+ 	return SAM_STAT_GOOD;
+ 
+ sense:
++	if (data)
++		free(data);
+ 	cmd-&gt;len = 0;
+ 	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+diff --git a/usr/spc.h b/usr/spc.h
+index 1cc8623..c9824c6 100644
+--- a/usr/spc.h
++++ b/usr/spc.h
+@@ -1,6 +1,7 @@
+ #ifndef __SPC_H
+ #define __SPC_H
+ 
++extern void spc_return_buf(struct scsi_cmd *cmd, void *data, uint32_t len);
+ extern int spc_inquiry(int host_no, struct scsi_cmd *cmd);
+ extern int spc_report_luns(int host_no, struct scsi_cmd *cmd);
+ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000896.html">[Stgt-devel] [PATCH 2/7] iser counter events
+</A></li>
+	<LI>Next message: <A HREF="000898.html">[Stgt-devel] [PATCH 4/7] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#897">[ date ]</a>
+              <a href="thread.html#897">[ thread ]</a>
+              <a href="subject.html#897">[ subject ]</a>
+              <a href="author.html#897">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Current SVN
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Current%20SVN&In-Reply-To=%3C200608201903.k7KJ3cGT016589%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000317.html">
+   <LINK REL="Next"  HREF="000319.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Current SVN</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Current%20SVN&In-Reply-To=%3C200608201903.k7KJ3cGT016589%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Current SVN">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun Aug 20 21:03:36 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000317.html">[Stgt-devel] Current SVN
+</A></li>
+        <LI>Next message: <A HREF="000319.html">[Stgt-devel] Current SVN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#318">[ date ]</a>
+              <a href="thread.html#318">[ thread ]</a>
+              <a href="subject.html#318">[ subject ]</a>
+              <a href="author.html#318">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+Subject: [Stgt-devel] Current SVN
+Date: Fri, 18 Aug 2006 10:06:43 -0500
+
+&gt;<i> Tomo:
+</I>&gt;<i> 
+</I>&gt;<i> It looks like in the most recent svn repo (532) you moved all of the
+</I>&gt;<i> core changes from the svn tree to the patchset against the git tree.
+</I>&gt;<i> This is cool, but the makefile still attempts to build ./kernel from the
+</I>&gt;<i> svn tree which contains old code -- and not unexpectedly breaks. I think
+</I>&gt;<i> you need to remove the &quot;make -C kernel&quot; from the root Makefile.
+</I>
+Yep. I fixed it. Thanks.
+
+Maybe it would be better to remove kernel code in svn to avoid
+confusion. Probabaly, we will do when the git tree is ready.
+
+
+By the way, I've tried the user-space iSCSI target code exploiting
+user-space tgt code. I can make an ext2 file system with open-iscsi,
+however, It's far from completion. I just wanted to see how things
+work. We are still not sure where the Linux iSCSI target code lives
+(user or kernel).
+
+svn+<A HREF="ssh://svn.berlios.de/svnroot/repos/stgt/branches/user-iscsi">ssh://svn.berlios.de/svnroot/repos/stgt/branches/user-iscsi</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000317.html">[Stgt-devel] Current SVN
+</A></li>
+	<LI>Next message: <A HREF="000319.html">[Stgt-devel] Current SVN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#318">[ date ]</a>
+              <a href="thread.html#318">[ thread ]</a>
+              <a href="subject.html#318">[ subject ]</a>
+              <a href="author.html#318">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

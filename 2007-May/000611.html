@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question for pass-through target design
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C20070508003734T.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000610.html">
+   <LINK REL="Next"  HREF="000612.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question for pass-through target design</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C20070508003734T.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Question for pass-through target design">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon May  7 17:37:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000610.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+        <LI>Next message: <A HREF="000612.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#611">[ date ]</a>
+              <a href="thread.html#611">[ thread ]</a>
+              <a href="subject.html#611">[ subject ]</a>
+              <a href="author.html#611">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Vladislav Bolkhovitin &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>&gt;
+Subject: Re: [Stgt-devel] Question for pass-through target design
+Date: Mon, 07 May 2007 19:27:23 +0400
+
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: Vladislav Bolkhovitin &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>&gt;
+</I>&gt;<i> &gt; Subject: Re: [Stgt-devel] Question for pass-through target design
+</I>&gt;<i> &gt; Date: Mon, 07 May 2007 18:24:44 +0400
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt;FUJITA Tomonori wrote:
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;It looks like the pass-through target support is currently broken, at
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;least as I've checked for ibmvstgt, but I think it's a general problem.
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;I wanted to check my assumptions and get ideas.
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;Yeah, unfortunately, it works only with the iSCSI target driver (which
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;runs in user space).
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;The code isn't allocating any memory to pass along to the sg code to store
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;the result of a read or data for a write.  Currently, dxferp for sg_io_hdr
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;or dout_xferp/din_xferp for sg_io_v4 are assigned to the value of uaddr,
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;which is set to 0 in kern_queue_cmd.  With the pointer set to NULL,
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;the pass-through target isn't going to function.  Even if we had memory
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;allocated, there isn't a means of getting data to be written via sg down
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;this code path.
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;What ideas are there as to how the data will get to user-space so that
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt;we can use sg?
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;For kernel-space drivers, we don't need to go to user-space. We can do
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;the pass-through in kernel space. I talked with James about this last
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;year and he said that if the code is implemented cleanly, he would
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;merges it into mainline.
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;We already have a pass-through in the kernel space for
+</I>&gt;<i> &gt;&gt;&gt;&gt;kernel space drivers. It is the scsi_tgt* code.
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;Could you elaborate more?
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;What I meant that is that the kernel tgt code (scsi_tgt*) receives
+</I>&gt;<i> &gt;&gt;&gt;SCSI commands from one lld and send them to another lld instead of
+</I>&gt;<i> &gt;&gt;&gt;sending them to user space.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;Although the approach of passing SCSI commands from a target LLD to an
+</I>&gt;<i> &gt;&gt;initiator one without any significant interventions from the target
+</I>&gt;<i> &gt;&gt;software looks to be nice and simple, you should realize how limited,
+</I>&gt;<i> &gt;&gt;unsafe and illegal it is, since it badly violates SCSI specs.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I think that 'implemented cleanly' means that one scsi_host is assigned
+</I>&gt;<i> &gt; to only one initiator.
+</I>&gt;<i> 
+</I>&gt;<i> Sorry, I don't fully understand you. If you mean you are going to limit 
+</I>&gt;<i> only one remote initiator per-target device, then, well, is it even more 
+</I>&gt;<i> limited (and limiting) or not?
+</I>
+The target software assigns one scsi_host to only one remote
+initiator. For FC, NPIV works nicely.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000610.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+	<LI>Next message: <A HREF="000612.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#611">[ date ]</a>
+              <a href="thread.html#611">[ thread ]</a>
+              <a href="subject.html#611">[ subject ]</a>
+              <a href="author.html#611">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

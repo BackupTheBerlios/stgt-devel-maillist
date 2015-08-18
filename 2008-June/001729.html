@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] How to setup a DVD RW
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20How%20to%20setup%20a%20DVD%20RW&In-Reply-To=%3Cb2919bc20806300011kbf0b317rafd04b75377e503%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001724.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] How to setup a DVD RW</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20How%20to%20setup%20a%20DVD%20RW&In-Reply-To=%3Cb2919bc20806300011kbf0b317rafd04b75377e503%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] How to setup a DVD RW">albert.pauw at gmail.com
+       </A><BR>
+    <I>Mon Jun 30 09:11:40 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001724.html">[Stgt-devel] [PATCH 2/2] fcoe: print a warning instead of SEGV when	no interface was specified
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1729">[ date ]</a>
+              <a href="thread.html#1729">[ thread ]</a>
+              <a href="subject.html#1729">[ subject ]</a>
+              <a href="author.html#1729">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Ronnie,
+
+I must be doing something wrong here, here is the output of dvdrecord:
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at orange</A> ~]# dvdrecord -dao -ignsize -overburn dev=/dev/sr1 ./fdfullcd.iso
+Device type    : Removable CD-ROM
+Version        : 5
+Response Format: 2
+Capabilities   : TERMIOP CMDQUE
+Vendor_info    : 'IET     '
+Identification : 'VIRTUAL-CDROM'
+Revision       : '0001'
+Device seems to be: Generic mmc2 DVD-R/DVD-RW.
+dvdrecord: Sorry, no CD/DVD-Recorder or unsupported CD/DVD-Recorder
+found on this target.
+Using generic SCSI-3/mmc   CD-ROM driver (mmc_cd).
+Driver flags   : MMC-3 SWABAUDIO BURNFREE
+Supported modes: TAO PACKET SAO SAO/R96P SAO/R96R RAW/R16 RAW/R96P RAW/R96R
+Errno: 5 (Input/output error), test unit ready scsi sendcmd: no error
+CDB:  00 20 00 00 00 00
+status: 0x2 (CHECK CONDITION)
+Sense Bytes: 70 00 02 00 00 00 00 0A 00 00 00 00 3A 00 00 00
+Sense Key: 0x2 Not Ready, Segment 0
+Sense Code: 0x3A Qual 0x00 (medium not present) Fru 0x0
+Sense flags: Blk 0 (not valid)
+cmd finished after 0.000s timeout 200s
+dvdrecord: No disk / Wrong disk!
+
+As you can see, it doesn't see the disk.
+
+Albert
+
+-- 
+
+Ronnie Sahlberg wrote:
+
+Can you try using dvdwriter like this :
+
+dvdrecord -dao -ignsize -overburn dev=/dev/sgX ./IMAGE.iso
+
+and just verify that that works.
+
+If that works it is most likely that there is something missing in the
+emulation of DVD+R that
+K2B needs to be happy.
+
+
+
+On Mon, Jun 30, 2008 at 3:25 AM, Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+
+&gt;<i> Using open-iscsi to log into tgtd, which has the following setup for a
+</I>&gt;<i> DVD-R:
+</I>&gt;<i>
+</I>&gt;<i> tgtadm --lld iscsi --mode target --op new --tid 1 -T
+</I>&gt;<i> iqn.2007-03:virtual-dvd:`hostname`
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+</I>&gt;<i> scsi_id --value &quot;CONTROLLER&quot;
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 0 --name
+</I>&gt;<i> scsi_sn --value &quot;001&quot;
+</I>&gt;<i>
+</I>&gt;<i> # Create a DVD drive and give it a nice name
+</I>&gt;<i> # The dvd starts out without a backing store file, i.e. no disk loaded
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+</I>&gt;<i> --backing-store /root/empty.iso --device-type cd
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --params
+</I>&gt;<i> removable=1
+</I>&gt;<i>
+</I>&gt;<i> Where /root/empty.iso is an empty 4GB file. I can succesfully log into the
+</I>&gt;<i> this target, dmesg shows:
+</I>&gt;<i>
+</I>&gt;<i> scsi 13:0:0:0: RAID              IET      Controller       0001 PQ: 0 ANSI:
+</I>&gt;<i> 5
+</I>&gt;<i> scsi 13:0:0:0: Attached scsi generic sg2 type 12
+</I>&gt;<i> scsi 13:0:0:1: CD-ROM            IET      VIRTUAL-CDROM    0001 PQ: 0 ANSI:
+</I>&gt;<i> 5
+</I>&gt;<i> sr1: scsi-1 drive
+</I>&gt;<i> sr 13:0:0:1: Attached scsi CD-ROM sr1
+</I>&gt;<i>
+</I>&gt;<i> However, K3B (CD burner program) sees the virtual CDROM (as it is called by
+</I>&gt;<i> default), but doesn't see
+</I>&gt;<i> that a medium is loaded (while I had given it a backing store).
+</I>&gt;<i>
+</I>&gt;<i> What I am doing wrong here?
+</I>&gt;<i>
+</I>&gt;<i> Thanks,
+</I>&gt;<i>
+</I>&gt;<i> Albert
+</I>&gt;<i>
+</I>&gt;<i> P.S. I am using Fedora 9.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080630/a6f62c52/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080630/a6f62c52/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001724.html">[Stgt-devel] [PATCH 2/2] fcoe: print a warning instead of SEGV when	no interface was specified
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1729">[ date ]</a>
+              <a href="thread.html#1729">[ thread ]</a>
+              <a href="subject.html#1729">[ subject ]</a>
+              <a href="author.html#1729">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

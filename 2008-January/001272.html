@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/4%5D%20iscsi%3A%20allow%20multiple%20initiators%20in%0A%09tgt-setup-lun&In-Reply-To=%3C47823FA3.90809%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001271.html">
+   <LINK REL="Next"  HREF="001273.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/4%5D%20iscsi%3A%20allow%20multiple%20initiators%20in%0A%09tgt-setup-lun&In-Reply-To=%3C47823FA3.90809%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 2/4] iscsi: allow multiple initiators in	tgt-setup-lun">erezz at voltaire.com
+       </A><BR>
+    <I>Mon Jan  7 16:05:07 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001271.html">[Stgt-devel] [PATCH 1/4] iscsi: renamed setup_lun to tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001273.html">[Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1272">[ date ]</a>
+              <a href="thread.html#1272">[ thread ]</a>
+              <a href="subject.html#1272">[ subject ]</a>
+              <a href="author.html#1272">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Currently, tgt-setup-lun only allows the assignment of a
+single initiator per target. This fix allows the
+assignment of multiple initiators per target (or all
+initiators).
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ usr/scripts/tgt-setup-lun |   64 +++++++++++++++++++++++++++++++++-----------
+ 1 files changed, 48 insertions(+), 16 deletions(-)
+
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+index 0c8698c..d63a793 100644
+--- a/usr/scripts/tgt-setup-lun
++++ b/usr/scripts/tgt-setup-lun
+@@ -19,11 +19,28 @@
+ 
+ #!/bin/bash
+ 
++usage()
++{
++	name=$(basename $0)
++	echo &quot;usage: $name -d dev -n target_name [initiator_IP1 initiator_IP2 ...] &quot;;
++	echo &quot;example: $name /dev/sdb1 noni 192.168.10.63&quot;;
++}
++
+ verify_params()
+ {
++	if ! [ &quot;$dev&quot; ]; then
++		echo &quot;Error: a device is mandatory&quot;;
++		exit 1;
++	fi
++
+ 	# Make sure that the device exists
+ 	if ! [ -b $dev -o -f $dev ]; then
+-		echo &quot;$dev is not a device&quot;;
++		echo &quot;Error: $dev is not a device&quot;;
++		exit 1;
++	fi
++
++	if ! [ &quot;$tgt_name&quot; ]; then
++		echo &quot;Error: target name is mandatory&quot;;
+ 		exit 1;
+ 	fi
+ }
+@@ -86,16 +103,22 @@ find_vacant_lun()
+ 	return $next_vacant_lun
+ }
+ 
+-if [ $# -ne 3 ]; then
+-	name=$(basename $0)
+-	echo &quot;usage: $name &lt;dev&gt; &lt;initiator name&gt; &lt;initiator IP&gt;&quot;;
+-	echo &quot;example: $name /dev/sdb1 noni 192.168.10.63&quot;;
+-	exit 1;
+-fi
++while getopts &quot;d:n:&quot; opt
++do
++	case ${opt} in
++	d)
++		dev=$OPTARG;;
++	n)
++		tgt_name=$OPTARG;;
++	*)
++		usage
++		exit 1
++	esac
++done
++
++shift $(($OPTIND - 1))
+ 
+-dev=$1
+-initiator=$2
+-initiator_ip=$3
++initiators=$*
+ 
+ verify_params
+ 
+@@ -106,22 +129,31 @@ if [ $tgtd_count -ne 3 ]; then
+ 	tgtd
+ fi
+ 
+-tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$initiator&quot;
++tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$tgt_name&quot;
+ 
+ find_vacant_tgt_id
+ tid=$?
+ 
+ # Create the new target
+-echo &quot;Creating the new target&quot;
++echo &quot;Creating the new target ($tgt_name)&quot;
+ tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
+ 
+ find_vacant_lun $tid
+ lun=$?
+ 
+ # Add a logical unit to the target
+-echo &quot;Adding a logical unit to the target&quot;
++echo &quot;Adding a logical unit ($dev) to the target&quot;
+ tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
+ 
+-# Accept only a specific initiator
+-echo &quot;Accepting connections only from $initiator_ip&quot;
+-tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
++# Define which initiators can use this target
++if test &quot;$initiators&quot; ; then
++	# Allow access only for specific initiators
++	echo &quot;Accepting connections only from $initiators&quot;
++	for initiator in $initiators; do
++		tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator
++	done
++else
++	# Allow access for everyone
++	echo &quot;Accepting connections from every initiator&quot;
++	tgtadm --lld iscsi --op bind --mode target --tid $tid -I ALL
++fi
+-- 
+1.5.3.7
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001271.html">[Stgt-devel] [PATCH 1/4] iscsi: renamed setup_lun to tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001273.html">[Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1272">[ date ]</a>
+              <a href="thread.html#1272">[ thread ]</a>
+              <a href="subject.html#1272">[ subject ]</a>
+              <a href="author.html#1272">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

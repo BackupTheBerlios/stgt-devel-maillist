@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/20%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C20071112230815F.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001154.html">
+   <LINK REL="Next"  HREF="001143.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2004/20%5D%20iser%20bidi%20alloc%20read%20buf&In-Reply-To=%3C20071112230815F.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf">tomof at acm.org
+       </A><BR>
+    <I>Mon Nov 12 15:14:34 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001154.html">[Stgt-devel] [PATCH 03/20] iser transport buf
+</A></li>
+        <LI>Next message: <A HREF="001143.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1139">[ date ]</a>
+              <a href="thread.html#1139">[ thread ]</a>
+              <a href="subject.html#1139">[ subject ]</a>
+              <a href="author.html#1139">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 16 Oct 2007 11:19:03 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> Allocate the read buffer for bidirectional commands in the transport to
+</I>&gt;<i> pass down to devices.  A device can fill and return this buffer in
+</I>&gt;<i> task-&gt;uaddr, and thus choose to do the read or write processing in any
+</I>&gt;<i> order.  Unfortunately, this allocation can not be combined with the task
+</I>&gt;<i> and task-&gt;data allocation as the bidi read size is not known until after
+</I>&gt;<i> AHS processing.
+</I>
+I've been cleaning up the code in preparation for bidi. For exmaple,
+moving bidi stuff in iscsi_task (read_len, write_len, and
+data_direction) to scsi_cmd so that everyone can use bidi.
+
+I'll add bidi support like this when I finish the preparation.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001154.html">[Stgt-devel] [PATCH 03/20] iser transport buf
+</A></li>
+	<LI>Next message: <A HREF="001143.html">[Stgt-devel] [PATCH 04/20] iser bidi alloc read buf
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1139">[ date ]</a>
+              <a href="thread.html#1139">[ thread ]</a>
+              <a href="subject.html#1139">[ subject ]</a>
+              <a href="author.html#1139">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

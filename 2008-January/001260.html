@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi: add assign_lun script
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20add%20assign_lun%20script&In-Reply-To=%3C20080103140408O.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001258.html">
+   <LINK REL="Next"  HREF="001261.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi: add assign_lun script</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20add%20assign_lun%20script&In-Reply-To=%3C20080103140408O.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi: add assign_lun script">tomof at acm.org
+       </A><BR>
+    <I>Thu Jan  3 06:00:57 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001258.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+        <LI>Next message: <A HREF="001261.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1260">[ date ]</a>
+              <a href="thread.html#1260">[ thread ]</a>
+              <a href="subject.html#1260">[ subject ]</a>
+              <a href="author.html#1260">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 01 Jan 2008 13:50:07 +0200
+Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+</I>&gt;<i> &gt; Date: Sun, 30 Dec 2007 10:51:16 +0200
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   
+</I>&gt;<i> &gt;&gt; Add a script that will create a target, add a device to
+</I>&gt;<i> &gt;&gt; the target and define the initiator that can connect to it.
+</I>&gt;<i> &gt;&gt;     
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Can you move this to usr/scripts? I guess that this could be improved
+</I>&gt;<i> &gt; to handle other protocols later on.
+</I>&gt;<i> &gt;   
+</I>&gt;<i> 
+</I>&gt;<i> I will.
+</I>&gt;<i> 
+</I>&gt;<i> &gt; There would be a better name since this script does more than
+</I>&gt;<i> &gt; assigning a logical unit, that is, creates a new target, add a lun,
+</I>&gt;<i> &gt; and enable an initiator to access to the target.
+</I>&gt;<i> &gt;   
+</I>&gt;<i> 
+</I>&gt;<i> In the (near) future I would like to enhance this script, so it will not
+</I>&gt;<i> always create a new target (e.g. add a device to a target that already
+</I>&gt;<i> exists if the user wants). So, the main thing that this script does is
+</I>&gt;<i> to setup a lun. How about &quot;setup_lun&quot;? Do you have other ideas?
+</I>
+I see. Then, you can choose whatever you like. I'm not good at
+naming. :)
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001258.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+	<LI>Next message: <A HREF="001261.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1260">[ date ]</a>
+              <a href="thread.html#1260">[ thread ]</a>
+              <a href="subject.html#1260">[ subject ]</a>
+              <a href="author.html#1260">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

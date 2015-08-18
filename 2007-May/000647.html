@@ -1,0 +1,622 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] PATCH 2 of 6 - tgt core patch
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%202%20of%206%20-%20tgt%20core%20patch&In-Reply-To=%3C200705130738.l4D7c1W1012622%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000618.html">
+   <LINK REL="Next"  HREF="000650.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] PATCH 2 of 6 - tgt core patch</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%202%20of%206%20-%20tgt%20core%20patch&In-Reply-To=%3C200705130738.l4D7c1W1012622%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] PATCH 2 of 6 - tgt core patch">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun May 13 09:37:49 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000618.html">[Stgt-devel] PATCH 2 of 6 - tgt core patch
+</A></li>
+        <LI>Next message: <A HREF="000650.html">[Stgt-devel] PATCH 2 of 6 - tgt core patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#647">[ date ]</a>
+              <a href="thread.html#647">[ thread ]</a>
+              <a href="subject.html#647">[ subject ]</a>
+              <a href="author.html#647">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] PATCH 2 of 6 - tgt core patch
+Date: Fri, 11 May 2007 13:17:44 +1000
+
+Thanks a lot for your work.
+
+Can we focus on tgt core changes first? If VTL code doesn't break tgt,
+I'm happy to merge it.
+
+
+&gt;<i> diff --git a/doc/tgt-setup b/doc/tgt-setup
+</I>&gt;<i> index e27f104..bb1074c 100755
+</I>&gt;<i> --- a/doc/tgt-setup
+</I>&gt;<i> +++ b/doc/tgt-setup
+</I>&gt;<i> @@ -2,7 +2,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>  set -x
+</I>&gt;<i>  
+</I>&gt;<i> -export PATH=`pwd`/usr:$PATH
+</I>&gt;<i> +export PATH=`pwd`/../usr:$PATH
+</I>&gt;<i>  
+</I>&gt;<i>  P=`ps -ef|grep -v grep|grep tgtd|wc -l`
+</I>&gt;<i>  if [ &quot;X&quot;$P == &quot;X0&quot; ]; then
+</I>
+I think that we need a new directory for scripts.
+
+
+&gt;<i> diff --git a/usr/Makefile b/usr/Makefile
+</I>&gt;<i> index 7ff74cb..62d0805 100644
+</I>&gt;<i> --- a/usr/Makefile
+</I>&gt;<i> +++ b/usr/Makefile
+</I>&gt;<i> @@ -61,3 +61,9 @@ endif
+</I>&gt;<i>  
+</I>&gt;<i>  clean:
+</I>&gt;<i>  	rm -f *.o $(PROGRAMS) iscsi/*.o ibmvio/*.o xen/*.o
+</I>&gt;<i> +
+</I>&gt;<i> +distclean:
+</I>&gt;<i> +	rm -f *.o $(PROGRAMS) iscsi/*.o ibmvio/*.o xen/*.o TAGS *.rej
+</I>
+We need this? git-clean ?
+
+
+&gt;<i> +tags:
+</I>&gt;<i> +	etags *.c *.h iscsi/*.c iscsi/*.h ibmvio/*.c xen/*.c xen/*.h
+</I>
+I use gtags instead of etags. There are various tools for tags so I
+don't think that we need something like this.
+
+
+&gt;<i> diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> index e9cc479..d53d0f3 100644
+</I>&gt;<i> --- a/usr/mmc.c
+</I>&gt;<i> +++ b/usr/mmc.c
+</I>&gt;<i> @@ -121,10 +121,24 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return SAM_STAT_GOOD;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int device_mmc_init(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	lu-&gt;d_sense = 1;
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int device_mmc_shutdown(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  struct device_type_template mmc_template = {
+</I>&gt;<i>  	.type	= TYPE_ROM,
+</I>&gt;<i>  	.name	= &quot;cdrom/dvd&quot;,
+</I>&gt;<i>  	.pid	= &quot;VIRTUAL-CDROM&quot;,
+</I>&gt;<i> +	.device_init = device_mmc_init,
+</I>&gt;<i> +	.device_shutdown = device_mmc_shutdown,
+</I>&gt;<i> +	.device_config = spc_device_config,
+</I>&gt;<i>  	.ops	= {
+</I>&gt;<i>  		{spc_test_unit,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i> diff --git a/usr/osd.c b/usr/osd.c
+</I>&gt;<i> index 46bf0a0..64e7b2a 100644
+</I>&gt;<i> --- a/usr/osd.c
+</I>&gt;<i> +++ b/usr/osd.c
+</I>&gt;<i> @@ -145,15 +145,22 @@ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -static void device_osd_init(struct scsi_lu *lu)
+</I>&gt;<i> +static int device_osd_init(struct scsi_lu *lu)
+</I>&gt;<i>  {
+</I>&gt;<i>  	lu-&gt;d_sense = 1;
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int device_osd_shutdown(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  struct device_type_template osd_template = {
+</I>&gt;<i>  	.type		= TYPE_OSD,
+</I>&gt;<i>  	.name		= &quot;osd&quot;,
+</I>&gt;<i>  	.device_init	= device_osd_init,
+</I>&gt;<i> +	.device_shutdown	= device_osd_shutdown,
+</I>&gt;<i>  	.ops		= {
+</I>&gt;<i>  		[0x00 ... 0x0f] = {spc_illegal_op},
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/sbc.c b/usr/sbc.c
+</I>&gt;<i> index a22d3b0..879943a 100644
+</I>&gt;<i> --- a/usr/sbc.c
+</I>&gt;<i> +++ b/usr/sbc.c
+</I>&gt;<i> @@ -337,10 +337,21 @@ sense:
+</I>&gt;<i>  	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int sbc_init(struct scsi_lu *lu) {
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int sbc_shutdown(struct scsi_lu *lu) {
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  struct device_type_template sbc_template = {
+</I>&gt;<i>  	.type	= TYPE_DISK,
+</I>&gt;<i>  	.name	= &quot;disk&quot;,
+</I>&gt;<i>  	.pid	= &quot;VIRTUAL-DISK&quot;,
+</I>&gt;<i> +	.device_init = sbc_init,
+</I>&gt;<i> +	.device_shutdown = sbc_shutdown,
+</I>&gt;<i> +	.device_config = spc_device_config,
+</I>&gt;<i>  	.ops	= {
+</I>&gt;<i>  		{spc_test_unit,},
+</I>&gt;<i>  		{spc_illegal_op,},
+</I>&gt;<i> diff --git a/usr/sense_codes.h b/usr/sense_codes.h
+</I>&gt;<i> new file mode 100644
+</I>&gt;<i> index 0000000..0791dc3
+</I>&gt;<i> --- /dev/null
+</I>&gt;<i> +++ b/usr/sense_codes.h
+</I>&gt;<i> @@ -0,0 +1,105 @@
+</I>&gt;<i> +/*
+</I>&gt;<i> + * The SCSI sense key Additional Sense Code / Additional Sense Code Qualifier
+</I>&gt;<i> + *
+</I>&gt;<i> + * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
+</I>&gt;<i> + *
+</I>&gt;<i> + * This program is free software; you can redistribute it and/or modify
+</I>&gt;<i> + * it under the terms of the GNU General Public License as published by
+</I>&gt;<i> + * the Free Software Foundation; version 2 of the License.
+</I>&gt;<i> + *
+</I>&gt;<i> + * This program is distributed in the hope that it will be useful,
+</I>&gt;<i> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+</I>&gt;<i> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+</I>&gt;<i> + * GNU General Public License for more details.
+</I>&gt;<i> + *
+</I>&gt;<i> + * You should have received a copy of the GNU General Public License
+</I>&gt;<i> + * along with this program; if not, write to the Free Software
+</I>&gt;<i> + * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+</I>&gt;<i> + */
+</I>&gt;<i> +
+</I>&gt;<i> +#define mk_sense_data(cmd, key, qual) \
+</I>&gt;<i> +	sense_data_build(cmd, key, ((qual &gt;&gt; 8) &amp; 0xff), qual &amp;&amp; 0xff)
+</I>&gt;<i> +
+</I>&gt;<i> +/*
+</I>&gt;<i> + * SENSE keys
+</I>&gt;<i> + */
+</I>&gt;<i> +#define NO_SENSE		0x00
+</I>&gt;<i> +#define	RECOVERED_ERROR		0x01
+</I>&gt;<i> +#define NOT_READY		0x02
+</I>&gt;<i> +#define MEDIUM_ERROR		0x03
+</I>&gt;<i> +#define	HARDWARE_ERROR		0x04
+</I>&gt;<i> +#define ILLEGAL_REQUEST		0x05
+</I>&gt;<i> +#define UNIT_ATTENTION		0x06
+</I>&gt;<i> +#define DATA_PROTECT		0x07
+</I>&gt;<i> +#define	BLANK_CHECK		0x08
+</I>&gt;<i> +
+</I>&gt;<i> +/* No Sense Errors */
+</I>&gt;<i> +#define NO_ADDITIONAL_SENSE		0x0000
+</I>&gt;<i> +#define E_MARK				0x0001
+</I>&gt;<i> +#define E_EOM				0x0002
+</I>&gt;<i> +#define E_BOM				0x0004
+</I>&gt;<i> +#define E_END_OF_DATA			0x0005
+</I>&gt;<i> +#define E_OP_IN_PROGRESS		0x0016
+</I>&gt;<i> +#define E_DRIVE_REQUIRES_CLEANING	0x8282
+</I>&gt;<i> +
+</I>&gt;<i> +/* Recovered Errors */
+</I>&gt;<i> +#define E_WRITE_ERROR			0x0c00
+</I>&gt;<i> +#define E_READ_ERROR			0x1100
+</I>&gt;<i> +#define E_RECOVERED_WITH_RETRYS		0x1701
+</I>&gt;<i> +#define E_MEDIA_LOAD_EJECT_ERROR	0x5300
+</I>&gt;<i> +#define E_FAILURE_PREDICTION		0x5d00
+</I>&gt;<i> +
+</I>&gt;<i> +/* Not ready */
+</I>&gt;<i> +#define E_CAUSE_NOT_REPORTABLE		0x0400
+</I>&gt;<i> +#define E_BECOMING_READY		0x0401
+</I>&gt;<i> +#define E_INITIALIZING_REQUIRED		0x0402
+</I>&gt;<i> +#define E_CLEANING_CART_INSTALLED	0x3003
+</I>&gt;<i> +#define E_CLEANING_FAILURE		0x3007
+</I>&gt;<i> +#define E_MEDIUM_NOT_PRESENT		0x3a00
+</I>&gt;<i> +#define E_LOGICAL_UNIT_NOT_CONFIG	0x3e00
+</I>&gt;<i> +
+</I>&gt;<i> +/* Medium Errors */
+</I>&gt;<i> +#define E_WRITE_ERROR			0x0c00
+</I>&gt;<i> +#define E_UNRECOVERED_READ		0x1100
+</I>&gt;<i> +#define E_RECORDED_ENTITY_NOT_FOUND	0x1400
+</I>&gt;<i> +#define E_UNKNOWN_FORMAT		0x3001
+</I>&gt;<i> +#define E_IMCOMPATIBLE_FORMAT		0x3002
+</I>&gt;<i> +#define E_MEDIUM_FORMAT_CORRUPT		0x3100
+</I>&gt;<i> +#define E_SEQUENTIAL_POSITION_ERR	0x3b00
+</I>&gt;<i> +#define E_WRITE_APPEND_ERR		0x5000
+</I>&gt;<i> +#define E_CARTRIDGE_FAULT		0x5200
+</I>&gt;<i> +#define E_MEDIA_LOAD_OR_EJECT_FAILED	0x5300
+</I>&gt;<i> +
+</I>&gt;<i> +/* Hardware Failure */
+</I>&gt;<i> +#define E_COMPRESSION_CHECK		0x0c04
+</I>&gt;<i> +#define E_DECOMPRESSION_CRC		0x110d
+</I>&gt;<i> +#define E_MECHANICAL_POSITIONING_ERROR	0x1501
+</I>&gt;<i> +#define E_MANUAL_INTERVENTION_REQ	0x0403
+</I>&gt;<i> +#define E_HARDWARE_FAILURE		0x4000
+</I>&gt;<i> +#define E_INTERNAL_TARGET_FAILURE	0x4400
+</I>&gt;<i> +#define E_ERASE_FAILURE			0x5100
+</I>&gt;<i> +
+</I>&gt;<i> +/* Illegal Request */
+</I>&gt;<i> +#define E_PARAMETER_LIST_LENGTH_ERR	0x1a00
+</I>&gt;<i> +#define E_INVALID_OP_CODE		0x2000
+</I>&gt;<i> +#define E_INVALID_FIELD_IN_CDB		0x2400
+</I>&gt;<i> +#define E_LUN_NOT_SUPPORTED		0x2500
+</I>&gt;<i> +#define E_INVALID_FIELD_IN_PARMS	0x2600
+</I>&gt;<i> +#define E_SAVING_PARMS_UNSUP		0x3900
+</I>&gt;<i> +#define E_MEDIUM_DEST_FULL		0x3b0d
+</I>&gt;<i> +#define E_MEDIUM_SRC_EMPTY		0x3b0e
+</I>&gt;<i> +#define E_POSITION_PAST_BOM		0x3b0c
+</I>&gt;<i> +#define E_MEDIUM_REMOVAL_PREVENTED	0x5302
+</I>&gt;<i> +#define E_BAD_MICROCODE_DETECTED	0x8283
+</I>&gt;<i> +
+</I>&gt;<i> +/* Unit Attention */
+</I>&gt;<i> +#define E_NOT_READY_TO_TRANSITION	0x2800
+</I>&gt;<i> +#define E_POWERON_RESET			0x2900
+</I>&gt;<i> +#define E_MODE_PARAMETERS_CHANGED	0x2a01
+</I>&gt;<i> +#define E_MICROCODE_DOWNLOADED		0x3f01
+</I>&gt;<i> +#define E_FAILURE_PREDICTION_FALSE	0x5dff
+</I>&gt;<i> +#define E_INQUIRY_DATA_HAS_CHANGED	0x3f03
+</I>&gt;<i> +
+</I>&gt;<i> +/* Data Protect */
+</I>&gt;<i> +#define E_WRITE_PROTECT			0x2700
+</I>&gt;<i> +#define E_MEDIUM_OVERWRITE_ATTEMPTED	0x300c
+</I>&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> index b922a45..7dd920a 100644
+</I>&gt;<i> --- a/usr/spc.c
+</I>&gt;<i> +++ b/usr/spc.c
+</I>&gt;<i> @@ -26,11 +26,14 @@
+</I>&gt;<i>  
+</I>&gt;<i>  #include &quot;list.h&quot;
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i> +#include &quot;parser.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i>  #include &quot;target.h&quot;
+</I>&gt;<i> +#include &quot;tgtadm.h&quot;
+</I>&gt;<i>  #include &quot;driver.h&quot;
+</I>&gt;<i>  #include &quot;scsi.h&quot;
+</I>&gt;<i>  #include &quot;spc.h&quot;
+</I>&gt;<i> +#include &quot;sense_codes.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i>  #define PRODUCT_REV	&quot;0&quot;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -240,7 +243,74 @@ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  
+</I>&gt;<i>  int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i> +	uint8_t	*cdb = cmd-&gt;scb;
+</I>&gt;<i> +
+</I>&gt;<i> +	switch((cdb[0] &amp; 0xe0) &gt;&gt; 5) {
+</I>
+how about using cmd-&gt;scb_len?
+
+
+&gt;<i> +	case 0:	/* 6byte commands */
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 1: /* 10byte commands */
+</I>&gt;<i> +	case 2:
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x&quot;, 
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
+</I>&gt;<i> +			cdb[6], cdb[7], cdb[8], cdb[9]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 3:	/* Exception to the rule */
+</I>&gt;<i> +	case 4:	/* 16byte commands */
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x %02x %02x&quot; 
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x&quot;,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
+</I>&gt;<i> +			cdb[6], cdb[7], cdb[8], cdb[9], cdb[10], cdb[11],
+</I>&gt;<i> +			cdb[12], cdb[13], cdb[14], cdb[15]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case 5:	/* 12byte commands */
+</I>&gt;<i> +		dprintf(&quot;SCSI CMD: %02x %02x %02x %02x %02d %02x&quot;
+</I>&gt;<i> +				&quot; %02x %02x %02x %02x %02x %02x&quot; ,
+</I>&gt;<i> +			cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5],
+</I>&gt;<i> +			cdb[6], cdb[7], cdb[8], cdb[9], cdb[10], cdb[11]);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	}
+</I>&gt;<i>  	cmd-&gt;len = 0;
+</I>&gt;<i>  	sense_data_build(cmd, ILLEGAL_REQUEST, 0x20, 0);
+</I>&gt;<i>  	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  }
+</I>&gt;<i> +
+</I>&gt;<i> +enum {
+</I>&gt;<i> +	Opt_scsiid, Opt_scsisn, Opt_err,
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +static match_table_t tokens = {
+</I>&gt;<i> +	{Opt_scsiid, &quot;scsi_id=%s&quot;},
+</I>&gt;<i> +	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
+</I>&gt;<i> +	{Opt_err, NULL},
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +int spc_device_config(struct scsi_lu *lu, char * params) {
+</I>&gt;<i> +	int	err = 0;
+</I>&gt;<i> +	char	*p;
+</I>&gt;<i> +
+</I>&gt;<i> +	while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+</I>&gt;<i> +		substring_t args[MAX_OPT_ARGS];
+</I>&gt;<i> +		int token;
+</I>&gt;<i> +		if (!*p)
+</I>&gt;<i> +			continue;
+</I>&gt;<i> +		dprintf(&quot;*p : %s\n&quot;, p);
+</I>&gt;<i> +		token = match_token(p, tokens, args);
+</I>&gt;<i> +		switch (token) {
+</I>&gt;<i> +		case Opt_scsiid:
+</I>&gt;<i> +			match_strncpy(lu-&gt;scsi_id, &amp;args[0],
+</I>&gt;<i> +				      sizeof(lu-&gt;scsi_id) - 1);
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		case Opt_scsisn:
+</I>&gt;<i> +			match_strncpy(lu-&gt;scsi_sn, &amp;args[0],
+</I>&gt;<i> +				      sizeof(lu-&gt;scsi_sn) - 1);
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		default:
+</I>&gt;<i> +			err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> +		}
+</I>&gt;<i> +	}
+</I>&gt;<i> +	return err;
+</I>&gt;<i> +}
+</I>&gt;<i> diff --git a/usr/spc.h b/usr/spc.h
+</I>&gt;<i> index f81e74c..5ced810 100644
+</I>&gt;<i> --- a/usr/spc.h
+</I>&gt;<i> +++ b/usr/spc.h
+</I>&gt;<i> @@ -7,5 +7,8 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> +extern int spc_mode_sense(int host_no, struct scsi_cmd *cmd,
+</I>&gt;<i> +						struct list_head * head);
+</I>&gt;<i> +extern int spc_device_config(struct scsi_lu *lu, char * params);
+</I>&gt;<i>  
+</I>&gt;<i>  #endif
+</I>&gt;<i> diff --git a/usr/target.c b/usr/target.c
+</I>&gt;<i> index 23f450f..d3be173 100644
+</I>&gt;<i> --- a/usr/target.c
+</I>&gt;<i> +++ b/usr/target.c
+</I>&gt;<i> @@ -29,7 +29,6 @@
+</I>&gt;<i>  #include &lt;sys/socket.h&gt;
+</I>&gt;<i>  
+</I>&gt;<i>  #include &quot;list.h&quot;
+</I>&gt;<i> -#include &quot;parser.h&quot;
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i>  #include &quot;driver.h&quot;
+</I>&gt;<i> @@ -249,11 +248,13 @@ int tgt_device_create(int tid, uint64_t lun, char *args)
+</I>&gt;<i>  
+</I>&gt;<i>  	snprintf(lu-&gt;scsi_id, sizeof(lu-&gt;scsi_id),
+</I>&gt;<i>  		 &quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
+</I>&gt;<i> +	snprintf(lu-&gt;scsi_sn, sizeof(lu-&gt;scsi_sn),
+</I>&gt;<i> +		&quot;beaf%d%&quot; PRIu64, tid, lun);
+</I>&gt;<i>  
+</I>&gt;<i>  	tgt_cmd_queue_init(&amp;lu-&gt;cmd_queue);
+</I>&gt;<i>  
+</I>&gt;<i>  	if (target-&gt;dev_type_template.device_init)
+</I>&gt;<i> -		target-&gt;dev_type_template.device_init(lu);
+</I>&gt;<i> +		err = target-&gt;dev_type_template.device_init(lu);
+</I>&gt;<i>  
+</I>&gt;<i>  	list_for_each_entry(pos, &amp;target-&gt;device_list, device_siblings) {
+</I>&gt;<i>  		if (lu-&gt;lun &lt; pos-&gt;lun)
+</I>&gt;<i> @@ -269,6 +270,7 @@ int tgt_device_destroy(int tid, uint64_t lun)
+</I>&gt;<i>  {
+</I>&gt;<i>  	struct target *target;
+</I>&gt;<i>  	struct scsi_lu *lu;
+</I>&gt;<i> +	int	err;
+</I>&gt;<i>  
+</I>&gt;<i>  	dprintf(&quot;%u %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -281,12 +283,14 @@ int tgt_device_destroy(int tid, uint64_t lun)
+</I>&gt;<i>  	if (!list_empty(&amp;lu-&gt;cmd_queue.queue) || lu-&gt;cmd_queue.active_cmd)
+</I>&gt;<i>  		return TGTADM_LUN_ACTIVE;
+</I>&gt;<i>  
+</I>&gt;<i> +	err = target-&gt;dev_type_template.device_shutdown(lu);
+</I>&gt;<i> +
+</I>&gt;<i>  	free(lu-&gt;path);
+</I>&gt;<i>  	list_del(&amp;lu-&gt;device_siblings);
+</I>&gt;<i>  
+</I>&gt;<i>  	target-&gt;bst-&gt;bs_close(lu);
+</I>&gt;<i>  	free(lu);
+</I>&gt;<i> -	return 0;
+</I>&gt;<i> +	return err;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  int device_reserve(struct scsi_cmd *cmd)
+</I>&gt;<i> @@ -339,20 +343,9 @@ int device_reserved(struct scsi_cmd *cmd)
+</I>&gt;<i>  	return -EBUSY;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -enum {
+</I>&gt;<i> -	Opt_scsiid, Opt_scsisn, Opt_err,
+</I>&gt;<i> -};
+</I>&gt;<i> -
+</I>&gt;<i> -static match_table_t tokens = {
+</I>&gt;<i> -	{Opt_scsiid, &quot;scsi_id=%s&quot;},
+</I>&gt;<i> -	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
+</I>&gt;<i> -	{Opt_err, NULL},
+</I>&gt;<i> -};
+</I>&gt;<i> -
+</I>&gt;<i>  int tgt_device_update(int tid, uint64_t dev_id, char *params)
+</I>&gt;<i>  {
+</I>&gt;<i> -	int err = 0;
+</I>&gt;<i> -	char *p;
+</I>&gt;<i> +	int err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i>  	struct target *target;
+</I>&gt;<i>  	struct scsi_lu *lu;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -366,26 +359,8 @@ int tgt_device_update(int tid, uint64_t dev_id, char *params)
+</I>&gt;<i>  		return TGTADM_NO_LUN;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> -	while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+</I>&gt;<i> -		substring_t args[MAX_OPT_ARGS];
+</I>&gt;<i> -		int token;
+</I>&gt;<i> -		if (!*p)
+</I>&gt;<i> -			continue;
+</I>&gt;<i> -		token = match_token(p, tokens, args);
+</I>&gt;<i> -
+</I>&gt;<i> -		switch (token) {
+</I>&gt;<i> -		case Opt_scsiid:
+</I>&gt;<i> -			match_strncpy(lu-&gt;scsi_id, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;scsi_id) - 1);
+</I>&gt;<i> -			break;
+</I>&gt;<i> -		case Opt_scsisn:
+</I>&gt;<i> -			match_strncpy(lu-&gt;scsi_sn, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;scsi_sn) - 1);
+</I>&gt;<i> -			break;
+</I>&gt;<i> -		default:
+</I>&gt;<i> -			err = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> -		}
+</I>&gt;<i> -	}
+</I>&gt;<i> +	if (target-&gt;dev_type_template.device_config)
+</I>&gt;<i> +		err = target-&gt;dev_type_template.device_config(lu, params);
+</I>&gt;<i>  
+</I>&gt;<i>  	return err;
+</I>&gt;<i>  }
+</I>&gt;<i> @@ -474,8 +449,8 @@ int target_cmd_queue(int tid, struct scsi_cmd *cmd)
+</I>&gt;<i>  		cmd_post_perform(q, cmd);
+</I>&gt;<i>  
+</I>&gt;<i>  		dprintf(&quot;%&quot; PRIx64 &quot; %x %&quot; PRIx64 &quot; %&quot; PRIu64 &quot; %u %d %d\n&quot;,
+</I>&gt;<i> -			cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;uaddr, cmd-&gt;offset, cmd-&gt;len,
+</I>&gt;<i> -			result, cmd-&gt;async);
+</I>&gt;<i> +			cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;uaddr, cmd-&gt;offset,
+</I>&gt;<i> +			cmd-&gt;len, result, cmd-&gt;async);
+</I>&gt;<i>  
+</I>&gt;<i>  		set_cmd_processed(cmd);
+</I>&gt;<i>  		if (!cmd-&gt;async)
+</I>&gt;<i> @@ -483,7 +458,8 @@ int target_cmd_queue(int tid, struct scsi_cmd *cmd)
+</I>&gt;<i>  	} else {
+</I>&gt;<i>  		set_cmd_queued(cmd);
+</I>&gt;<i>  		dprintf(&quot;blocked %&quot; PRIx64 &quot; %x %&quot; PRIu64 &quot; %d\n&quot;,
+</I>&gt;<i> -			cmd-&gt;tag, cmd-&gt;scb[0], cmd-&gt;dev ? cmd-&gt;dev-&gt;lun : UINT64_MAX,
+</I>&gt;<i> +			cmd-&gt;tag, cmd-&gt;scb[0],
+</I>&gt;<i> +			cmd-&gt;dev ? cmd-&gt;dev-&gt;lun : UINT64_MAX,
+</I>&gt;<i>  			q-&gt;active_cmd);
+</I>&gt;<i>  
+</I>&gt;<i>  		list_add_tail(&amp;cmd-&gt;qlist, &amp;q-&gt;queue);
+</I>&gt;<i> diff --git a/usr/tgtadm.c b/usr/tgtadm.c
+</I>&gt;<i> index e55a785..3d551cc 100644
+</I>&gt;<i> --- a/usr/tgtadm.c
+</I>&gt;<i> +++ b/usr/tgtadm.c
+</I>&gt;<i> @@ -103,6 +103,7 @@ struct option const long_options[] = {
+</I>&gt;<i>  	{&quot;initiator-address&quot;, required_argument, NULL, 'I'},
+</I>&gt;<i>  	{&quot;user&quot;, required_argument, NULL, 'u'},
+</I>&gt;<i>  	{&quot;password&quot;, required_argument, NULL, 'p'},
+</I>&gt;<i> +	{&quot;params&quot;, required_argument, NULL, 'P'},
+</I>&gt;<i>  
+</I>&gt;<i>  	{&quot;bus&quot;, required_argument, NULL, 'B'},
+</I>&gt;<i>  	{&quot;target-type&quot;, required_argument, NULL, 'Y'},
+</I>&gt;<i> @@ -110,7 +111,7 @@ struct option const long_options[] = {
+</I>&gt;<i>  	{NULL, 0, NULL, 0},
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> -static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:B:Y:O&quot;;
+</I>&gt;<i> +static char *short_options = &quot;dhL:o:m:t:s:c:l:n:v:b:T:I:u:p:P:B:Y:O&quot;;
+</I>&gt;<i>  
+</I>&gt;<i>  static void usage(int status)
+</I>&gt;<i>  {
+</I>&gt;<i> @@ -355,7 +356,7 @@ int main(int argc, char **argv)
+</I>&gt;<i>  	int op, total, tid, rest, mode, t_type, ac_dir;
+</I>&gt;<i>  	uint32_t cid, hostno;
+</I>&gt;<i>  	uint64_t sid, lun;
+</I>&gt;<i> -	char *name, *value, *path, *targetname, *params, *address;
+</I>&gt;<i> +	char *name, *value, *path, *targetname, *params, *address, *targetOps;
+</I>&gt;<i>  	char *user, *password;
+</I>&gt;<i>  	char buf[BUFSIZE + sizeof(struct tgtadm_req)];
+</I>&gt;<i>  	struct tgtadm_req *req;
+</I>&gt;<i> @@ -365,7 +366,7 @@ int main(int argc, char **argv)
+</I>&gt;<i>  	t_type = TYPE_DISK;
+</I>&gt;<i>  	ac_dir = ACCOUNT_TYPE_INCOMING;
+</I>&gt;<i>  	rest = BUFSIZE;
+</I>&gt;<i> -	name = value = path = targetname = address = NULL;
+</I>&gt;<i> +	name = value = path = targetname = address = targetOps = NULL;
+</I>&gt;<i>  	user = password = NULL;
+</I>&gt;<i>  
+</I>&gt;<i>  	memset(buf, 0, sizeof(buf));
+</I>&gt;<i> @@ -396,6 +397,9 @@ int main(int argc, char **argv)
+</I>&gt;<i>  		case 'l':
+</I>&gt;<i>  			lun = strtoull(optarg, NULL, 10);
+</I>&gt;<i>  			break;
+</I>&gt;<i> +		case 'P':
+</I>&gt;<i> +			targetOps = optarg;
+</I>&gt;<i> +			break;
+</I>&gt;<i>  		case 'n':
+</I>&gt;<i>  			name = optarg;
+</I>&gt;<i>  			break;
+</I>&gt;<i> @@ -570,6 +574,10 @@ int main(int argc, char **argv)
+</I>&gt;<i>  	if (password)
+</I>&gt;<i>  		shprintf(total, params, rest, &quot;%spassword=%s&quot;,
+</I>&gt;<i>  			 rest == BUFSIZE ? &quot;&quot; : &quot;,&quot;, password);
+</I>&gt;<i> +	// Trailing ',' makes parsing params in modules easier..
+</I>&gt;<i> +	if (targetOps)
+</I>&gt;<i> +		shprintf(total, params, rest, &quot;%stargetOps %s,&quot;,
+</I>&gt;<i> +			 rest == BUFSIZE ? &quot;&quot; : &quot;,&quot;, targetOps);
+</I>&gt;<i>  
+</I>&gt;<i>  	req-&gt;len = sizeof(*req) + total;
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;<i> index 06e0dd9..808fd7f 100644
+</I>&gt;<i> --- a/usr/tgtd.h
+</I>&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;<i> @@ -49,6 +49,8 @@ struct scsi_lu {
+</I>&gt;<i>  
+</I>&gt;<i>  	/* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i>  	uint8_t d_sense;
+</I>&gt;<i> +
+</I>&gt;<i> +	void * priv_p;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i>  struct scsi_cmd {
+</I>&gt;<i> @@ -121,7 +123,9 @@ struct device_type_template {
+</I>&gt;<i>  	char *name;
+</I>&gt;<i>  	char *pid;
+</I>&gt;<i>  
+</I>&gt;<i> -	void (*device_init)(struct scsi_lu *dev);
+</I>&gt;<i> +	int (*device_init)(struct scsi_lu *lu);
+</I>&gt;<i> +	int (*device_shutdown)(struct scsi_lu *lu);
+</I>&gt;<i> +	int (*device_config)(struct scsi_lu *lu, char *arg);
+</I>&gt;<i>  
+</I>&gt;<i>  	struct device_type_operations ops[256];
+</I>&gt;<i>  };
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000618.html">[Stgt-devel] PATCH 2 of 6 - tgt core patch
+</A></li>
+	<LI>Next message: <A HREF="000650.html">[Stgt-devel] PATCH 2 of 6 - tgt core patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#647">[ date ]</a>
+              <a href="thread.html#647">[ thread ]</a>
+              <a href="subject.html#647">[ subject ]</a>
+              <a href="author.html#647">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

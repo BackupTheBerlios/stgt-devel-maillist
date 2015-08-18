@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Multiple tgtd exporting same device.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Multiple%20tgtd%20exporting%20same%20device.&In-Reply-To=%3C1214754999.3431.45.camel%40localhost%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001718.html">
+   <LINK REL="Next"  HREF="001721.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Multiple tgtd exporting same device.</H1>
+    <B>Simone Gotti</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Multiple%20tgtd%20exporting%20same%20device.&In-Reply-To=%3C1214754999.3431.45.camel%40localhost%3E"
+       TITLE="[Stgt-devel] Multiple tgtd exporting same device.">simone.gotti at gmail.com
+       </A><BR>
+    <I>Sun Jun 29 17:56:39 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001718.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+        <LI>Next message: <A HREF="001721.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1719">[ date ]</a>
+              <a href="thread.html#1719">[ thread ]</a>
+              <a href="subject.html#1719">[ subject ]</a>
+              <a href="author.html#1719">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 2008-06-29 at 21:46 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Simone Gotti &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">simone.gotti at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] Multiple tgtd exporting same device.
+</I>&gt;<i> Date: Thu, 26 Jun 2008 23:13:27 +0200
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Hi all,
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; to increase the availability (and also to use in future some features
+</I>&gt;<i> &gt; like cluster mirror with RedHat Cluster Suite when it'll be available on
+</I>&gt;<i> &gt; RHEL5 or in the upstream kernel) of a iscsi target server I'd like to
+</I>&gt;<i> 
+</I>&gt;<i> I'm not sure how this configuration can increase the availability.
+</I>
+I'll try to explain it in a clearer way.
+
+                        &#65279; ____________
+                        |            |
+                        | &#65279; Storage   |
+                        &#65279;|____________|
+                          /        \
+                         /          \
+               ___________          &#65279;___________
+              | Target 1  |        | Target 2  |
+              |   tgtd    |        |   tgtd    |
+              |___________|        |&#65279;&#65279;___________|
+                 | |                 /  /
+&#65279;                 | |   _____________/  /
+&#65279;                 | |  /  _____________/
+                 | | /  /
+&#65279;              &#65279; ___________          &#65279;___________
+              | CLient 1  |  ...   | Client X  |
+              |   tgtd    |        |           |
+              |&#65279;___________|        |&#65279;___________|
+
+
+
+The storage exports the same devices via FC (also multipathed), SCSI
+Cable ecc...
+
+Then 2 (or more) Servers exports in an active/active way the same device
+via iSCSI and multipathing on the client is used to see the same device
+(here via 4 paths).
+
+&#65279;What I'd like to do is to minimize the recovery time (and maybe, but
+this is not my primary reason the increase throughput) when a machine
+dies (or similar problems).
+
+Another solution would be an active/passive management where tgtd runs
+only on one machine and it's relocated on the other one using the
+cluster. But this can fail (take too much time) if node fencing is
+failing for every reason etc... 
+
+(The reasons I'm thinking about this solution are various: Need that
+many clients can access the same device via iscsi (like using oVirt for
+virtualization deployment) and trying to reuse an existent non iscsi
+storage etc...)
+
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; export the same block devices from 2 or more machines (connected to a
+</I>&gt;<i> &gt; common storage). Then the iscsi initiators on other client machines will
+</I>&gt;<i> &gt; use dm-multipath di balance I/O and to survive the lost of one or more
+</I>&gt;<i> &gt; scsi target machines.
+</I>&gt;<i> 
+</I>&gt;<i> You don't need multiple tgt daemons to use dm-multipath on the
+</I>&gt;<i> initiator side.
+</I>
+I know I can access a single tgtd over 2 different network interfaces/IP
+and get multipath over them.
+But my idea was to have multiple machines exporting the same device in
+an active/active way, so a tgtd running for every machine.
+
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; I'm already doing something similar with gnbd and now I'd like to do the
+</I>&gt;<i> &gt; same with stgt via iscsi.
+</I>&gt;<i> 
+</I>&gt;<i> You runs multiple tgt daemons on one machine and they export the same
+</I>&gt;<i> file to initiators?
+</I>&gt;<i> 
+</I>&gt;<i> If so, you can't do that easily because SCSI protocol is not about
+</I>&gt;<i> only READ and WRITE commands. For example, how can tgt daemons handle
+</I>&gt;<i> RESERVE command?
+</I>
+&#65279;In fact I didn't thought about the RESERVE command (&#65279;for the moment I
+won't need SCSI reservation). Gnbd uses it's own fencing to avoid the
+access to the exported devices instead of scsi reservation but requires
+the gnbd clients to be part of the same cluster of the gnbd servers).
+
+Probably a solution would be that the N tgtd should communicate each
+other the reservation state.
+&#65279;
+BTW. does/will tgtd support SCSI3 persistent reservation? Is/will the
+state be saved on local file system? Or how is it implemented?
+
+Thanks!
+Bye!
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001718.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+	<LI>Next message: <A HREF="001721.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1719">[ date ]</a>
+              <a href="thread.html#1719">[ thread ]</a>
+              <a href="subject.html#1719">[ subject ]</a>
+              <a href="author.html#1719">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

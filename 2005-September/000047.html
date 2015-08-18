@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C20050909045633Z.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000068.html">
+   <LINK REL="Next"  HREF="000048.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20%26%20IBM%20virtual%20SCSI%20Target%20Driver&In-Reply-To=%3C20050909045633Z.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Sep  8 21:56:33 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000068.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000048.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#47">[ date ]</a>
+              <a href="thread.html#47">[ thread ]</a>
+              <a href="subject.html#47">[ subject ]</a>
+              <a href="author.html#47">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I had a look at your code to figure out how it works together.
+
+Here is my guess, however, probably I misunderstood several issues.
+
+In case of DMA_TO_DEVICE, your driver allocates continuous buffer and
+asks the hypervisor to copy data from initiator's buffer several times
+(= cmnd-&gt;use_sg). And then, it submits the I/O request.
+
+In case of DMA_FROM_DEVICE, your driver allocates continuous buffer
+and submits the I/O request. After the completion, the driver asks
+the hypervisor to copy data to initiator's buffer in the same way as
+DMA_TO_DEVICE.
+
+
+I think that your driver can exploit stgt easily.
+
+In case of DMA_TO_DEVICE, your driver asks stgt to create a new
+command and allocate sg buffer, and then copy data from initiator's
+buffer.  After that, it asks stgt to perform the command.
+
+In case of DMA_FROM_DEVICE, your driver asks stgt to create a new
+command and to perform the command. After the completion notification
+(of course, you can specify the completion notification callback), the
+driver uses sg buffer in the command.
+
+stgt takes care of SCSI command handling. So your driver can focus on
+communication with indicators.
+
+stgt scheme to handle sense data buffer does not match your driver,
+however, I thought that its scheme needs to be cleaned up. So we can
+see it later on.
+
+We plan to do most of configurations through netlink. Your driver is
+purely virtual so that all configurations can be done through netlink.
+
+We've not implement all features yet, however, I think you can start
+to work right now.
+
+
+By the way, I have some questions about your driver.
+
+1. Your driver uses bio to access non-scsi devices. I think that it
+leads to poor read performance. Why do you use the vfs interface to
+exploit page cache?
+
+2. About task attribute, you can support only simple and ordered. You
+implement 'ordered task' to use bio barrier. So you don't have a
+complete code to handle all task attributes?
+
+
+stgt interface needs to be changed to support task attribute
+feature. I also think that we can simplify stgt_cmnd_* and buffer
+allocation interfaces. In short, I don't think that target drivers
+don't need to know or access the inside of stgt_cmnd structure. Mike,
+What do you think?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000068.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000048.html">[Stgt-devel] stgt &amp; IBM virtual SCSI Target Driver
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#47">[ date ]</a>
+              <a href="thread.html#47">[ thread ]</a>
+              <a href="subject.html#47">[ subject ]</a>
+              <a href="author.html#47">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

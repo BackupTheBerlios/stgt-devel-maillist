@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C431F9495.8010306%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000043.html">
+   <LINK REL="Next"  HREF="000045.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C431F9495.8010306%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Thu Sep  8 03:32:05 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000043.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000045.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#44">[ date ]</a>
+              <a href="thread.html#44">[ thread ]</a>
+              <a href="subject.html#44">[ subject ]</a>
+              <a href="author.html#44">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+</I>&gt;<i> Date: Sun, 28 Aug 2005 00:49:44 +0900
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;&gt;&gt;&gt;<i>Does stgt enable target drivers to call their own functions when
+</I>&gt;&gt;&gt;&gt;<i>user-space requires such operations?
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>I think we will need to move the stgt_target_template registration to 
+</I>&gt;&gt;&gt;<i>the target driver's module_init function. We can add some callbacks onto 
+</I>&gt;&gt;&gt;<i>it so stgt can call into the target driver. Maybe a create_target(), 
+</I>&gt;&gt;&gt;<i>set_param(), get_param(), destroy_target(), etc is needed. I think this 
+</I>&gt;&gt;&gt;<i>is what you are suggesting right?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>I think so. I simply thought about mechanisms like
+</I>&gt;&gt;<i>stgt_device_template, however, I didn't have a clear idea. I'll
+</I>&gt;&gt;<i>implement that after the cleanup.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I've done target_create/destroy callbacks.
+</I>&gt;<i> 
+</I>&gt;<i> I'll try to see how to integrate target driver daemons to stgtd. For
+</I>&gt;<i> that, ietd daemon needs to do all kernel-user space communication
+</I>&gt;<i> through stgt netlink. Thus, we need to add some iSCSI specific
+</I>&gt;<i> callbacks (like conn_create/destroy). Is it OK? Or is implementing
+</I>
+I do not think we want to do that since we would have stgt_core doing 
+lower level transport stuff and as we add many the callouts for them 
+could get out of hand.
+
+&gt;<i> more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+</I>&gt;<i> target driver specific tasks better?
+</I>
+Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+handle the event it passes it to the protocol or target driver or 
+transport. Or maybe it can flow downwards. For what we have now:
+
+STGT_UEVENT_SEND_MESSAGE-&gt;stgt (if not mine pass down) -&gt;protocol (pass 
+down if not mine) -&gt;target_driver (fail if not my message)
+
+I guess either way we need to add something on the event so we can 
+figure out who the event is supposed to be for. I ran into similar 
+troubles with passing things upwards (see the TODO I added to the 
+usr/netlink.c this morning).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000043.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000045.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#44">[ date ]</a>
+              <a href="thread.html#44">[ thread ]</a>
+              <a href="subject.html#44">[ subject ]</a>
+              <a href="author.html#44">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

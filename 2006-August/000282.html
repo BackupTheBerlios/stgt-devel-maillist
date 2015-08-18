@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154472884.2829.76.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000280.html">
+   <LINK REL="Next"  HREF="000287.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154472884.2829.76.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] User-mode iSER">mingz at ele.uri.edu
+       </A><BR>
+    <I>Wed Aug  2 00:54:44 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000280.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000287.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#282">[ date ]</a>
+              <a href="thread.html#282">[ thread ]</a>
+              <a href="subject.html#282">[ subject ]</a>
+              <a href="author.html#282">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 2006-08-02 at 07:21 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] User-mode iSER
+</I>&gt;<i> Date: Tue, 01 Aug 2006 16:31:10 -0400
+</I>&gt;<i> 
+</I>&gt;<i> &gt; On Tue, 2006-08-01 at 15:23 -0500, Tom Tucker wrote:
+</I>&gt;<i> &gt; &gt; On Tue, 2006-08-01 at 16:21 -0400, Ming Zhang wrote:
+</I>&gt;<i> &gt; &gt; &gt; On Tue, 2006-08-01 at 14:00 -0500, Tom Tucker wrote:
+</I>&gt;<i> &gt; &gt; &gt; &gt; On Tue, 2006-08-01 at 14:49 -0400, Ming Zhang wrote:
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; my 2c. u figure ignores other device types like VT/VTL or bridge. your
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; target device type are only TYPE_DISK here.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; Yeah, I should put in ellipses... These types are not precluded.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt;  also scsi/block/file just
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; physical media used by TYPE_DISK.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; Yes, but there seemed to be some interest in exporting a file as a SCSI
+</I>&gt;<i> &gt; &gt; &gt; &gt; Target, or even anonymously mapped memory...
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; What else should we be thinking about?
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; SPI is not mentioned in your pic.
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; and it will be better if kernel/user space line is marked. so people
+</I>&gt;<i> &gt; &gt; &gt; know your intention and can comment in that if need. otherwise, i saw no
+</I>&gt;<i> &gt; &gt; &gt; difference from stgt or scst.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Someone else mentioned that. I'll add a line.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cool.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; also license. :P what license(s) will be used and allowed for each part.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Dual BSD/GPL
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cool again.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; i bet vendor will love to jump onto this. ;)
+</I>&gt;<i> 
+</I>&gt;<i> Only the iSER component. The rest will be released under GPL.
+</I>
+then is a VT/VTL company write a target mode driver and need to link to
+this target, means it has to be GPL as well?
+
+Ming
+
+&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000280.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000287.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#282">[ date ]</a>
+              <a href="thread.html#282">[ thread ]</a>
+              <a href="subject.html#282">[ subject ]</a>
+              <a href="author.html#282">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

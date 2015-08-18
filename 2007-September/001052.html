@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] isns fix initiator -&gt; target
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20isns%20fix%20initiator%20-%3E%20target&In-Reply-To=%3Cb2919bc20709170057k3898778ub5bd49c10a9c1505%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001051.html">
+   <LINK REL="Next"  HREF="001053.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] isns fix initiator -&gt; target</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20isns%20fix%20initiator%20-%3E%20target&In-Reply-To=%3Cb2919bc20709170057k3898778ub5bd49c10a9c1505%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] isns fix initiator -&gt; target">albert.pauw at gmail.com
+       </A><BR>
+    <I>Mon Sep 17 09:57:39 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001051.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+        <LI>Next message: <A HREF="001053.html">[Stgt-devel] first burst &gt; max burst
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1052">[ date ]</a>
+              <a href="thread.html#1052">[ thread ]</a>
+              <a href="subject.html#1052">[ subject ]</a>
+              <a href="author.html#1052">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Olaf,
+
+I haven't been able to reproduce this. I must have mixed up things (as it
+was quite late),
+and the next day (after clearing the isns DB by hand first) everything
+worked as it should.
+
+
+On 9/17/07, Olaf Kirch &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">okir at lst.de</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> On Sunday 16 September 2007 08:21, Albert Pauw wrote:
+</I>&gt;<i> &gt; I am running open-iscsi and tgt on the same host, but as we discovered
+</I>&gt;<i> &gt; earlier the registration with open-isns gets confused about this. But
+</I>&gt;<i> &gt; even when the initiator has been stopped and shortly after expunged from
+</I>&gt;<i> &gt; the isns database something of it is left. When I start tgt isns still
+</I>&gt;<i> &gt; thinks that it is an initiator (as it comes from the same host).
+</I>&gt;<i>
+</I>&gt;<i> That sounds weird indeed. Can you reproduce this reliably? If so,
+</I>&gt;<i> please send me the complete debug log of the session, as well as
+</I>&gt;<i> a database dump taken before and after tgt re-registers.
+</I>&gt;<i>
+</I>&gt;<i> Olaf
+</I>&gt;<i> --
+</I>&gt;<i> Olaf Kirch  |  --- o --- Nous sommes du soleil we love when we play
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">okir at lst.de</A> |    / | \   sol.dhoop.naytheet.ah kin.ir.samse.qurax
+</I>&gt;<i>
+</I>-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070917/31186302/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070917/31186302/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001051.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+	<LI>Next message: <A HREF="001053.html">[Stgt-devel] first burst &gt; max burst
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1052">[ date ]</a>
+              <a href="thread.html#1052">[ thread ]</a>
+              <a href="subject.html#1052">[ subject ]</a>
+              <a href="author.html#1052">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

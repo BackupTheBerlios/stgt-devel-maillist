@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C64770.190.10.50.223.1205892417.squirrel%40webmail.decarpentier.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001477.html">
+   <LINK REL="Next"  HREF="001470.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>Niels de Carpentier</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C64770.190.10.50.223.1205892417.squirrel%40webmail.decarpentier.com%3E"
+       TITLE="[Stgt-devel] Open connections">stgt at decarpentier.com
+       </A><BR>
+    <I>Wed Mar 19 03:06:57 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001477.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001470.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1479">[ date ]</a>
+              <a href="thread.html#1479">[ thread ]</a>
+              <a href="subject.html#1479">[ subject ]</a>
+              <a href="author.html#1479">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;&gt;<i>
+</I>&gt;&gt;<i> The reconnect issue seems to be related to some commented out code in
+</I>&gt;&gt;<i> login_security_done:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>                 if (!req-&gt;tsih) {
+</I>&gt;&gt;<i>                         /* do session reinstatement */
+</I>&gt;&gt;<i>                         /* We need to close all connections in this
+</I>&gt;&gt;<i> session */
+</I>&gt;&gt;<i> /*                      session_conns_close(conn-&gt;tid, sid); */
+</I>&gt;&gt;<i> /*                      session = NULL; */
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> If I uncomment the session = NULL, things will work ok. (Of course this
+</I>&gt;&gt;<i> doesn't handle any cleanups, but indicates where the problem is)
+</I>&gt;<i>
+</I>&gt;<i> Yeah, one of the problems is that tgt doesn't implement session
+</I>&gt;<i> reinstatement properly.
+</I>&gt;<i>
+</I>&gt;<i> Can you try the following patch?
+</I>
+The patch fixed the reconnect issue for me, and properly closes the old
+connection.
+
+Just let me know if you need more info about the other issue. (I'll be on
+leave till Monday, but will be available again after that.)
+
+Niels
+
+&gt;<i>
+</I>&gt;<i> Thanks,
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> index 490a743..bc8a1d5 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> @@ -237,10 +237,16 @@ static void login_security_done(struct
+</I>&gt;<i> iscsi_connection *conn)
+</I>&gt;<i>  	session = session_find_name(conn-&gt;tid, conn-&gt;initiator, req-&gt;isid);
+</I>&gt;<i>  	if (session) {
+</I>&gt;<i>  		if (!req-&gt;tsih) {
+</I>&gt;<i> +			struct iscsi_connection *ent, *next;
+</I>&gt;<i> +
+</I>&gt;<i>  			/* do session reinstatement */
+</I>&gt;<i> -			/* We need to close all connections in this session */
+</I>&gt;<i> -/* 			session_conns_close(conn-&gt;tid, sid); */
+</I>&gt;<i> -/* 			session = NULL; */
+</I>&gt;<i> +
+</I>&gt;<i> +			list_for_each_entry_safe(ent, next, &amp;session-&gt;conn_list,
+</I>&gt;<i> +						 clist) {
+</I>&gt;<i> +				conn_close(ent);
+</I>&gt;<i> +			}
+</I>&gt;<i> +
+</I>&gt;<i> +			session = NULL;
+</I>&gt;<i>  		} else if (req-&gt;tsih != session-&gt;tsih) {
+</I>&gt;<i>  			/* fail the login */
+</I>&gt;<i>  			rsp-&gt;status_class = ISCSI_STATUS_CLS_INITIATOR_ERR;
+</I>&gt;<i> @@ -250,8 +256,10 @@ static void login_security_done(struct
+</I>&gt;<i> iscsi_connection *conn)
+</I>&gt;<i>  		} else if (conn_find(session, conn-&gt;cid)) {
+</I>&gt;<i>  			/* do connection reinstatement */
+</I>&gt;<i>  		}
+</I>&gt;<i> +
+</I>&gt;<i>  		/* add a new connection to the session */
+</I>&gt;<i> -		conn_add_to_session(conn, session);
+</I>&gt;<i> +		if (session)
+</I>&gt;<i> +			conn_add_to_session(conn, session);
+</I>&gt;<i>  	} else {
+</I>&gt;<i>  		if (req-&gt;tsih) {
+</I>&gt;<i>  			/* fail the login */
+</I>&gt;<i>
+</I>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001477.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001470.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1479">[ date ]</a>
+              <a href="thread.html#1479">[ thread ]</a>
+              <a href="subject.html#1479">[ subject ]</a>
+              <a href="author.html#1479">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

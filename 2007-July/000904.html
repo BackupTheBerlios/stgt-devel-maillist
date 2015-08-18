@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 7/7] iser core
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20iser%20core&In-Reply-To=%3C1185897559.15430.4.camel%40confield.dd.xiranet.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000901.html">
+   <LINK REL="Next"  HREF="000905.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 7/7] iser core</H1>
+    <B>Arne Redlich</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%207/7%5D%20iser%20core&In-Reply-To=%3C1185897559.15430.4.camel%40confield.dd.xiranet.com%3E"
+       TITLE="[Stgt-devel] [PATCH 7/7] iser core">agr at powerkom-dd.de
+       </A><BR>
+    <I>Tue Jul 31 17:59:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000901.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+        <LI>Next message: <A HREF="000905.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#904">[ date ]</a>
+              <a href="thread.html#904">[ thread ]</a>
+              <a href="subject.html#904">[ subject ]</a>
+              <a href="author.html#904">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Am Montag, den 30.07.2007, 15:01 -0400 schrieb Pete Wyckoff:
+
+&gt;<i> +/* global connection list variables */
+</I>&gt;<i> +struct rdma_conn_list {
+</I>&gt;<i> +	struct conn_info conn[MAX_CONN];
+</I>&gt;<i> +	/*variables that all connections will share*/
+</I>&gt;<i> +	struct ibv_context	*ibv_hndl;
+</I>&gt;<i> +	struct rdma_event_channel *rdma_evt_channel;
+</I>&gt;<i> +	struct rdma_cm_id	*cma_listen_id;
+</I>&gt;<i> +	struct ibv_pd		*prot_id;
+</I>&gt;<i> +	struct ibv_cq		*cq_hndl;
+</I>&gt;<i> +	struct ibv_comp_channel *cq_channel;
+</I>&gt;<i> +	struct list_head conn_tx_ready;  /* conns with tasks ready to tx */
+</I>&gt;<i> +	/* prereg rdma bufs */
+</I>&gt;<i> +	void *regbuf;
+</I>&gt;<i> +	void *membuf;
+</I>&gt;<i> +	struct ibv_mr *regmr;
+</I>&gt;<i> +	struct list_head freel, allocl;
+</I>&gt;<i> +	int num_tx_ready;
+</I>&gt;<i> +};
+</I>&gt;<i> +static struct rdma_conn_list cl;
+</I>
+Haven't found it in the errata, but it seems that with this design only
+one HCA is supported?
+
+Arne
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000901.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+	<LI>Next message: <A HREF="000905.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#904">[ date ]</a>
+              <a href="thread.html#904">[ thread ]</a>
+              <a href="subject.html#904">[ subject ]</a>
+              <a href="author.html#904">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,283 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/2] fcoe: remove older fcoe header code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20fcoe%3A%20remove%20older%20fcoe%20header%20code&In-Reply-To=%3C1215721563-12537-3-git-send-email-michaelc%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001761.html">
+   <LINK REL="Next"  HREF="001763.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/2] fcoe: remove older fcoe header code</H1>
+    <B>michaelc at cs.wisc.edu</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20fcoe%3A%20remove%20older%20fcoe%20header%20code&In-Reply-To=%3C1215721563-12537-3-git-send-email-michaelc%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/2] fcoe: remove older fcoe header code">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Thu Jul 10 22:26:03 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001761.html">[Stgt-devel] [PATCH 1/2] fcoe: use new header by default
+</A></li>
+        <LI>Next message: <A HREF="001763.html">[Stgt-devel] fcoe target bug fix and cleanup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1762">[ date ]</a>
+              <a href="thread.html#1762">[ thread ]</a>
+              <a href="subject.html#1762">[ subject ]</a>
+              <a href="author.html#1762">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+
+Just support the current format, so remove older fcoe header code.
+
+Signed-off-by: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+---
+ usr/fcoe/fc_fcoe.h  |   50 ------------------------------------
+ usr/fcoe/fcoe_dev.c |   70 +++++++++++++++++++-------------------------------
+ usr/fcoe/fcoe_if.c  |    1 -
+ 3 files changed, 27 insertions(+), 94 deletions(-)
+
+diff --git a/usr/fcoe/fc_fcoe.h b/usr/fcoe/fc_fcoe.h
+index 6c883b6..27b5dbe 100644
+--- a/usr/fcoe/fc_fcoe.h
++++ b/usr/fcoe/fc_fcoe.h
+@@ -54,54 +54,6 @@
+ #define	FC_FCOE_ENCAPS_ID(n)	(((u_int64_t) FC_FCOE_OUI &lt;&lt; 24) | (n))
+ #define	FC_FCOE_DECAPS_ID(n)	((n) &gt;&gt; 24)
+ 
+-#ifndef FCOE_T11_AUG07				/* old version */
+-
+-/*
+- * Start of frame values.
+- * For FCOE the SOF value is encoded in 4 bits by simply trimming the
+- * standard RFC 3643 encapsulation values.  See fc/encaps.h.
+- *
+- * The following macros work for class 3 and class F traffic.
+- * It is still required to use net access functions to do the byte swapping.
+- *
+- * SOF code	Normal	 FCOE
+- *  SOFf	0x28	    8
+- *  SOFi3	0x2e	    e
+- *  SOFn3	0x36	    6
+- */
+-#define	FC_FCOE_ENCAPS_LEN_SOF(len, sof) \
+-		((FC_FCOE_VER &lt;&lt; 14) | (((len) &amp; 0x3ff) &lt;&lt; 4) | ((sof) &amp; 0xf))
+-#define	FC_FCOE_DECAPS_VER(n)	((n) &gt;&gt; 14)
+-#define	FC_FCOE_DECAPS_LEN(n)	(((n) &gt;&gt; 4) &amp; 0x3ff)
+-#define	FC_FCOE_DECAPS_SOF(n) \
+-		(((n) &amp; 0x8) ? (((n) &amp; 0xf) + 0x20) : (((n) &amp; 0xf) + 0x30))
+-
+-/*
+- * FCoE frame header
+- *
+- * NB: This is the old version, defined before August 2007.
+- *
+- * This follows the VLAN header, which includes the ethertype.
+- * The version is the MS 2 bits, followed by the 10-bit length (in 32b words),
+- * followed by the 4-bit encoded SOF as the LSBs.
+- */
+-struct fcoe_hdr {
+-	net16_t		fcoe_plen;	/* fc frame len and SOF */
+-};
+-
+-/*
+- * FCoE CRC &amp; EOF
+- * NB: This is the old version, defined before August 2007.
+- */
+-struct fcoe_crc_eof {
+-	u_int32_t	fcoe_crc32;	/* CRC for FC packet */
+-	net8_t		fcoe_eof;	/* EOF from RFC 3643 */
+-} __attribute__((packed));
+-
+-#define	FCOE_CRC_LEN	4	/* byte length of the FC CRC */
+-
+-#else /* FCOE_T11_AUG07 */
+-
+ /*
+  * FCoE frame header - 14 bytes
+  *
+@@ -126,8 +78,6 @@ struct fcoe_crc_eof {
+ 	net8_t		fcoe_resvd[3];	/* reserved - send zero and ignore */
+ } __attribute__((packed));
+ 
+-#endif /* FCOE_T11_AUG07 */
+-
+ /*
+  * Store OUI + DID into MAC address field.
+  */
+diff --git a/usr/fcoe/fcoe_dev.c b/usr/fcoe/fcoe_dev.c
+index 96d2cdb..0027e79 100644
+--- a/usr/fcoe/fcoe_dev.c
++++ b/usr/fcoe/fcoe_dev.c
+@@ -36,7 +36,6 @@
+ #include &quot;fc_types.h&quot;
+ #include &quot;fc_frame.h&quot;
+ #include &quot;fc_encaps.h&quot;
+-#define	FCOE_T11_AUG07		/* use new FCoE version */
+ #include &quot;fc_fcoe.h&quot;
+ #include &quot;fc_fcoe_old.h&quot;
+ #include &quot;fcdev.h&quot;
+@@ -127,6 +126,7 @@ int fcoe_xmit(struct fcdev *fdev, struct fc_frame *fp)
+ 	struct fcoe_crc_eof *cp;
+ 	int wlen, ret, total;
+ 	struct ethhdr *eh;
++	struct fcoe_hdr *hp;
+ 
+ 	dprintf(&quot;op %x\n&quot;, fc_frame_payload_op(fp));
+ 
+@@ -164,8 +164,6 @@ int fcoe_xmit(struct fcdev *fdev, struct fc_frame *fp)
+ 	 */
+ 	hlen = fc-&gt;fcoe_hlen;
+ 	tlen = sizeof(struct fcoe_crc_eof);
+-	if (hlen == sizeof(struct fcoe_hdr_old))
+-		tlen = sizeof(struct fcoe_crc_eof_old);
+ 
+ 	cp = (struct fcoe_crc_eof *)((char *)fh + fp-&gt;fr_len);
+ 
+@@ -192,20 +190,11 @@ int fcoe_xmit(struct fcdev *fdev, struct fc_frame *fp)
+ 
+ 	eh-&gt;h_proto = htons(ETH_P_FCOE);
+ 
+-	if (hlen == sizeof(struct fcoe_hdr)) {
+-		struct fcoe_hdr *hp;
+-
+-		hp = (struct fcoe_hdr *)(eh + 1);
+-		memset(hp, 0, sizeof(*hp));
+-		if (FC_FCOE_VER)
+-			FC_FCOE_ENCAPS_VER(hp, FC_FCOE_VER);
+-		hp-&gt;fcoe_sof = sof;
+-	} else {
+-		struct fcoe_hdr_old *ohp;
+-
+-		ohp = (struct fcoe_hdr_old *)(eh + 1);
+-		net16_put(&amp;ohp-&gt;fcoe_plen, FC_FCOE_ENCAPS_LEN_SOF(wlen, sof));
+-	}
++	hp = (struct fcoe_hdr *)(eh + 1);
++	memset(hp, 0, sizeof(*hp));
++	if (FC_FCOE_VER)
++		FC_FCOE_ENCAPS_VER(hp, FC_FCOE_VER);
++	hp-&gt;fcoe_sof = sof;
+ 
+ 	total = fp-&gt;fr_len + tlen + sizeof(*eh) + hlen;
+ 	ret = write(fdev-&gt;fd, eh, total);
+@@ -223,11 +212,11 @@ int fcoe_rcv(struct fcdev *fdev)
+ 	struct fcoe_softc *fc;
+ 	struct ethhdr *eh;
+ 	uint64_t mac = 0;
+-	enum fc_sof sof;
+ 	int ret;
+ 	struct fcoe_dev_stats *stats;
+ 	struct fcoe_crc_eof *cp;
+ 	struct fc_frame *fp;
++	struct fcoe_hdr *hp;
+ 
+ 	fc = fdev-&gt;drv_priv;
+ 
+@@ -254,31 +243,26 @@ int fcoe_rcv(struct fcdev *fdev)
+ 		mac = net48_get((net48_t *)eh-&gt;h_source);
+ 
+ 	hlen = fc-&gt;fcoe_hlen;
+-	if (hlen == sizeof(struct fcoe_hdr)) {
+-		struct fcoe_hdr *hp = (struct fcoe_hdr *)(eh + 1);
+-
+-		if (FC_FCOE_DECAPS_VER(hp) != FC_FCOE_VER) {
+-			eprintf(&quot;unknown FCoE version %x\n&quot;,
+-				FC_FCOE_DECAPS_VER(hp));
+-			stats-&gt;ErrorFrames++;
+-			free(buf);
+-			goto out;
+-		}
+-		sof = hp-&gt;fcoe_sof;
+-		fr_len = ret -(sizeof(*eh) +
+-			       sizeof(*hp) + sizeof(struct fcoe_crc_eof));
+-		tlen = sizeof(struct fcoe_crc_eof);
+-	} else {
+-		struct fcoe_hdr_old *fchp = (struct fcoe_hdr_old *)(eh + 1);
+-		u_int len;
+-
+-		len = net16_get(&amp;fchp-&gt;fcoe_plen);
+-		fr_len = FC_FCOE_DECAPS_LEN(len);
+-		fr_len = fr_len * FCOE_WORD_TO_BYTE;
+-		sof = FC_FCOE_DECAPS_SOF(len);
+-		fr_len -= sizeof(cp-&gt;fcoe_crc32);
+-		tlen = sizeof(struct fcoe_crc_eof_old);
++	if (hlen != sizeof(struct fcoe_hdr)) {
++		eprintf(&quot;Wrong fcoe header size. Got %u, but should &quot;
++			&quot;be %u. Make sure you are using a initiator that &quot;
++			&quot;is using the current header format\n&quot;,
++			hlen, sizeof(struct fcoe_hdr));
++		stats-&gt;ErrorFrames++;
++		goto out;
++	}
++
++	hp = (struct fcoe_hdr *)(eh + 1);
++	if (FC_FCOE_DECAPS_VER(hp) != FC_FCOE_VER) {
++		eprintf(&quot;unknown FCoE version %x\n&quot;,
++			FC_FCOE_DECAPS_VER(hp));
++		stats-&gt;ErrorFrames++;
++		free(buf);
++		goto out;
+ 	}
++	fr_len = ret -(sizeof(*eh) +
++		       sizeof(*hp) + sizeof(struct fcoe_crc_eof));
++	tlen = sizeof(struct fcoe_crc_eof);
+ 
+ 	if (fr_len + tlen &gt; ret) {
+ 		eprintf(&quot;short frame fr_len %x len %x\n&quot;,
+@@ -296,7 +280,7 @@ int fcoe_rcv(struct fcdev *fdev)
+ 	fp-&gt;fr_len = fr_len;
+ 	cp = (struct fcoe_crc_eof *)((char *)fp-&gt;fr_hdr + fr_len);
+ 	fp-&gt;fr_eof = cp-&gt;fcoe_eof;
+-	fp-&gt;fr_sof = sof;
++	fp-&gt;fr_sof = hp-&gt;fcoe_sof;
+ 
+ 	/*
+ 	 * Check the CRC here, unless it's solicited data for SCSI.
+diff --git a/usr/fcoe/fcoe_if.c b/usr/fcoe/fcoe_if.c
+index 68be336..9470f70 100644
+--- a/usr/fcoe/fcoe_if.c
++++ b/usr/fcoe/fcoe_if.c
+@@ -38,7 +38,6 @@
+ #include &quot;fc_types.h&quot;
+ #include &quot;fc_frame.h&quot;
+ #include &quot;fc_encaps.h&quot;
+-#define FCOE_T11_AUG07		/* use new FCoE version */
+ #include &quot;fc_fcoe.h&quot;
+ #include &quot;fc_fcoe_old.h&quot;
+ #include &quot;fc_fs.h&quot;
+-- 
+1.5.5.1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001761.html">[Stgt-devel] [PATCH 1/2] fcoe: use new header by default
+</A></li>
+	<LI>Next message: <A HREF="001763.html">[Stgt-devel] fcoe target bug fix and cleanup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1762">[ date ]</a>
+              <a href="thread.html#1762">[ thread ]</a>
+              <a href="subject.html#1762">[ subject ]</a>
+              <a href="author.html#1762">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

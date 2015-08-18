@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 4/8 ] Add support for MODE SENSE(6) and MODE	SENSE(10) commands.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%204/8%20%5D%20Add%20support%20for%20MODE%20SENSE%286%29%20and%20MODE%0A%09SENSE%2810%29%20commands.&In-Reply-To=%3Cf29db9a80705222008v91ee5d4ra2e2894fb16e668f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000685.html">
+   <LINK REL="Next"  HREF="000687.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 4/8 ] Add support for MODE SENSE(6) and MODE	SENSE(10) commands.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%204/8%20%5D%20Add%20support%20for%20MODE%20SENSE%286%29%20and%20MODE%0A%09SENSE%2810%29%20commands.&In-Reply-To=%3Cf29db9a80705222008v91ee5d4ra2e2894fb16e668f%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 4/8 ] Add support for MODE SENSE(6) and MODE	SENSE(10) commands.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed May 23 05:08:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000685.html">[Stgt-devel] [Patch 3/8 ] Added the ability to change/tune SCSI	Inquiry params:
+</A></li>
+        <LI>Next message: <A HREF="000687.html">[Stgt-devel] [Patch 5/8 ] Clean up scripts/tgt-core-test script to	remove any un-implemented options.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#686">[ date ]</a>
+              <a href="thread.html#686">[ thread ]</a>
+              <a href="subject.html#686">[ subject ]</a>
+              <a href="author.html#686">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>This is a major change.
+
+The mode pages are configured/defined at setup time using tgtadm.
+
+The following example sets up MODE PAGE 3.
+
+# Format mode page
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
+       --params ModePage=3:0:22:0:0:0:0:0:0:0:0:1:0:2:0:0:0:0:0:0:0:0:13:0:0
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 4x8.diff
+Type: text/x-patch
+Size: 31756 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/acf7d840/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070523/acf7d840/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000685.html">[Stgt-devel] [Patch 3/8 ] Added the ability to change/tune SCSI	Inquiry params:
+</A></li>
+	<LI>Next message: <A HREF="000687.html">[Stgt-devel] [Patch 5/8 ] Clean up scripts/tgt-core-test script to	remove any un-implemented options.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#686">[ date ]</a>
+              <a href="thread.html#686">[ thread ]</a>
+              <a href="subject.html#686">[ subject ]</a>
+              <a href="author.html#686">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch] support different type in one target, V2.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%5D%20support%20different%20type%20in%20one%20target%2C%20V2.&In-Reply-To=%3C462469A4.903%40suse.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000571.html">
+   <LINK REL="Next"  HREF="000575.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch] support different type in one target, V2.</H1>
+    <B>Hannes Reinecke</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%5D%20support%20different%20type%20in%20one%20target%2C%20V2.&In-Reply-To=%3C462469A4.903%40suse.de%3E"
+       TITLE="[Stgt-devel] [patch] support different type in one target, V2.">hare at suse.de
+       </A><BR>
+    <I>Tue Apr 17 08:31:00 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000571.html">[Stgt-devel] [patch] support different type in one target, V2.
+</A></li>
+        <LI>Next message: <A HREF="000575.html">[Stgt-devel] [patch] support different type in one target, V2.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#573">[ date ]</a>
+              <a href="thread.html#573">[ thread ]</a>
+              <a href="subject.html#573">[ subject ]</a>
+              <a href="author.html#573">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hu Gang wrote:
+&gt;<i> support different type in one target.
+</I>&gt;<i> 
+</I>&gt;<i> all of the logical units at same target must same type.
+</I>&gt;<i> this patch extend current tgt to support different type in one target.
+</I>&gt;<i>  
+</I>[ .. ]
+&gt;<i> 
+</I>&gt;<i> From: &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hugang at soulinfo.com</A>&gt;
+</I>
+Hmpf. You beat me to it.
+I had just finished my patch and was about to send it :-)
+Oh well.
+
+We definitely should associate the SCSI type with the LUN, not the
+target. Otherwise we just impose some artificial restrictions not
+mandated by the spec.
+
+Signed-off-by: Hannes Reinecke &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>&gt;
+
+Cheers,
+
+Hannes
+-- 
+Dr. Hannes Reinecke		      zSeries &amp; Storage
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A>			      +49 911 74053 688
+SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N&#252;rnberg
+GF: Markus Rex, HRB 16746 (AG N&#252;rnberg)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000571.html">[Stgt-devel] [patch] support different type in one target, V2.
+</A></li>
+	<LI>Next message: <A HREF="000575.html">[Stgt-devel] [patch] support different type in one target, V2.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#573">[ date ]</a>
+              <a href="thread.html#573">[ thread ]</a>
+              <a href="subject.html#573">[ subject ]</a>
+              <a href="author.html#573">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,485 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/4%5D%20bs_mmap%20/%20kreq_send%20threading&In-Reply-To=%3C20071210161203.GA14038%40linux.vnet.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001220.html">
+   <LINK REL="Next"  HREF="001208.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/4%5D%20bs_mmap%20/%20kreq_send%20threading&In-Reply-To=%3C20071210161203.GA14038%40linux.vnet.ibm.com%3E"
+       TITLE="[Stgt-devel] [Patch 0/4] bs_mmap / kreq_send threading">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Mon Dec 10 17:12:04 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001220.html">[Stgt-devel] iSER patches, third release
+</A></li>
+        <LI>Next message: <A HREF="001208.html">[Stgt-devel] fluorescein
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1203">[ date ]</a>
+              <a href="thread.html#1203">[ thread ]</a>
+              <a href="subject.html#1203">[ subject ]</a>
+              <a href="author.html#1203">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>* FUJITA Tomonori (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>) wrote:
+&gt;<i> On Tue, 6 Nov 2007 01:27:10 +0900
+</I>&gt;<i> FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Sorry about the delay.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; On Tue, 23 Oct 2007 16:14:01 -0500
+</I>&gt;<i> &gt; Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; A little threading work like we have in bs_sync for bs_mmap.  The mmap
+</I>&gt;<i> &gt; &gt; can be taken care of with a small pool of worker threads this way.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; After the mmap the completed commands enter back into the main tgtd
+</I>&gt;<i> &gt; &gt; thread and would be sent to the kernel for in-kernel drivers through
+</I>&gt;<i> &gt; &gt; kreq_send.  Unfortunately kreq_send can sleep in blk_rq_map_user or
+</I>&gt;<i> &gt; &gt; scsi_map_user_pages and hold up processing in tgtd.  So kreq_send can
+</I>&gt;<i> &gt; &gt; add the command to a list and hand it off to a small thread pool to
+</I>&gt;<i> &gt; &gt; process sending the replies to the kernel.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; tgtd is blocked when the data of a file isn't in page cache. So how
+</I>&gt;<i> &gt; about worker threads does access to the data before tgtd calls
+</I>&gt;<i> &gt; kreq_send? It works like the flush web server.
+</I>&gt;<i> 
+</I>&gt;<i> Have you measured the performance with your patch?
+</I>&gt;<i> 
+</I>&gt;<i> I tried the worker thread idea, but the performance drops (probabaly
+</I>&gt;<i> due to pipe notification overveheads).
+</I>
+Took me a while to get back to this but I had done performance measures
+as I made these changes.  
+
+Applying only the patch to thread bs_sync testing would show that for
+readv/writev operations there is a slight performance regression.
+For aioread/aiowrite, pread/pwrite, and read/write the performance
+improved with this patch by itself.  With the full patchset the random
+readv/writev performance was stable with respect to the unpatched tree.
+
+&gt;<i> diff --git a/usr/Makefile b/usr/Makefile
+</I>&gt;<i> index addf5be..7339dfc 100644
+</I>&gt;<i> --- a/usr/Makefile
+</I>&gt;<i> +++ b/usr/Makefile
+</I>&gt;<i> @@ -29,6 +29,7 @@ ifneq ($(IBMVIO),)
+</I>&gt;<i>  CFLAGS += -DIBMVIO -DUSE_KERNEL
+</I>&gt;<i>  TGTD_OBJS += $(addprefix ibmvio/, ibmvio.o)
+</I>&gt;<i>  TGTD_OBJS += bs_mmap.o tgtif.o
+</I>&gt;<i> +LIBS += -lpthread
+</I>&gt;<i>  endif
+</I>&gt;<i> 
+</I>&gt;<i>  ifneq ($(ISCSI),)
+</I>&gt;<i> diff --git a/usr/bs_mmap.c b/usr/bs_mmap.c
+</I>&gt;<i> index ad1bb4f..e4c0b86 100644
+</I>&gt;<i> --- a/usr/bs_mmap.c
+</I>&gt;<i> +++ b/usr/bs_mmap.c
+</I>&gt;<i> @@ -26,59 +26,277 @@
+</I>&gt;<i>  #include &lt;stdlib.h&gt;
+</I>&gt;<i>  #include &lt;string.h&gt;
+</I>&gt;<i>  #include &lt;unistd.h&gt;
+</I>&gt;<i> +#include &lt;pthread.h&gt;
+</I>&gt;<i>  #include &lt;sys/mman.h&gt;
+</I>&gt;<i> +#include &lt;sys/epoll.h&gt;
+</I>&gt;<i> 
+</I>&gt;<i>  #include &quot;list.h&quot;
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i>  #include &quot;scsi.h&quot;
+</I>&gt;<i> 
+</I>&gt;<i> -static int bs_mmap_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+</I>&gt;<i> -{
+</I>&gt;<i> -	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
+</I>&gt;<i> +#define NR_WORKER_THREADS	4
+</I>&gt;<i> 
+</I>&gt;<i> -	return *fd &gt;= 0 ? 0 : *fd;
+</I>&gt;<i> -}
+</I>&gt;<i> +struct bs_mmap_info {
+</I>&gt;<i> +	pthread_t ack_thread;
+</I>&gt;<i> +	pthread_t worker_thread[NR_WORKER_THREADS];
+</I>&gt;<i> 
+</I>&gt;<i> -static void bs_mmap_close(struct scsi_lu *lu)
+</I>&gt;<i> +	/* protected by pipe */
+</I>&gt;<i> +	struct list_head ack_list;
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_cond_t finished_cond;
+</I>&gt;<i> +	pthread_mutex_t finished_lock;
+</I>&gt;<i> +	struct list_head finished_list;
+</I>&gt;<i> +
+</I>&gt;<i> +	/* wokers sleep on this and signaled by tgtd */
+</I>&gt;<i> +	pthread_cond_t pending_cond;
+</I>&gt;<i> +	/* locked by tgtd and workers */
+</I>&gt;<i> +	pthread_mutex_t pending_lock;
+</I>&gt;<i> +	/* protected by pending_lock */
+</I>&gt;<i> +	struct list_head pending_list;
+</I>&gt;<i> +
+</I>&gt;<i> +	int command_fd[2];
+</I>&gt;<i> +	int done_fd[2];
+</I>&gt;<i> +
+</I>&gt;<i> +	int stop;
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +static void *bs_mmap_ack_fn(void *arg)
+</I>&gt;<i>  {
+</I>&gt;<i> -	close(lu-&gt;fd);
+</I>&gt;<i> +	struct bs_mmap_info *info = arg;
+</I>&gt;<i> +	int command, ret, nr;
+</I>&gt;<i> +	struct scsi_cmd *cmd;
+</I>&gt;<i> +
+</I>&gt;<i> +retry:
+</I>&gt;<i> +	ret = read(info-&gt;command_fd[0], &amp;command, sizeof(command));
+</I>&gt;<i> +	if (ret &lt; 0) {
+</I>&gt;<i> +		eprintf(&quot;ack pthread will be dead, %m\n&quot;);
+</I>&gt;<i> +		if (errno == EAGAIN || errno == EINTR)
+</I>&gt;<i> +			goto retry;
+</I>&gt;<i> +
+</I>&gt;<i> +		goto out;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_mutex_lock(&amp;info-&gt;finished_lock);
+</I>&gt;<i> +retest:
+</I>&gt;<i> +	if (list_empty(&amp;info-&gt;finished_list)) {
+</I>&gt;<i> +		pthread_cond_wait(&amp;info-&gt;finished_cond, &amp;info-&gt;finished_lock);
+</I>&gt;<i> +		goto retest;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	while (!list_empty(&amp;info-&gt;finished_list)) {
+</I>&gt;<i> +		cmd = list_entry(info-&gt;finished_list.next,
+</I>&gt;<i> +				 struct scsi_cmd, bs_list);
+</I>&gt;<i> +
+</I>&gt;<i> +		dprintf(&quot;found %p\n&quot;, cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +		list_del(&amp;cmd-&gt;bs_list);
+</I>&gt;<i> +		list_add(&amp;cmd-&gt;bs_list, &amp;info-&gt;ack_list);
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_mutex_unlock(&amp;info-&gt;finished_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +	nr = 1;
+</I>&gt;<i> +rewrite:
+</I>&gt;<i> +	ret = write(info-&gt;done_fd[1], &amp;nr, sizeof(nr));
+</I>&gt;<i> +	if (ret &lt; 0) {
+</I>&gt;<i> +		eprintf(&quot;can't ack tgtd, %m\n&quot;);
+</I>&gt;<i> +		if (errno == EAGAIN || errno == EINTR)
+</I>&gt;<i> +			goto rewrite;
+</I>&gt;<i> +
+</I>&gt;<i> +		goto out;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	goto retry;
+</I>&gt;<i> +out:
+</I>&gt;<i> +	return NULL;
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i>  #define pgcnt(size, offset)	((((size) + ((offset) &amp; (pagesize - 1))) + (pagesize - 1)) &gt;&gt; pageshift)
+</I>&gt;<i> 
+</I>&gt;<i> -static int bs_mmap_cmd_submit(struct scsi_cmd *cmd)
+</I>&gt;<i> +static void *bs_mmap_worker_fn(void *arg)
+</I>&gt;<i>  {
+</I>&gt;<i> -	int fd = cmd-&gt;dev-&gt;fd, ret = 0;
+</I>&gt;<i> -	void *p;
+</I>&gt;<i> -	uint64_t addr;
+</I>&gt;<i> +	int ret = 0;
+</I>&gt;<i> +	struct bs_mmap_info *info = arg;
+</I>&gt;<i> +	struct scsi_cmd *cmd;
+</I>&gt;<i>  	uint32_t length;
+</I>&gt;<i> 
+</I>&gt;<i> -	if (cmd-&gt;scb[0] == SYNCHRONIZE_CACHE ||
+</I>&gt;<i> -	    cmd-&gt;scb[0] == SYNCHRONIZE_CACHE_16)
+</I>&gt;<i> -		return fsync(fd);
+</I>&gt;<i> +	while (1) {
+</I>&gt;<i> +		uint64_t addr;
+</I>&gt;<i> +		char *p, dummy;
+</I>&gt;<i> +		int i, nr;
+</I>&gt;<i> 
+</I>&gt;<i> -	length = (scsi_get_data_dir(cmd) == DATA_WRITE) ?
+</I>&gt;<i> -		scsi_get_out_length(cmd) : scsi_get_in_length(cmd);
+</I>&gt;<i> +		pthread_mutex_lock(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +	retest:
+</I>&gt;<i> +		if (list_empty(&amp;info-&gt;pending_list)) {
+</I>&gt;<i> +			pthread_cond_wait(&amp;info-&gt;pending_cond, &amp;info-&gt;pending_lock);
+</I>&gt;<i> +			if (info-&gt;stop) {
+</I>&gt;<i> +				pthread_mutex_unlock(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +				break;
+</I>&gt;<i> +			}
+</I>&gt;<i> +			goto retest;
+</I>&gt;<i> +		}
+</I>&gt;<i> 
+</I>&gt;<i> -	p = mmap64(NULL, pgcnt(length, cmd-&gt;offset) &lt;&lt; pageshift,
+</I>&gt;<i> -		   PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+</I>&gt;<i> -		   cmd-&gt;offset &amp; ~((1ULL &lt;&lt; pageshift) - 1));
+</I>&gt;<i> -	if (p == MAP_FAILED) {
+</I>&gt;<i> -		ret = -EINVAL;
+</I>&gt;<i> -		eprintf(&quot;%u %&quot; PRIu64 &quot;\n&quot;, length, cmd-&gt;offset);
+</I>&gt;<i> +		cmd = list_entry(info-&gt;pending_list.next,
+</I>&gt;<i> +				 struct scsi_cmd, bs_list);
+</I>&gt;<i> +
+</I>&gt;<i> +		dprintf(&quot;got %p\n&quot;, cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +		list_del(&amp;cmd-&gt;bs_list);
+</I>&gt;<i> +		pthread_mutex_unlock(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +		if (cmd-&gt;scb[0] == SYNCHRONIZE_CACHE ||
+</I>&gt;<i> +		    cmd-&gt;scb[0] == SYNCHRONIZE_CACHE_16) {
+</I>&gt;<i> +			ret = fsync(cmd-&gt;dev-&gt;fd);
+</I>&gt;<i> +			goto done;
+</I>&gt;<i> +		}
+</I>&gt;<i> +
+</I>&gt;<i> +		ret = 0;
+</I>&gt;<i> +
+</I>&gt;<i> +		if (cmd-&gt;data_dir == DATA_WRITE) {
+</I>&gt;<i> +			addr = (unsigned long)scsi_get_out_buffer(cmd);
+</I>&gt;<i> +			length = scsi_get_out_length(cmd);
+</I>&gt;<i> +		} else {
+</I>&gt;<i> +			addr = (unsigned long)scsi_get_in_buffer(cmd);
+</I>&gt;<i> +			length = scsi_get_in_length(cmd);
+</I>&gt;<i> +		}
+</I>&gt;<i> +
+</I>&gt;<i> +		nr = pgcnt(length, (addr &amp; (pagesize - 1)));
+</I>&gt;<i> +		addr &amp;= ~(pagesize - 1);
+</I>&gt;<i> +
+</I>&gt;<i> +		p = (void *)(unsigned long)addr;
+</I>&gt;<i> +		for (i = 0; i &lt; nr; i++) {
+</I>&gt;<i> +			dummy = *p;
+</I>&gt;<i> +			p += pagesize;
+</I>&gt;<i> +		}
+</I>&gt;<i> +	done:
+</I>&gt;<i> +		if (ret) {
+</I>&gt;<i> +			eprintf(&quot;io error %p %x %d %d, %m\n&quot;,
+</I>&gt;<i> +				cmd, cmd-&gt;scb[0], ret, cmd-&gt;offset);
+</I>&gt;<i> +			scsi_set_result(cmd, SAM_STAT_CHECK_CONDITION);
+</I>&gt;<i> +			sense_data_build(cmd, MEDIUM_ERROR, ASC_READ_ERROR);
+</I>&gt;<i> +		} else
+</I>&gt;<i> +			scsi_set_result(cmd, SAM_STAT_GOOD);
+</I>&gt;<i> +
+</I>&gt;<i> +		pthread_mutex_lock(&amp;info-&gt;finished_lock);
+</I>&gt;<i> +		list_add(&amp;cmd-&gt;bs_list, &amp;info-&gt;finished_list);
+</I>&gt;<i> +		pthread_mutex_unlock(&amp;info-&gt;finished_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +		pthread_cond_signal(&amp;info-&gt;finished_cond);
+</I>&gt;<i>  	}
+</I>&gt;<i> 
+</I>&gt;<i> -	addr = (unsigned long)p + (cmd-&gt;offset &amp; (pagesize - 1));
+</I>&gt;<i> +	return NULL;
+</I>&gt;<i> +}
+</I>&gt;<i> 
+</I>&gt;<i> -	if (scsi_get_data_dir(cmd) == DATA_WRITE)
+</I>&gt;<i> -		scsi_set_out_buffer(cmd, (void *)(unsigned long)addr);
+</I>&gt;<i> -	else if (scsi_get_data_dir(cmd) == DATA_READ)
+</I>&gt;<i> -		scsi_set_in_buffer(cmd, (void *)(unsigned long)addr);
+</I>&gt;<i> +static void bs_mmap_handler(int fd, int events, void *data)
+</I>&gt;<i> +{
+</I>&gt;<i> +	struct bs_mmap_info *info = data;
+</I>&gt;<i> +	struct scsi_cmd *cmd;
+</I>&gt;<i> +	int nr_events, ret;
+</I>&gt;<i> 
+</I>&gt;<i> -	dprintf(&quot;%&quot; PRIx64 &quot; %u %&quot; PRIu64 &quot;\n&quot;, addr, length, cmd-&gt;offset);
+</I>&gt;<i> +	ret = read(info-&gt;done_fd[0], &amp;nr_events, sizeof(nr_events));
+</I>&gt;<i> +	if (ret &lt; 0) {
+</I>&gt;<i> +		eprintf(&quot;wrong wakeup\n&quot;);
+</I>&gt;<i> +		return;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	while (!list_empty(&amp;info-&gt;ack_list)) {
+</I>&gt;<i> +		cmd = list_entry(info-&gt;ack_list.next,
+</I>&gt;<i> +				 struct scsi_cmd, bs_list);
+</I>&gt;<i> 
+</I>&gt;<i> -	return ret;
+</I>&gt;<i> +		dprintf(&quot;back to tgtd, %p\n&quot;, cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +		list_del(&amp;cmd-&gt;bs_list);
+</I>&gt;<i> +		target_cmd_io_done(cmd, scsi_get_result(cmd));
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	write(info-&gt;command_fd[1], &amp;nr_events, sizeof(nr_events));
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int bs_mmap_open(struct scsi_lu *lu, char *path, int *fd, uint64_t *size)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int i, ret;
+</I>&gt;<i> +	struct bs_mmap_info *info =
+</I>&gt;<i> +		(struct bs_mmap_info *)((char *)lu + sizeof(*lu));
+</I>&gt;<i> +
+</I>&gt;<i> +	INIT_LIST_HEAD(&amp;info-&gt;ack_list);
+</I>&gt;<i> +	INIT_LIST_HEAD(&amp;info-&gt;finished_list);
+</I>&gt;<i> +	INIT_LIST_HEAD(&amp;info-&gt;pending_list);
+</I>&gt;<i> +
+</I>&gt;<i> +	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
+</I>&gt;<i> +	if (*fd &lt; 0)
+</I>&gt;<i> +		return *fd;
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_cond_init(&amp;info-&gt;finished_cond, NULL);
+</I>&gt;<i> +	pthread_cond_init(&amp;info-&gt;pending_cond, NULL);
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_mutex_init(&amp;info-&gt;finished_lock, NULL);
+</I>&gt;<i> +	pthread_mutex_init(&amp;info-&gt;pending_lock, NULL);
+</I>&gt;<i> +
+</I>&gt;<i> +	ret = pipe(info-&gt;command_fd);
+</I>&gt;<i> +	if (ret)
+</I>&gt;<i> +		goto close_dev_fd;
+</I>&gt;<i> +
+</I>&gt;<i> +	ret = pipe(info-&gt;done_fd);
+</I>&gt;<i> +	if (ret)
+</I>&gt;<i> +		goto close_command_fd;
+</I>&gt;<i> +
+</I>&gt;<i> +	ret = tgt_event_add(info-&gt;done_fd[0], EPOLLIN, bs_mmap_handler, info);
+</I>&gt;<i> +	if (ret)
+</I>&gt;<i> +		goto close_done_fd;
+</I>&gt;<i> +
+</I>&gt;<i> +	ret = pthread_create(&amp;info-&gt;ack_thread, NULL, bs_mmap_ack_fn, info);
+</I>&gt;<i> +	if (ret)
+</I>&gt;<i> +		goto event_del;
+</I>&gt;<i> +
+</I>&gt;<i> +	for (i = 0; i &lt; ARRAY_SIZE(info-&gt;worker_thread); i++) {
+</I>&gt;<i> +		ret = pthread_create(&amp;info-&gt;worker_thread[i], NULL,
+</I>&gt;<i> +				     bs_mmap_worker_fn, info);
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	write(info-&gt;command_fd[1], &amp;ret, sizeof(ret));
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +event_del:
+</I>&gt;<i> +	tgt_event_del(info-&gt;done_fd[0]);
+</I>&gt;<i> +close_done_fd:
+</I>&gt;<i> +	close(info-&gt;done_fd[0]);
+</I>&gt;<i> +	close(info-&gt;done_fd[1]);
+</I>&gt;<i> +close_command_fd:
+</I>&gt;<i> +	close(info-&gt;command_fd[0]);
+</I>&gt;<i> +	close(info-&gt;command_fd[1]);
+</I>&gt;<i> +close_dev_fd:
+</I>&gt;<i> +	close(*fd);
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_cond_destroy(&amp;info-&gt;finished_cond);
+</I>&gt;<i> +	pthread_cond_destroy(&amp;info-&gt;pending_cond);
+</I>&gt;<i> +	pthread_mutex_destroy(&amp;info-&gt;finished_lock);
+</I>&gt;<i> +	pthread_mutex_destroy(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +	return -1;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static void bs_mmap_close(struct scsi_lu *lu)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int i;
+</I>&gt;<i> +	struct bs_mmap_info *info =
+</I>&gt;<i> +		(struct bs_mmap_info *)((char *)lu + sizeof(*lu));
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_cancel(info-&gt;ack_thread);
+</I>&gt;<i> +	pthread_join(info-&gt;ack_thread, NULL);
+</I>&gt;<i> +
+</I>&gt;<i> +	info-&gt;stop = 1;
+</I>&gt;<i> +	pthread_cond_broadcast(&amp;info-&gt;pending_cond);
+</I>&gt;<i> +
+</I>&gt;<i> +	for (i = 0; i &lt; ARRAY_SIZE(info-&gt;worker_thread); i++)
+</I>&gt;<i> +		pthread_join(info-&gt;worker_thread[i], NULL);
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_cond_destroy(&amp;info-&gt;finished_cond);
+</I>&gt;<i> +	pthread_cond_destroy(&amp;info-&gt;pending_cond);
+</I>&gt;<i> +	pthread_mutex_destroy(&amp;info-&gt;finished_lock);
+</I>&gt;<i> +	pthread_mutex_destroy(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +	close(lu-&gt;fd);
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i>  static int bs_mmap_cmd_done(struct scsi_cmd *cmd)
+</I>&gt;<i> @@ -109,7 +327,59 @@ static int bs_mmap_cmd_done(struct scsi_cmd *cmd)
+</I>&gt;<i>  	return err;
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>&gt;<i> +static int bs_mmap_cmd_submit(struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +	struct scsi_lu *lu = cmd-&gt;dev;
+</I>&gt;<i> +	struct bs_mmap_info *info =
+</I>&gt;<i> +		(struct bs_mmap_info *)((char *)lu + sizeof(*lu));
+</I>&gt;<i> +	int fd;
+</I>&gt;<i> +	uint32_t length;
+</I>&gt;<i> +	uint64_t addr;
+</I>&gt;<i> +	void *p;
+</I>&gt;<i> +
+</I>&gt;<i> +	fd = cmd-&gt;dev-&gt;fd;
+</I>&gt;<i> +	length = 0;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (cmd-&gt;scb[0] == SYNCHRONIZE_CACHE ||
+</I>&gt;<i> +	    cmd-&gt;scb[0] == SYNCHRONIZE_CACHE_16)
+</I>&gt;<i> +		goto queuing;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (cmd-&gt;data_dir == DATA_WRITE)
+</I>&gt;<i> +		length = scsi_get_out_length(cmd);
+</I>&gt;<i> +	else
+</I>&gt;<i> +		length = scsi_get_in_length(cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +	p = mmap64(NULL, pgcnt(length, cmd-&gt;offset) &lt;&lt; pageshift,
+</I>&gt;<i> +		   PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+</I>&gt;<i> +		   cmd-&gt;offset &amp; ~((1ULL &lt;&lt; pageshift) - 1));
+</I>&gt;<i> +	if (p == MAP_FAILED)
+</I>&gt;<i> +		return EIO;
+</I>&gt;<i> +
+</I>&gt;<i> +	addr = (unsigned long)p + (cmd-&gt;offset &amp; (pagesize - 1));
+</I>&gt;<i> +
+</I>&gt;<i> +	if (scsi_get_data_dir(cmd) == DATA_WRITE)
+</I>&gt;<i> +		scsi_set_out_buffer(cmd, (void *)(unsigned long)addr);
+</I>&gt;<i> +	else
+</I>&gt;<i> +		scsi_set_in_buffer(cmd, (void *)(unsigned long)addr);
+</I>&gt;<i> +
+</I>&gt;<i> +	scsi_set_result(cmd, SAM_STAT_GOOD);
+</I>&gt;<i> +
+</I>&gt;<i> +queuing:
+</I>&gt;<i> +	pthread_mutex_lock(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +	list_add(&amp;cmd-&gt;bs_list, &amp;info-&gt;pending_list);
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_mutex_unlock(&amp;info-&gt;pending_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +	pthread_cond_signal(&amp;info-&gt;pending_cond);
+</I>&gt;<i> +
+</I>&gt;<i> +	set_cmd_async(cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  struct backingstore_template mmap_bst = {
+</I>&gt;<i> +	.bs_datasize		= sizeof(struct bs_mmap_info),
+</I>&gt;<i>  	.bs_open		= bs_mmap_open,
+</I>&gt;<i>  	.bs_close		= bs_mmap_close,
+</I>&gt;<i>  	.bs_cmd_submit		= bs_mmap_cmd_submit,
+</I>---
+Robert C. Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcjenn at us.ibm.com</A>&gt;
+IBM Linux Technology Center, Austin
++1.512.838.4964 (t/l 678.4964)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001220.html">[Stgt-devel] iSER patches, third release
+</A></li>
+	<LI>Next message: <A HREF="001208.html">[Stgt-devel] fluorescein
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1203">[ date ]</a>
+              <a href="thread.html#1203">[ thread ]</a>
+              <a href="subject.html#1203">[ subject ]</a>
+              <a href="author.html#1203">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

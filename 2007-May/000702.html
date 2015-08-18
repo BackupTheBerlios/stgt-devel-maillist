@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Brown paper bag fix...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Brown%20paper%20bag%20fix...&In-Reply-To=%3C1180008587.3803.3.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000701.html">
+   <LINK REL="Next"  HREF="000704.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Brown paper bag fix...</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Brown%20paper%20bag%20fix...&In-Reply-To=%3C1180008587.3803.3.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] Brown paper bag fix...">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu May 24 14:09:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000701.html">[Stgt-devel] Brown paper bag fix...
+</A></li>
+        <LI>Next message: <A HREF="000704.html">[Stgt-devel] Have a look at storageos.com
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#702">[ date ]</a>
+              <a href="thread.html#702">[ thread ]</a>
+              <a href="subject.html#702">[ subject ]</a>
+              <a href="author.html#702">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-05-24 at 16:07 +1000, Mark Harvey wrote:
+&gt;<i> What can I say.
+</I>&gt;<i> 
+</I>&gt;<i> I thought I'd tested/compiled before I posted the patches....
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> index f148645..fa0971d 100644
+</I>&gt;<i> --- a/usr/mmc.c
+</I>&gt;<i> +++ b/usr/mmc.c
+</I>&gt;<i> @@ -104,7 +104,7 @@ static int mmc_mode_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> 
+</I>&gt;<i>         /* MMC devices do not support BLOCK DESCRIPTOR
+</I>&gt;<i>          * So make sure we have DISABLE BLOCK DESCRIPTOR bit set */
+</I>&gt;<i> -       sbc[1] | 8;
+</I>&gt;<i> +       scb[1] |= 8;
+</I>&gt;<i> 
+</I>&gt;<i>         return spc_mode_sense(host_no, cmd);
+</I>&gt;<i>  }
+</I>&gt;<i> 
+</I>
+i would pass a flag about whether have DBD. i saw DBD is used and not
+used all the time. so assume it is always there is not safe.
+
+
+&gt;<i> 
+</I>&gt;<i> Cheers
+</I>&gt;<i> Mark
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000701.html">[Stgt-devel] Brown paper bag fix...
+</A></li>
+	<LI>Next message: <A HREF="000704.html">[Stgt-devel] Have a look at storageos.com
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#702">[ date ]</a>
+              <a href="thread.html#702">[ thread ]</a>
+              <a href="subject.html#702">[ subject ]</a>
+              <a href="author.html#702">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

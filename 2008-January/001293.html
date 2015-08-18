@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801180230sb1bd6edj4cbe6cd99e2f030e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001292.html">
+   <LINK REL="Next"  HREF="001294.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801180230sb1bd6edj4cbe6cd99e2f030e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Fri Jan 18 11:30:47 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001292.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001294.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1293">[ date ]</a>
+              <a href="thread.html#1293">[ thread ]</a>
+              <a href="subject.html#1293">[ subject ]</a>
+              <a href="author.html#1293">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Jan 17, 2008 6:45 PM, Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+&gt;<i> There's nothing particularly stunning here.  Suspect Bart has
+</I>&gt;<i> configuration issues if not even IPoIB will do &gt; 100 MB/s.
+</I>
+Regarding configuration issues: the systems I ran the test on probably
+communicate via PCI-e x4 with the InfiniBand HCA's. With other systems
+with identical software and with PCI-e x8 HCA's on the same InfiniBand
+network I reach a throughput of 934 MB/s instead of 675 MB/s (PCI-e
+x4). This is something I only found out today, otherwise I would have
+run all tests on the systems with PCI-e x8 HCA's.
+
+So the relative utilization of the InfiniBand network is as follows:
+* STGT + iSER, PCI-e x4 HCA: 324/675 = 48% (measured myself)
+* STGT + iSER, PCI-e x8 HCA: 550/934 = 59%
+(<A HREF="http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf">http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf</A>)
+* SCST + SRP, PCI-e x4 HCA: 600/675 = 89% (measured myself)
+
+Or: SCST uses the InfiniBand network much more effectively than STGT.
+
+Bart.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001292.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001294.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1293">[ date ]</a>
+              <a href="thread.html#1293">[ thread ]</a>
+              <a href="subject.html#1293">[ subject ]</a>
+              <a href="author.html#1293">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

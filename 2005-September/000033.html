@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] More threads for device server
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20More%20threads%20for%20device%20server&In-Reply-To=%3C431BA7D8.5050706%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000032.html">
+   <LINK REL="Next"  HREF="000034.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] More threads for device server</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20More%20threads%20for%20device%20server&In-Reply-To=%3C431BA7D8.5050706%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] More threads for device server">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Mon Sep  5 04:05:12 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000032.html">[Stgt-devel] More threads for device server
+</A></li>
+        <LI>Next message: <A HREF="000034.html">[Stgt-devel] More threads for device server
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#33">[ date ]</a>
+              <a href="thread.html#33">[ thread ]</a>
+              <a href="subject.html#33">[ subject ]</a>
+              <a href="author.html#33">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> The current code uses work queue for performing SCSI commands (or
+</I>&gt;<i> block target's tasks). Work queue is simple and good enough for
+</I>&gt;<i> debugging, however, a single thread per CPU is not good enough (from
+</I>&gt;<i> the performance perspective).
+</I>&gt;<i> 
+</I>&gt;<i> I thought about creating multiple kernel threads by hand. Are there
+</I>&gt;<i> handy APIs?
+</I>
+you can create a single threaded workqueue per target or session?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000032.html">[Stgt-devel] More threads for device server
+</A></li>
+	<LI>Next message: <A HREF="000034.html">[Stgt-devel] More threads for device server
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#33">[ date ]</a>
+              <a href="thread.html#33">[ thread ]</a>
+              <a href="subject.html#33">[ subject ]</a>
+              <a href="author.html#33">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3Cf29db9a80807291945s186b1236o87d63f44d0e87869%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001962.html">
+   <LINK REL="Next"  HREF="001971.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%0A%09properly%20...&In-Reply-To=%3Cf29db9a80807291945s186b1236o87d63f44d0e87869%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jul 30 04:45:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001962.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+        <LI>Next message: <A HREF="001971.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1970">[ date ]</a>
+              <a href="thread.html#1970">[ thread ]</a>
+              <a href="subject.html#1970">[ subject ]</a>
+              <a href="author.html#1970">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>OK, I've reproduced the core dump as well.
+
+All my testing involved running the scripts/tgt-core-setup script.
+
+This script (incorrectly) adds a backing file - so I never experienced
+this core dump. When configured to startup with a backing file - loads
+and unloads work without error.
+
+Setting up the device without an initial backing file results in the
+core dump once a write is attempted.
+
+Cheers
+Mark
+
+On Wed, Jul 30, 2008 at 3:02 AM, Richard Sharpe
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+&gt;<i> Here is the command I used to create DVDs ...
+</I>&gt;<i>
+</I>&gt;<i> iscsiadm -m node -T
+</I>&gt;<i> iqn.2008-03.com.datalane-inc:storage.dvd1.tyan1U00.sys1 -p
+</I>&gt;<i> 192.168.1.19:3260 -u
+</I>&gt;<i>  mtx -f /dev/sg4 load 3
+</I>&gt;<i> cdrecord -v -dao -ignsize -overburn dev=/dev/sg3 ./someDVD.iso
+</I>&gt;<i>
+</I>&gt;<i> Here is the script I use to set up the tape library:
+</I>&gt;<i>
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2008-03.com.datal
+</I>&gt;<i> ane-inc:storage.tape1.tyan1U00.sys1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op new    --mode logicalunit --tid 1 --lun 1 -Y ssc -
+</I>&gt;<i> -bstype ssc
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params
+</I>&gt;<i>  vendor_id=QUANTUM,product_id=DLT7000,product_rev=0010,scsi_sn=DLMV010023,remova
+</I>&gt;<i> ble=1
+</I>&gt;<i> # Create the SMC device
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op new    --mode logicalunit --tid 1 --lun 2 -b /mnt/
+</I>&gt;<i> testing/virtual-tapes/smc -Y changer
+</I>&gt;<i> # Name it ...
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  vendor_id=Quantum,product_id=DLT4700,product_rev=0010,scsi_sn=XYZZY_0,removable
+</I>&gt;<i> =1
+</I>&gt;<i> # Add a data transfer device (1 drive)
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op=update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=4,start_address=1,quantity=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=4,address=1,tid=1,lun=1
+</I>&gt;<i>
+</I>&gt;<i> # Medium Transport Elements
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=1,start_address=16,quantity=1
+</I>&gt;<i>
+</I>&gt;<i> # Define the path to the virtual tapes
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  media_home=/mnt/testing/virtual-tapes
+</I>&gt;<i>
+</I>&gt;<i> # Add media to slots ...
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,start_address=1024,quantity=8
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1024,barcode=TAPE0000,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1025,barcode=TAPE0001,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1026,barcode=TAPE0002,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1027,barcode=TAPE0003,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1028,barcode=TAPE0004,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1029,barcode=TAPE0005,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1030,barcode=TAPE0006,sides=1
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 2 --params
+</I>&gt;<i>  element_type=2,address=1031,barcode=TAPE0007,sides=1
+</I>&gt;<i>
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op show   --mode target
+</I>&gt;<i> ./usr/tgtadm --lld iscsi --op bind   --mode target --tid 1 -I ALL
+</I>&gt;<i>
+</I>&gt;<i> I used mtx to load a tape and then tar to save a job
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001962.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works	properly ...
+</A></li>
+	<LI>Next message: <A HREF="001971.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff	works	properly ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1970">[ date ]</a>
+              <a href="thread.html#1970">[ thread ]</a>
+              <a href="subject.html#1970">[ subject ]</a>
+              <a href="author.html#1970">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

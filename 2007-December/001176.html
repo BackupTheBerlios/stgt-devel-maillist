@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] read &lt;&lt; write
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20read%20%3C%3C%20write&In-Reply-To=%3C20071206075453J.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001175.html">
+   <LINK REL="Next"  HREF="001180.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] read &lt;&lt; write</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20read%20%3C%3C%20write&In-Reply-To=%3C20071206075453J.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] read &lt;&lt; write">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Dec  5 23:54:53 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001175.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+        <LI>Next message: <A HREF="001180.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1176">[ date ]</a>
+              <a href="thread.html#1176">[ thread ]</a>
+              <a href="subject.html#1176">[ subject ]</a>
+              <a href="author.html#1176">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 5 Dec 2007 08:56:09 -0500
+Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+
+&gt;<i> Hi,
+</I>&gt;<i> 
+</I>&gt;<i> I'm finding that reads are a lot slower than writes when I have a real
+</I>&gt;<i> file or device behind tgt instead of a ramdisk. is this expected?
+</I>&gt;<i> 
+</I>&gt;<i> iSER reads backed by a file on lustre or a md raid0 device seem to be at
+</I>&gt;<i> most ~100MB/s which is 4 or 5 times slower than writes:
+</I>&gt;<i> 
+</I>&gt;<i> bonnie++
+</I>&gt;<i>  Version  1.03    ------Sequential Output------ --Sequential Input- --Random-
+</I>&gt;<i>                   -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+</I>&gt;<i>  Machine     Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+</I>&gt;<i>  iSER/ramdisk  4G 79699  98 458229 96 260343 38 87650  98 474552 32 +++++ +++
+</I>&gt;<i>  iSER/md0      4G 79479  98 341628 68  96554 13 86280  96  64672  4 788.0   0
+</I>&gt;<i>  iSER/lustre   4G 78691  97 484972 90 131885 18 82747  93  98331  6 236.8   0
+</I>&gt;<i>                              ^^^                            ^^^
+</I>&gt;<i>  IPoIB/lustre  4G 76653  96 225736 50  71555  9 67401  90  91115  4 241.6   0 
+</I>&gt;<i>  GigE/lustre   4G 75556  96 115951 26  46772  5 64280  84  93495  5 247.3   0
+</I>&gt;<i>  native lustre 4G 69852  98 367647 87  62090 38 75893  93 333886 98 272.0   1
+</I>&gt;<i>  native md0                 309000                        335000
+</I>&gt;<i> 
+</I>&gt;<i> where:
+</I>&gt;<i>  iSER/ramdisk  - iSER to a 7G ramdisk
+</I>&gt;<i>  iSER/md0      - iSER to a software raid0 device
+</I>&gt;<i>  iSER/lustre   - iSER to a file on a Lustre fs client (also using IB)
+</I>&gt;<i>  IPoIB/lustre  - iSCSI over IP-over-IB to a file on a Lustre fs
+</I>&gt;<i>  GigE/lustre   - iSCSI over gigE to a file on a Lustre fs
+</I>&gt;<i>  native lustre - to native lustre
+</I>&gt;<i>  native md0    - dd speeds to /dev/md0
+</I>&gt;<i> 
+</I>&gt;<i> the trend of reads being limited to ~100MB/s seems to continue with
+</I>&gt;<i> normal iSCSI IPoIB and with TCP over gigE, which is odd.
+</I>&gt;<i> 
+</I>&gt;<i> perhaps I didn't see this before because my filesystems were too slow...??
+</I>
+Can you try a block-level benchmark like disktest to avoid file
+systems effects?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001175.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+	<LI>Next message: <A HREF="001180.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1176">[ date ]</a>
+              <a href="thread.html#1176">[ thread ]</a>
+              <a href="subject.html#1176">[ subject ]</a>
+              <a href="author.html#1176">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

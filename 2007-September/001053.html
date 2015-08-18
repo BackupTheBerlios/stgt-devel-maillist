@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] first burst &gt; max burst
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20first%20burst%20%3E%20max%20burst&In-Reply-To=%3C20070917144102.GA28236%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001052.html">
+   <LINK REL="Next"  HREF="001054.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] first burst &gt; max burst</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20first%20burst%20%3E%20max%20burst&In-Reply-To=%3C20070917144102.GA28236%40osc.edu%3E"
+       TITLE="[Stgt-devel] first burst &gt; max burst">pw at osc.edu
+       </A><BR>
+    <I>Mon Sep 17 16:41:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001052.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+        <LI>Next message: <A HREF="001054.html">[Stgt-devel] Difference in isns implementation between open-iscsi	and tgt
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1053">[ date ]</a>
+              <a href="thread.html#1053">[ thread ]</a>
+              <a href="subject.html#1053">[ subject ]</a>
+              <a href="author.html#1053">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I've been tripping over this lately:
+
+        if ((session-&gt;imm_data_en || !session-&gt;initial_r2t_en) &amp;&amp;
+             session-&gt;first_burst &gt; session-&gt;max_burst) {
+                printk(&quot;iscsi: invalid burst lengths: &quot;
+                       &quot;first_burst %d max_burst %d\n&quot;,
+                       session-&gt;first_burst, session-&gt;max_burst);
+                return -EINVAL;
+        }       
+
+when testing stock v2.6.23-rc6.  My previous kernel had that
+code hacked out, somewhat accidentally.
+
+The open-iscsi regression.dat has two blocks of 10 tests total that
+will trigger this complaint.  It asks for FBL from 4k..128k, but MBL
+of only 4k.
+
+The spec tells us:
+
+   FirstBurstLength MUST NOT exceed MaxBurstLength.
+
+But stgt does not enforce this constraint.
+
+What's your philosophy here?  The initiator is asking for something
+that is not valid.  Negotiation happens with the target, which
+merrily does the &quot;minimum&quot; dance for the two parameters separately, but
+doesn't enforce the constraint.  Then finally in iscsi_conn_start(),
+the initiator complains.  Do you think stgt should have code that
+quietly decreases FirstBurstLength if it exceeds MaxBurstLength so
+that the login will succeed?
+
+I would have thought this was operator error, not a target
+deficiency, but your commit ffd0436ed2e5a741c8d30062b489b989acf0a526
+says in part:
+
+    iSCSI RFC states that the first burst length must be smaller than the
+    max burst length. We currently assume targets will be good, but that may
+    not be the case, so this patch adds a check.
+
+Whose job is it to be good here?
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001052.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+	<LI>Next message: <A HREF="001054.html">[Stgt-devel] Difference in isns implementation between open-iscsi	and tgt
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1053">[ date ]</a>
+              <a href="thread.html#1053">[ thread ]</a>
+              <a href="subject.html#1053">[ subject ]</a>
+              <a href="author.html#1053">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

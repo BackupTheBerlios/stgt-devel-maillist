@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%205.1&In-Reply-To=%3C47C6C571.7010706%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001398.html">
+   <LINK REL="Next"  HREF="001417.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Different%20throughput%20numbers%20on%20SLES%2010%20and%20RHEL%0A%205.1&In-Reply-To=%3C47C6C571.7010706%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Thu Feb 28 15:30:09 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001398.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+        <LI>Next message: <A HREF="001417.html">[Stgt-devel] Different throughput numbers on SLES 10 and	RHEL	5.1
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1416">[ date ]</a>
+              <a href="thread.html#1416">[ thread ]</a>
+              <a href="subject.html#1416">[ subject ]</a>
+              <a href="author.html#1416">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Erez Zilber wrote:
+&gt;<i> Hi,
+</I>&gt;<i> 
+</I>&gt;<i> I'm using the latest stgt release (tgt-20071227) and I see different
+</I>&gt;<i> throughput numbers for READ commands on SLES 10  &amp; RHEL 5.1. I'm using
+</I>&gt;<i> stgt with iSCSI over iSER.
+</I>&gt;<i> 
+</I>&gt;<i> I'm using the same initiator (open-iscsi 865.15 from OFED 1.3 rc4) and
+</I>&gt;<i> the same target machine. The target machine has 2 partitions - one is
+</I>&gt;<i> SLES 10 &amp; the other is RHEL 5.1. When I run READ commands against the
+</I>&gt;<i> target on SLES 10, I get ~400 MB/sec (which is the throughput of the
+</I>&gt;<i> LUN). When I run the same READ commands from the same initiator against
+</I>&gt;<i> the target on RHEL 5.1, I get only 240 MB/sec.
+</I>&gt;<i> 
+</I>&gt;<i> Is there anything that I need to config on the RHEL 5.1 machine? BTW -
+</I>&gt;<i> if I run the same test directly from the target machine, I get 400
+</I>&gt;<i> MB/sec on both distros.
+</I>&gt;<i> 
+</I>&gt;<i> Here's the command that I use:
+</I>&gt;<i> 
+</I>&gt;<i> sgp_dd if=/dev/sdc of=/dev/null bs=512 bpt=1024 thr=8 time=1 count=20480000
+</I>&gt;<i> 
+</I>
+Does this command try to keep 8 IOs running in parrallel, and if so did 
+you try the noop scheduler (I think for SG_IO this will not make a 
+difference)?
+
+Is the target by any chance running on a x86_64 box?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001398.html">[Stgt-devel] Different throughput numbers on SLES 10 and RHEL 5.1
+</A></li>
+	<LI>Next message: <A HREF="001417.html">[Stgt-devel] Different throughput numbers on SLES 10 and	RHEL	5.1
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1416">[ date ]</a>
+              <a href="thread.html#1416">[ thread ]</a>
+              <a href="subject.html#1416">[ subject ]</a>
+              <a href="author.html#1416">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

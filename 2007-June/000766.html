@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%0A%091/2%5D%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3C20070612213706H.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000764.html">
+   <LINK REL="Next"  HREF="000755.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%0A%091/2%5D%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3C20070612213706H.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Jun 12 14:37:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000764.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+        <LI>Next message: <A HREF="000755.html">[PATCH] Bind device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#766">[ date ]</a>
+              <a href="thread.html#766">[ thread ]</a>
+              <a href="subject.html#766">[ subject ]</a>
+              <a href="author.html#766">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+Date: Tue, 12 Jun 2007 14:32:59 +1000
+
+&gt;<i> &gt; &gt;  struct scsi_lu {
+</I>&gt;<i> &gt; &gt;       int fd;
+</I>&gt;<i> &gt; &gt;       uint64_t addr; /* persistent mapped address */
+</I>&gt;<i> &gt; &gt;       uint64_t size;
+</I>&gt;<i> &gt; &gt;       uint64_t lun;
+</I>&gt;<i> &gt; &gt; -     char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> &gt; &gt; -     char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i> &gt; &gt;       char *path;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;       /* the list of devices belonging to a target */
+</I>&gt;<i> &gt; &gt; @@ -48,7 +63,7 @@ struct scsi_lu {
+</I>&gt;<i> &gt; &gt;       uint64_t reserve_id;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt;       /* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i> &gt; &gt; -     uint8_t d_sense;
+</I>&gt;<i> &gt; &gt; +     struct lu_phy_attr *attributes;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Why do we use a struct lu_phy_attr pointer? Why just can't we do:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; struct scsi_lu {
+</I>&gt;<i> &gt; ...
+</I>&gt;<i> &gt;         struct lu_phy_attr attrs;
+</I>&gt;<i> &gt; };
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; 'attributes' is too long for me. renamed 'attrs'.
+</I>&gt;<i> &gt;
+</I>&gt;<i> 
+</I>&gt;<i> I used a pointer and malloc(sizeof(struct lu_phy_attrs)) thinking this
+</I>&gt;<i> will limit the size of the scsi_lu structure.
+</I>
+What's the point to use a pointer (and reduce the the scsi_lu
+structure size) if we always allocate a lu_phy_attr structure for each
+scsi_lu?
+
+
+&gt;<i> I can in-line it with scsi_lu if you like..
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> BTW: I am having problem accessing the git repositry via http..
+</I>&gt;<i> (<A HREF="git://">git://</A> blocked from work's firewall)
+</I>
+Sorry, I have no idea. dumping the current your tree and
+git-clone might work.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000764.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+	<LI>Next message: <A HREF="000755.html">[PATCH] Bind device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#766">[ date ]</a>
+              <a href="thread.html#766">[ thread ]</a>
+              <a href="subject.html#766">[ subject ]</a>
+              <a href="author.html#766">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

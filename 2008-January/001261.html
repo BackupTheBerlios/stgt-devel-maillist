@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi: add assign_lun script
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20add%20assign_lun%20script&In-Reply-To=%3C477C838F.2020203%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001260.html">
+   <LINK REL="Next"  HREF="001262.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi: add assign_lun script</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20add%20assign_lun%20script&In-Reply-To=%3C477C838F.2020203%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi: add assign_lun script">erezz at voltaire.com
+       </A><BR>
+    <I>Thu Jan  3 07:41:19 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001260.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+        <LI>Next message: <A HREF="001262.html">[Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1261">[ date ]</a>
+              <a href="thread.html#1261">[ thread ]</a>
+              <a href="subject.html#1261">[ subject ]</a>
+              <a href="author.html#1261">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> On Tue, 01 Jan 2008 13:50:07 +0200
+</I>&gt;<i> Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;&gt;&gt;<i> From: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+</I>&gt;&gt;&gt;<i> Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+</I>&gt;&gt;&gt;<i> Date: Sun, 30 Dec 2007 10:51:16 +0200
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;&gt;&gt;<i> Add a script that will create a target, add a device to
+</I>&gt;&gt;&gt;&gt;<i> the target and define the initiator that can connect to it.
+</I>&gt;&gt;&gt;&gt;<i>     
+</I>&gt;&gt;&gt;<i> Can you move this to usr/scripts? I guess that this could be improved
+</I>&gt;&gt;&gt;<i> to handle other protocols later on.
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;<i> I will.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> There would be a better name since this script does more than
+</I>&gt;&gt;&gt;<i> assigning a logical unit, that is, creates a new target, add a lun,
+</I>&gt;&gt;&gt;<i> and enable an initiator to access to the target.
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;<i> In the (near) future I would like to enhance this script, so it will not
+</I>&gt;&gt;<i> always create a new target (e.g. add a device to a target that already
+</I>&gt;&gt;<i> exists if the user wants). So, the main thing that this script does is
+</I>&gt;&gt;<i> to setup a lun. How about &quot;setup_lun&quot;? Do you have other ideas?
+</I>&gt;<i> 
+</I>&gt;<i> I see. Then, you can choose whatever you like. I'm not good at
+</I>&gt;<i> naming. :)
+</I>&gt;<i> 
+</I>&gt;<i> Thanks,
+</I>
+Add a script that will create a target, add a device to
+the target and define the initiator that can connect to it.
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ usr/scripts/setup_lun |  130 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 130 insertions(+), 0 deletions(-)
+ create mode 100755 usr/scripts/setup_lun
+
+diff --git a/usr/scripts/setup_lun b/usr/scripts/setup_lun
+new file mode 100755
+index 0000000..e35d623
+--- /dev/null
++++ b/usr/scripts/setup_lun
+@@ -0,0 +1,130 @@
++# Copyright (C) Voltaire Ltd. 2001-2008.  ALL RIGHTS RESERVED.
++#
++# This source code (the &quot;Code&quot;) is a proprietary product of Voltaire Ltd.
++# (the &quot;Company&quot;) and all right, title, and interest in and to the Code,
++# including all associated intellectual property rights, are and shall
++# remain exclusively with the Company.
++#
++# The Code is provided &quot;as is&quot;. To the maximum extent permitted by law,
++# the Company disclaims any warranties of any kind, either expressed or
++# implied, including, without limitation, implied warranties of
++# merchantability, fitness for a particular purpose and non-infringement.
++# The Company does not warrant that the Code will operate error free, or
++# in an uninterrupted fashion or that it is compatible with any particular
++# platform. In no event shall the Company be liable for any damages
++# whatsoever (including, without limitation, incidental, direct, indirect,
++# special and consequential damages, damages for loss of business profits,
++# business interruption, loss of business information, or other pecuniary
++# loss) arising out of the use or inability to use the Code, even if
++# advised of the possibility of such damages.
++#
++# Author: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
++
++#!/bin/bash
++
++verify_params()
++{
++	# Make sure that the device exists
++	if ! [ -b $dev -o -f $dev ]; then
++		echo &quot;$dev is not a device&quot;;
++		exit 1;
++	fi
++}
++
++find_vacant_tgt_id()
++{
++	id_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d&quot; &quot; -f2 | sed s/://)
++
++	next_vacant_id=1
++
++	for id in $id_list; do
++		if (($id &gt; $next_vacant_id)); then
++			break;
++		else
++			next_vacant_id=$((next_vacant_id+1))
++		fi
++	done
++
++	return $next_vacant_id
++}
++
++find_vacant_lun()
++{
++	tid=$1
++	tgt_found=0
++	next_vacant_lun=0
++	tmp_file=/tmp/target_list.txt
++
++	tgtadm --lld iscsi --op show --mode target &gt; $tmp_file
++
++	while read line; do
++		# Check if we finished going over this target
++		if ((tgt_found == 1 &amp;&amp; $(echo $line | grep -c &quot;^Target&quot;) == 1)); then
++			break
++		fi
++
++		# Check if we found the requested target
++		if (($(echo $line | grep -c &quot;Target $tid:&quot;) == 1)); then
++			tgt_found=1
++			continue
++		fi
++
++		if ((tgt_found == 1 &amp;&amp; $(echo $line | grep -c &quot;LUN:&quot;) == 1)); then
++			curr_lun=$(echo $line | cut -d&quot; &quot; -f2)
++			if (($curr_lun &gt; $next_vacant_lun)); then
++				break
++			else
++				next_vacant_lun=$((next_vacant_lun+1))
++			fi
++		fi
++	done &lt; $tmp_file
++
++	rm -f $tmp_file
++
++	if ((tgt_found == 0)); then
++		echo &quot;Error: could not find a LUN for target $tid&quot;
++		return -1
++	fi
++
++	return $next_vacant_lun
++}
++
++if [ $# -ne 3 ]; then
++	name=$(basename $0)
++	echo &quot;usage: $name &lt;dev&gt; &lt;initiator name&gt; &lt;initiator IP&gt;&quot;;
++	echo &quot;example: $name /dev/sdb1 noni 192.168.10.63&quot;;
++	exit 1;
++fi
++
++dev=$1
++initiator=$2
++initiator_ip=$3
++
++verify_params
++
++# Check if tgtd is running (we should have 2 daemons)
++tgtd_count=$(ps aux|grep -c tgtd)
++if [ $tgtd_count -ne 3 ]; then
++	echo &quot;Starting tgtd&quot;
++	tgtd
++fi
++
++tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$initiator&quot;
++
++find_vacant_tgt_id
++tid=$?
++
++# Create the new target
++echo &quot;Creating the new target&quot;
++tgtadm --lld iscsi --op new --mode target --tid $tid -T $tgt_name
++
++find_vacant_lun $tid
++lun=$?
++
++# Add a logical unit to the target
++echo &quot;Adding a logical unit to the target&quot;
++tgtadm --lld iscsi --op new --mode logicalunit --tid $tid --lun $lun -b $dev
++
++# Accept only a specific initiator
++echo &quot;Accepting connections only from $initiator_ip&quot;
++tgtadm --lld iscsi --op bind --mode target --tid $tid -I $initiator_ip
+-- 
+1.5.3.7
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001260.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+	<LI>Next message: <A HREF="001262.html">[Stgt-devel] [PATCH v2] iscsi: add setup_lun script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1261">[ date ]</a>
+              <a href="thread.html#1261">[ thread ]</a>
+              <a href="subject.html#1261">[ subject ]</a>
+              <a href="author.html#1261">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

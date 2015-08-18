@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [RFC] target configuration tool?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BRFC%5D%20target%20configuration%20tool%3F&In-Reply-To=%3C47DFA5A9.2080902%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001473.html">
+   <LINK REL="Next"  HREF="001467.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [RFC] target configuration tool?</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BRFC%5D%20target%20configuration%20tool%3F&In-Reply-To=%3C47DFA5A9.2080902%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [RFC] target configuration tool?">mangoo at wpkg.org
+       </A><BR>
+    <I>Tue Mar 18 12:21:13 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001473.html">[Stgt-devel] [RFC] target configuration tool?
+</A></li>
+        <LI>Next message: <A HREF="001467.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1475">[ date ]</a>
+              <a href="thread.html#1475">[ thread ]</a>
+              <a href="subject.html#1475">[ subject ]</a>
+              <a href="author.html#1475">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tomasz Chmielewski schrieb:
+&gt;<i> Tomasz Chmielewski schrieb:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> Comments (other than &quot;there is such a tool already&quot;, which would be just 
+</I>&gt;&gt;<i> great)?
+</I>&gt;<i> 
+</I>&gt;<i> I made an initial version of such a tool. It is available, with 
+</I>&gt;<i> additional info, examples and configuration instructions on 
+</I>&gt;<i> <A HREF="http://wpkg.org/TGT-admin.">http://wpkg.org/TGT-admin.</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Summary:
+</I>
+I added some more configuration possibilities (incominguser, 
+initiator-address).
+If no initiator-address is specified, it defaults to ALL.
+If no incominguser is specified, it is not used.
+
+Config file with all possible options can look like below:
+
+include /etc/tgt/temp/*.conf
+
+&lt;target iqn.2007-04.com.example:san.monitoring&gt;
+backing-store /dev/san/monitoring
+
+# if no &quot;incominguser&quot; is specified, it is not used
+incominguser backup secretpass12
+
+# defaults to ALL if no &quot;initiator-address&quot; is specified
+initiator-address 192.168.1.2
+&lt;/target&gt;
+
+&lt;target iqn.2007-02.com.example:san.xen1&gt;
+backing-store /dev/san/xen1
+&lt;/target&gt;
+
+
+I also added a brief help, i.e.:
+
+# tgt-admin -h
+Usage:
+tgt-admin [OPTION]...
+Configure tgt targets.
+
+   -e, --execute   read /etc/tgt/targets.conf and execute tgtadm commands
+   -p, --pretend   only print tgtadm options
+   -v, --verbose   increase verbosity (no effect in &quot;pretend&quot; mode)
+   -h, --help      show this help
+
+
+
+You can find more info on <A HREF="http://wpkg.org/TGT-admin,">http://wpkg.org/TGT-admin,</A> and the source code 
+for download is available on <A HREF="http://wpkg.org/tgt-admin">http://wpkg.org/tgt-admin</A>
+
+I would be glad for any feedback.
+
+
+
+-- 
+Tomasz Chmielewski
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001473.html">[Stgt-devel] [RFC] target configuration tool?
+</A></li>
+	<LI>Next message: <A HREF="001467.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1475">[ date ]</a>
+              <a href="thread.html#1475">[ thread ]</a>
+              <a href="subject.html#1475">[ subject ]</a>
+              <a href="author.html#1475">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

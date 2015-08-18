@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] iscsi: do not create target if it already	exists
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20iscsi%3A%20do%20not%20create%20target%20if%20it%20already%0A%09exists&In-Reply-To=%3C47824030.8070504%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001273.html">
+   <LINK REL="Next"  HREF="001275.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] iscsi: do not create target if it already	exists</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20iscsi%3A%20do%20not%20create%20target%20if%20it%20already%0A%09exists&In-Reply-To=%3C47824030.8070504%40voltaire.com%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] iscsi: do not create target if it already	exists">erezz at voltaire.com
+       </A><BR>
+    <I>Mon Jan  7 16:07:28 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001273.html">[Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001275.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1274">[ date ]</a>
+              <a href="thread.html#1274">[ thread ]</a>
+              <a href="subject.html#1274">[ subject ]</a>
+              <a href="author.html#1274">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>In tgt-setup-lun, if the user tries to create a target
+with a name that already exists, the script should fail.
+
+Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+---
+ usr/scripts/tgt-setup-lun |   21 +++++++++++++++++++++
+ 1 files changed, 21 insertions(+), 0 deletions(-)
+
+diff --git a/usr/scripts/tgt-setup-lun b/usr/scripts/tgt-setup-lun
+index df5418a..824c7d3 100755
+--- a/usr/scripts/tgt-setup-lun
++++ b/usr/scripts/tgt-setup-lun
+@@ -116,6 +116,19 @@ err_exit()
+ 	exit 1
+ }
+ 
++check_if_tgt_exists()
++{
++	tgt_list=$(tgtadm --lld iscsi --op show --mode target | grep Target | cut -d&quot; &quot; -f3)
++
++	for curr_tgt in $tgt_list; do
++		if [ $tgt_name = $curr_tgt ]; then
++			return 1
++		fi
++	done
++
++	return 0
++}
++
+ while getopts &quot;d:n:&quot; opt
+ do
+ 	case ${opt} in
+@@ -144,6 +157,14 @@ fi
+ 
+ tgt_name=&quot;iqn.2001-04.com.$(hostname -s)-$tgt_name&quot;
+ 
++# Make sure that a target with the same name doesn't exist
++check_if_tgt_exists
++if [ $? -eq 1 ]; then
++	echo &quot;Error: a target named $tgt_name already exists&quot;
++	echo &quot;Please select a different target name&quot;
++	exit 1
++fi
++
+ find_vacant_tgt_id
+ tid=$?
+ 
+-- 
+1.5.3.7
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001273.html">[Stgt-devel] [PATCH 3/4] iscsi: test tgtadm ret values in	tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001275.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1274">[ date ]</a>
+              <a href="thread.html#1274">[ thread ]</a>
+              <a href="subject.html#1274">[ subject ]</a>
+              <a href="author.html#1274">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

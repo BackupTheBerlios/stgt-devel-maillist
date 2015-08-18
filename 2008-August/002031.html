@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE ELEMENT	STATUS
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20Take%202%3A%20Implement%20smc%20INITIALIZE%20ELEMENT%0A%09STATUS&In-Reply-To=%3Cf29db9a80808191808n7ab01d14g4dd10bcfbd4cdc2f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002030.html">
+   <LINK REL="Next"  HREF="002040.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE ELEMENT	STATUS</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20Take%202%3A%20Implement%20smc%20INITIALIZE%20ELEMENT%0A%09STATUS&In-Reply-To=%3Cf29db9a80808191808n7ab01d14g4dd10bcfbd4cdc2f%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE ELEMENT	STATUS">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Aug 20 03:08:18 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002030.html">[Stgt-devel] vger mailing list
+</A></li>
+        <LI>Next message: <A HREF="002040.html">[Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE	ELEMENT STATUS
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2031">[ date ]</a>
+              <a href="thread.html#2031">[ thread ]</a>
+              <a href="subject.html#2031">[ subject ]</a>
+              <a href="author.html#2031">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Added test for SCSI RESERVATION.
+
+Still implemented as a no-op.
+
+(Attached patch due to gmail web mangling whitespaces).
+
+
+commit de9949ce821ed1bca9d60e8d98ec806c3c80ec6b
+Author: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date:   Wed Aug 20 10:48:57 2008 +1000
+
+    Implement smc INITIALIZE ELEMENT STATUS op code as NO-OP
+
+    Re-submit Richard Sharpe's patch in git format
+
+    Added test for reservation.
+
+    Reported-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+    Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+
+diff --git a/usr/smc.c b/usr/smc.c
+index 9d7f681..e735deb 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -225,6 +225,24 @@ static int build_element_descriptors(uint8_t *data, struct
+list_head *head,
+ }
+
+ /**
++ * smc_initialize_element_status - INITIALIZE ELEMENT STATUS op code
++ *
++ * Some backup libraries seem to require this.
++ *
++ * Support the SCSI op code INITIALIZE_ELEMENT_STATUS
++ * Ref: smc3r10a, 6.2
++ */
++static int smc_initialize_element_status(int host_no, struct scsi_cmd *cmd)
++{
++       scsi_set_in_resid_by_actual(cmd, 0);
++
++       if (device_reserved(cmd))
++               return SAM_STAT_RESERVATION_CONFLICT;
++       else
++               return SAM_STAT_GOOD;
++}
++
++/**
+  * smc_read_element_status  -  READ ELEMENT STATUS op code
+  *
+  * Support the SCSI op code READ ELEMENT STATUS
+@@ -748,7 +766,7 @@ struct device_type_template smc_template = {
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+-               {spc_illegal_op,},
++               {smc_initialize_element_status,},
+
+                {spc_illegal_op,},
+                {spc_illegal_op,},
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0001-Implement-smc-INITIALIZE-ELEMENT-STATUS-op-code-as-N.patch
+Type: application/octet-stream
+Size: 1497 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080820/4d9bb16e/attachment.obj">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080820/4d9bb16e/attachment.obj</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002030.html">[Stgt-devel] vger mailing list
+</A></li>
+	<LI>Next message: <A HREF="002040.html">[Stgt-devel] [PATCH 1/2] Take 2: Implement smc INITIALIZE	ELEMENT STATUS
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2031">[ date ]</a>
+              <a href="thread.html#2031">[ thread ]</a>
+              <a href="subject.html#2031">[ subject ]</a>
+              <a href="author.html#2031">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

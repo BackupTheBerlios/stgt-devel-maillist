@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt backing store &amp; SSC
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20backing%20store%20%26%20SSC&In-Reply-To=%3C46AF0795.1010306%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000905.html">
+   <LINK REL="Next"  HREF="000903.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt backing store &amp; SSC</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20backing%20store%20%26%20SSC&In-Reply-To=%3C46AF0795.1010306%40gmail.com%3E"
+       TITLE="[Stgt-devel] stgt backing store &amp; SSC">markh794 at gmail.com
+       </A><BR>
+    <I>Tue Jul 31 11:57:41 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000905.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+        <LI>Next message: <A HREF="000903.html">[Stgt-devel] &quot;exporting&quot; SCSI tape drives - possible?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#902">[ date ]</a>
+              <a href="thread.html#902">[ thread ]</a>
+              <a href="subject.html#902">[ subject ]</a>
+              <a href="author.html#902">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi One and all,
+
+I'm after some input on the best way to incorporate the SSC device with 
+the current backing store implementations.
+
+The 'block' format used currently for SBC, MMC devices do not map well 
+for streaming device(s). - For both implicit and explicit addressing mode.
+
+The 'problem':
+==========
+For Variable block SSC device, the block size written needs to be 
+tracked. Otherwise the SSC device will be unable to correctly handle the 
+scenario where a read request arrives (from the application client) that 
+requests a 'large block'. The SSC device needs the ability to set the 
+REQUEST SENSE with ILI bit set correctly.
+e.g.
+A application client wrote a previous write of a 1k block of data:
+An application client reserves 64k and requests a 'read'. The lu 
+receives a 64k read request.
+The lu should now return 1k of data with REQUEST SENSE and ILI set 
+correctly.
+
+Without some sore of way of tracking each block written, I can see no 
+way of achieving this.
+
+My current thoughts of a solution:
+========================
+A block header describes each block written -&gt; Analogy to the 'tar' 
+format where a header is written, followed by the 'data' followed by 
+another header, followed by more data...repeat...until blank header...
+
+/**
+ * Tape layout
+ *
+ * @block_type: (BOT, Uncompress data, compressed data, EOT etc)
+ * @blk_size: Uncompressed size of data block
+ * @disk_blk_size: Amount of space block takes up in the backing 'file'
+ *
+ * @prev_blk, curr_blk &amp; next_blk form a 'poor mans DLL'
+ */
+struct blk_header {
+        uint32_t blk_type;
+        uint32_t blk_size;
+        uint32_t disk_blk_size;
+        loff_t blk_number;
+        loff_t prev_blk;
+        loff_t curr_blk;
+        loff_t next_blk;
+};
+
+The file format I've used before is similar to:
+&lt;Beginning of tape blk_header&gt;
+&lt;Media Aux Memory&gt;
+&lt;blk header&gt;
+&lt;Blk size data&gt;
+       [repeat header/data blocks n times for n writes]
+&lt;End of Data blk header&gt;
+
+
+However the current implementation for iSCSI -&gt; bs_sync uses a 
+pread64()/pwrite64() and writes data based on information stored in 
+scsi_cmd -
+ pwrite64(fd, cmd-&gt;uaddr, cmd-&gt;len, cmd-&gt;offset)
+ pread64(fd, cmd-&gt;uaddr, cmd-&gt;len, cmd-&gt;offset)
+
+
+Would it be OK to add a 'blk_header' structure to struct scsi_cmd and if 
+blk_header is set, write this blk header as well ?
+I will attempt to put the above idea into code and submit for comment...
+
+Or does somebody have a better / cleaner way of achieving this ?
+
+Regards
+Mark
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000905.html">[Stgt-devel] [PATCH 7/7] iser core
+</A></li>
+	<LI>Next message: <A HREF="000903.html">[Stgt-devel] &quot;exporting&quot; SCSI tape drives - possible?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#902">[ date ]</a>
+              <a href="thread.html#902">[ thread ]</a>
+              <a href="subject.html#902">[ subject ]</a>
+              <a href="author.html#902">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

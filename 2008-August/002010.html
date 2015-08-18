@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SSC%2C%20Variable%20Block%20Sizes%20and%20file%20marks%20etc%20...&In-Reply-To=%3C46b8a8850808010939t56b75cdfh47ede522594cf242%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002023.html">
+   <LINK REL="Next"  HREF="002011.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SSC%2C%20Variable%20Block%20Sizes%20and%20file%20marks%20etc%20...&In-Reply-To=%3C46b8a8850808010939t56b75cdfh47ede522594cf242%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Fri Aug  1 18:39:21 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002023.html">[Stgt-devel] [PATCH] updating targets in tgt-admin
+</A></li>
+        <LI>Next message: <A HREF="002011.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2010">[ date ]</a>
+              <a href="thread.html#2010">[ thread ]</a>
+              <a href="subject.html#2010">[ subject ]</a>
+              <a href="author.html#2010">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I discovered Bacula's btape command and started using that to verify
+my SSC implementation, and then discovered that I would have to
+implement variable block size records in any case, so I switched.
+
+I can now pass all the important Bacula btest tests, and many of the
+unimportant ones like back space file, back space record, but there is
+still at least one unimportant test that my code fails (space to just
+past the very last record on the tape, but fixing that required a
+careful reading of the spec ... :-). The code I have at the moment is
+pretty crappy, and I might post it in a couple of weeks when I get
+back from a cruise we are taking next week.
+
+However, I thought I would describe the approach I have taken.
+
+I keep all the metadata separate from the data. I have a separate
+array of filemarks/setmarks (actually, I only implement filemarks at
+the moment, but setmarks are not hard). This array can be small since
+we don't expect many of them, and the cost of realloc to double its
+size from 20 to 40 entries is not expensive and is only needed with
+the WITE FILEMARKS(6) command.
+
+I also have a separate array of record lengths. I size it for 1M
+records at the moment, but the sizing of this array will depend on the
+size of tape you are emulating and the record sizes you expect to
+support. It seems that the default in programs like NetBackup is 64kB,
+but they routinely recommend that you use 512kB or larger. 1M records
+with 1MB record sizes means we can support 1TB backup tapes. Since
+uncompressed LTO4s are 800GB (I am being a little loose here with MB
+and MiB etc), and since compression can be done below the tape level,
+1M records seems fine and requires 4MB per tape emulated. I would
+probably return 64kB or more as the min Block Size (although I wonder
+how many apps would support a granularity larger than 9 (16, for
+example ...).
+
+Every write writes its length to the next available record slot.
+
+When reading, we keep track of the current record (starting at 0) and
+read only the bytes of data the current record slot tells us
+(actually, we should read the min of current record and the requested
+size) and then deal with under-length or over-length reads as the spec
+requests.
+
+The filemarks array is used in this way. Marks occur before records.
+If a mark is at the same offset as a record, the mark is first, and I
+keep two variables, next_mark and next_record to tell me what I am up
+to.
+
+So, during a read, if there is a mark at the current offset, then a
+CHECK_CONDITION should be returned with NO_SENSE and ASC_MARK.
+However, if the request was an over-length read and there is a MARK
+immediately after the read, a CHECK_CONDITION with NO_SENSE and NO_ASC
+should be returned (at least by my reading of the spec).
+Unfortunately, there are no programs that I am aware of that test for
+these things (perhaps a useful additional tool for STGT would be a
+program that does these sorts of tests). I am not sure that my code
+handles this condition correctly, yet, as there is no test for it.
+
+Spacing forward is a simple matter of lseeking using the block lengths
+that I keep in my array of record sizes, and spacing backward is much
+the same ...
+
+My code currently does not handle writing over a MARK yet, but that is
+only a matter of time, and I will probably write a stress test tool
+first.
+
+Also, I am not currently saving the metadata to files/xattrs nor
+reading them in when a tape if mounted, but that is the easy part.
+
+I have chosen this representation because performance in the data path
+is important to me, especially during writing, but it is clear that
+other representations can be used.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002023.html">[Stgt-devel] [PATCH] updating targets in tgt-admin
+</A></li>
+	<LI>Next message: <A HREF="002011.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2010">[ date ]</a>
+              <a href="thread.html#2010">[ thread ]</a>
+              <a href="subject.html#2010">[ subject ]</a>
+              <a href="author.html#2010">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

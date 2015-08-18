@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Makefile auto dependencies
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Makefile%20auto%20dependencies&In-Reply-To=%3CPine.LNX.4.64.0708311614280.11401%40oldsony%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000984.html">
+   <LINK REL="Next"  HREF="000987.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Makefile auto dependencies</H1>
+    <B>Alexander Nezhinsky</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Makefile%20auto%20dependencies&In-Reply-To=%3CPine.LNX.4.64.0708311614280.11401%40oldsony%3E"
+       TITLE="[Stgt-devel] [PATCH] Makefile auto dependencies">nezhinsky at gmail.com
+       </A><BR>
+    <I>Fri Aug 31 15:21:53 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000984.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+        <LI>Next message: <A HREF="000987.html">[Stgt-devel] close completes before synchronize cache response
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#986">[ date ]</a>
+              <a href="thread.html#986">[ thread ]</a>
+              <a href="subject.html#986">[ subject ]</a>
+              <a href="author.html#986">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Resending Makefile patch for the current head. 
+
+Dependency files generated using -MM flag of gcc and included to
+the Makefile itself.
+.PHONY target declarations added where appropriate.
+Few lines longer than 80 chars broken. 
+
+Signed-off-by: Alexander Nezhinsky &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A>&gt;
+---
+ usr/Makefile |   29 ++++++++++++++++++++++-------
+ 1 files changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 43565df..c84fe86 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -33,8 +33,9 @@ endif
+ 
+ ifneq ($(ISCSI),)
+ CFLAGS += -DISCSI
+-TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o iscsid.o target.o \
+-	chap.o transport.o iscsi_tcp.o isns.o libcrc32c.o)
++TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o \
++		iscsid.o target.o chap.o transport.o iscsi_tcp.o \
++		isns.o libcrc32c.o)
+ TGTD_OBJS += bs_sync.o
+ LIBS += -lcrypto -lpthread
+ endif
+@@ -46,24 +47,38 @@ TGTD_OBJS += bs_mmap.o tgtif.o
+ endif
+ 
+ INCLUDES += -I.
+-CFLAGS += -Wall -g -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDES)
++
++CFLAGS += -D_LARGEFILE64_SOURCE 
++CFLAGS += $(INCLUDES)
++CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC 
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o parser.o \
+-		spc.o sbc.o mmc.o osd.o spt.o scc.o smc.o
++TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
++		parser.o spc.o sbc.o mmc.o osd.o spt.o scc.o smc.o
+ 
++TGTD_DEP = $(TGTD_OBJS:.o=.d)
+ 
++.PHONY:all
+ all: $(PROGRAMS)
+ 
+ tgtd: $(TGTD_OBJS)
+ 	$(CC) $^ -o $@ $(LIBS)
+ 
++-include $(TGTD_DEP)
++
+ tgtadm: tgtadm.o
+ 	$(CC) $^ -o $@
+ 
++-include tgtadm.d
++
++%.o: %.c
++	$(CC) -c $(CFLAGS) $*.c -o $*.o
++	@$(CC) -MM $(CFLAGS) -MF $*.d -MT $*.o $*.c
++
++.PHONY: install
+ install: $(PROGRAMS)
+ 	install -m 0755 $(PROGRAMS) $(DESTDIR)/usr/sbin
+ 
++.PHONY: clean
+ clean:
+-	rm -f *.o $(PROGRAMS) iscsi/*.o ibmvio/*.o xen/*.o fc/*.o
+-
++	rm -f *.[od] $(PROGRAMS) iscsi/*.[od] ibmvio/*.[od] xen/*.[od]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000984.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+	<LI>Next message: <A HREF="000987.html">[Stgt-devel] close completes before synchronize cache response
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#986">[ date ]</a>
+              <a href="thread.html#986">[ thread ]</a>
+              <a href="subject.html#986">[ subject ]</a>
+              <a href="author.html#986">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

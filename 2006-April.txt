@@ -1,0 +1,510 @@
+From ming.zhang.china at gmail.com  Mon Apr 17 03:44:55 2006
+From: ming.zhang.china at gmail.com (ming.zhang.china at gmail.com)
+Date: Sun, 16 Apr 2006 21:44:55 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance examples ?
+In-Reply-To: <1145236838.10704.34.camel@localhost.localdomain>
+References: <1145233944.10704.24.camel@localhost.localdomain>
+	 <20060417094232Y.fujita.tomonori@lab.ntt.co.jp>
+	 <1145234949.10704.30.camel@localhost.localdomain>
+	 <20060417100704P.fujita.tomonori@lab.ntt.co.jp>
+	 <1145236838.10704.34.camel@localhost.localdomain>
+Message-ID: <1145238295.10704.37.camel@localhost.localdomain>
+
+btw, stgt can directly work on page cache because it uses mmap
+interface?
+
+On Sun, 2006-04-16 at 21:20 -0400, Ming Zhang wrote:
+> 
+> > 
+> > Anyway, stgt is directly read from and write to page cache unlike
+> > IET. Ardis target code also does in a hacky way. I didn't like it so
+> > IET does memory copies between page cache and allocated kernel
+> buffer.
+> 
+> base on oprofile results, the memory copy between page cache and
+> kernel
+> buffer is a main cost here in IET. do u have performance comparison on
+> stgt and iet on this?
+> 
+
+
+
+From ming.zhang.china at gmail.com  Mon Apr 17 03:44:55 2006
+From: ming.zhang.china at gmail.com (ming.zhang.china at gmail.com)
+Date: Sun, 16 Apr 2006 21:44:55 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance examples ?
+In-Reply-To: <1145236838.10704.34.camel@localhost.localdomain>
+References: <1145233944.10704.24.camel@localhost.localdomain>
+	 <20060417094232Y.fujita.tomonori@lab.ntt.co.jp>
+	 <1145234949.10704.30.camel@localhost.localdomain>
+	 <20060417100704P.fujita.tomonori@lab.ntt.co.jp>
+	 <1145236838.10704.34.camel@localhost.localdomain>
+Message-ID: <1145238295.10704.37.camel@localhost.localdomain>
+
+btw, stgt can directly work on page cache because it uses mmap
+interface?
+
+On Sun, 2006-04-16 at 21:20 -0400, Ming Zhang wrote:
+> 
+> > 
+> > Anyway, stgt is directly read from and write to page cache unlike
+> > IET. Ardis target code also does in a hacky way. I didn't like it so
+> > IET does memory copies between page cache and allocated kernel
+> buffer.
+> 
+> base on oprofile results, the memory copy between page cache and
+> kernel
+> buffer is a main cost here in IET. do u have performance comparison on
+> stgt and iet on this?
+> 
+
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+http://sel.as-us.falkag.net/sel?cmd=lnk&kid=110944&bid=241720&dat=121642
+_______________________________________________
+Iscsitarget-devel mailing list
+Iscsitarget-devel at lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr 17 06:55:08 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 17 Apr 2006 13:55:08 +0900
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance examples ?
+In-Reply-To: <1145238295.10704.37.camel@localhost.localdomain>
+References: <20060417100704P.fujita.tomonori@lab.ntt.co.jp>
+	<1145236838.10704.34.camel@localhost.localdomain>
+	<1145238295.10704.37.camel@localhost.localdomain>
+Message-ID: <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+
+From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+Subject: Re: [Iscsitarget-devel] write performance examples ?
+Date: Sun, 16 Apr 2006 21:44:55 -0400
+
+> btw, stgt can directly work on page cache because it uses mmap
+> interface?
+
+Yes and No. As I said, Ardis can also directly work on page cache
+without using mmap.
+
+stgt performs I/O operations in user space unlike the
+others. Comparing it with the others does not make sense. You need to
+read IET/Ardis/stgt code to understand the details.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr 17 06:55:08 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 17 Apr 2006 13:55:08 +0900
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance examples ?
+In-Reply-To: <1145238295.10704.37.camel@localhost.localdomain>
+References: <20060417100704P.fujita.tomonori@lab.ntt.co.jp>
+	<1145236838.10704.34.camel@localhost.localdomain>
+	<1145238295.10704.37.camel@localhost.localdomain>
+Message-ID: <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+
+From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+Subject: Re: [Iscsitarget-devel] write performance examples ?
+Date: Sun, 16 Apr 2006 21:44:55 -0400
+
+> btw, stgt can directly work on page cache because it uses mmap
+> interface?
+
+Yes and No. As I said, Ardis can also directly work on page cache
+without using mmap.
+
+stgt performs I/O operations in user space unlike the
+others. Comparing it with the others does not make sense. You need to
+read IET/Ardis/stgt code to understand the details.
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+http://sel.as-us.falkag.net/sel?cmd=lnk&kid=110944&bid=241720&dat=121642
+_______________________________________________
+Iscsitarget-devel mailing list
+Iscsitarget-devel at lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel
+
+
+From ming.zhang.china at gmail.com  Mon Apr 17 15:40:29 2006
+From: ming.zhang.china at gmail.com (ming.zhang.china at gmail.com)
+Date: Mon, 17 Apr 2006 09:40:29 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance
+	examples ?
+In-Reply-To: <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+References: <20060417100704P.fujita.tomonori@lab.ntt.co.jp>
+	 <1145236838.10704.34.camel@localhost.localdomain>
+	 <1145238295.10704.37.camel@localhost.localdomain>
+	 <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1145281229.24418.12.camel@localhost.localdomain>
+
+On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+> From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> Subject: Re: [Iscsitarget-devel] write performance examples ?
+> Date: Sun, 16 Apr 2006 21:44:55 -0400
+> 
+> > btw, stgt can directly work on page cache because it uses mmap
+> > interface?
+> 
+> Yes and No. As I said, Ardis can also directly work on page cache
+> without using mmap.
+> 
+> stgt performs I/O operations in user space unlike the
+> others. Comparing it with the others does not make sense. You need to
+> read IET/Ardis/stgt code to understand the details.
+
+from users point of view, both stgt and iet provide a networked storage
+service (stgt can provide more). just like people can compare NFS,
+SAMBA, FTP performance with same HW, and choose the best one base on
+feature and performance, why people can not compare same protocol and
+different implementation solutions?
+
+many people on iet list might want to decide whether to immigrate to
+stgt once it is stable. they of course have interest to know how it
+performs compared with the solution currently under use.
+
+
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From ming.zhang.china at gmail.com  Mon Apr 17 15:40:29 2006
+From: ming.zhang.china at gmail.com (ming.zhang.china at gmail.com)
+Date: Mon, 17 Apr 2006 09:40:29 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance
+	examples ?
+In-Reply-To: <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+References: <20060417100704P.fujita.tomonori@lab.ntt.co.jp>
+	 <1145236838.10704.34.camel@localhost.localdomain>
+	 <1145238295.10704.37.camel@localhost.localdomain>
+	 <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1145281229.24418.12.camel@localhost.localdomain>
+
+On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+> From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> Subject: Re: [Iscsitarget-devel] write performance examples ?
+> Date: Sun, 16 Apr 2006 21:44:55 -0400
+> 
+> > btw, stgt can directly work on page cache because it uses mmap
+> > interface?
+> 
+> Yes and No. As I said, Ardis can also directly work on page cache
+> without using mmap.
+> 
+> stgt performs I/O operations in user space unlike the
+> others. Comparing it with the others does not make sense. You need to
+> read IET/Ardis/stgt code to understand the details.
+
+from users point of view, both stgt and iet provide a networked storage
+service (stgt can provide more). just like people can compare NFS,
+SAMBA, FTP performance with same HW, and choose the best one base on
+feature and performance, why people can not compare same protocol and
+different implementation solutions?
+
+many people on iet list might want to decide whether to immigrate to
+stgt once it is stable. they of course have interest to know how it
+performs compared with the solution currently under use.
+
+
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+http://sel.as-us.falkag.net/sel?cmd=lnk&kid=110944&bid=241720&dat=121642
+_______________________________________________
+Iscsitarget-devel mailing list
+Iscsitarget-devel at lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr 18 16:04:22 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 18 Apr 2006 23:04:22 +0900
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance
+	examples ?
+In-Reply-To: <1145281229.24418.12.camel@localhost.localdomain>
+References: <1145238295.10704.37.camel@localhost.localdomain>
+	<20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+	<1145281229.24418.12.camel@localhost.localdomain>
+Message-ID: <20060418230422L.fujita.tomonori@lab.ntt.co.jp>
+
+From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+Subject: Re: [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+Date: Mon, 17 Apr 2006 09:40:29 -0400
+
+> On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+> > From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> > Subject: Re: [Iscsitarget-devel] write performance examples ?
+> > Date: Sun, 16 Apr 2006 21:44:55 -0400
+> > 
+> > > btw, stgt can directly work on page cache because it uses mmap
+> > > interface?
+> > 
+> > Yes and No. As I said, Ardis can also directly work on page cache
+> > without using mmap.
+> > 
+> > stgt performs I/O operations in user space unlike the
+> > others. Comparing it with the others does not make sense. You need to
+> > read IET/Ardis/stgt code to understand the details.
+> 
+> from users point of view, both stgt and iet provide a networked storage
+> service (stgt can provide more). just like people can compare NFS,
+> SAMBA, FTP performance with same HW, and choose the best one base on
+> feature and performance, why people can not compare same protocol and
+> different implementation solutions?
+
+Of course, you can compare the performances by running them. But you
+cannot compare (or understand) the designs with simple sentences such
+as 'stgt can directly work on page cache because it uses mmap
+interface?'.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr 18 16:04:22 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 18 Apr 2006 23:04:22 +0900
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance
+	examples ?
+In-Reply-To: <1145281229.24418.12.camel@localhost.localdomain>
+References: <1145238295.10704.37.camel@localhost.localdomain>
+	<20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+	<1145281229.24418.12.camel@localhost.localdomain>
+Message-ID: <20060418230422L.fujita.tomonori@lab.ntt.co.jp>
+
+From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+Subject: Re: [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+Date: Mon, 17 Apr 2006 09:40:29 -0400
+
+> On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+> > From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> > Subject: Re: [Iscsitarget-devel] write performance examples ?
+> > Date: Sun, 16 Apr 2006 21:44:55 -0400
+> > 
+> > > btw, stgt can directly work on page cache because it uses mmap
+> > > interface?
+> > 
+> > Yes and No. As I said, Ardis can also directly work on page cache
+> > without using mmap.
+> > 
+> > stgt performs I/O operations in user space unlike the
+> > others. Comparing it with the others does not make sense. You need to
+> > read IET/Ardis/stgt code to understand the details.
+> 
+> from users point of view, both stgt and iet provide a networked storage
+> service (stgt can provide more). just like people can compare NFS,
+> SAMBA, FTP performance with same HW, and choose the best one base on
+> feature and performance, why people can not compare same protocol and
+> different implementation solutions?
+
+Of course, you can compare the performances by running them. But you
+cannot compare (or understand) the designs with simple sentences such
+as 'stgt can directly work on page cache because it uses mmap
+interface?'.
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+http://sel.as-us.falkag.net/sel?cmd=lnk&kid=110944&bid=241720&dat=121642
+_______________________________________________
+Iscsitarget-devel mailing list
+Iscsitarget-devel at lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel
+
+
+From ming.zhang.china at gmail.com  Tue Apr 18 16:20:00 2006
+From: ming.zhang.china at gmail.com (ming.zhang.china at gmail.com)
+Date: Tue, 18 Apr 2006 10:20:00 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance
+	examples ?
+In-Reply-To: <20060418230422L.fujita.tomonori@lab.ntt.co.jp>
+References: <1145238295.10704.37.camel@localhost.localdomain>
+	 <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+	 <1145281229.24418.12.camel@localhost.localdomain>
+	 <20060418230422L.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1145370001.8601.56.camel@localhost.localdomain>
+
+On Tue, 2006-04-18 at 23:04 +0900, FUJITA Tomonori wrote:
+> From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> Subject: Re: [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+> Date: Mon, 17 Apr 2006 09:40:29 -0400
+> 
+> > On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+> > > From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> > > Subject: Re: [Iscsitarget-devel] write performance examples ?
+> > > Date: Sun, 16 Apr 2006 21:44:55 -0400
+> > > 
+> > > > btw, stgt can directly work on page cache because it uses mmap
+> > > > interface?
+> > > 
+> > > Yes and No. As I said, Ardis can also directly work on page cache
+> > > without using mmap.
+> > > 
+> > > stgt performs I/O operations in user space unlike the
+> > > others. Comparing it with the others does not make sense. You need to
+> > > read IET/Ardis/stgt code to understand the details.
+> > 
+> > from users point of view, both stgt and iet provide a networked storage
+> > service (stgt can provide more). just like people can compare NFS,
+> > SAMBA, FTP performance with same HW, and choose the best one base on
+> > feature and performance, why people can not compare same protocol and
+> > different implementation solutions?
+> 
+> Of course, you can compare the performances by running them. But you
+> cannot compare (or understand) the designs with simple sentences such
+> as 'stgt can directly work on page cache because it uses mmap
+> interface?'.
+
+of course, design issues can not be easily found via simple black box
+performance test.
+
+also if that simple sentence is incomplete or wrong, you can list the
+difference between them if u want. 
+
+for every iet user, they want to know why development on iet is slow
+down. and when they know the main focus is switched to stgt, they want
+to know when, why, and how to move to stgt, you can not expect every one
+to read the code right?
+
+
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+From ming.zhang.china at gmail.com  Tue Apr 18 16:20:00 2006
+From: ming.zhang.china at gmail.com (ming.zhang.china at gmail.com)
+Date: Tue, 18 Apr 2006 10:20:00 -0400
+Subject: [Stgt-devel] Re: [Iscsitarget-devel] write performance
+	examples ?
+In-Reply-To: <20060418230422L.fujita.tomonori@lab.ntt.co.jp>
+References: <1145238295.10704.37.camel@localhost.localdomain>
+	 <20060417135508Q.fujita.tomonori@lab.ntt.co.jp>
+	 <1145281229.24418.12.camel@localhost.localdomain>
+	 <20060418230422L.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1145370001.8601.56.camel@localhost.localdomain>
+
+On Tue, 2006-04-18 at 23:04 +0900, FUJITA Tomonori wrote:
+> From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> Subject: Re: [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+> Date: Mon, 17 Apr 2006 09:40:29 -0400
+> 
+> > On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+> > > From: "ming.zhang.china at gmail.com" <ming.zhang.china at gmail.com>
+> > > Subject: Re: [Iscsitarget-devel] write performance examples ?
+> > > Date: Sun, 16 Apr 2006 21:44:55 -0400
+> > > 
+> > > > btw, stgt can directly work on page cache because it uses mmap
+> > > > interface?
+> > > 
+> > > Yes and No. As I said, Ardis can also directly work on page cache
+> > > without using mmap.
+> > > 
+> > > stgt performs I/O operations in user space unlike the
+> > > others. Comparing it with the others does not make sense. You need to
+> > > read IET/Ardis/stgt code to understand the details.
+> > 
+> > from users point of view, both stgt and iet provide a networked storage
+> > service (stgt can provide more). just like people can compare NFS,
+> > SAMBA, FTP performance with same HW, and choose the best one base on
+> > feature and performance, why people can not compare same protocol and
+> > different implementation solutions?
+> 
+> Of course, you can compare the performances by running them. But you
+> cannot compare (or understand) the designs with simple sentences such
+> as 'stgt can directly work on page cache because it uses mmap
+> interface?'.
+
+of course, design issues can not be easily found via simple black box
+performance test.
+
+also if that simple sentence is incomplete or wrong, you can list the
+difference between them if u want. 
+
+for every iet user, they want to know why development on iet is slow
+down. and when they know the main focus is switched to stgt, they want
+to know when, why, and how to move to stgt, you can not expect every one
+to read the code right?
+
+
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+http://sel.as-us.falkag.net/sel?cmd=lnk&kid=110944&bid=241720&dat=121642
+_______________________________________________
+Iscsitarget-devel mailing list
+Iscsitarget-devel at lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel
+
+
+From mingz at ele.uri.edu  Sun Apr 23 17:38:01 2006
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Sun, 23 Apr 2006 11:38:01 -0400
+Subject: [Stgt-devel] producing opensource software
+Message-ID: <1145806681.8675.2.camel@localhost.localdomain>
+
+http://www.producingoss.com/
+
+in case u have time to read book instead of code. ;)
+
+
+
+Ming
+
+
+
+
+From mingz at ele.uri.edu  Sun Apr 23 17:38:01 2006
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Sun, 23 Apr 2006 11:38:01 -0400
+Subject: [Stgt-devel] [Iscsitarget-devel] producing opensource software
+Message-ID: <1145806681.8675.2.camel@localhost.localdomain>
+
+http://www.producingoss.com/
+
+in case u have time to read book instead of code. ;)
+
+
+
+Ming
+
+
+
+
+-------------------------------------------------------
+Using Tomcat but need to do more? Need to support web services, security?
+Get stuff done quickly with pre-integrated technology to make your job easier
+Download IBM WebSphere Application Server v.1.0.1 based on Apache Geronimo
+http://sel.as-us.falkag.net/sel?cmd=lnk&kid=120709&bid=263057&dat=121642
+_______________________________________________
+Iscsitarget-devel mailing list
+Iscsitarget-devel at lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel
+
+

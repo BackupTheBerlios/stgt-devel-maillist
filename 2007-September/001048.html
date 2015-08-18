@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] isns fix initiator -&gt; target
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20isns%20fix%20initiator%20-%3E%20target&In-Reply-To=%3C46ECCB54.6010701%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001047.html">
+   <LINK REL="Next"  HREF="001051.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] isns fix initiator -&gt; target</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20isns%20fix%20initiator%20-%3E%20target&In-Reply-To=%3C46ECCB54.6010701%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] isns fix initiator -&gt; target">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sun Sep 16 08:21:08 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001047.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+        <LI>Next message: <A HREF="001051.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1048">[ date ]</a>
+              <a href="thread.html#1048">[ thread ]</a>
+              <a href="subject.html#1048">[ subject ]</a>
+              <a href="author.html#1048">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> If tgt tells an iSNS server to register it as an initiator, it's quite
+</I>&gt;<i> strange. tgt properly works for me.
+</I>&gt;<i> 
+</I>It's weird, I tried it again this morning with the original tgt source 
+and indeed it registers as a target. I get the feeling that open-isns
+has a little mixup here.
+
+I am running open-iscsi and tgt on the same host, but as we discovered 
+earlier the registration with open-isns gets confused about this. But 
+even when the initiator has been stopped and shortly after expunged from 
+the isns database something of it is left. When I start tgt isns still 
+thinks that it is an initiator (as it comes from the same host).
+
+When I remove the isns DB and start from scratch it works fine, tgt is 
+registered as a target.
+
+I don't know if this all makes sense to Olaf (open-isns).
+
+Albert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001047.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+	<LI>Next message: <A HREF="001051.html">[Stgt-devel] [PATCH] isns fix initiator -&gt; target
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1048">[ date ]</a>
+              <a href="thread.html#1048">[ thread ]</a>
+              <a href="subject.html#1048">[ subject ]</a>
+              <a href="author.html#1048">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

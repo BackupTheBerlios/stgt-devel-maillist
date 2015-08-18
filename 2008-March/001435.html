@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080306165744.GB7754%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001433.html">
+   <LINK REL="Next"  HREF="001420.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080306165744.GB7754%40osc.edu%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">pw at osc.edu
+       </A><BR>
+    <I>Thu Mar  6 17:57:44 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001433.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001420.html">[Stgt-devel] Unused code in sbc.c ???
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1435">[ date ]</a>
+              <a href="thread.html#1435">[ thread ]</a>
+              <a href="subject.html#1435">[ subject ]</a>
+              <a href="author.html#1435">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Thu, 06 Mar 2008 12:10 +0200:
+&gt;<i> Here's a patch that works with the current version of stgt. 
+</I>
+Thanks for fixing it up; I'll hang onto it for debugging.  Hopefully
+the new sync-range code you added isn't actually getting used in
+your performance tests.  I doubt it.
+
+&gt;<i> Now, the performance is even lower (~460 MB/sec with rdwr_sync compared to ~670 MB/sec with rdwr). I've noticed that it takes a lot of time between target_cmd_queue (time = 663673) &amp; iscsi_task_tx_start (669209).
+</I>
+5.5 ms is impossibly slow.  Unless you're writing to disk and/or
+syncing to disk.
+
+You need to decide what you want to test.  Total throughput needs
+threading on the target for best performance, and multiple
+outstanding commands on the initiator.  Latency tests are best for
+understanding which part of the system is being &quot;slow&quot;:  network,
+disk, context switch, etc.  To test latency effectively you need to
+ensure that only 1 command is outstanding.
+
+&gt;<i> I don't understand something in the behavior of
+</I>&gt;<i> iscsi_task_tx_start (this may be related to the long time
+</I>&gt;<i> mentioned above): when it is called, it handles only the 1st task
+</I>&gt;<i> in conn-&gt;tx_clist.
+</I>
+This would only matter in the multiple-command case, just to point
+out the difference again.
+
+&gt;<i> Why doesn't it try to handle all tasks on the
+</I>&gt;<i> list? What happens is that after bs completes is work, it takes a
+</I>&gt;<i> lot of time until iscsi_task_tx_start is called for that task.
+</I>
+That definitely sounds like a problem.  So just getting into
+iscsi_task_tx_start is an issue, even if you only need to be there
+for a single task.
+
+&gt;<i> iscsi_task_tx_start *is* called immediately, but it handles the
+</I>&gt;<i> 1st task only (so the current task has to wait for this thread to
+</I>&gt;<i> wake up multiple times until it will be handled). Can anyone
+</I>&gt;<i> explain this design?
+</I>
+After it handles that task, it goes back to the main loop of
+iser_tx_progress.  This function will continue to be called as long
+as num_tx_ready is non-zero.  Various points increment that:
+conn-&gt;tp-&gt;event_modify(.., ..|EPOLLOUT) and some completion events
+from the NIC.
+
+This is just like how TCP works.  We let the top-level epoll() drive
+all the events for all the connections.  With this added counter so
+that non-pollable RDMA events can be tracked too.
+
+If you narrow down big delays, like the 5.5 ms, to exactly two
+points, then look at the code and figure out what has to happen to
+get from one to the other, that will help us figure out what to fix.
+Like the previous mail where it looked like getting into the RX
+progress function was slow, indicating something about notifications
+from the NIC or a bug on that relatively short path.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001433.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001420.html">[Stgt-devel] Unused code in sbc.c ???
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1435">[ date ]</a>
+              <a href="thread.html#1435">[ thread ]</a>
+              <a href="subject.html#1435">[ subject ]</a>
+              <a href="author.html#1435">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

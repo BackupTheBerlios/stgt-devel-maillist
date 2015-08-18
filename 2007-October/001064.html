@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071005155701.GA9292%40lemming.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001063.html">
+   <LINK REL="Next"  HREF="001066.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071005155701.GA9292%40lemming.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Fri Oct  5 17:57:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001063.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001066.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1064">[ date ]</a>
+              <a href="thread.html#1064">[ thread ]</a>
+              <a href="subject.html#1064">[ subject ]</a>
+              <a href="author.html#1064">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, Oct 04, 2007 at 01:20:35PM -0400, Pete Wyckoff wrote:
+&gt;<i>This all turned out to be a known bug in the mthca IB driver in
+</I>&gt;<i>kernels older than 2.6.21.  Including the rhel5 kernel.  The
+</I>
+just FYI, a iSER testing kernel:
+  <A HREF="http://people.redhat.com/dzickus/el5/52.el5/">http://people.redhat.com/dzickus/el5/52.el5/</A>
+referenced from this:
+  <A HREF="https://bugzilla.redhat.com/show_bug.cgi?id=234352">https://bugzilla.redhat.com/show_bug.cgi?id=234352</A>
+has the required one-liner patch to fix mthca, so maybe it'll be fixed
+in RHEL soon.
+
+the 2.6.18-52.el5 kernel + stock CentOS5 userland + the iSER git
+appears to be fine under testing, and has a tad better read performance
+than 2.6.22.6
+
+Version  1.03 ------Sequential Output------ --Sequential Input- --Random-
+              -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+x11        1G 78579  99 417268 92 208824 34 85054  96 340290 25 +++++ +++
+x11        4G 78341  99 446128 96 194134 29 86896  98 343078 25 +++++ +++
+x11        6G 78720  99 457873 98 191004 28 86464  97 347046 24 +++++ +++
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001063.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001066.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1064">[ date ]</a>
+              <a href="thread.html#1064">[ thread ]</a>
+              <a href="subject.html#1064">[ subject ]</a>
+              <a href="author.html#1064">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

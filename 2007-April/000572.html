@@ -1,0 +1,282 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch] modularization target types. V2.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%5D%20modularization%20target%20types.%20V2.&In-Reply-To=%3C20070416182906.1b29452a%40hugang-laptop%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000575.html">
+   <LINK REL="Next"  HREF="000574.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch] modularization target types. V2.</H1>
+    <B>Hu Gang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%5D%20modularization%20target%20types.%20V2.&In-Reply-To=%3C20070416182906.1b29452a%40hugang-laptop%3E"
+       TITLE="[Stgt-devel] [patch] modularization target types. V2.">hugang at soulinfo.com
+       </A><BR>
+    <I>Mon Apr 16 12:29:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000575.html">[Stgt-devel] [patch] support different type in one target, V2.
+</A></li>
+        <LI>Next message: <A HREF="000574.html">[Stgt-devel] [patch] modularization target types. V2.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#572">[ date ]</a>
+              <a href="thread.html#572">[ thread ]</a>
+              <a href="subject.html#572">[ subject ]</a>
+              <a href="author.html#572">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>this patch adding support mutiple scsi type as a modules.
+
+---
+
+ usr/mmc.c    |    7 ++++++-
+ usr/osd.c    |    7 ++++++-
+ usr/sbc.c    |    7 ++++++-
+ usr/spt.c    |    8 +++++++-
+ usr/target.c |   61 +++++++++++++++++++++++++++++++++++++++++++---------------
+ usr/tgtd.h   |    4 ++++
+ 6 files changed, 74 insertions(+), 20 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index ba3a395..49103a5 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -121,7 +121,7 @@ static int mmc_read_capacity(int host_no
+ 	return SAM_STAT_GOOD;
+ }
+ 
+-struct device_type_template mmc_template = {
++static struct device_type_template mmc_template = {
+ 	.type	= TYPE_ROM,
+ 	.name	= &quot;cdrom/dvd&quot;,
+ 	.pid	= &quot;VIRTUAL-CDROM&quot;,
+@@ -227,3 +227,8 @@ struct device_type_template mmc_template
+ 		[0xb0 ... 0xff] = {spc_illegal_op},
+ 	}
+ };
++
++__attribute__((constructor)) static void mmc_init(void)
++{
++    device_type_register(&amp;mmc_template);
++}
+diff --git a/usr/osd.c b/usr/osd.c
+index 894d4b4..91286f6 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -150,7 +150,7 @@ static void device_osd_init(struct scsi_
+ 	lu-&gt;d_sense = 1;
+ }
+ 
+-struct device_type_template osd_template = {
++static struct device_type_template osd_template = {
+ 	.type		= TYPE_OSD,
+ 	.name		= &quot;osd&quot;,
+ 	.device_init	= device_osd_init,
+@@ -221,3 +221,8 @@ struct device_type_template osd_template
+ 		[0xb0 ... 0xff] = {spc_illegal_op},
+ 	}
+ };
++
++__attribute__((constructor)) static void osd_init(void)
++{
++        device_type_register(&amp;osd_template);
++}
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 4ac6833..2cd8b23 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -337,7 +337,7 @@ sense:
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
+-struct device_type_template sbc_template = {
++static struct device_type_template sbc_template = {
+ 	.type	= TYPE_DISK,
+ 	.name	= &quot;disk&quot;,
+ 	.pid	= &quot;VIRTUAL-DISK&quot;,
+@@ -479,3 +479,8 @@ struct device_type_template sbc_template
+ 		[0xb0 ... 0xff] = {spc_illegal_op},
+ 	}
+ };
++
++__attribute__((constructor)) static void sbc_init(void)
++{
++        device_type_register(&amp;sbc_template);
++}
+diff --git a/usr/spt.c b/usr/spt.c
+index 3d1413f..4f9d9ae 100644
+--- a/usr/spt.c
++++ b/usr/spt.c
+@@ -80,7 +80,8 @@ static int spt_cmd_perform(int host_no, 
+ 		return SAM_STAT_GOOD;
+ }
+ 
+-struct device_type_template spt_template = {
++static struct device_type_template spt_template = {
++    .type   = TYPE_SPT,
+ 	.name	= &quot;passthrough&quot;,
+ 	.ops	= {
+ 		[0x00 ... 0x9f] = {spt_cmd_perform,},
+@@ -107,3 +108,8 @@ struct device_type_template spt_template
+ 		[0xb0 ... 0xff] = {spt_cmd_perform},
+ 	}
+ };
++
++__attribute__((constructor)) static void spt_init(void)
++{
++    device_type_register(&amp;spt_template);
++}
+diff --git a/usr/target.c b/usr/target.c
+index dadb6f4..5c7ea6f 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -36,8 +36,37 @@ #include &quot;target.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;tgtadm.h&quot;
+ 
+-extern struct device_type_template sbc_template, mmc_template, osd_template,
+-	spt_template;
++static LIST_HEAD(type_list);
++
++int device_type_register(struct device_type_template *t)
++{
++    list_add_tail(&amp;t-&gt;list_entry, &amp;type_list);
++    return 0;
++}
++
++static struct device_type_template *device_type_find_name(const char *name)
++{
++    struct device_type_template *t;
++    
++    list_for_each_entry(t, &amp;type_list, list_entry) {
++        if (strcmp(name, t-&gt;name) == 0)
++            return t;
++    }
++
++    return NULL;
++}
++
++static struct device_type_template *device_type_find_type(unsigned char type)
++{
++    struct device_type_template *t;
++    
++    list_for_each_entry(t, &amp;type_list, list_entry) {
++        if (t-&gt;type == type)
++            return t;
++    }
++
++    return NULL;
++}
+ 
+ static LIST_HEAD(target_list);
+ 
+@@ -213,6 +242,7 @@ int tgt_device_create(int tid, uint64_t 
+ 	struct target *target;
+ 	struct scsi_lu *lu, *pos;
+     struct backingstore_template *bst;
++    struct device_type_template *tt;
+ 
+ 	dprintf(&quot;%d %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+ 
+@@ -245,23 +275,12 @@ int tgt_device_create(int tid, uint64_t 
+ 		return TGTADM_NOMEM;
+     lu-&gt;bst = bst;
+ 
+-	switch (t_type) {
+-	case TYPE_DISK:
+-		lu-&gt;dev_type_template = sbc_template;
+-		break;
+-	case TYPE_ROM:
+-		lu-&gt;dev_type_template = mmc_template;
+-		break;
+-	case TYPE_OSD:
+-		lu-&gt;dev_type_template = osd_template;
+-		break;
+-	case TYPE_SPT:
+-		lu-&gt;dev_type_template = spt_template;
+-		break;
+-	default:
++    tt = device_type_find_type(t_type);
++    if (tt == NULL) {
+ 		free(lu);
+ 		return TGTADM_INVALID_REQUEST;
+ 	}
++    lu-&gt;dev_type_template = *tt;
+ 
+ 	err = tgt_device_path_update(target, lu, p);
+ 	if (err) {
+@@ -1116,6 +1135,7 @@ int tgt_target_show_all(char *buf, int r
+ 	struct scsi_lu *lu;
+ 	struct acl_entry *acl;
+ 	struct it_nexus *nexus;
++    struct device_type_template *dtt;
+ 
+ 	list_for_each_entry(target, &amp;target_list, target_siblings) {
+ 		shprintf(total, buf, rest,
+@@ -1175,6 +1195,15 @@ int tgt_target_show_all(char *buf, int r
+ 		list_for_each_entry(acl, &amp;target-&gt;acl_list, aclent_list)
+ 			shprintf(total, buf, rest, _TAB2 &quot;%s\n&quot;, acl-&gt;address);
+ 	}
++
++    shprintf(total, buf, rest, &quot;Device type:\n&quot;);
++    list_for_each_entry(dtt, &amp;type_list, list_entry) {
++        shprintf(total, buf, rest, 
++                _TAB1 &quot;Device Type: %d\n&quot;
++                _TAB2 &quot;Device Name: %s\n&quot;
++                _TAB2 &quot;Device Pid : %s\n&quot;,
++                dtt-&gt;type, dtt-&gt;name, dtt-&gt;pid ? dtt-&gt;pid : &quot;&quot;);
++    }
+ 	return total;
+ overflow:
+ 	return max;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index e0bebaa..2eacaba 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -44,8 +44,12 @@ struct device_type_template {
+ 	void (*device_init)(struct scsi_lu *dev);
+ 
+ 	struct device_type_operations ops[256];
++
++    struct list_head list_entry;
+ };
+ 
++extern int device_type_register(struct device_type_template *);
++
+ struct scsi_lu {
+ 	int fd;
+ 	uint64_t addr; /* persistent mapped address */
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000575.html">[Stgt-devel] [patch] support different type in one target, V2.
+</A></li>
+	<LI>Next message: <A HREF="000574.html">[Stgt-devel] [patch] modularization target types. V2.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#572">[ date ]</a>
+              <a href="thread.html#572">[ thread ]</a>
+              <a href="subject.html#572">[ subject ]</a>
+              <a href="author.html#572">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

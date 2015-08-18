@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%20version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C4399A2BA.1070505%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000220.html">
+   <LINK REL="Next"  HREF="000173.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%20version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C4399A2BA.1070505%40vlnb.net%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?">vst at vlnb.net
+       </A><BR>
+    <I>Fri Dec  9 16:28:58 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000220.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000173.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mike Christie wrote:
+&gt;<i> Vladislav Bolkhovitin wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i>  - Scst has some performance advantages over stgt, at least, on 
+</I>&gt;&gt;<i> hardware targets, because it allows internal handling in SIRQ context 
+</I>&gt;&gt;<i> as well as doesn't need user space program, so it eliminates additi
+</I>&gt;&gt;<i> switches (at least 3 per command for WRITEs and 2 per command for 
+</I>&gt;&gt;<i> reads plus switches to user space daemon, probably, 2 per command). 5 
+</I>&gt;&gt;<i> context switches per command looks too much for me, especially 
+</I>&gt;&gt;<i> considering how little work is done on each context. It means ~15000 
+</I>&gt;&gt;<i> CS/sec on regular 200Mb/sec link with 64K block size. Additionally, 
+</I>&gt;&gt;<i> kernel only commands execution allows direct access to page cache, 
+</I>&gt;&gt;<i> which is GREAT performance improvement, because in architecture with 
+</I>&gt;&gt;<i> user space daemon the data should be copied several times between 
+</I>&gt;&gt;<i> kernel and user space. Or, do I miss anything?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Userspace only occurs for READ/WRITEs. So for REPORT_LUNS, TUR, etc 
+</I>&gt;<i> where performance is not a factor.
+</I>
+So, do you mean that READ/WRITE operations are (or will be) performed in 
+  kernel space only? I don't see that from the code.
+
+&gt;<i> Also is the page cache comment in reference to us using the page cache 
+</I>&gt;<i> for our reads and writes or I am not sure why you wrote that if you do 
+</I>&gt;<i> not do it right now.
+</I>
+Hm, at first, the page cache already used somehow in fileio dev handler 
+(though, with additional mem copy). At the second, fully utilize the 
+page cache is one of two major improvements that are pending in scst, 
+because it is required changing the kernel, which until some moment try 
+to avoid. Although I prepared what is necessary for that.
+
+The idea basically is the following. When READ operation arrives, pages 
+for all requested blocks are at first searched in the page cache 
+(probably, in SIRQ context, because it isn't expensive operation) and if 
+all pages are found, they are referenced and the result will be sent to 
+the initiator. Then the pages will be dereferenced (so, no pages 
+allocation will be done at all). Otherwise, the missed pages will be 
+allocated and the command will be rescheduled to the thread, which will 
+read them. Then, after the response is sent, the pages will remain in 
+the page cache for future accesses. For WRITEs the processing is the 
+similar, the pages with the data will be put in the page cache.
+
+I doubt it is possible to implement such simple and effective algorithm 
+via user space. Pages mapping and unmapping is quite expensive for both 
+coding effort and performance.
+
+&gt;&gt;<i>
+</I>&gt;&gt;<i>  From other side, stgt has not too much advantages over scst. 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Hey, we just started and have not had too much time.
+</I>
+No offense, please, you wrote stgt and scst are the same, I wrote, they 
+aren't :-)
+
+&gt;&gt;<i> Actually, we would greatly appreciate if Mike or Christoph will tell 
+</I>&gt;&gt;<i> us what is so wrong in scst on their opinion, so they started they own 
+</I>&gt;&gt;<i> new project. (I'm not considering motivation like &quot;I want to make my 
+</I>&gt;&gt;<i> own in any case&quot; seriously). Is scst too complicated? Do you think 
+</I>&gt;&gt;<i> stgt will be simpler with all those features implemented?
+</I>&gt;&gt;<i>
+</I>&gt;<i> 
+</I>&gt;<i> Didn't we go over this? To get SCST ready for mainline we would have had 
+</I>&gt;<i> a large cleanup effort. I started this and sent you a patch to begin the 
+</I>&gt;<i> cleanup. In the end some of the scsi people liked the idea of throwing 
+</I>&gt;<i> the non-read/write command to userspace and to do this we just decided 
+</I>&gt;<i> to start over but I have been cutting and pasting your code and cleaning 
+</I>&gt;<i> it up as I add more stuff.
+</I>
+The patches that I've seen were just pretty mechanic cleanups and 
+renames, which could be done in a half of hour time and which I'm going 
+to do in any case before preparing the patch. So, that reason doesn't 
+look convincing for me to throw away a big chunk of working code. Doing 
+so you delayed SCSI targets development for at least to a year-two, 
+because there are too much features for you to implement in stgt, which 
+are already working and useful in scst.
+
+ From other side, if you look on scst closely you will see that:
+
+- The user space gate could be easily and clearly done using existing 
+dev handler's hooks
+
+- There is nothing in current SCST that could be moved in user space 
+without sacrificing performance. Neither task management, nor UA 
+processing, nor RESERVE/RELEASE emulation. Otherwise, you will have to 
+pass *all* the commands to the user space to check allowed this command 
+for processing or it shall be returned with an error. SCST core is just 
+about 7500 lines of code. Is it too much?
+
+So, in my opinion, there is/was no technical point to drop scst in favor 
+of stgt.
+
+&gt;<i> Simmer down :) If you had just gotton your code ready when christoph 
+</I>&gt;<i> asked a year ago we would never have had this problem and I would be 
+</I>&gt;<i> sending you patches to remove the scsi_request usage as we speak.
+</I>
+Christoph didn't ask me to do anything. Actually, nobody contacted and 
+asked anything about that me when you with Christoph conceived stgt.
+
+Vlad
+
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000220.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000173.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

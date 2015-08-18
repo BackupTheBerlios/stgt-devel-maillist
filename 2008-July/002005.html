@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Return correct error code on malloc() failure
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Return%20correct%20error%20code%20on%20malloc%28%29%20failure&In-Reply-To=%3Cmailman.46.1331738484.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002003.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Return correct error code on malloc() failure</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Return%20correct%20error%20code%20on%20malloc%28%29%20failure&In-Reply-To=%3Cmailman.46.1331738484.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="Return correct error code on malloc() failure">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Jul 31 22:21:39 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002003.html">[Stgt-devel] :o)
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2005">[ date ]</a>
+              <a href="thread.html#2005">[ thread ]</a>
+              <a href="subject.html#2005">[ subject ]</a>
+              <a href="author.html#2005">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Reported-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/ssc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usr/ssc.c b/usr/ssc.c
+index 848b323..2630a6a 100644
+--- a/usr/ssc.c
++++ b/usr/ssc.c
+@@ -108,7 +108,7 @@ static int ssc_lu_init(struct scsi_lu *lu)
+ 	if (ssc)
+ 		dtype_priv(lu) = ssc;
+ 	else
+-		return -ENOMEM;
++		return TGTADM_NOMEM;
+
+ 	if (spc_lu_init(lu))
+ 		return TGTADM_NOMEM;
+-- 
+
+&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+------=_Part_975_11561062.1217540557307
+Content-Type: application/octet-stream;
+ name=0001-Return-correct-error-code-on-malloc-failure.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fjbw2mia0
+Content-Disposition: attachment;
+ filename=0001-Return-correct-error-code-on-malloc-failure.patch
+
+RnJvbSAxMDVkZjRlZDBmZjQ3OWU5M2ExNTI2MTM5N2Q2Mzg1NzViMTFiODQwIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJrIEhhcnZleSA8bWFya2g3OTRAZ21haWwuY29tPgpEYXRl
+OiBGcmksIDEgQXVnIDIwMDggMDY6MjE6MzkgKzEwMDAKU3ViamVjdDogUmV0dXJuIGNvcnJlY3Qg
+ZXJyb3IgY29kZSBvbiBtYWxsb2MoKSBmYWlsdXJlCgpSZXBvcnRlZC1ieTogUmljaGFyZCBTaGFy
+cGUgPHJlYWxyaWNoYXJkc2hhcnBlQGdtYWlsLmNvbT4KU2lnbmVkLW9mZi1ieTogTWFyayBIYXJ2
+ZXkgPG1hcmtoNzk0QGdtYWlsLmNvbT4KLS0tCiB1c3Ivc3NjLmMgfCAgICAyICstCiAxIGZpbGVz
+IGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS91
+c3Ivc3NjLmMgYi91c3Ivc3NjLmMKaW5kZXggODQ4YjMyMy4uMjYzMGE2YSAxMDA2NDQKLS0tIGEv
+dXNyL3NzYy5jCisrKyBiL3Vzci9zc2MuYwpAQCAtMTA4LDcgKzEwOCw3IEBAIHN0YXRpYyBpbnQg
+c3NjX2x1X2luaXQoc3RydWN0IHNjc2lfbHUgKmx1KQogCWlmIChzc2MpCiAJCWR0eXBlX3ByaXYo
+bHUpID0gc3NjOwogCWVsc2UKLQkJcmV0dXJuIC1FTk9NRU07CisJCXJldHVybiBUR1RBRE1fTk9N
+RU07CiAKIAlpZiAoc3BjX2x1X2luaXQobHUpKQogCQlyZXR1cm4gVEdUQURNX05PTUVNOwotLSAK
+MS41LjQuMwoK
+------=_Part_975_11561062.1217540557307--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002003.html">[Stgt-devel] :o)
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2005">[ date ]</a>
+              <a href="thread.html#2005">[ thread ]</a>
+              <a href="subject.html#2005">[ subject ]</a>
+              <a href="author.html#2005">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

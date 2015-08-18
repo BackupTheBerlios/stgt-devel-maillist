@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [RFC] target configuration tool
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BRFC%5D%20target%20configuration%20tool&In-Reply-To=%3C47E137C4.9090006%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001483.html">
+   <LINK REL="Next"  HREF="001485.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [RFC] target configuration tool</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BRFC%5D%20target%20configuration%20tool&In-Reply-To=%3C47E137C4.9090006%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [RFC] target configuration tool">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Wed Mar 19 16:56:52 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001483.html">[Stgt-devel] [RFC] target configuration tool
+</A></li>
+        <LI>Next message: <A HREF="001485.html">[Stgt-devel] [RFC] target configuration tool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1484">[ date ]</a>
+              <a href="thread.html#1484">[ thread ]</a>
+              <a href="subject.html#1484">[ subject ]</a>
+              <a href="author.html#1484">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tomasz Chmielewski wrote:
+&gt;<i> I would like to present a tgtd iSCSI target configuration tool.
+</I>&gt;<i> 
+</I>&gt;<i> An example config file for configuring targets can look like below:
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> include /etc/tgt/temp/*.conf
+</I>&gt;<i> 
+</I>&gt;<i> &lt;target iqn.2007-04.com.example:san.monitoring&gt;
+</I>&gt;<i>     backing-store /dev/san/monitoring
+</I>&gt;<i> 
+</I>&gt;<i>     # if no &quot;incominguser&quot; is specified, it is not used
+</I>&gt;<i>     incominguser backup secretpass12
+</I>&gt;<i> 
+</I>&gt;<i>     # defaults to ALL if no &quot;initiator-address&quot; is specified
+</I>&gt;<i>     initiator-address 192.168.1.2
+</I>&gt;<i> &lt;/target&gt;
+</I>&gt;<i> 
+</I>&gt;<i> &lt;target iqn.2007-02.com.example:san.xen1&gt;
+</I>&gt;<i>     backing-store /dev/san/xen1-disk1 # LUN1
+</I>&gt;<i>     backing-store /dev/san/xen1-disk2 # LUN2
+</I>&gt;<i>     backing-store /dev/san/xen1-disk2 # LUN3
+</I>&gt;<i> 
+</I>&gt;<i>     initiator-address 192.168.1.2     # Allowed IP
+</I>&gt;<i>     initiator-address 192.168.5.6     # Allowed IP
+</I>&gt;<i> 
+</I>&gt;<i>     incominguser user1 secretpass12
+</I>&gt;<i>     incominguser user2 secretpass23
+</I>&gt;<i> 
+</I>&gt;<i>     outgoinguser userA secretpassA
+</I>&gt;<i> &lt;/target&gt;
+</I>&gt;<i> 
+</I>&gt;<i> &lt;target iqn.2007-02.com.example:san.xen2&gt;
+</I>&gt;<i>     backing-store /dev/san/xen2
+</I>&gt;<i> &lt;/target&gt;
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> You can find more info on <A HREF="http://wpkg.org/TGT-admin">http://wpkg.org/TGT-admin</A> and download the 
+</I>&gt;<i> source code by pointing wget to <A HREF="http://wpkg.org/tgt-admin">http://wpkg.org/tgt-admin</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Other features I'd like to implement are:
+</I>&gt;<i> 
+</I>&gt;<i> * change target configuration if the target is already online and its 
+</I>&gt;<i> config was changed
+</I>&gt;<i> * add a proper /etc/init.d/tgt script
+</I>&gt;<i> * dumping current tgtd configuration
+</I>&gt;<i> * support other target types (not only iSCSI) - unfortunately, I don't 
+</I>&gt;<i> have any other hardware
+</I>&gt;<i> 
+</I>
+Hey Tomasz,
+
+It is looking pretty good. I will have more constructive comments as I 
+try it out more, but wanted to say thanks for doing this.
+
+To distinguish between iscsi specific or other target type specific 
+params do you think it would be good to do something like:
+
+
+&lt;target-type iscsi&gt;
+	
+	# setting something like CHAP here would work like IET's
+	# ietd.conf
+	incominguser user1 secretpass12
+
+
+	&lt;target iqn.2007-04.com.example:san.monitoring&gt;
+	.....
+
+	# would we set values like iscsi's MaxRecvDataSegmentLength here ?
+	&lt;/target&gt;
+
+	&lt;target iqn.2007-04.com.example:san.monitoring&gt;
+	.....
+	&lt;/target&gt;
+&lt;/target-type iscsi&gt;
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001483.html">[Stgt-devel] [RFC] target configuration tool
+</A></li>
+	<LI>Next message: <A HREF="001485.html">[Stgt-devel] [RFC] target configuration tool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1484">[ date ]</a>
+              <a href="thread.html#1484">[ thread ]</a>
+              <a href="subject.html#1484">[ subject ]</a>
+              <a href="author.html#1484">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

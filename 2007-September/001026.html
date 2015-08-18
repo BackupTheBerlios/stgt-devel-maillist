@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070904201912.GA6840%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001003.html">
+   <LINK REL="Next"  HREF="001028.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070904201912.GA6840%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:19:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001003.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001028.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1026">[ date ]</a>
+              <a href="thread.html#1026">[ thread ]</a>
+              <a href="subject.html#1026">[ subject ]</a>
+              <a href="author.html#1026">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Mon, 03 Sep 2007 23:24 -0400:
+&gt;<i> On Mon, Sep 03, 2007 at 01:02:23PM -0400, Pete Wyckoff wrote:
+</I>&gt;<i> &gt;Open-iscsi has no way to specify the RDMA parameters,
+</I>&gt;<i> &gt;IntiatorRecvDataSegmentLength or TargetRDSL, that size the control
+</I>&gt;<i> &gt;transfer sizes.  You can set them on the target similarly to how you
+</I>&gt;<i> &gt;set MRDSL above, but the initiator will insist on 8k TRDSL.  I'll
+</I>&gt;<i> &gt;try to generate patches for that some day.  Data sizes are
+</I>&gt;<i> &gt;(recently) chosen by the target unilaterally.
+</I>&gt;<i> 
+</I>&gt;<i> 8k's pretty small. to get ~90% of max bandwidth out of single IB
+</I>&gt;<i> messages (at least via verbs) something north of 50-100kB seems to be
+</I>&gt;<i> required(*).
+</I>&gt;<i> presumably you have multiple messages in flight though? if so then
+</I>&gt;<i> maybe a total RDMA buffer of order this size would be enough. I guess
+</I>&gt;<i> we'll find out :)
+</I>
+Yeah, small.  The [it]rdsl numbers affect only _control_ type
+packets (as I was informed in an earlier thread here).  But these do
+include the immediate data and unsolicited data packets, if you have
+configured things as such.  For RDMA read/write, it is 512k now, but
+see the #define in iscsi_rdma.c if you want to play with it.
+
+I haven't done much testing of throughput vs packet size lately, and
+in fact, ripping out the unsignaled completions may have slowed
+things down some.  But they were a mess as far as tracking RDMA
+resources went.  Would love some help with tuning if you are so
+inclined.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001003.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001028.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1026">[ date ]</a>
+              <a href="thread.html#1026">[ thread ]</a>
+              <a href="subject.html#1026">[ subject ]</a>
+              <a href="author.html#1026">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

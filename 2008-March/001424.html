@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080303180801.GD26560%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001432.html">
+   <LINK REL="Next"  HREF="001429.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080303180801.GD26560%40osc.edu%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">pw at osc.edu
+       </A><BR>
+    <I>Mon Mar  3 19:08:01 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001432.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001429.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1424">[ date ]</a>
+              <a href="thread.html#1424">[ thread ]</a>
+              <a href="subject.html#1424">[ subject ]</a>
+              <a href="author.html#1424">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Sun, 02 Mar 2008 15:17 +0200:
+&gt;<i> Here's an example of a single command execution:
+</I>&gt;<i> 
+</I>&gt;<i> 27892 tgtd: [16:40:38.907547] iser_rx_progress(1101) entry
+</I>&gt;<i> 27893 tgtd: [16:40:38.907558] handle_wc(897) incoming cmd, len 76
+</I>&gt;<i> 27894 tgtd: [16:40:38.907568] iscsi_iser_read(1301) buf 0x529fc8 nbytes 48
+</I>&gt;<i> 27895 tgtd: [16:40:38.907578] iser_parse_hdr(1265) control type PDU
+</I>&gt;<i> 27896 tgtd: [16:40:38.907587] iser_parse_hdr(1271) rstag 9b320086 va
+</I>&gt;<i> 3f1fc000
+</I>&gt;<i> 27897 tgtd: [16:40:38.907597] iscsi_scsi_cmd_rx_start(1466) 1 28 0 0
+</I>&gt;<i> 524288 1 b
+</I>&gt;<i> 27898 tgtd: [16:40:38.907607] iscsi_rdma_alloc_data_buf(1659) malloc
+</I>&gt;<i> 0x2acf61554000 sz 524288
+</I>&gt;<i> 27899 tgtd: [16:40:38.907617] iscsi_task_queue(1411) 388b 388b 1
+</I>&gt;<i> 27900 tgtd: [16:40:38.907627] target_cmd_queue(763) 0x535de8 28 1
+</I>&gt;<i> 27901 tgtd: [16:40:38.907637] target_cmd_queue(783) 0x535de8 28 1 1
+</I>&gt;<i> 
+</I>&gt;<i> this is where bs work starts:
+</I>&gt;<i> 27902 tgtd: [16:40:38.907649] tgtd: [16:40:38.907650]
+</I>&gt;<i> bs_thread_worker_fn(151) got 0x535de8
+</I>&gt;<i> 27903 target_cmd_queue(794) b 28 (nil) 0x2acf61554000 262144 0 524288 0 4
+</I>&gt;<i> 27904 tgtd: [16:40:38.907676] iscsi_rdma_event_modify(1628) tx ready
+</I>&gt;<i> adding 0x529eb0
+</I>&gt;<i> 27905 tgtd: [16:40:38.907686] handle_wc(922) incoming cmd proc done, repost
+</I>&gt;<i> 27906 tgtd: [16:40:38.907697] iser_tx_progress(1017) entry
+</I>&gt;<i> 27907 tgtd: [16:40:38.907706] iser_tx_progress(1028) trying tx
+</I>&gt;<i> 27908 tgtd: [16:40:38.907716] iscsi_task_tx_start(1784) no more data
+</I>&gt;<i> 27909 tgtd: [16:40:38.907725] iscsi_rdma_event_modify(1633) tx ready
+</I>&gt;<i> removing 0x529eb0
+</I>&gt;<i> 
+</I>&gt;<i> this is where bs work ends (130 us):
+</I>&gt;<i> 27910 tgtd: [16:40:38.907779] bs_rdwr_request(114) io done 0x535de8 28
+</I>&gt;<i> 524288 524288
+</I>&gt;<i> 27911 tgtd: [16:40:38.907796] bs_thread_ack_fn(82) found 0x535de8
+</I>&gt;<i> 27912 tgtd: [16:40:38.907813] bs_thread_request_done(122) back to tgtd,
+</I>&gt;<i> 0x535de8
+</I>&gt;<i> 27913 tgtd: [16:40:38.907825] iscsi_rdma_event_modify(1628) tx ready
+</I>&gt;<i> adding 0x529eb0
+</I>&gt;<i> 27914 tgtd: [16:40:38.907837] iser_tx_progress(1017) entry
+</I>&gt;<i> 27915 tgtd: [16:40:38.907846] iser_tx_progress(1028) trying tx
+</I>&gt;<i> 27916 tgtd: [16:40:38.907856] iscsi_task_tx_start(1759) found a task b
+</I>&gt;<i> 524288 0 0
+</I>
+&gt;<i> 27917 tgtd: [16:40:38.907865] iscsi_data_rsp_build(974) 524288 524288
+</I>&gt;<i> 524288 524288 b
+</I>&gt;<i> 27918 tgtd: [16:40:38.907875] iscsi_rdma_rdma_write(1491) offset 0 len
+</I>&gt;<i> 524288 stag 9b320086 va 3f1fc000
+</I>&gt;<i> 27919 tgtd: [16:40:38.907885] iscsi_rdma_event_modify(1633) tx ready
+</I>&gt;<i> removing 0x529eb0
+</I>&gt;<i> 27920 tgtd: [16:40:38.907895] iscsi_scsi_cmd_tx_done(1707) more data or
+</I>&gt;<i> sense or bidir b
+</I>&gt;<i> 27921 tgtd: [16:40:38.908269] iser_rx_progress(1101) entry
+</I>&gt;<i> 27922 tgtd: [16:40:38.908280] handle_wc(932) RDMA write done
+</I>&gt;<i> 27923 tgtd: [16:40:38.908289] iscsi_rdma_event_modify(1628) tx ready
+</I>&gt;<i> adding 0x529eb0
+</I>&gt;<i> 27924 tgtd: [16:40:38.908298] iser_tx_progress(1017) entry
+</I>&gt;<i> 27925 tgtd: [16:40:38.908308] iser_tx_progress(1028) trying tx
+</I>&gt;<i> 27926 tgtd: [16:40:38.908317] iscsi_task_tx_start(1759) found a task b
+</I>&gt;<i> 524288 524288 0
+</I>&gt;<i> 27927 tgtd: [16:40:38.908327] iscsi_cmd_rsp_build(901) 0x535d28 28
+</I>
+This is rather slow in here.  It does the RDMA write, gets the local
+completion that the write went out, then sends the command response
+packet.  Does it make sense that it takes 374 us for the adapter to
+say that it finished the write?
+
+Another comment:  there is 10 us between consecutive printfs in this
+trace.  You're probably not using TSC for GTOD.  It's not a big
+deal, but be aware that your &quot;with debugging&quot; runs may be
+significantly slower than without.  Just watch to make sure that the
+profiling output makes sense.  We hack the kernel in a bad way to
+get around this on our machines.
+<A HREF="http://git.osc.edu/?p=linux.git;a=commitdiff;h=e7ff54222523a2ae6816c9ff17ad5a8fa86cd5e1">http://git.osc.edu/?p=linux.git;a=commitdiff;h=e7ff54222523a2ae6816c9ff17ad5a8fa86cd5e1</A>
+
+&gt;<i> 27928 tgtd: [16:40:38.908336] iscsi_iser_write_begin(1352) new sendl
+</I>&gt;<i> 0x2aaab45f7090 len 48
+</I>&gt;<i> 27929 tgtd: [16:40:38.908347] iscsi_iser_write_end(1387) sendl
+</I>&gt;<i> 0x2aaab45f7090 len 76
+</I>&gt;<i> 27930 tgtd: [16:40:38.908356] iscsi_iser_write_end(1402) inc progress to
+</I>&gt;<i> finish cmd
+</I>&gt;<i> 27931 tgtd: [16:40:38.908366] __cmd_done(855) 8 (nil) 0x2acf61554000 0
+</I>&gt;<i> 524288 0
+</I>&gt;<i> 27932 tgtd: [16:40:38.908376] iscsi_rdma_free_data_buf(1678) free
+</I>&gt;<i> 0x2acf61554000
+</I>&gt;<i> 
+</I>&gt;<i> It seems that bs work takes a lot of time. For example: if I run
+</I>&gt;<i> disktest on the same device directly from the target machine (i.e. tgt
+</I>&gt;<i> is not involved) in the following way:
+</I>&gt;<i> 
+</I>&gt;<i> disktest -PT -T100 -h1 -K64 -B256k -ID /dev/sdc -r
+</I>&gt;<i> 
+</I>&gt;<i> I get ~13000 iops -&gt; each IO takes ~77 us (compared to 130 us only for
+</I>&gt;<i> bs work with tgt). I'm not familiar with the bs code in tgt, so I'm not
+</I>&gt;<i> sure what should be done here.
+</I>
+It would be interesting to isolate the IO effects from the thread
+switching to see where it all goes.  I recall a lot of it goes to
+non-IO overhead.  A really-synchronous of bs_rdwr follows.  It may
+not build against the current tree; it's old.
+
+&gt;<i> Another thing that looks strange - from looking at the logs, I don't see
+</I>&gt;<i> that work is done in parallel. A command is received, iSCSI processing
+</I>&gt;<i> is done and it is sent to bs processing (which seems to be idle until
+</I>&gt;<i> that point in time). Now, nothing happens until bs processing is
+</I>&gt;<i> complete. I will try to look more into the code and try to understand
+</I>&gt;<i> it, but can someone try to elaborate on this?
+</I>
+You need to give it some parallel work to do, if that's what you
+intend, like Tomo hints.  Of course, your logs will look much
+messier!
+
+		-- Pete
+
+
+commit d9b9a70ee808f63f05c81e368fe9125dafdc8254
+Author: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Date:   Tue Oct 16 15:21:41 2007 -0400
+
+    bs-rdwr-sync
+    
+    New file bs_rdwr_sync.c is similar in spirit to bs_rdwr.c but without all
+    the threading.  For simpler debugging of core iscsi.
+
+diff --git a/usr/Makefile b/usr/Makefile
+index a16416b..7ee6596 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -17,7 +17,7 @@ CFLAGS += -DISCSI
+ TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o \
+ 		iscsid.o target.o chap.o transport.o iscsi_tcp.o \
+ 		isns.o libcrc32c.o)
+-TGTD_OBJS += bs_rdwr.o bs_aio.o
++TGTD_OBJS += bs_rdwr.o bs_rdwr_sync.o bs_aio.o
+ 
+ LIBS += -lcrypto
+ ifneq ($(ISCSI_RDMA),)
+diff --git a/usr/bs_rdwr_sync.c b/usr/bs_rdwr_sync.c
+new file mode 100644
+index 0000000..af6a76f
+--- /dev/null
++++ b/usr/bs_rdwr_sync.c
+@@ -0,0 +1,118 @@
++/*
++ * Synchronous I/O file backing store routine, based on an old bs_rdwr.
++ *
++ * Copyright (C) 2006-2007 FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
++ * Copyright (C) 2006-2007 Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
++ * Copyright (C) 2006-2007 Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#define _XOPEN_SOURCE 500
++
++#include &lt;errno.h&gt;
++#include &lt;fcntl.h&gt;
++#include &lt;inttypes.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;pthread.h&gt;
++
++#include &lt;linux/fs.h&gt;
++#include &lt;sys/epoll.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;scsi.h&quot;
++
++static int bs_rdwr_sync_open(struct scsi_lu *lu, char *path, int *fd,
++			     uint64_t *size)
++{
++	*fd = backed_file_open(path, O_RDWR | O_LARGEFILE, size);
++	if (*fd &lt; 0)
++		return *fd;
++	return 0;
++}
++
++static void bs_rdwr_sync_close(struct scsi_lu *lu)
++{
++	close(lu-&gt;fd);
++}
++
++static int bs_rdwr_sync_cmd_submit(struct scsi_cmd *cmd)
++{
++	struct scsi_lu *lu = cmd-&gt;dev;
++	int ret = 0, fd = lu-&gt;fd;
++	uint32_t length = 0;
++
++	dprintf(&quot;rw %d len %u off %llu cdb %02x\n&quot;, cmd-&gt;rw, cmd-&gt;len,
++		(unsigned long long) cmd-&gt;offset, cmd-&gt;scb[0]);
++
++	switch (cmd-&gt;scb[0]) {
++	case SYNCHRONIZE_CACHE:
++	case SYNCHRONIZE_CACHE_16:
++		ret = fsync(fd);
++		break;
++	case WRITE_6:
++	case WRITE_10:
++	case WRITE_12:
++	case WRITE_16:
++		length = scsi_get_out_length(cmd);
++		ret = pwrite64(fd, scsi_get_out_buffer(cmd), length,
++			       cmd-&gt;offset);
++		break;
++	case READ_6:
++	case READ_10:
++	case READ_12:
++	case READ_16:
++		length = scsi_get_in_length(cmd);
++		ret = pread64(fd, scsi_get_in_buffer(cmd), length, cmd-&gt;offset);
++		break;
++	default:
++		break;
++	}
++
++	if (ret == length) {
++		scsi_set_result(cmd, SAM_STAT_GOOD);
++	} else {
++		eprintf(&quot;io error %p %x %d %d %&quot; PRIu64 &quot;, %m\n&quot;,
++			cmd, cmd-&gt;scb[0], ret, length, cmd-&gt;offset);
++		scsi_set_result(cmd, SAM_STAT_CHECK_CONDITION);
++		sense_data_build(cmd, MEDIUM_ERROR, ASC_READ_ERROR);
++	}
++
++	return 0;
++}
++
++static int bs_rdwr_sync_cmd_done(struct scsi_cmd *cmd)
++{
++	return 0;
++}
++
++static struct backingstore_template rdwr_sync_bst = {
++	.bs_name		= &quot;rdwr_sync&quot;,
++	.bs_datasize		= 0,
++	.bs_open		= bs_rdwr_sync_open,
++	.bs_close		= bs_rdwr_sync_close,
++	.bs_cmd_submit		= bs_rdwr_sync_cmd_submit,
++	.bs_cmd_done		= bs_rdwr_sync_cmd_done,
++};
++
++__attribute__((constructor)) static void bs_rdwr_sync_constructor(void)
++{
++	register_backingstore_template(&amp;rdwr_sync_bst);
++}
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 16cd400..f8ce4e5 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -2180,7 +2180,7 @@ static struct tgt_driver iscsi = {
+ 	.show			= iscsi_target_show,
+ 	.cmd_end_notify		= iscsi_scsi_cmd_done,
+ 	.mgmt_end_notify	= iscsi_tm_done,
+-	.default_bst		= &quot;rdwr&quot;,
++	.default_bst		= &quot;rdwr_sync&quot;,
+ };
+ 
+ __attribute__((constructor)) static void iscsi_driver_constructor(void)
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001432.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001429.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1424">[ date ]</a>
+              <a href="thread.html#1424">[ thread ]</a>
+              <a href="subject.html#1424">[ subject ]</a>
+              <a href="author.html#1424">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%20common%0A%09spc_inquiry%20routine.&In-Reply-To=%3Cf29db9a80705251448r743a04a0of9a07dfd3798cd24%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000712.html">
+   <LINK REL="Next"  HREF="000714.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%202/8%20%5D%20Combine%20INQUIRY%20into%20a%20common%0A%09spc_inquiry%20routine.&In-Reply-To=%3Cf29db9a80705251448r743a04a0of9a07dfd3798cd24%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a common	spc_inquiry routine.">markh794 at gmail.com
+       </A><BR>
+    <I>Fri May 25 23:48:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000712.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+        <LI>Next message: <A HREF="000714.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#713">[ date ]</a>
+              <a href="thread.html#713">[ thread ]</a>
+              <a href="subject.html#713">[ subject ]</a>
+              <a href="author.html#713">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 5/26/07, Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A> wrote on Wed, 23 May 2007 13:01 +1000:
+</I>&gt;<i> &gt; Moved scsi_sn, scsi_id and d_sense (now sense_format) into a common
+</I>&gt;<i> &gt; struct with other INQUIRY related data.
+</I>&gt;<i> [..]
+</I>&gt;<i> &gt; +static int osd_device_init(struct scsi_lu *lu)
+</I>&gt;<i> &gt;  {
+</I>&gt;<i> &gt; -     lu-&gt;d_sense = 1;
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +     if (spc_device_init(lu))
+</I>&gt;<i> &gt; +             return -ENOMEM;
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +     memcpy(lu-&gt;attributes-&gt;ProductIdent, &quot;OSD&quot;, 16);
+</I>&gt;<i> &gt; +     lu-&gt;attributes-&gt;sense_format = 1;
+</I>&gt;<i> &gt; +     lu-&gt;attributes-&gt;version_desc1 = 0x0340; /* OSD */
+</I>&gt;<i> &gt; +     lu-&gt;attributes-&gt;version_desc2 = 0x0960; /* iSCSI */
+</I>&gt;<i> &gt; +     lu-&gt;attributes-&gt;version_desc3 = 0x0300; /* SPC-3 */
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt;       return 0;
+</I>&gt;<i> &gt;  }
+</I>&gt;<i>
+</I>&gt;<i> Good stuff.  I like the common INQUIRY handling.  It was something
+</I>&gt;<i> Tomo asked for once I added yet another inquiry handler for OSD.
+</I>&gt;<i>
+</I>&gt;<i> Another tweak that will be needed is the ability to support more
+</I>&gt;<i> page codes.  OSD needs to provide 0xb0 and 0xb1.  This means
+</I>&gt;<i> modifying 0x0 (supported VPD pages) to add two more supported pages
+</I>&gt;<i> to the list.  And it needs very OSD-internal code to produce the
+</I>&gt;<i> right responses for 0xb0 and 0xb1.  So I've been holding off pushing
+</I>&gt;<i> that change because it is difficult to generalize well.  If you have
+</I>&gt;<i> ideas, they would be most welcome.
+</I>&gt;<i>
+</I>&gt;<i> By all means, this patch is a step in the right direction, though.
+</I>&gt;<i>
+</I>&gt;<i>                 -- Pete
+</I>&gt;<i>
+</I>
+Thanks for the vote of confidence.
+
+As you may be aware, my main aim is to create a Virtual Library
+(Tape/CD/MO etc.)
+
+The SSC devices will also require extra VPD pages...
+
+I have not had any ideas regarding how to support multiple VPD pages
+which I feel is 'good'.
+
+I was thinking yet another list, similar to the MODE list, but this
+seems a bit of an over-kill for a few bytes of data / VPD.
+
+
+The other concern I had regarding the SCSI Version, related to the
+underlying transport. At the moment, I have hard-coded iSCSI version,
+however it would be 'nice' to be able to insert which ever underlying
+protocol was being used to connect to the target...
+
+Can anybody suggest an easy way of detecting the underlying protocol
+at runtime ?
+
+Cheers
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000712.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+	<LI>Next message: <A HREF="000714.html">[Stgt-devel] [Patch 2/8 ] Combine INQUIRY into a	common	spc_inquiry routine.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#713">[ date ]</a>
+              <a href="thread.html#713">[ thread ]</a>
+              <a href="subject.html#713">[ subject ]</a>
+              <a href="author.html#713">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

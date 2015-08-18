@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070815161559.GA13710%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000953.html">
+   <LINK REL="Next"  HREF="000962.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi fix xmit param</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070815161559.GA13710%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi fix xmit param">pw at osc.edu
+       </A><BR>
+    <I>Wed Aug 15 18:15:59 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000953.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+        <LI>Next message: <A HREF="000962.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#955">[ date ]</a>
+              <a href="thread.html#955">[ thread ]</a>
+              <a href="subject.html#955">[ subject ]</a>
+              <a href="author.html#955">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Wed, 15 Aug 2007 12:11 +0900:
+&gt;<i> On Tue, 14 Aug 2007 17:52:06 -0500
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; This might be a hack.  In fixing the defaults earlier, I put the
+</I>&gt;<i> &gt; SCSI default for MaxRecvDataSegmentLength in place for the
+</I>&gt;<i> &gt; ISCSI_PARAM_MAX_XMIT_DLENGTH.  But really it should be whatever
+</I>&gt;<i> &gt; the initiator tells us.
+</I>&gt;<i> 
+</I>&gt;<i> Not sure. Initiators can declarer whatever about MRDSL, the target can
+</I>&gt;<i> use a lower value than it. And the target administrator should be able
+</I>&gt;<i> to configure it.
+</I>&gt;<i> 
+</I>&gt;<i> That's the current behaivoir (taken from IET).
+</I>
+True.  There are a few cases.
+
+1.  ini sends mrdsl &gt; target mxdsl.  Apply minimum, use target max.
+2.  ini sends mrdsl &lt; target mxdsl.  Apply minimum, use ini max.
+3.  ini does not mention mrdsl.  Target should set its mxdsl to the
+    standard default (8192), not use its default max.
+
+This last case was broken before my earlier patch &quot;iscsi param
+cleanup&quot;.  Now it is fixed but I changed the target default to 8k.
+I want the target to agree to use a larger value if the initiator is
+willing, but still get case #3 correct if the initiator does not
+specify.
+
+Here's a better patch.  Tested with all cases of ini &lt;,&gt;,= target,
+and target 8k or 256k mxdsl.
+
+		-- Pete
+
+--------------------------------------------------------------------------
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000953.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+	<LI>Next message: <A HREF="000962.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#955">[ date ]</a>
+              <a href="thread.html#955">[ thread ]</a>
+              <a href="subject.html#955">[ subject ]</a>
+              <a href="author.html#955">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

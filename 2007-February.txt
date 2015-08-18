@@ -1,0 +1,2102 @@
+From fujita.tomonori at lab.ntt.co.jp  Mon Feb 19 15:32:59 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 19 Feb 2007 23:32:59 +0900
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <20070123161917.GB2885@osc.edu>
+References: <1169493719.2784.44.camel@localhost.localdomain>
+	<1169494510.2784.58.camel@localhost.localdomain>
+	<20070123161917.GB2885@osc.edu>
+Message-ID: <200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+Date: Tue, 23 Jan 2007 11:19:17 -0500
+
+> blackmagic02881 at gmail.com wrote on Mon, 22 Jan 2007 14:35 -0500:
+> > not a good idea. suggest to keep in a way like IET code, for each target
+> > type, call its foo_cmd_perform(), and make some common spc function as
+> > helper functions.
+> 
+> I think you're saying that I should duplicate the switch() logic for
+> the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+> type-specific functions.  This would reduce scsi_cmd_perform() into
+> just a check on the target type, with no handling of SPC commands,
+> e.g. INQUIRY.
+> 
+> I'm not opposed to doing that, just don't have a good reason to do
+> so.  As the OSD work progresses this may become clear to me (PERFORM
+> SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+
+Very sorry for taking so long.
+
+I put a patch to support various device types:
+
+http://zaal.org/tgt/device-types.diff
+
+
+I don't merge it because:
+
+- only iscsi + AIO works (sg and ibmvio are broken).
+
+- there are still lots of things to implement
+
+- huge cleanup is necessary
+
+
+I took an approach discussed a long time ago in IET mailing list. Each
+device type has its own function array (like sbc_mode_sense). spc code
+exports some common functions. A LLD can cleanly replace functions in
+arrays (so we can kill dirty hack in tgt_driver struct). A transport
+class also needs that (though we don't implement yet).
+
+
+From blackmagic02881 at gmail.com  Mon Feb 19 16:05:28 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 19 Feb 2007 10:05:28 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+References: <1169493719.2784.44.camel@localhost.localdomain>
+	<1169494510.2784.58.camel@localhost.localdomain>
+	<20070123161917.GB2885@osc.edu>
+	<200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+Message-ID: <1171897528.3045.16.camel@localhost.localdomain>
+
+On Mon, 2007-02-19 at 23:32 +0900, FUJITA Tomonori wrote:
+> From: Pete Wyckoff <pw at osc.edu>
+> Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+> Date: Tue, 23 Jan 2007 11:19:17 -0500
+> 
+> > blackmagic02881 at gmail.com wrote on Mon, 22 Jan 2007 14:35 -0500:
+> > > not a good idea. suggest to keep in a way like IET code, for each target
+> > > type, call its foo_cmd_perform(), and make some common spc function as
+> > > helper functions.
+> > 
+> > I think you're saying that I should duplicate the switch() logic for
+> > the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+> > type-specific functions.  This would reduce scsi_cmd_perform() into
+> > just a check on the target type, with no handling of SPC commands,
+> > e.g. INQUIRY.
+> > 
+> > I'm not opposed to doing that, just don't have a good reason to do
+> > so.  As the OSD work progresses this may become clear to me (PERFORM
+> > SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+> 
+> Very sorry for taking so long.
+> 
+> I put a patch to support various device types:
+> 
+> http://zaal.org/tgt/device-types.diff
+> 
+> 
+> I don't merge it because:
+> 
+> - only iscsi + AIO works (sg and ibmvio are broken).
+> 
+> - there are still lots of things to implement
+> 
+> - huge cleanup is necessary
+> 
+> 
+> I took an approach discussed a long time ago in IET mailing list. Each
+> device type has its own function array (like sbc_mode_sense). spc code
+> exports some common functions. A LLD can cleanly replace functions in
+> arrays (so we can kill dirty hack in tgt_driver struct). A transport
+> class also needs that (though we don't implement yet).
+
+i prefer this approach. spc provides common functions and other device
+handlers are free to override it.
+
+why call sbc_null instead of sbc_tur?
+
+can we have rawio or sg to be implemented as bcc?
+ Bridge Controller Commands (BCC)
+{Date: 2004/09/21, Rev: 00, Status: Development, Project: 1528-D, File:
+bcc-r00.pdf (329079 bytes)}
+BCC describes the command set for SCSI protocol bridge controller
+devices that bridge between various SCSI protocols like SPI, FCP, SRP,
+and iSCSI.
+
+
+target.c invokes "result = ops->cmd_exec(target->tid, target->lid,..."
+without check if cmd_exec is NULL.
+
+
+ming
+
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From pw at osc.edu  Wed Feb 21 19:30:58 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Wed, 21 Feb 2007 13:30:58 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+References: <1169493719.2784.44.camel@localhost.localdomain>
+	<1169494510.2784.58.camel@localhost.localdomain>
+	<20070123161917.GB2885@osc.edu>
+	<200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+Message-ID: <20070221183058.GC10825@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Mon, 19 Feb 2007 23:32 +0900:
+> I put a patch to support various device types:
+> 
+> http://zaal.org/tgt/device-types.diff
+> 
+> I don't merge it because:
+> 
+> - only iscsi + AIO works (sg and ibmvio are broken).
+> 
+> - there are still lots of things to implement
+> 
+> - huge cleanup is necessary
+> 
+> I took an approach discussed a long time ago in IET mailing list. Each
+> device type has its own function array (like sbc_mode_sense). spc code
+> exports some common functions. A LLD can cleanly replace functions in
+> arrays (so we can kill dirty hack in tgt_driver struct). A transport
+> class also needs that (though we don't implement yet).
+
+That would be a reasonable approach, although the tables will be
+very sparse.  I shouldn't have too much trouble factoring out my
+current osd_cmd_perform into separate functions with shared
+routines.  If you check your patch in, I'll do this and try to help
+fix up the bugs and missing pieces.
+
+We'll still have to do something with bkio_submit_t to support
+bidirectional and to support returning both data and sense.  I have
+such a thing for OSD but have not tried to make all the other
+devices fit it pending your perusal.
+
+The other largish piece I'm carrying around is AHS support for
+iscsi.
+
+		-- Pete
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Feb 23 00:26:13 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 23 Feb 2007 08:26:13 +0900
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <20070221183058.GC10825@osc.edu>
+References: <20070123161917.GB2885@osc.edu>
+	<200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+	<20070221183058.GC10825@osc.edu>
+Message-ID: <20070223082613B.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+Date: Wed, 21 Feb 2007 13:30:58 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Mon, 19 Feb 2007 23:32 +0900:
+> > I put a patch to support various device types:
+> > 
+> > http://zaal.org/tgt/device-types.diff
+> > 
+> > I don't merge it because:
+> > 
+> > - only iscsi + AIO works (sg and ibmvio are broken).
+> > 
+> > - there are still lots of things to implement
+> > 
+> > - huge cleanup is necessary
+> > 
+> > I took an approach discussed a long time ago in IET mailing list. Each
+> > device type has its own function array (like sbc_mode_sense). spc code
+> > exports some common functions. A LLD can cleanly replace functions in
+> > arrays (so we can kill dirty hack in tgt_driver struct). A transport
+> > class also needs that (though we don't implement yet).
+> 
+> That would be a reasonable approach, although the tables will be
+> very sparse.  I shouldn't have too much trouble factoring out my
+> current osd_cmd_perform into separate functions with shared
+> routines.  If you check your patch in, I'll do this and try to help
+> fix up the bugs and missing pieces.
+
+More work is necessary before merging that patch. I'll try to finish
+it this weekend.
+
+
+> We'll still have to do something with bkio_submit_t to support
+> bidirectional and to support returning both data and sense.  I have
+> such a thing for OSD but have not tried to make all the other
+> devices fit it pending your perusal.
+
+If you send these patches, I'll try to fix and merge them.
+
+
+> The other largish piece I'm carrying around is AHS support for
+> iscsi.
+
+ditto.
+
+
+Thanks,
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Feb 23 17:48:31 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 24 Feb 2007 01:48:31 +0900 (JST)
+Subject: [Stgt-devel] iSCSI target driver works without kernel patches
+Message-ID: <20070224011948N.fujita.tomonori@lab.ntt.co.jp>
+
+Some target drivers (like iSCSI) need an interface to wait for both
+synchronous and asynchronous file descriptors. But upstream kernels
+don't support something like BSD's kqueue yet though some candidates
+are under development (e.g. kevent).
+
+We've used EPOLL_WAIT patch to add the feature. It's supposed to be
+merged to upstream, however, seems that it takes long time. And it's
+not very fast and it even crashes ppc64 kernels now.
+
+We don't like to use any kernel patches.
+
+I modified the aio code to use a I/O helper thread to avoid this issue
+(stolen from RedHat Xen blktap code). So we don't need any kernel
+patches anymore. Just use 2.6.20.
+
+This workaround will be removed when we have a interface to support
+both async and sync file descriptors in upstream. And it should
+provide better performance.
+
+
+I've just tried the current code and IET with the default iSCSI
+parameters. The performances are comparable. I guess that IET could
+provide better performances with optimized parameters. However, don't
+forget that tgt's performance will improve in the future with a better
+event notification interface.
+
+
+- tgt
+
+disktest -PT -T1200 -h1 -K8 -B8192 -pL -ID /dev/sdc
+
+| 2007/02/24-09:59:10 | STAT  | 28339 | v1.2.8 | /dev/sdc | Total read throughput: 34458842.5B/s (32.86MB/s), IOPS 4206.4/s.
+
+sg_turs -t -n=10000 /dev/sdc
+time to perform commands was 1.210659 secs; 8259.96 operations/sec
+Completed 10000 Test Unit Ready commands with 0 errors
+
+- IET
+
+| 2007/02/24-10:40:40 | STAT  | 28501 | v1.2.8 | /dev/sdc | Total read throughput: 33759505.1B/s (32.20MB/s), IOPS 4121.0/s.
+
+time to perform commands was 1.193761 secs; 8376.89 operations/sec
+Completed 10000 Test Unit Ready commands with 0 errors
+
+
+From pw at osc.edu  Sun Feb 25 01:20:52 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 24 Feb 2007 19:20:52 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <20070223082613B.fujita.tomonori@lab.ntt.co.jp>
+References: <20070123161917.GB2885@osc.edu>
+	<200702191433.l1JEX6Dn025494@r-dd.iij4u.or.jp>
+	<20070221183058.GC10825@osc.edu>
+	<20070223082613B.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <20070225002052.GA9204@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Fri, 23 Feb 2007 08:26 +0900:
+> From: Pete Wyckoff <pw at osc.edu>
+> Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+> Date: Wed, 21 Feb 2007 13:30:58 -0500
+>
+> > We'll still have to do something with bkio_submit_t to support
+> > bidirectional and to support returning both data and sense.  I have
+> > such a thing for OSD but have not tried to make all the other
+> > devices fit it pending your perusal.
+> 
+> If you send these patches, I'll try to fix and merge them.
+> 
+> > The other largish piece I'm carrying around is AHS support for
+> > iscsi.
+> 
+> ditto.
+
+I'm still working on bidirectional support.  It's held up as I'm
+having initiator issues, making it somewhat hard to test.
+
+But the extended CDB and AHS handling should be okay, as well as
+returning data and sense.  Let me know if you'd like any changes
+to these next four.
+
+01 track-target-type
+	Trivial, need this to switch on target type in scsi.c
+	eventually.
+
+02 pass-scb-length
+	Give length of CDB to target.
+
+03 parse-iscsi-ahs-header-for-ext
+	iscsi: parse AHS and handle extended CDB.
+
+04 return-sense-data-in-iscsi-res
+	Return sense data separate from requsted data.  May want
+	to fix tgtif to hand it back into kernel too sometime.
+
+		-- Pete
+
+
+From pw at osc.edu  Sun Feb 25 01:21:52 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 24 Feb 2007 19:21:52 -0500
+Subject: [Stgt-devel] [PATCH] track target type
+Message-ID: <20070225002152.GB9204@osc.edu>
+
+Track target type (block, mmc, etc.).
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+ usr/target.c |    1 +
+ usr/target.h |    1 +
+ usr/tgtd.h   |    7 +++++++
+ 3 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/usr/target.c b/usr/target.c
+index c8fc48c..c101b39 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -1253,6 +1253,7 @@ int tgt_target_create(int lld, int tid, char *args, int t_type, int bs_type)
+ 		target->bdt = tgt_drivers[lld]->default_bdt;
+ 	}
+ 
++	target->target_type = t_type;
+ 	target->target_state = SCSI_TARGET_RUNNING;
+ 	target->lid = lld;
+ 
+diff --git a/usr/target.h b/usr/target.h
+index 75d6518..aecee7c 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -40,6 +40,7 @@ struct target {
+ 	int lid;
+ 
+ 	enum scsi_target_iotype target_iotype;
++	enum scsi_target_type target_type;
+ 	enum scsi_target_state target_state;
+ 
+ 	struct list_head target_siblings;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 07224ce..eb9dd2e 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -21,6 +21,13 @@ enum scsi_target_iotype {
+ 	SCSI_TARGET_RAWIO,
+ };
+ 
++enum scsi_target_type {
++	SCSI_TARGET_SBC, /* disk */
++	SCSI_TARGET_SSC, /* tape */
++	SCSI_TARGET_MMC, /* cdrom */
++	SCSI_TARGET_OSD, /* object storage device */
++};
++
+ enum scsi_target_state {
+ 	SCSI_TARGET_SUSPENDED = 1,
+ 	SCSI_TARGET_RUNNING,
+
+
+From pw at osc.edu  Sun Feb 25 01:22:43 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 24 Feb 2007 19:22:43 -0500
+Subject: [Stgt-devel] [PATCH] pass cdb length
+Message-ID: <20070225002243.GC9204@osc.edu>
+
+Large CDBs are needed for OSD commands.  Pass the length of the command
+as well as the CDB itself.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+ usr/iscsi/iscsid.c |    4 ++--
+ usr/target.c       |    6 ++++--
+ usr/target.h       |    3 ++-
+ usr/tgtd.h         |    2 +-
+ usr/tgtif.c        |    2 +-
+ 5 files changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 8ea1092..6726c7d 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -953,14 +953,14 @@ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ 				list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 		} else
+ 			err = target_cmd_queue(conn->session->iscsi_nexus_id,
+-					       req->cdb,
++					       req->cdb, 16,
+ 					       req->flags & ISCSI_FLAG_CMD_WRITE,
+ 					       uaddr, req->lun,
+ 					       ntohl(req->data_length),
+ 					       cmd_attr(task), req->itt);
+ 	} else
+ 		err = target_cmd_queue(conn->session->iscsi_nexus_id,
+-				       req->cdb,
++				       req->cdb, 16,
+ 				       req->flags & ISCSI_FLAG_CMD_WRITE,
+ 				       uaddr, req->lun, ntohl(req->data_length),
+ 				       cmd_attr(task), req->itt);
+diff --git a/usr/target.c b/usr/target.c
+index c101b39..6cb69ce 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -388,7 +388,7 @@ static void cmd_post_perform(struct tgt_cmd_queue *q, struct scsi_cmd *cmd)
+ 	}
+ }
+ 
+-int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
++int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 		     unsigned long uaddr,
+ 		     uint8_t *lun, uint32_t data_len,
+ 		     int attribute, uint64_t tag)
+@@ -409,7 +409,7 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 
+ 	target = nexus->nexus_target;
+ 	/* TODO: preallocate cmd */
+-	cmd = zalloc(sizeof(*cmd));
++	cmd = zalloc(sizeof(*cmd) + scblen);
+ 	if (!cmd)
+ 		return -ENOMEM;
+ 
+@@ -419,6 +419,8 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 	cmd->tag = tag;
+ 	cmd->uaddr = uaddr;
+ 	cmd->len = data_len;
++	cmd->scb = (void *) (cmd + 1);
++	cmd->scblen = scblen;
+ 	memcpy(cmd->scb, scb, sizeof(cmd->scb));
+ 	memcpy(cmd->lun, lun, sizeof(cmd->lun));
+ 
+diff --git a/usr/target.h b/usr/target.h
+index aecee7c..e90b094 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -90,7 +90,8 @@ struct scsi_cmd {
+ 	uint64_t cmd_nexus_id;
+ 	uint32_t data_len;
+ 	uint64_t offset;
+-	uint8_t scb[16];
++	uint8_t *scb;
++	int scblen;
+ 	uint8_t lun[8];
+ 	int attribute;
+ 	uint64_t tag;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index eb9dd2e..b4d8146 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -103,7 +103,7 @@ extern int tgt_event_add(int fd, int events, event_handler_t handler, void *data
+ extern void tgt_event_del(int fd);
+ extern int tgt_event_modify(int fd, int events);
+ 
+-extern int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
++extern int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 			    unsigned long uaddr,
+ 			    uint8_t *lun, uint32_t data_len,
+ 			    int attribute, uint64_t tag);
+diff --git a/usr/tgtif.c b/usr/tgtif.c
+index 76545f6..4c22863 100644
+--- a/usr/tgtif.c
++++ b/usr/tgtif.c
+@@ -132,7 +132,7 @@ retry:
+ 	switch (ev->hdr.type) {
+ 	case TGT_KEVENT_CMD_REQ:
+ 		target_cmd_queue(host_no_to_it_nexus(ev->p.cmd_req.host_no),
+-				 ev->p.cmd_req.scb,
++				 ev->p.cmd_req.scb, 16,
+ 				 0, 0,
+ /* 				 ev->k.cmd_req.uaddr, */
+ 				 ev->p.cmd_req.lun, ev->p.cmd_req.data_len,
+
+
+From pw at osc.edu  Sun Feb 25 01:23:41 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 24 Feb 2007 19:23:41 -0500
+Subject: [Stgt-devel] [PATCH] iscsi: parse AHS header for extended CDB
+Message-ID: <20070225002341.GD9204@osc.edu>
+
+Modify iscsi target code to understand AHS header when it contains
+an extended CDB, and pass this into target for processing.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+ usr/iscsi/iscsid.c |  125 +++++++++++++++++++++++++++++++++-------------------
+ usr/iscsi/iscsid.h |    2 +
+ 2 files changed, 81 insertions(+), 46 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 6726c7d..eefa8b1 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -868,7 +868,9 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ 	target_cmd_done(conn->session->iscsi_nexus_id, task->tag);
+ 	list_del(&task->c_hlist);
+ 	if (task->c_buffer) {
+-		if ((unsigned long) task->c_buffer != task->addr)
++		/* task->data was set on the input, if not changed, no
++		 * buffer was allocated by scsi layer */
++		if ((unsigned long) task->data != task->addr)
+ 			free((void *) (unsigned long) task->addr);
+ 	}
+ 	iscsi_free_task(task);
+@@ -942,29 +944,44 @@ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task->conn;
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &task->req;
+-	unsigned long uaddr = (unsigned long) task->c_buffer;
++	unsigned long uaddr = (unsigned long) task->data;
++	uint8_t rw = req->flags & ISCSI_FLAG_CMD_WRITE;
++	uint8_t *cdb, cdbbuf[260];
++	int cdblen;
+ 	int err = 0;
+ 
+-	if (req->flags & ISCSI_FLAG_CMD_WRITE) {
+-		if (task->r2t_count) {
+-			if (task->unsol_count)
+-				;
+-			else
+-				list_add_tail(&task->c_list, &task->conn->tx_clist);
+-		} else
+-			err = target_cmd_queue(conn->session->iscsi_nexus_id,
+-					       req->cdb, 16,
+-					       req->flags & ISCSI_FLAG_CMD_WRITE,
+-					       uaddr, req->lun,
+-					       ntohl(req->data_length),
+-					       cmd_attr(task), req->itt);
+-	} else
+-		err = target_cmd_queue(conn->session->iscsi_nexus_id,
+-				       req->cdb, 16,
+-				       req->flags & ISCSI_FLAG_CMD_WRITE,
+-				       uaddr, req->lun, ntohl(req->data_length),
+-				       cmd_attr(task), req->itt);
++	if (rw && task->r2t_count) {
++		if (!task->unsol_count)
++			list_add_tail(&task->c_list, &task->conn->tx_clist);
++		goto noqueue;
++	}
++
++	cdb = req->cdb;
++	cdblen = 16;
++	if (req->hlength) {
++		/* concatenate extended cdb */
++		struct iscsi_ahs_extcdb *ahs_extcdb = task->ahs;
++		if (ahs_extcdb->ahstype == ISCSI_AHSTYPE_CDB) {
++			int extlen = ntohs(ahs_extcdb->ahslength) - 1;
++			dprintf("extcdb len %d from addr %p\n", extlen,
++			        ahs_extcdb->extcdb);
++			if (extlen + 16 > sizeof(cdbbuf)) {
++				err = -ENOMEM;
++				goto noqueue;
++			}
++			memcpy(cdbbuf, cdb, 16);
++			memcpy(cdbbuf + 16, ahs_extcdb->extcdb, extlen);
++			cdb = cdbbuf;
++			cdblen = 16 + extlen;
++		}
++	}
++
++	err = target_cmd_queue(conn->session->iscsi_nexus_id,
++			       cdb, cdblen, rw, uaddr, req->lun,
++			       ntohl(req->data_length),
++			       cmd_attr(task), req->itt);
+ 
++noqueue:
+ 	tgt_event_modify(conn->fd, EPOLLIN|EPOLLOUT);
+ 
+ 	return err;
+@@ -1188,6 +1205,7 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &conn->req.bhs;
+ 	struct iscsi_task *task;
++	int ahslen, ahslen_round, dlen, dlen_round, tot_data_length;
+ 	int len;
+ 
+ 	task = __iscsi_task_rx_start(conn);
+@@ -1195,26 +1213,45 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 		return -ENOMEM;
+ 	task->tag = req->itt;
+ 
+-	dprintf("%u %x %d %d %x\n", conn->session->tsih,
++	ahslen = req->hlength * 4;
++	dlen = ntoh24(req->dlength);  /* just part in this PDU */
++	tot_data_length = ntohl(req->data_length);  /* all data */
++
++	dprintf("%u %x %d %d %x task %p lens %d %d %d\n", conn->session->tsih,
+ 		req->cdb[0], ntohl(req->data_length),
+-		req->flags & ISCSI_FLAG_CMD_ATTR_MASK, req->itt);
++		req->flags & ISCSI_FLAG_CMD_ATTR_MASK, req->itt,
++		task, ahslen, dlen, tot_data_length);
+ 
+-	len = ntohl(req->data_length);
+-	if (len) {
+-		task->c_buffer = valloc(len);
++	/*
++	 * Allocate both AHS space from this PDU, and data from this
++	 * and all subsequent PDUs, at once.  Since the AHS and initial
++	 * data segments are padded to 4-byte boundaries, space things
++	 * so that a single read() does the right thing.
++	 */
++	if (ahslen || tot_data_length) {
++		/* round up each separately */
++		ahslen_round = (ahslen + 3) & ~3;
++		dlen_round = (dlen + 3) & ~3;
++		len = tot_data_length;  /* make sure to alloc padding */
++		if (len < dlen_round)
++			len = dlen_round;
++		task->c_buffer = valloc(ahslen_round + len);
+ 		if (!task->c_buffer) {
+ 			iscsi_free_task(task);
+ 			return -ENOMEM;
+ 		}
+-		dprintf("%p\n", task->c_buffer);
++		task->ahs = task->c_buffer;
++		task->data = task->c_buffer + ahslen_round;
++
++		/* next amount to read from this PDU, and where to put it */
++		conn->rx_size = ahslen_round + dlen_round;
++		conn->rx_buffer = task->c_buffer;
+ 	}
+ 
+ 	if (req->flags & ISCSI_FLAG_CMD_WRITE) {
+-		conn->rx_size = ntoh24(req->dlength);
+-		conn->rx_buffer = task->c_buffer;
+-		task->r2t_count = ntohl(req->data_length) - conn->rx_size;
++		task->r2t_count = tot_data_length - dlen;  /* bytes left */
+ 		task->unsol_count = !(req->flags & ISCSI_FLAG_CMD_FINAL);
+-		task->offset = conn->rx_size;
++		task->offset = dlen;
+ 
+ 		dprintf("%d %d %d %d\n", conn->rx_size, task->r2t_count,
+ 			task->unsol_count, task->offset);
+@@ -1541,35 +1578,31 @@ static void iscsi_rx_handler(int fd, struct iscsi_connection *conn)
+ 
+ 		switch (conn->rx_iostate) {
+ 		case IOSTATE_READ_BHS:
+-			conn->rx_iostate = IOSTATE_READ_AHS_DATA;
+ 			conn->req.ahssize = conn->req.bhs.hlength * 4;
+ 			conn->req.datasize = ntoh24(conn->req.bhs.dlength);
+-			conn->rx_size = (conn->req.ahssize + conn->req.datasize + 3) & -4;
+-
+-			if (conn->req.ahssize) {
+-				eprintf("FIXME: we cannot handle ahs\n");
+-				conn->state = STATE_CLOSE;
+-				break;
+-			}
+ 
+ 			if (conn->state == STATE_SCSI) {
++				/* sets up rx_buffer and rx_size */
+ 				res = iscsi_task_rx_start(conn);
+ 				if (res) {
+ 					conn->state = STATE_CLOSE;
+ 					break;
+ 				}
++			} else {
++				/* use req_buffer to store the bits */
++				conn->rx_buffer = conn->req_buffer;
++				conn->req.ahs = conn->rx_buffer;
++				conn->rx_size = (conn->req.ahssize + 3) & ~3;
++				conn->req.data = conn->rx_buffer + conn->rx_size;
++				conn->rx_size += (conn->req.datasize + 3) & ~3;
+ 			}
+-
+ 			if (conn->rx_size) {
+-				if (conn->state != STATE_SCSI) {
+-					conn->rx_buffer = conn->req_buffer;
+-					conn->req.ahs = conn->rx_buffer;
+-				}
+-				conn->req.data =
+-					conn->rx_buffer + conn->req.ahssize;
++				conn->rx_iostate = IOSTATE_READ_AHS_DATA;
+ 				goto read_again;
+ 			}
+ 
++			/* fall through */
++
+ 		case IOSTATE_READ_AHS_DATA:
+ 			if (conn->state == STATE_SCSI) {
+ 				res = iscsi_task_rx_done(conn);
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 9646538..c4b23d9 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -112,6 +112,8 @@ struct iscsi_task {
+ 	int exp_r2tsn;
+ 
+ 	void *c_buffer;
++	void *ahs;  /* these point into c_buffer, parts after bhs */
++	void *data;
+ };
+ 
+ struct iscsi_connection {
+
+
+From pw at osc.edu  Sun Feb 25 01:24:35 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 24 Feb 2007 19:24:35 -0500
+Subject: [Stgt-devel] [PATCH] return sense data
+Message-ID: <20070225002435.GE9204@osc.edu>
+
+It is legal to return both data and sense data.  Modify iscsi to do this.
+Let target and scsi generate sense information to return through the task.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+ usr/driver.h       |    2 +-
+ usr/iscsi/iscsid.c |   24 +++++++++++++++++++++---
+ usr/iscsi/iscsid.h |    3 +++
+ usr/target.c       |   20 +++++++++++---------
+ usr/target.h       |    2 ++
+ usr/tgtif.c        |    3 ++-
+ 6 files changed, 40 insertions(+), 14 deletions(-)
+
+diff --git a/usr/driver.h b/usr/driver.h
+index 764c53a..0d9fc02 100644
+--- a/usr/driver.h
++++ b/usr/driver.h
+@@ -18,7 +18,7 @@ struct tgt_driver {
+ 	int (*scsi_inquiry)(struct tgt_device *, int, uint8_t *, uint8_t *,
+ 			    uint8_t *, int *);
+ 	int (*cmd_end_notify)(uint64_t nid, int len, int result, int rw, uint64_t addr,
+-			      uint64_t tag);
++			      uint64_t tag, uint8_t *sense, uint8_t senselen);
+ 	int (*mgmt_end_notify)(uint64_t nid, uint64_t mid, int result);
+ 
+ 	struct backedio_template *default_bdt;
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index eefa8b1..8862523 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -753,6 +753,22 @@ static int iscsi_cmd_rsp_build(struct iscsi_task *task)
+ 	rsp->exp_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn);
+ 	rsp->max_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn + MAX_QUEUE_CMD);
+ 
++	dprintf("len %d senselen %d\n", task->len, task->senselen);
++
++	/* Tack on sense to response cdb. */
++	if (task->senselen) {
++		uint16_t len = task->senselen;
++		if (len > sizeof(conn->sense_buffer)-2)
++			len = sizeof(conn->sense_buffer) - 2;
++		memcpy(&conn->sense_buffer[2], task->sense, len);
++		conn->sense_buffer[0] = (len & 0xff00) >> 8;
++		conn->sense_buffer[1] = (len & 0x00ff);
++		dprintf("len+2 %d\n", len+2);
++		hton24(rsp->dlength, len+2);
++		conn->rsp.data = conn->sense_buffer;
++		conn->rsp.datasize = len+2;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -877,13 +893,13 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ }
+ 
+ int iscsi_scsi_cmd_done(uint64_t nid, int len, int result, int rw, uint64_t addr,
+-			uint64_t tag)
++			uint64_t tag, uint8_t *sense, uint8_t senselen)
+ {
+ 	struct iscsi_session *session;
+ 	struct iscsi_task *task;
+ 
+-	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 "\n", nid,
+-		len, result, rw, addr, tag);
++	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 " senselen %d\n",
++	        nid, len, result, rw, addr, tag, senselen);
+ 	session = session_lookup(nid);
+ 	if (!session)
+ 		return -EINVAL;
+@@ -913,6 +929,8 @@ found:
+ 	task->result = result;
+ 	task->len = len;
+ 	task->rw = rw;
++	task->sense = sense;
++	task->senselen = senselen;
+ 
+ 	list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 	tgt_event_modify(task->conn->fd, EPOLLIN | EPOLLOUT);
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index c4b23d9..bc6ec39 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -103,6 +103,8 @@ struct iscsi_task {
+ 	int result;
+ 	int len;
+ 	int rw;
++	uint8_t *sense;
++	uint8_t senselen;
+ 
+ 	int offset;
+ 	int data_sn;
+@@ -146,6 +148,7 @@ struct iscsi_connection {
+ 	struct iscsi_pdu req;
+ 	void *req_buffer;
+ 	struct iscsi_pdu rsp;
++	uint8_t sense_buffer[252];  /* architectural limit */
+ 	void *rsp_buffer;
+ 	unsigned char *rx_buffer;
+ 	unsigned char *tx_buffer;
+diff --git a/usr/target.c b/usr/target.c
+index 6cb69ce..51b5106 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -463,13 +463,15 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 
+ 		cmd_post_perform(q, cmd);
+ 
+-		dprintf("%" PRIx64 " %x %" PRIx64 " %" PRIu64 " %u %d %d\n",
+-			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result, cmd->async);
++		dprintf("%" PRIx64 " %x %lx %" PRIu64 " %d %d %d senselen %d\n",
++			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result,
++			cmd->async, cmd->senselen);
+ 
+ 		set_cmd_processed(cmd);
+ 		if (!cmd->async)
+ 			tgt_drivers[target->lid]->cmd_end_notify(nid, cmd->len, result,
+-								 cmd->rw, cmd->uaddr, tag);
++								 cmd->rw, cmd->uaddr, tag,
++								 cmd->sense, cmd->senselen);
+ 	} else {
+ 		set_cmd_queued(cmd);
+ 		dprintf("blocked %" PRIx64 " %x %" PRIu64 " %d\n",
+@@ -490,7 +492,7 @@ void target_cmd_io_done(void *key, int result)
+ 	tgt_drivers[cmd->c_target->lid]->cmd_end_notify(cmd->cmd_nexus_id,
+ 							cmd->len, result,
+ 							cmd->rw, cmd->uaddr,
+-							cmd->tag);
++							cmd->tag, NULL, 0);
+ 	return;
+ }
+ 
+@@ -498,7 +500,6 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ {
+ 	struct scsi_cmd *cmd, *tmp;
+ 	int enabled, result;
+-	int (* notify_fn)(uint64_t, int, int, int, uint64_t, uint64_t);
+ 
+ 	list_for_each_entry_safe(cmd, tmp, &q->queue, qlist) {
+ 		enabled = cmd_enabled(q, cmd);
+@@ -515,9 +516,10 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ 			cmd_post_perform(q, cmd);
+ 			set_cmd_processed(cmd);
+ 			if (!cmd->async) {
+-				notify_fn = tgt_drivers[cmd->c_target->lid]->cmd_end_notify;
+-				notify_fn(cmd->cmd_nexus_id, cmd->len, result, cmd->rw,
+-					  cmd->uaddr, cmd->tag);
++				tgt_drivers[cmd->c_target->lid]->cmd_end_notify(
++					cmd->cmd_nexus_id, cmd->len, result,
++					cmd->rw, cmd->uaddr, cmd->tag,
++					cmd->sense, cmd->senselen);
+ 			}
+ 		} else
+ 			break;
+@@ -613,7 +615,7 @@ static int abort_cmd(struct target* target, struct mgmt_req *mreq,
+ 	} else {
+ 		__cmd_done(target, cmd);
+ 		tgt_drivers[cmd->c_target->lid]->cmd_end_notify(cmd->cmd_nexus_id, 0,
+-								TASK_ABORTED, 0, 0, cmd->tag);
++								TASK_ABORTED, 0, 0, cmd->tag, NULL, 0);
+ 	}
+ 	return err;
+ }
+diff --git a/usr/target.h b/usr/target.h
+index e90b094..37da8c5 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -98,6 +98,8 @@ struct scsi_cmd {
+ 	uint8_t rw;
+ 	int async;
+ 	struct mgmt_req *mreq;
++	uint8_t *sense;    /* output values from target */
++	uint8_t senselen;
+ };
+ 
+ enum {
+diff --git a/usr/tgtif.c b/usr/tgtif.c
+index 4c22863..b87a5ac 100644
+--- a/usr/tgtif.c
++++ b/usr/tgtif.c
+@@ -101,7 +101,8 @@ int kspace_send_tsk_mgmt_res(uint64_t nid, uint64_t mid, int result)
+ }
+ 
+ int kspace_send_cmd_res(uint64_t nid, int len, int result,
+-			int rw, uint64_t addr, uint64_t tag)
++			int rw, uint64_t addr, uint64_t tag,
++			uint8_t *sense, uint8_t senselen)
+ {
+ 	struct tgt_event ev;
+ 
+
+
+From pw at osc.edu  Sun Feb 25 19:43:19 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sun, 25 Feb 2007 13:43:19 -0500
+Subject: [Stgt-devel] [PATCH v2] pass cdb length
+In-Reply-To: <20070225002243.GC9204@osc.edu>
+References: <20070225002243.GC9204@osc.edu>
+Message-ID: <20070225184319.GA12438@osc.edu>
+
+Oops.  Insufficient testing when refactoring patches.  Use this
+one instead.
+---
+
+Large CDBs are needed for OSD commands.  Pass the length of the command
+as well as the CDB itself.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+ usr/iscsi/iscsid.c |    4 ++--
+ usr/target.c       |    8 +++++---
+ usr/target.h       |    3 ++-
+ usr/tgtd.h         |    2 +-
+ usr/tgtif.c        |    2 +-
+ 5 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 8ea1092..6726c7d 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -953,14 +953,14 @@ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ 				list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 		} else
+ 			err = target_cmd_queue(conn->session->iscsi_nexus_id,
+-					       req->cdb,
++					       req->cdb, 16,
+ 					       req->flags & ISCSI_FLAG_CMD_WRITE,
+ 					       uaddr, req->lun,
+ 					       ntohl(req->data_length),
+ 					       cmd_attr(task), req->itt);
+ 	} else
+ 		err = target_cmd_queue(conn->session->iscsi_nexus_id,
+-				       req->cdb,
++				       req->cdb, 16,
+ 				       req->flags & ISCSI_FLAG_CMD_WRITE,
+ 				       uaddr, req->lun, ntohl(req->data_length),
+ 				       cmd_attr(task), req->itt);
+diff --git a/usr/target.c b/usr/target.c
+index c101b39..dc112d1 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -388,7 +388,7 @@ static void cmd_post_perform(struct tgt_cmd_queue *q, struct scsi_cmd *cmd)
+ 	}
+ }
+ 
+-int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
++int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 		     unsigned long uaddr,
+ 		     uint8_t *lun, uint32_t data_len,
+ 		     int attribute, uint64_t tag)
+@@ -409,7 +409,7 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 
+ 	target = nexus->nexus_target;
+ 	/* TODO: preallocate cmd */
+-	cmd = zalloc(sizeof(*cmd));
++	cmd = zalloc(sizeof(*cmd) + scblen);
+ 	if (!cmd)
+ 		return -ENOMEM;
+ 
+@@ -419,7 +419,9 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 	cmd->tag = tag;
+ 	cmd->uaddr = uaddr;
+ 	cmd->len = data_len;
+-	memcpy(cmd->scb, scb, sizeof(cmd->scb));
++	cmd->scb = (void *) (cmd + 1);
++	cmd->scblen = scblen;
++	memcpy(cmd->scb, scb, scblen);
+ 	memcpy(cmd->lun, lun, sizeof(cmd->lun));
+ 
+ 	cmd_hlist_insert(target, cmd);
+diff --git a/usr/target.h b/usr/target.h
+index aecee7c..e90b094 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -90,7 +90,8 @@ struct scsi_cmd {
+ 	uint64_t cmd_nexus_id;
+ 	uint32_t data_len;
+ 	uint64_t offset;
+-	uint8_t scb[16];
++	uint8_t *scb;
++	int scblen;
+ 	uint8_t lun[8];
+ 	int attribute;
+ 	uint64_t tag;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index eb9dd2e..b4d8146 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -103,7 +103,7 @@ extern int tgt_event_add(int fd, int events, event_handler_t handler, void *data
+ extern void tgt_event_del(int fd);
+ extern int tgt_event_modify(int fd, int events);
+ 
+-extern int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
++extern int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 			    unsigned long uaddr,
+ 			    uint8_t *lun, uint32_t data_len,
+ 			    int attribute, uint64_t tag);
+diff --git a/usr/tgtif.c b/usr/tgtif.c
+index 76545f6..4c22863 100644
+--- a/usr/tgtif.c
++++ b/usr/tgtif.c
+@@ -132,7 +132,7 @@ retry:
+ 	switch (ev->hdr.type) {
+ 	case TGT_KEVENT_CMD_REQ:
+ 		target_cmd_queue(host_no_to_it_nexus(ev->p.cmd_req.host_no),
+-				 ev->p.cmd_req.scb,
++				 ev->p.cmd_req.scb, 16,
+ 				 0, 0,
+ /* 				 ev->k.cmd_req.uaddr, */
+ 				 ev->p.cmd_req.lun, ev->p.cmd_req.data_len,
+
+
+From pw at osc.edu  Sun Feb 25 19:44:53 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sun, 25 Feb 2007 13:44:53 -0500
+Subject: [Stgt-devel] [PATCH v2] return sense data
+In-Reply-To: <20070225002435.GE9204@osc.edu>
+References: <20070225002435.GE9204@osc.edu>
+Message-ID: <20070225184453.GB12438@osc.edu>
+
+Minor fix.  Add prototypes for changed end_notify functions to avoid
+compiler warnings.
+---
+
+It is legal to return both data and sense data.  Modify iscsi to do this.
+Let target and scsi generate sense information to return through the task.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+ usr/driver.h       |    2 +-
+ usr/iscsi/iscsi.h  |    3 ++-
+ usr/iscsi/iscsid.c |   27 +++++++++++++++++++++++----
+ usr/iscsi/iscsid.h |    3 +++
+ usr/target.c       |   20 +++++++++++---------
+ usr/target.h       |    2 ++
+ usr/tgtd.h         |    3 ++-
+ usr/tgtif.c        |    3 ++-
+ 8 files changed, 46 insertions(+), 17 deletions(-)
+
+diff --git a/usr/driver.h b/usr/driver.h
+index 764c53a..0d9fc02 100644
+--- a/usr/driver.h
++++ b/usr/driver.h
+@@ -18,7 +18,7 @@ struct tgt_driver {
+ 	int (*scsi_inquiry)(struct tgt_device *, int, uint8_t *, uint8_t *,
+ 			    uint8_t *, int *);
+ 	int (*cmd_end_notify)(uint64_t nid, int len, int result, int rw, uint64_t addr,
+-			      uint64_t tag);
++			      uint64_t tag, uint8_t *sense, uint8_t senselen);
+ 	int (*mgmt_end_notify)(uint64_t nid, uint64_t mid, int result);
+ 
+ 	struct backedio_template *default_bdt;
+diff --git a/usr/iscsi/iscsi.h b/usr/iscsi/iscsi.h
+index f74c493..5acf710 100644
+--- a/usr/iscsi/iscsi.h
++++ b/usr/iscsi/iscsi.h
+@@ -7,7 +7,8 @@ extern int iscsi_target_update(int, char *);
+ extern int iscsi_mgmt_account(uint32_t op, int tid, uint32_t uid, char *param,
+ 			      char *buf, int len);
+ extern int iscsi_scsi_cmd_done(uint64_t nid, int len, int result, int rw,
+-			       uint64_t addr, uint64_t tag);
++			       uint64_t addr, uint64_t tag, uint8_t *sense,
++			       uint8_t senselen);
+ extern int iscsi_tm_done(uint64_t nid, uint64_t mid, int result);
+ 
+ struct tgt_driver iscsi = {
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index eefa8b1..654b7f3 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -753,6 +753,22 @@ static int iscsi_cmd_rsp_build(struct iscsi_task *task)
+ 	rsp->exp_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn);
+ 	rsp->max_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn + MAX_QUEUE_CMD);
+ 
++	dprintf("len %d senselen %d\n", task->len, task->senselen);
++
++	/* Tack on sense to response cdb. */
++	if (task->senselen) {
++		uint16_t len = task->senselen;
++		if (len > sizeof(conn->sense_buffer)-2)
++			len = sizeof(conn->sense_buffer) - 2;
++		memcpy(&conn->sense_buffer[2], task->sense, len);
++		conn->sense_buffer[0] = (len & 0xff00) >> 8;
++		conn->sense_buffer[1] = (len & 0x00ff);
++		dprintf("len+2 %d\n", len+2);
++		hton24(rsp->dlength, len+2);
++		conn->rsp.data = conn->sense_buffer;
++		conn->rsp.datasize = len+2;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -876,14 +892,15 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ 	iscsi_free_task(task);
+ }
+ 
+-int iscsi_scsi_cmd_done(uint64_t nid, int len, int result, int rw, uint64_t addr,
+-			uint64_t tag)
++int iscsi_scsi_cmd_done(uint64_t nid, int len, int result, int rw,
++			uint64_t addr, uint64_t tag, uint8_t *sense,
++			uint8_t senselen)
+ {
+ 	struct iscsi_session *session;
+ 	struct iscsi_task *task;
+ 
+-	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 "\n", nid,
+-		len, result, rw, addr, tag);
++	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 " senselen %d\n",
++	        nid, len, result, rw, addr, tag, senselen);
+ 	session = session_lookup(nid);
+ 	if (!session)
+ 		return -EINVAL;
+@@ -913,6 +930,8 @@ found:
+ 	task->result = result;
+ 	task->len = len;
+ 	task->rw = rw;
++	task->sense = sense;
++	task->senselen = senselen;
+ 
+ 	list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 	tgt_event_modify(task->conn->fd, EPOLLIN | EPOLLOUT);
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index c4b23d9..bc6ec39 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -103,6 +103,8 @@ struct iscsi_task {
+ 	int result;
+ 	int len;
+ 	int rw;
++	uint8_t *sense;
++	uint8_t senselen;
+ 
+ 	int offset;
+ 	int data_sn;
+@@ -146,6 +148,7 @@ struct iscsi_connection {
+ 	struct iscsi_pdu req;
+ 	void *req_buffer;
+ 	struct iscsi_pdu rsp;
++	uint8_t sense_buffer[252];  /* architectural limit */
+ 	void *rsp_buffer;
+ 	unsigned char *rx_buffer;
+ 	unsigned char *tx_buffer;
+diff --git a/usr/target.c b/usr/target.c
+index dc112d1..6d5e094 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -463,13 +463,15 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 
+ 		cmd_post_perform(q, cmd);
+ 
+-		dprintf("%" PRIx64 " %x %" PRIx64 " %" PRIu64 " %u %d %d\n",
+-			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result, cmd->async);
++		dprintf("%" PRIx64 " %x %lx %" PRIu64 " %d %d %d senselen %d\n",
++			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result,
++			cmd->async, cmd->senselen);
+ 
+ 		set_cmd_processed(cmd);
+ 		if (!cmd->async)
+ 			tgt_drivers[target->lid]->cmd_end_notify(nid, cmd->len, result,
+-								 cmd->rw, cmd->uaddr, tag);
++								 cmd->rw, cmd->uaddr, tag,
++								 cmd->sense, cmd->senselen);
+ 	} else {
+ 		set_cmd_queued(cmd);
+ 		dprintf("blocked %" PRIx64 " %x %" PRIu64 " %d\n",
+@@ -490,7 +492,7 @@ void target_cmd_io_done(void *key, int result)
+ 	tgt_drivers[cmd->c_target->lid]->cmd_end_notify(cmd->cmd_nexus_id,
+ 							cmd->len, result,
+ 							cmd->rw, cmd->uaddr,
+-							cmd->tag);
++							cmd->tag, NULL, 0);
+ 	return;
+ }
+ 
+@@ -498,7 +500,6 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ {
+ 	struct scsi_cmd *cmd, *tmp;
+ 	int enabled, result;
+-	int (* notify_fn)(uint64_t, int, int, int, uint64_t, uint64_t);
+ 
+ 	list_for_each_entry_safe(cmd, tmp, &q->queue, qlist) {
+ 		enabled = cmd_enabled(q, cmd);
+@@ -515,9 +516,10 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ 			cmd_post_perform(q, cmd);
+ 			set_cmd_processed(cmd);
+ 			if (!cmd->async) {
+-				notify_fn = tgt_drivers[cmd->c_target->lid]->cmd_end_notify;
+-				notify_fn(cmd->cmd_nexus_id, cmd->len, result, cmd->rw,
+-					  cmd->uaddr, cmd->tag);
++				tgt_drivers[cmd->c_target->lid]->cmd_end_notify(
++					cmd->cmd_nexus_id, cmd->len, result,
++					cmd->rw, cmd->uaddr, cmd->tag,
++					cmd->sense, cmd->senselen);
+ 			}
+ 		} else
+ 			break;
+@@ -613,7 +615,7 @@ static int abort_cmd(struct target* target, struct mgmt_req *mreq,
+ 	} else {
+ 		__cmd_done(target, cmd);
+ 		tgt_drivers[cmd->c_target->lid]->cmd_end_notify(cmd->cmd_nexus_id, 0,
+-								TASK_ABORTED, 0, 0, cmd->tag);
++								TASK_ABORTED, 0, 0, cmd->tag, NULL, 0);
+ 	}
+ 	return err;
+ }
+diff --git a/usr/target.h b/usr/target.h
+index e90b094..37da8c5 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -98,6 +98,8 @@ struct scsi_cmd {
+ 	uint8_t rw;
+ 	int async;
+ 	struct mgmt_req *mreq;
++	uint8_t *sense;    /* output values from target */
++	uint8_t senselen;
+ };
+ 
+ enum {
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index b4d8146..fb31b75 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -83,7 +83,8 @@ struct backedio_template sg_bdt;
+ 
+ extern int kspace_send_tsk_mgmt_res(uint64_t nid, uint64_t mid, int result);
+ extern int kspace_send_cmd_res(uint64_t nid, int len, int result,
+-			       int rw, uint64_t addr, uint64_t tag);
++			       int rw, uint64_t addr, uint64_t tag,
++			       uint8_t *sense, uint8_t senselen);
+ extern int ipc_init(void);
+ extern int tgt_device_create(int tid, uint64_t lun, char *args);
+ extern int tgt_device_destroy(int tid, uint64_t lun);
+diff --git a/usr/tgtif.c b/usr/tgtif.c
+index 4c22863..b87a5ac 100644
+--- a/usr/tgtif.c
++++ b/usr/tgtif.c
+@@ -101,7 +101,8 @@ int kspace_send_tsk_mgmt_res(uint64_t nid, uint64_t mid, int result)
+ }
+ 
+ int kspace_send_cmd_res(uint64_t nid, int len, int result,
+-			int rw, uint64_t addr, uint64_t tag)
++			int rw, uint64_t addr, uint64_t tag,
++			uint8_t *sense, uint8_t senselen)
+ {
+ 	struct tgt_event ev;
+ 
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Feb 26 01:27:48 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 26 Feb 2007 09:27:48 +0900 (JST)
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <20070225002052.GA9204@osc.edu>
+References: <20070221183058.GC10825@osc.edu>
+	<20070223082613B.fujita.tomonori@lab.ntt.co.jp>
+	<20070225002052.GA9204@osc.edu>
+Message-ID: <20070225070420W.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+Date: Sat, 24 Feb 2007 19:20:52 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Fri, 23 Feb 2007 08:26 +0900:
+> > From: Pete Wyckoff <pw at osc.edu>
+> > Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+> > Date: Wed, 21 Feb 2007 13:30:58 -0500
+> >
+> > > We'll still have to do something with bkio_submit_t to support
+> > > bidirectional and to support returning both data and sense.  I have
+> > > such a thing for OSD but have not tried to make all the other
+> > > devices fit it pending your perusal.
+> > 
+> > If you send these patches, I'll try to fix and merge them.
+> > 
+> > > The other largish piece I'm carrying around is AHS support for
+> > > iscsi.
+> > 
+> > ditto.
+> 
+> I'm still working on bidirectional support.  It's held up as I'm
+> having initiator issues, making it somewhat hard to test.
+> 
+> But the extended CDB and AHS handling should be okay, as well as
+> returning data and sense.  Let me know if you'd like any changes
+> to these next four.
+
+Thanks! I had a quick look over them.
+
+
+> 01 track-target-type
+> 	Trivial, need this to switch on target type in scsi.c
+> 	eventually.
+
+I'll add SCSI_TARGET_PASSTHROUGH (or whatever we call it).
+
+
+> 02 pass-scb-length
+> 	Give length of CDB to target.
+
+I'd like to move more members in iscsi_task structure to cmd structure
+(cmd structure is renamed to scsi_cmd). I like something like struct
+inode does.
+
+
+> 03 parse-iscsi-ahs-header-for-ext
+> 	iscsi: parse AHS and handle extended CDB.
+
+Looks nice.
+
+
+> 04 return-sense-data-in-iscsi-res
+> 	Return sense data separate from requsted data.  May want
+> 	to fix tgtif to hand it back into kernel too sometime.
+
+I thought about adding sense_buffer to scsi_cmd.
+
+About in-kernel drivers, we need Mike's block layer patch merged into
+mainline. That enables tgtd to pass non-aligned buffer to kernel so we
+can put sense buffer to scsi_cmd.
+
+
+I can take on these changes. Give me some time.
+
+
+From pw at osc.edu  Wed Feb 28 21:13:23 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Wed, 28 Feb 2007 15:13:23 -0500
+Subject: [Stgt-devel] your recent sense checkin
+Message-ID: <20070228201323.GA18276@osc.edu>
+
+I took a look at your SVN and rebased my patches on top of it.  One
+thing to point out:  it should be possible for a target to send back
+both data-in bytes as the result of a command, and status bytes in
+the response.  Your use of task->addr to get the status bytes
+appears to make that impossible.  I had added extra task->sense and
+task->senselen to accommodate this usage.
+
+Regarding the "Need to clean up this mess" comment in
+iscsi_scsi_cmd_tx_start:  it gets worse once we mix in the
+bidirectional.  There you cannot do a phase collapse on the final
+data packet, so it becomes even more of a mess.
+
+I have cleaned most of that mess up, perhaps, as part of getting
+bidirectional transfers to work, but the patches are not ready for
+submission to stgt because they depend on AHS structures defined
+only in non-mainline kernel patches.  If you are willing to remove
+the dependency on kernel headers by copying the relevant bits into
+stgt, we can avoid that problem.
+
+Note the duplication in iscsi_cmd_rsp_build and
+iscsi_sense_rsp_build; wouldn't it be better to have a single
+function with "if (task->result != 0) {...}" to return status?
+
+Here they are, fyi.  Let me know if you have suggestions on how I
+can help you get more of this merged.
+
+		-- Pete
+-------------- next part --------------
+return sense data in iscsi response
+
+From: Pete Wyckoff <pw at osc.edu>
+
+It is legal to return both data and sense data.  Modify iscsi to do this.
+Let target and scsi generate sense information to return through the task.
+---
+
+ usr/iscsi/iscsid.c |   27 +++++++++++++++------------
+ usr/iscsi/iscsid.h |    3 +++
+ usr/target.c       |    5 +++--
+ usr/tgtd.h         |    2 ++
+ 4 files changed, 23 insertions(+), 14 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 1d0cd9a..920a07a 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -766,7 +766,7 @@ static int iscsi_sense_rsp_build(struct iscsi_task *task)
+ 	struct iscsi_connection *conn = task->conn;
+ 	struct iscsi_cmd_rsp *rsp = (struct iscsi_cmd_rsp *) &conn->rsp.bhs;
+ 	struct iscsi_sense_data *sense;
+-	uint16_t sense_len = task->len;
++	uint16_t len = task->senselen;
+ 
+ 	memset(rsp, 0, sizeof(*rsp));
+ 	rsp->opcode = ISCSI_OP_SCSI_CMD_RSP;
+@@ -775,18 +775,19 @@ static int iscsi_sense_rsp_build(struct iscsi_task *task)
+ 	rsp->response = ISCSI_STATUS_CMD_COMPLETED;
+ 	rsp->cmd_status = SAM_STAT_CHECK_CONDITION;
+ 
+-	sense = (void *) (unsigned long) task->addr;
++	dprintf("len %d senselen %d\n", task->len, task->senselen);
+ 
+-	/* FIXME: we assume that sense_buffer is large enough
+-	 * (sense_len + 2 bytes). It's true now, but... */
++	sense = (void *)(uintptr_t) conn->sense_buffer;
+ 
+-	memmove(sense->data, sense, sense_len);
+-	sense->length = cpu_to_be16(sense_len);
++	if (len > sizeof(conn->sense_buffer)-2)
++		len = sizeof(conn->sense_buffer) - 2;
+ 
+-	conn->rsp.datasize = sense_len + sizeof(*sense);
+-	hton24(rsp->dlength, sense_len + sizeof(*sense));
+-	conn->rsp.data = (void *) (unsigned long) task->addr;
+-	task->offset += sense_len + sizeof(*sense);
++	memcpy(sense->data, task->sense, len);
++	sense->length = cpu_to_be16(len);
++
++	conn->rsp.datasize = len + sizeof(*sense);
++	hton24(rsp->dlength, len + sizeof(*sense));
++	conn->rsp.data = conn->sense_buffer;
+ 
+ 	return 0;
+ }
+@@ -916,8 +917,8 @@ int iscsi_scsi_cmd_done(uint64_t nid, int result, struct scsi_cmd *cmd)
+ 	struct iscsi_session *session;
+ 	struct iscsi_task *task;
+ 
+-	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 "\n", nid,
+-		cmd->len, result, cmd->rw, cmd->uaddr, cmd->tag);
++	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 "senselen %d\n", nid,
++		cmd->len, result, cmd->rw, cmd->uaddr, cmd->tag, cmd->senselen);
+ 	session = session_lookup(nid);
+ 	if (!session)
+ 		return -EINVAL;
+@@ -947,6 +948,8 @@ found:
+ 	task->result = result;
+ 	task->len = cmd->len;
+ 	task->rw = cmd->rw;
++	task->sense = cmd->sense;
++	task->senselen = cmd->senselen;
+ 
+ 	list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 	tgt_event_modify(task->conn->fd, EPOLLIN | EPOLLOUT);
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index c4b23d9..bc6ec39 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -103,6 +103,8 @@ struct iscsi_task {
+ 	int result;
+ 	int len;
+ 	int rw;
++	uint8_t *sense;
++	uint8_t senselen;
+ 
+ 	int offset;
+ 	int data_sn;
+@@ -146,6 +148,7 @@ struct iscsi_connection {
+ 	struct iscsi_pdu req;
+ 	void *req_buffer;
+ 	struct iscsi_pdu rsp;
++	uint8_t sense_buffer[252];  /* architectural limit */
+ 	void *rsp_buffer;
+ 	unsigned char *rx_buffer;
+ 	unsigned char *tx_buffer;
+diff --git a/usr/target.c b/usr/target.c
+index f50089b..f2b16d7 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -463,8 +463,9 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 
+ 		cmd_post_perform(q, cmd);
+ 
+-		dprintf("%" PRIx64 " %x %" PRIx64 " %" PRIu64 " %u %d %d\n",
+-			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result, cmd->async);
++		dprintf("%" PRIx64 " %x %lx %" PRIu64 " %d %d %d senselen %d\n",
++			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result,
++			cmd->async, cmd->senselen);
+ 
+ 		set_cmd_processed(cmd);
+ 		if (!cmd->async)
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 9cb1b41..18ccd11 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -94,6 +94,8 @@ struct scsi_cmd {
+ 
+ #define SCSI_SENSE_BUFFERSIZE	96
+ 	unsigned char sense_buffer[SCSI_SENSE_BUFFERSIZE];
++	uint8_t *sense;    /* output values from target */
++	uint8_t senselen;
+ };
+ 
+ #ifdef USE_KERNEL
+-------------- next part --------------
+Make bidirectional transfers work.  Also updates iscsi code to use
+
+From: Pete Wyckoff <pw at osc.edu>
+
+new kernel data structures for extended CDBs in Panasas patch.
+---
+
+ usr/iscsi/iscsid.c |  241 ++++++++++++++++++++++++++++++++++++++++------------
+ usr/iscsi/iscsid.h |   23 +++--
+ usr/osd.c          |    6 +
+ usr/target.c       |    4 +
+ 4 files changed, 207 insertions(+), 67 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 920a07a..e8d03aa 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -738,10 +738,15 @@ static void cmnd_finish(struct iscsi_connection *conn)
+ 	}
+ }
+ 
++/*
++ * Send the final command response.  For successful (and non-bidirectional)
++ * tasks that return data, this packet is not required.
++ */
+ static int iscsi_cmd_rsp_build(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task->conn;
+ 	struct iscsi_cmd_rsp *rsp = (struct iscsi_cmd_rsp *) &conn->rsp.bhs;
++	uint32_t residual;
+ 
+ 	memset(rsp, 0, sizeof(*rsp));
+ 	rsp->opcode = ISCSI_OP_SCSI_CMD_RSP;
+@@ -753,6 +758,31 @@ static int iscsi_cmd_rsp_build(struct iscsi_task *task)
+ 	rsp->exp_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn);
+ 	rsp->max_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn + MAX_QUEUE_CMD);
+ 
++	/* we never have write under/over flow, no way to signal that
++	 * back from the target currently. */
++
++	residual = 0;
++	if (task->dir == BIDIRECTIONAL) {
++		if (task->len < task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_BIDI_UNDERFLOW;
++			residual = task->read_len - task->len;
++		} else if (task->len > task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_BIDI_OVERFLOW;
++			residual = task->len - task->read_len;
++		}
++		rsp->bi_residual_count = cpu_to_be32(residual);
++		rsp->residual_count = 0;
++	} else {
++		if (task->len < task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_UNDERFLOW;
++			residual = task->read_len - task->len;
++		} else if (task->len > task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_OVERFLOW;
++			residual = task->len - task->read_len;
++		}
++		rsp->residual_count = cpu_to_be32(residual);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -766,6 +796,7 @@ static int iscsi_sense_rsp_build(struct iscsi_task *task)
+ 	struct iscsi_connection *conn = task->conn;
+ 	struct iscsi_cmd_rsp *rsp = (struct iscsi_cmd_rsp *) &conn->rsp.bhs;
+ 	struct iscsi_sense_data *sense;
++	uint32_t residual;
+ 	uint16_t len = task->senselen;
+ 
+ 	memset(rsp, 0, sizeof(*rsp));
+@@ -774,8 +805,37 @@ static int iscsi_sense_rsp_build(struct iscsi_task *task)
+ 	rsp->flags = ISCSI_FLAG_CMD_FINAL;
+ 	rsp->response = ISCSI_STATUS_CMD_COMPLETED;
+ 	rsp->cmd_status = SAM_STAT_CHECK_CONDITION;
++	rsp->statsn = cpu_to_be32(conn->stat_sn++);
++	rsp->exp_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn);
++	rsp->max_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn + MAX_QUEUE_CMD);
+ 
+-	dprintf("len %d senselen %d\n", task->len, task->senselen);
++	/* we never have write under/over flow, no way to signal that
++	 * back from the target currently. */
++
++	residual = 0;
++	if (task->dir == BIDIRECTIONAL) {
++		if (task->len < task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_BIDI_UNDERFLOW;
++			residual = task->read_len - task->len;
++		} else if (task->len > task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_BIDI_OVERFLOW;
++			residual = task->len - task->read_len;
++		}
++		rsp->bi_residual_count = cpu_to_be32(residual);
++		rsp->residual_count = 0;
++	} else {
++		if (task->len < task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_UNDERFLOW;
++			residual = task->read_len - task->len;
++		} else if (task->len > task->read_len) {
++			rsp->flags |= ISCSI_FLAG_CMD_OVERFLOW;
++			residual = task->len - task->read_len;
++		}
++		rsp->residual_count = cpu_to_be32(residual);
++	}
++
++	dprintf("status %d len %d senselen %d\n", task->result, task->len,
++	        task->senselen);
+ 
+ 	sense = (void *)(uintptr_t) conn->sense_buffer;
+ 
+@@ -792,23 +852,24 @@ static int iscsi_sense_rsp_build(struct iscsi_task *task)
+ 	return 0;
+ }
+ 
++/*
++ * Send a data-in PDU.  If status was 0, collapse the response message
++ * into the last data-in PDU.
++ */
+ static int iscsi_data_rsp_build(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task->conn;
+ 	struct iscsi_data_rsp *rsp = (struct iscsi_data_rsp *) &conn->rsp.bhs;
+-	struct iscsi_cmd *req = (struct iscsi_cmd *) &task->req;
+-	int residual, datalen, exp_datalen = ntohl(req->data_length);
++	int residual, datalen, exp_datalen = task->read_len;
+ 	int max_burst = conn->session_param[ISCSI_PARAM_MAX_XMIT_DLENGTH].val;
+ 
+ 	memset(rsp, 0, sizeof(*rsp));
+ 	rsp->opcode = ISCSI_OP_SCSI_DATA_IN;
+ 	rsp->itt = task->tag;
+ 	rsp->ttt = cpu_to_be32(ISCSI_RESERVED_TAG);
+-	rsp->cmd_status = ISCSI_STATUS_CMD_COMPLETED;
+ 
+ 	rsp->offset = cpu_to_be32(task->offset);
+-	rsp->datasn = cpu_to_be32(task->data_sn++);
+-	rsp->cmd_status = task->result;
++	rsp->datasn = cpu_to_be32(task->exp_r2tsn++);
+ 
+ 	datalen = min(exp_datalen, task->len);
+ 	datalen -= task->offset;
+@@ -816,21 +877,26 @@ static int iscsi_data_rsp_build(struct iscsi_task *task)
+ 	dprintf("%d %d %d %d %x\n", datalen, exp_datalen, task->len, max_burst, rsp->itt);
+ 
+ 	if (datalen <= max_burst) {
+-		rsp->flags = ISCSI_FLAG_CMD_FINAL | ISCSI_FLAG_DATA_STATUS;
+-		if (task->len < exp_datalen) {
+-			rsp->flags |= ISCSI_FLAG_CMD_UNDERFLOW;
+-			residual = exp_datalen - task->len;
+-		} else if (task->len > exp_datalen) {
+-			rsp->flags |= ISCSI_FLAG_CMD_OVERFLOW;
+-			residual = task->len - exp_datalen;
+-		} else
+-			residual = 0;
+-		rsp->residual_count = cpu_to_be32(residual);
++		rsp->flags = ISCSI_FLAG_CMD_FINAL;
++
++		/* collapse status into final packet if successful */
++		if (task->result == 0 && task->dir != BIDIRECTIONAL) {
++			rsp->flags |= ISCSI_FLAG_DATA_STATUS;
++			if (task->len < exp_datalen) {
++				rsp->flags |= ISCSI_FLAG_CMD_UNDERFLOW;
++				residual = exp_datalen - task->len;
++			} else if (task->len > exp_datalen) {
++				rsp->flags |= ISCSI_FLAG_CMD_OVERFLOW;
++				residual = task->len - exp_datalen;
++			} else
++				residual = 0;
++			rsp->cmd_status = task->result;
++			rsp->statsn = cpu_to_be32(conn->stat_sn++);
++			rsp->residual_count = cpu_to_be32(residual);
++		}
+ 	} else
+ 		datalen = max_burst;
+ 
+-	if (rsp->flags & ISCSI_FLAG_CMD_FINAL)
+-		rsp->statsn = cpu_to_be32(conn->stat_sn++);
+ 	rsp->exp_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn);
+ 	rsp->max_cmdsn = cpu_to_be32(conn->session->exp_cmd_sn + MAX_QUEUE_CMD);
+ 
+@@ -912,12 +978,17 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ 	iscsi_free_task(task);
+ }
+ 
++/*
++ * Called from target layer when the command completes.  The addr and
++ * len are what should be sent back.
++ */
+ int iscsi_scsi_cmd_done(uint64_t nid, int result, struct scsi_cmd *cmd)
+ {
+ 	struct iscsi_session *session;
+ 	struct iscsi_task *task;
+ 
+-	dprintf("%" PRIu64 " %d %d %d %" PRIx64 " %" PRIx64 "senselen %d\n", nid,
++	dprintf("len %" PRIu64 " result %d rw %d addr %d %" PRIx64
++	        " tag %" PRIx64 " senselen %d\n", nid,
+ 		cmd->len, result, cmd->rw, cmd->uaddr, cmd->tag, cmd->senselen);
+ 	session = session_lookup(nid);
+ 	if (!session)
+@@ -977,30 +1048,46 @@ static int cmd_attr(struct iscsi_task *task)
+ 	return attr;
+ }
+ 
++/*
++ * Try to execute the command.  Called when the initial scsi command PDU
++ * arrives and after each finished data burst.  If there is still data-out
++ * unreceived, put back on the queue to wait until that is done.
++ */
+ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task->conn;
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &task->req;
+ 	unsigned long uaddr = (unsigned long) task->data;
+ 	uint8_t rw = req->flags & ISCSI_FLAG_CMD_WRITE;
+-	uint8_t *cdb, cdbbuf[260];
++	uint32_t data_len;
++	uint8_t *cdb, cdbbuf[260], *ahs, ahslen;
+ 	int cdblen;
+ 	int err = 0;
+ 
+-	if (rw && task->r2t_count) {
+-		if (!task->unsol_count)
++	/* wait for more data; if unsol, initiator will send without r2t */
++	if (task->r2t_count) {
++		if (!task->waiting_unsol)
+ 			list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 		goto noqueue;
+ 	}
+ 
++	task->offset = 0;  /* for use as transmit pointer for data-ins */
++
++	/* build full cdb for target, possibly using ahs */
+ 	cdb = req->cdb;
+ 	cdblen = 16;
+-	if (req->hlength) {
++	ahs = task->ahs;
++	ahslen = req->hlength * 4;
++	if (ahslen >= 4) {
+ 		/* concatenate extended cdb */
+-		struct iscsi_ecdb_ahdr *ahs_extcdb = task->ahs;
++		struct iscsi_ecdb_ahdr *ahs_extcdb = (void *) ahs;
+ 		if (ahs_extcdb->ahstype == ISCSI_AHSTYPE_CDB) {
+ 			int extlen = ntohs(ahs_extcdb->ahslength) - 1;
+ 			dprintf("extcdb len %d\n", extlen);
++			if (4 + extlen > ahslen) {
++				err = -EINVAL;
++				goto noqueue;
++			}
+ 			if (extlen + 16 > sizeof(cdbbuf)) {
+ 				err = -ENOMEM;
+ 				goto noqueue;
+@@ -1009,13 +1096,40 @@ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ 			memcpy(cdbbuf + 16, ahs_extcdb->ecdb, extlen);
+ 			cdb = cdbbuf;
+ 			cdblen = 16 + extlen;
++
++			/* advance pointers for possible bidi */
++			ahs += 4 + extlen;
++			ahslen -= 4 + extlen;
+ 		}
+ 	}
+ 
++	/* figure out incoming (write) and outgoing (read) sizes */
++	data_len = 0;
++	task->write_len = 0;
++	if (task->dir == WRITE || task->dir == BIDIRECTIONAL) {
++		task->write_len = ntohl(req->data_length);
++		data_len = task->write_len;
++	}
++	task->read_len = 0;
++	if (task->dir == BIDIRECTIONAL && ahslen >= 8) {
++		struct iscsi_rlength_ahdr *ahs_bidi = (void *) ahs;
++		if (ahs_bidi->ahstype == ISCSI_AHSTYPE_RLENGTH) {
++			task->read_len = ntohl(ahs_bidi->read_length);
++			dprintf("bidi read len %u\n", task->read_len);
++		}
++	}
++	if (task->dir == READ) {
++		task->read_len = ntohl(req->data_length);
++		data_len = task->read_len;
++	}
++
++	/*
++	 * When done, target will call iscsi_scsi_cmd_done with
++	 * addr and len of data-in, as well as sense.
++	 */
+ 	err = target_cmd_queue(conn->session->iscsi_nexus_id,
+ 			       cdb, cdblen, rw, uaddr, req->lun,
+-			       ntohl(req->data_length),
+-			       cmd_attr(task), req->itt);
++			       data_len, cmd_attr(task), req->itt);
+ 
+ noqueue:
+ 	tgt_event_modify(conn->fd, EPOLLIN|EPOLLOUT);
+@@ -1105,6 +1219,17 @@ static int iscsi_task_execute(struct iscsi_task *task)
+ 		tgt_event_modify(task->conn->fd, EPOLLIN | EPOLLOUT);
+ 		break;
+ 	case ISCSI_OP_SCSI_CMD:
++		/* convenient directionality for our internal use */
++		if (hdr->flags & ISCSI_FLAG_CMD_READ) {
++			if (hdr->flags & ISCSI_FLAG_CMD_WRITE)
++				task->dir = BIDIRECTIONAL;
++			else
++				task->dir = READ;
++		} else if (hdr->flags & ISCSI_FLAG_CMD_WRITE) {
++			task->dir = WRITE;
++		} else
++			task->dir = NONE;
++
+ 		err = iscsi_scsi_cmd_execute(task);
+ 		break;
+ 	case ISCSI_OP_SCSI_TMFUNC:
+@@ -1130,12 +1255,14 @@ static int iscsi_data_out_rx_done(struct iscsi_task *task)
+ 	int err = 0;
+ 
+ 	if (hdr->ttt == cpu_to_be32(ISCSI_RESERVED_TAG)) {
++		/* unsolicited data, accumulate until final */
+ 		if (hdr->flags & ISCSI_FLAG_CMD_FINAL) {
+-			task->unsol_count = 0;
++			task->waiting_unsol = 0;
+ 			if (!task_pending(task))
+ 				err = iscsi_scsi_cmd_execute(task);
+ 		}
+ 	} else {
++		/* response to a r2t we sent */
+ 		if (!(hdr->flags & ISCSI_FLAG_CMD_FINAL))
+ 			return err;
+ 
+@@ -1162,7 +1289,7 @@ found:
+ 		task->r2t_count,
+ 		ntoh24(req->dlength), be32_to_cpu(req->offset));
+ 
+-	conn->rx_buffer = (void *) (unsigned long) task->c_buffer;
++	conn->rx_buffer = task->c_buffer;
+ 	conn->rx_buffer += be32_to_cpu(req->offset);
+ 	conn->rx_size = ntoh24(req->dlength);
+ 
+@@ -1185,6 +1312,7 @@ static int iscsi_task_queue(struct iscsi_task *task)
+ 	dprintf("%x %x %x\n", be32_to_cpu(req->statsn), session->exp_cmd_sn,
+ 		req->opcode);
+ 
++	/* immediate live outside of the CmdSN space */
+ 	if (req->opcode & ISCSI_OP_IMMEDIATE)
+ 		return iscsi_task_execute(task);
+ 
+@@ -1253,9 +1381,9 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 	dlen = ntoh24(req->dlength);  /* just part in this PDU */
+ 	tot_data_length = ntohl(req->data_length);  /* all data */
+ 
+-	dprintf("%u %x %d %d %x task %p lens %d %d %d\n", conn->session->tsih,
++	dprintf("%u %x %d %d task %p lens %d %d %d\n", conn->session->tsih,
+ 		req->cdb[0], ntohl(req->data_length),
+-		req->flags & ISCSI_FLAG_CMD_ATTR_MASK, req->itt,
++		req->flags & ISCSI_FLAG_CMD_ATTR_MASK,
+ 		task, ahslen, dlen, tot_data_length);
+ 
+ 	/*
+@@ -1286,11 +1414,11 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 
+ 	if (req->flags & ISCSI_FLAG_CMD_WRITE) {
+ 		task->r2t_count = tot_data_length - dlen;  /* bytes left */
+-		task->unsol_count = !(req->flags & ISCSI_FLAG_CMD_FINAL);
++		task->waiting_unsol = !(req->flags & ISCSI_FLAG_CMD_FINAL);
+ 		task->offset = dlen;
+ 
+ 		dprintf("%d %d %d %d\n", conn->rx_size, task->r2t_count,
+-			task->unsol_count, task->offset);
++			task->waiting_unsol, task->offset);
+ 	}
+ 
+ 	list_add(&task->c_hlist, &conn->session->cmd_list);
+@@ -1413,30 +1541,23 @@ static int iscsi_task_rx_start(struct iscsi_connection *conn)
+ 	return 0;
+ }
+ 
++/*
++ * Send something.  Could be a data-in PDU or a response.  In theory
++ * this can happen while we are still waiting data-out, but in this
++ * implementation, all data-out is received first.
++ */
+ static int iscsi_scsi_cmd_tx_start(struct iscsi_task *task)
+ {
+ 	int err = 0;
+-	struct iscsi_cmd *req = (struct iscsi_cmd *) &task->req;
+ 
+ 	if (task->r2t_count)
+-		err = iscsi_r2t_build(task);
+-	else {
+-		/* Needs to clean up this mess. */
+-
+-		if (req->flags & ISCSI_FLAG_CMD_WRITE)
+-			if (task->result)
+-				err = iscsi_sense_rsp_build(task);
+-			else
+-				err = iscsi_cmd_rsp_build(task);
+-		else {
+-			if (task->result)
+-				err = iscsi_sense_rsp_build(task);
+-			else if (task->len)
+-				err = iscsi_data_rsp_build(task);
+-			else
+-				err = iscsi_cmd_rsp_build(task);
+-		}
+-	}
++		err = iscsi_r2t_build(task);  /* still receiving data-out */
++	else if (task->offset < task->len)
++		err = iscsi_data_rsp_build(task);  /* sending data-in */
++	else if (task->result)
++		err = iscsi_sense_rsp_build(task);  /* final, status nonzero */
++	else
++		err = iscsi_cmd_rsp_build(task);  /* final response */
+ 
+ 	return err;
+ }
+@@ -1504,6 +1625,10 @@ static int iscsi_tm_tx_start(struct iscsi_task *task)
+ 	return 0;
+ }
+ 
++/*
++ * Look at the response we just sent and figure out if there is anything
++ * more to do.
++ */
+ static int iscsi_scsi_cmd_tx_done(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_hdr *hdr = &conn->rsp.bhs;
+@@ -1513,8 +1638,9 @@ static int iscsi_scsi_cmd_tx_done(struct iscsi_connection *conn)
+ 	case ISCSI_OP_R2T:
+ 		break;
+ 	case ISCSI_OP_SCSI_DATA_IN:
+-		if (!(hdr->flags & ISCSI_FLAG_CMD_FINAL)) {
+-			dprintf("more data %x\n", hdr->itt);
++		if (task->offset < task->len || task->result != 0
++		   || task->dir == BIDIRECTIONAL) {
++			dprintf("more data or sense or bidir %x\n", hdr->itt);
+ 			list_add_tail(&task->c_list, &task->conn->tx_clist);
+ 			return 0;
+ 		}
+@@ -1547,6 +1673,10 @@ static int iscsi_task_tx_done(struct iscsi_connection *conn)
+ 	return 0;
+ }
+ 
++/*
++ * Pick a task that wants to transmit and switch the connection to
++ * begin the transmit state machine.
++ */
+ static int iscsi_task_tx_start(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_task *task;
+@@ -1558,10 +1688,9 @@ static int iscsi_task_tx_start(struct iscsi_connection *conn)
+ 	conn_write_pdu(conn);
+ 
+ 	task = list_entry(conn->tx_clist.next, struct iscsi_task, c_list);
+-	dprintf("found a task %" PRIx64 " %u %u %u\n", task->tag,
++	dprintf("found a task %" PRIx64 " %u %u\n", task->tag,
+ 		ntohl(((struct iscsi_cmd *) (&task->req))->data_length),
+-		task->offset,
+-		task->r2t_count);
++		task->offset);
+ 
+ 	list_del(&task->c_list);
+ 
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index bc6ec39..8458187 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -31,12 +31,12 @@
+ #define DIGEST_CRC32C           (1 << 1)
+ 
+ #define sid64(isid, tsih)					\
+-({								\
++(								\
+ 	(uint64_t) isid[0] <<  0 | (uint64_t) isid[1] <<  8 |	\
+ 	(uint64_t) isid[2] << 16 | (uint64_t) isid[3] << 24 |	\
+ 	(uint64_t) isid[4] << 32 | (uint64_t) isid[5] << 40 |	\
+-	(uint64_t) tsih << 48;					\
+-})
++	(uint64_t) tsih << 48					\
++)
+ 
+ #define sid_to_tsih(sid) ((sid) >> 48)
+ 
+@@ -98,20 +98,24 @@ struct iscsi_task {
+ 	struct list_head c_list;
+ 
+ 	unsigned long flags;
++	enum { NONE, WRITE, READ, BIDIRECTIONAL } dir;
++	uint32_t write_len;  /* from command pdu, write and read lengths */
++	uint32_t read_len;
+ 
+ 	uint64_t addr;
+ 	int result;
+-	int len;
++	int len;  /* before execute, data-out len; after, data-in len */
+ 	int rw;
+ 	uint8_t *sense;
+ 	uint8_t senselen;
+ 
+-	int offset;
+-	int data_sn;
++	int offset;  /* progress in data buffer for rx or tx */
++
++	/* data out */
++	int r2t_count;  /* bytes to arrive in unsol data and to solicit */
++	int waiting_unsol;  /* bool, waiting for unsolicited data */
+ 
+-	int r2t_count;
+-	int unsol_count;
+-	int exp_r2tsn;
++	int exp_r2tsn;  /* next R2T or Data SN target should generate */
+ 
+ 	void *c_buffer;
+ 	void *ahs;  /* these point into c_buffer, parts after bhs */
+@@ -141,6 +145,7 @@ struct iscsi_connection {
+ 	uint32_t stat_sn;
+ 	uint32_t exp_stat_sn;
+ 
++	/* these should be session-wide, not per-connection */
+ 	uint32_t cmd_sn;
+ 	uint32_t exp_cmd_sn;
+ 	uint32_t max_cmd_sn;
+diff --git a/usr/osd.c b/usr/osd.c
+index 9417171..6fb9f0a 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -213,6 +213,9 @@ int osd_cmd_perform(int host_no, struct scsi_cmd *cmd, void *key)
+ 	static const int group_lens[8] = { 6, 10, 10, 0, 16, 12, 0, 0 };
+ 	uint8_t *sense, senselen = 0;
+ 
++	dprintf(" indata %p len %u cdb[0] %02x cdblen %d\n", (void *) *uaddr,
++	        datalen, cdb[0], cdblen);
++
+ 	/* check cdb length, maybe this goes up a level; but now
+ 	 * the well-known commands need not verify the cdblen */
+ 	if (cdblen < 6 ||
+@@ -281,7 +284,6 @@ int osd_cmd_perform(int host_no, struct scsi_cmd *cmd, void *key)
+ 		*len = 0;
+ 		break;
+ 	case VARLEN_CDB:
+-		dprintf("cdb[0] %x datalen %u\n", cdb[0], datalen);
+ 		if (cdb[7] != 200-8)
+ 			eprintf("request size %d wrong, should be 200\n",
+ 			        cdb[7]+8);
+@@ -326,6 +328,8 @@ out:
+ 		cmd->senselen = senselen;
+ 	}
+ 
++	dprintf("outdata %p len %u\n", (void *) *uaddr, *len);
++
+ 	return ret;
+ }
+ 
+diff --git a/usr/target.c b/usr/target.c
+index f2b16d7..9c2f4b0 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -459,11 +459,13 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, int scblen, uint8_t rw,
+ 		enabled = cmd_enabled(q, cmd);
+ 
+ 	if (enabled) {
++		/* This must update cmd->uaddr and cmd->len even if there
++		 * is no data-in. */
+ 		result = scsi_cmd_perform(nexus->host_no, cmd, (void *)cmd);
+ 
+ 		cmd_post_perform(q, cmd);
+ 
+-		dprintf("%" PRIx64 " %x %lx %" PRIu64 " %d %d %d senselen %d\n",
++		dprintf("%" PRIx64 " %x %lx %" PRIu64 " len %d res %d %d senselen %d\n",
+ 			tag, scb[0], cmd->uaddr, cmd->offset, cmd->len, result,
+ 			cmd->async, cmd->senselen);
+ 
+

@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] VTL - tgtadm syntax additions (Long)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20-%20tgtadm%20syntax%20additions%20%28Long%29&In-Reply-To=%3C46073BA5.60600%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000485.html">
+   <LINK REL="Next"  HREF="000476.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] VTL - tgtadm syntax additions (Long)</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20-%20tgtadm%20syntax%20additions%20%28Long%29&In-Reply-To=%3C46073BA5.60600%40torque.net%3E"
+       TITLE="[Stgt-devel] VTL - tgtadm syntax additions (Long)">dougg at torque.net
+       </A><BR>
+    <I>Mon Mar 26 05:19:01 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000485.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+        <LI>Next message: <A HREF="000476.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#474">[ date ]</a>
+              <a href="thread.html#474">[ thread ]</a>
+              <a href="subject.html#474">[ subject ]</a>
+              <a href="author.html#474">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Mark Harvey wrote:
+&gt;<i> As the idea of hijacking the 'backing file' for use as a configuration
+</I>&gt;<i> file has not received the most positive resonse, I have put together
+</I>&gt;<i> some ideas for adding to the syntax of tgtadm to allow the
+</I>&gt;<i> configuration and customization of SSC and SMC devices.
+</I>&gt;<i> 
+</I>&gt;<i> I have not attempted to implement any of the syntax, but am posting to
+</I>&gt;<i> the list for comments before putting any effort into coding.
+</I>&gt;<i> 
+</I>&gt;<i> Here goes....
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid=[] --lun=[]
+</I>&gt;<i> --value=[value]
+</I>&gt;<i> 
+</I>&gt;<i> Where value is:
+</I>&gt;<i> 
+</I>&gt;<i> If device_type == 1 (SSC)
+</I>&gt;<i> 
+</I>&gt;<i>  VendorIdent=&quot;SONY&quot;
+</I>&gt;<i>  ProductIdent=&quot;SDX-900V&quot;
+</I>&gt;<i>  ProductRev=&quot;5401&quot;
+</I>&gt;<i>  SerialNumber=&quot;XYZZY_10&quot;
+</I>
+Mark,
+How about adding some place holders for logical unit
+world wide names? For example:
+  eui64=&quot;...&quot;
+  naa2=&quot;....&quot;
+  naa5=&quot;5000334441112720&quot;
+  naa6=&quot;...&quot;
+  scsi_name=&quot;...&quot;
+
+Building a comprehensive device identification VPD page
+(0x83) should be an interesting challenge as it is made
+up of 3 parts:
+  a) logical unit identification (derived from my suggestion
+     in the previous paragraph perhaps)
+  b) target device identification (target HBA related or
+     constructed)
+  c) target port identification (target HBA related)
+
+
+Note that if the stgt infrastructure was being used to
+bridge between two SCSI transports (say iSCSI and SAS)
+then parts b) and c) need to be reconstructed.
+
+Doug Gilbert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000485.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+	<LI>Next message: <A HREF="000476.html">[Stgt-devel] VTL - tgtadm syntax additions (Long)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#474">[ date ]</a>
+              <a href="thread.html#474">[ thread ]</a>
+              <a href="subject.html#474">[ subject ]</a>
+              <a href="author.html#474">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

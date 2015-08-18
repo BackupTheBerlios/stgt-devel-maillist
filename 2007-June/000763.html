@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Move device type to LUN
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Move%20device%20type%20to%20LUN&In-Reply-To=%3C466D6D74.60207%40emulex.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000762.html">
+   <LINK REL="Next"  HREF="000765.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Move device type to LUN</H1>
+    <B>James Smart</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Move%20device%20type%20to%20LUN&In-Reply-To=%3C466D6D74.60207%40emulex.com%3E"
+       TITLE="[Stgt-devel] [PATCH] Move device type to LUN">James.Smart at Emulex.Com
+       </A><BR>
+    <I>Mon Jun 11 17:42:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000762.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+        <LI>Next message: <A HREF="000765.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#763">[ date ]</a>
+              <a href="thread.html#763">[ thread ]</a>
+              <a href="subject.html#763">[ subject ]</a>
+              <a href="author.html#763">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Please move to this route.... a special LUN 0 w/ REPORT_LUNS support.
+Most SCSI discovery algorithms finally use it, and it solves many
+problems. With out it, you re-introducing the old SCSI-2-isms, which
+drove things like devinfo(/blacklist) entries, etc. Bad hacks you'd
+like to avoid.
+
+I also agree with the desire for multiple lun support. Yes, SCSI has
+lots of warts (command queuing sharing a prime one), but multiple luns
+makes a lot of sense in a lot of circumstances.
+
+-- james s
+
+Hannes Reinecke wrote:
+&gt;&gt;<i> Perhaps it is reasonable to create a special device for these
+</I>&gt;&gt;<i> commands.  Up in target.c, you could assign cmd-&gt;dev to target-&gt;dev,
+</I>&gt;&gt;<i> where that is the special device, paralleling the way that
+</I>&gt;&gt;<i> target-&gt;cmd_queue is used.  As a side effect, lots of &quot;if (cmd-&gt;dev)
+</I>&gt;&gt;<i> ... else ILLEGAL_REQUEST&quot; clauses can be removed from device code
+</I>&gt;&gt;<i> too.
+</I>&gt;&gt;<i>
+</I>&gt;<i> Well, I actually thought of creating a proper LUN 0 with type 0xc.
+</I>&gt;<i> This would be automagically created whenever a target is created.
+</I>&gt;<i> And we could hook some management facilities to that one.
+</I>&gt;<i> Maybe even turn it into a proper remote management :-)
+</I>&gt;<i> 
+</I>&gt;<i> But then, for this we definitely need to move the type to the LUN.
+</I>&gt;<i> 
+</I>&gt;<i> Tomo, what are you're thoughts on that one?
+</I>&gt;<i> 
+</I>&gt;<i> Cheers,
+</I>&gt;<i> 
+</I>&gt;<i> Hannes
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000762.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+	<LI>Next message: <A HREF="000765.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#763">[ date ]</a>
+              <a href="thread.html#763">[ thread ]</a>
+              <a href="subject.html#763">[ subject ]</a>
+              <a href="author.html#763">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

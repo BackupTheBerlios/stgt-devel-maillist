@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Make sure the -&gt;next/prev pointers in the list head
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Make%20sure%20the%20-%3Enext/prev%20pointers%20in%20the%20list%20head&In-Reply-To=%3Cmailman.39.1331738482.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001739.html">
+   <LINK REL="Next"  HREF="001740.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Make sure the -&gt;next/prev pointers in the list head</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Make%20sure%20the%20-%3Enext/prev%20pointers%20in%20the%20list%20head&In-Reply-To=%3Cmailman.39.1331738482.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Make sure the -&gt;next/prev pointers in the list head">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Mon Jul  7 03:06:11 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001739.html">[Stgt-devel] :)
+</A></li>
+        <LI>Next message: <A HREF="001740.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1741">[ date ]</a>
+              <a href="thread.html#1741">[ thread ]</a>
+              <a href="subject.html#1741">[ subject ]</a>
+              <a href="author.html#1741">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>are non-NULL
+ before we dereference them.
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/list.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/usr/list.h b/usr/list.h
+index 4d76057..39222ab 100644
+--- a/usr/list.h
++++ b/usr/list.h
+@@ -82,6 +82,9 @@ static inline void __list_del(struct list_head *
+prev, struct list_head * next)
+
+ static inline void list_del(struct list_head *entry)
+ {
++	if ((entry-&gt;prev == NULL) &amp;&amp; (entry-&gt;next == NULL)) {
++		return;
++	}
+ 	__list_del(entry-&gt;prev, entry-&gt;next);
+ 	entry-&gt;next = entry-&gt;prev = NULL;
+ }
+-- 
+1.5.4.3
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001739.html">[Stgt-devel] :)
+</A></li>
+	<LI>Next message: <A HREF="001740.html">[Stgt-devel] [PATCH 1/1] list.h: prevent a SEGV if we try to clear	a list that is already empty
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1741">[ date ]</a>
+              <a href="thread.html#1741">[ thread ]</a>
+              <a href="subject.html#1741">[ subject ]</a>
+              <a href="author.html#1741">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

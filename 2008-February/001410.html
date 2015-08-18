@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] About the command execution in tgt
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20About%20the%20command%20execution%20in%20tgt&In-Reply-To=%3C20080221144627.GA17843%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001409.html">
+   <LINK REL="Next"  HREF="001411.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] About the command execution in tgt</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20About%20the%20command%20execution%20in%20tgt&In-Reply-To=%3C20080221144627.GA17843%40osc.edu%3E"
+       TITLE="[Stgt-devel] About the command execution in tgt">pw at osc.edu
+       </A><BR>
+    <I>Thu Feb 21 15:46:27 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001409.html">[Stgt-devel] About the command execution in tgt
+</A></li>
+        <LI>Next message: <A HREF="001411.html">[Stgt-devel] Connect from MS Initiator 2.x
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1410">[ date ]</a>
+              <a href="thread.html#1410">[ thread ]</a>
+              <a href="subject.html#1410">[ subject ]</a>
+              <a href="author.html#1410">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Thu, 21 Feb 2008 14:04 +0200:
+&gt;<i> I'm going over some of the code, and now I'm trying to understand how is
+</I>&gt;<i> the cmd executed in the backing store. I know how it is done in kernel
+</I>&gt;<i> space (just call scsi-ml), but I'm pretty new to userspace.
+</I>&gt;<i> 
+</I>&gt;<i> I saw that scsi_cmd_perform calls
+</I>&gt;<i> cmd-&gt;dev-&gt;dev_type_template.ops[op].cmd_perform. I didn't find any
+</I>&gt;<i> implementation for cmd_perform in the code. Can anyone give a brief
+</I>&gt;<i> explanation?
+</I>
+Look at struct device_type_template and device_type_operations.  It
+has an array of ops[], one for each of the potential 256 1-byte
+opcodes in the SCSI command.  See the bottom of sbc.c for the list
+of ops that block devices support, for example.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001409.html">[Stgt-devel] About the command execution in tgt
+</A></li>
+	<LI>Next message: <A HREF="001411.html">[Stgt-devel] Connect from MS Initiator 2.x
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1410">[ date ]</a>
+              <a href="thread.html#1410">[ thread ]</a>
+              <a href="subject.html#1410">[ subject ]</a>
+              <a href="author.html#1410">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

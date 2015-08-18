@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/1] device_reserved fastpath
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20device_reserved%20fastpath&In-Reply-To=%3C20071001195626.GA32253%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001059.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/1] device_reserved fastpath</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20device_reserved%20fastpath&In-Reply-To=%3C20071001195626.GA32253%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/1] device_reserved fastpath">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Mon Oct  1 21:56:26 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001059.html">[Stgt-devel] [appologies] Mailing list issues
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1058">[ date ]</a>
+              <a href="thread.html#1058">[ thread ]</a>
+              <a href="subject.html#1058">[ subject ]</a>
+              <a href="author.html#1058">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Maintain a count of logical units with reservations in the target 
+structure.  For each IO we'll save traversing the entire list of 
+logical units for a target to check for a reservation.  Attach more 
+than one logicalunit to a target and this saves that many more 
+lookups per IO.
+
+Signed-off-by: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>
+
+---
+ usr/target.c |    8 ++++++++
+ usr/target.h |    1 +
+ 2 files changed, 9 insertions(+)
+
+Index: b/usr/target.c
+===================================================================
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -331,6 +331,9 @@ int tgt_device_destroy(int tid, uint64_t
+ 		lu-&gt;bst-&gt;bs_close(lu);
+ 	}
+ 
++	if (lu-&gt;reserve_id)
++		(target-&gt;reservations)--;
++
+ 	list_del(&amp;lu-&gt;device_siblings);
+ 	free(lu);
+ 
+@@ -409,6 +412,7 @@ int device_reserve(struct scsi_cmd *cmd)
+ 		return -EBUSY;
+ 	}
+ 
++	(cmd-&gt;c_target-&gt;reservations)++;
+ 	lu-&gt;reserve_id = cmd-&gt;cmd_itn_id;
+ 	return 0;
+ }
+@@ -426,6 +430,7 @@ int device_release(int tid, uint64_t itn
+ 
+ 	if (force || lu-&gt;reserve_id == itn_id) {
+ 		lu-&gt;reserve_id = 0;
++		(target-&gt;reservations)--;
+ 		return 0;
+ 	}
+ 
+@@ -436,6 +441,9 @@ int device_reserved(struct scsi_cmd *cmd
+ {
+ 	struct scsi_lu *lu;
+ 
++	if (cmd-&gt;c_target-&gt;reservations == 0)
++		return 0;
++
+ 	lu = device_lookup(cmd-&gt;c_target, cmd-&gt;dev-&gt;lun);
+ 	if (!lu || !lu-&gt;reserve_id || lu-&gt;reserve_id == cmd-&gt;cmd_itn_id)
+ 		return 0;
+Index: b/usr/target.h
+===================================================================
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -25,6 +25,7 @@ struct target {
+ 
+ 	int tid;
+ 	int lid;
++	uint reservations;
+ 
+ 	enum scsi_target_state target_state;
+ 
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001059.html">[Stgt-devel] [appologies] Mailing list issues
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1058">[ date ]</a>
+              <a href="thread.html#1058">[ thread ]</a>
+              <a href="subject.html#1058">[ subject ]</a>
+              <a href="author.html#1058">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

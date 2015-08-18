@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20a%20trivial%20patch%20to%20speed%20up%20assert%20a%20bit&In-Reply-To=%3C1126577766.5422.162.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000070.html">
+   <LINK REL="Next"  HREF="000072.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20a%20trivial%20patch%20to%20speed%20up%20assert%20a%20bit&In-Reply-To=%3C1126577766.5422.162.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit">mingz at ele.uri.edu
+       </A><BR>
+    <I>Tue Sep 13 04:16:06 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000070.html">Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000072.html">[Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#71">[ date ]</a>
+              <a href="thread.html#71">[ thread ]</a>
+              <a href="subject.html#71">[ subject ]</a>
+              <a href="author.html#71">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 2005-09-13 at 09:45 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>&gt;
+</I>&gt;<i> Subject: Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+</I>&gt;<i> Date: Mon, 12 Sep 2005 18:15:39 -0400
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; add a unlikely for assert.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; I think that we should kill assert and use BUG_ON.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; BUG_ON does not have dump_stack()
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; but WARN_ON is weak in some places.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; First, simply try to use BUG_ON to learn how it works.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; my dumb.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; [<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at amd64</A> iscsitarget-0.4.12]$ grep assert * -rn |wc
+</I>&gt;<i> &gt;      87     230    3922
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; do u have interest to merge the patch if i kill all these assert with
+</I>&gt;<i> &gt; BUG_ON?
+</I>&gt;<i> 
+</I>&gt;<i> To be honest, I don't. There is no chance that IET code is in
+</I>&gt;<i> mainline, so it is no worth doing that.
+</I>&gt;<i> 
+</I>
+:<i>) thx. so i will not do that.
+</I>
+so i guess there will not have much development on IET but on stgt then?
+
+&gt;<i> If you want to speed up assert, just define it as a null function.
+</I>
+yes.
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000070.html">Ang: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000072.html">[Stgt-devel] Re: [Iscsitarget-devel] a trivial patch to speed up assert a bit
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#71">[ date ]</a>
+              <a href="thread.html#71">[ thread ]</a>
+              <a href="subject.html#71">[ subject ]</a>
+              <a href="author.html#71">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

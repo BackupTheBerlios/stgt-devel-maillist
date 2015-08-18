@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Iscsitarget-devel] Re: [Scst-devel] Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BIscsitarget-devel%5D%20Re%3A%20%5BScst-devel%5D%20Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%0A%20stgt%20a%20new%20version%20of%20iscsi%20target%3F&In-Reply-To=%3C4399A2D7.2040402%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000161.html">
+   <LINK REL="Next"  HREF="000171.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Iscsitarget-devel] Re: [Scst-devel] Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BIscsitarget-devel%5D%20Re%3A%20%5BScst-devel%5D%20Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%0A%20stgt%20a%20new%20version%20of%20iscsi%20target%3F&In-Reply-To=%3C4399A2D7.2040402%40vlnb.net%3E"
+       TITLE="[Iscsitarget-devel] Re: [Scst-devel] Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?">vst at vlnb.net
+       </A><BR>
+    <I>Fri Dec  9 16:29:27 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000161.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000171.html">[Iscsitarget-devel] Re: [Scst-devel] Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#167">[ date ]</a>
+              <a href="thread.html#167">[ thread ]</a>
+              <a href="subject.html#167">[ subject ]</a>
+              <a href="author.html#167">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>James Bottomley wrote:
+&gt;<i> On Thu, 2005-12-08 at 21:46 +0300, Vladislav Bolkhovitin wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i>  - Scst has some performance advantages over stgt, at least, on 
+</I>&gt;&gt;<i>hardware targets, because it allows internal handling in SIRQ context as 
+</I>&gt;&gt;<i>well as doesn't need user space program, so it eliminates additional 
+</I>&gt;&gt;<i>context switches (at least 3 per command for WRITEs and 2 per command 
+</I>&gt;&gt;<i>for reads plus switches to user space daemon, probably, 2 per command). 
+</I>&gt;&gt;<i>5 context switches per command looks too much for me, especially 
+</I>&gt;&gt;<i>considering how little work is done on each context. It means ~15000 
+</I>&gt;&gt;<i>CS/sec on regular 200Mb/sec link with 64K block size. Additionally, 
+</I>&gt;&gt;<i>kernel only commands execution allows direct access to page cache, which 
+</I>&gt;&gt;<i>is GREAT performance improvement, because in architecture with user 
+</I>&gt;&gt;<i>space daemon the data should be copied several times between kernel and 
+</I>&gt;&gt;<i>user space. Or, do I miimpss anything?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I do have to say that I consider operation in interrupt context (or even
+</I>&gt;<i> kernel context) to be a disadvantage.  Compared with the response times
+</I>&gt;<i> that most arrays have to SCSI commands, the kernel context switch time
+</I>&gt;<i> isn't that significant.
+</I>&gt;<i> 
+</I>&gt;<i> Additionally, it's perfectly possible for all of this to be done zero
+</I>&gt;<i> copy on the data.  A user space target mmaps the data on its storage
+</I>&gt;<i> device and then does a SG_IO type scatter gather user virtual region
+</I>&gt;<i> pass to the underlying target infrastructure.  We already have this
+</I>&gt;<i> demonstrated in the SG_IO path, someone just needs to come up with the
+</I>&gt;<i> correct implementation for a target path.
+</I>
+I'm not completely understand how it will work. Consider, there are 
+READ/WRITE commands with random data sizes arrive from an initiator. Are 
+you going to do map/unmap for each command individually or alloc data 
+buffers for commands from a premapped area and live with possible its 
+fragmentation? If map/unmap individually, then I should say that those 
+are very expensive operations.
+
+&gt;<i> The great advantage of doing SCSI state machines in user space is that
+</I>&gt;<i> you can prototype anything you want, and user space has much better
+</I>&gt;<i> state machine implementation (and debugging) tools available than the
+</I>&gt;<i> kernel does.
+</I>&gt;<i> 
+</I>&gt;<i> James
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> -------------------------------------------------------
+</I>&gt;<i> This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+</I>&gt;<i> for problems?  Stop!  Download the new AJAX search engine that makes
+</I>&gt;<i> searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+</I>&gt;<i> <A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Scst-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Scst-devel at lists.sourceforge.net</A>
+</I>&gt;<i> <A HREF="https://lists.sourceforge.net/lists/listinfo/scst-devel">https://lists.sourceforge.net/lists/listinfo/scst-devel</A>
+</I>&gt;<i> 
+</I>
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000161.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000171.html">[Iscsitarget-devel] Re: [Scst-devel] Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#167">[ date ]</a>
+              <a href="thread.html#167">[ thread ]</a>
+              <a href="subject.html#167">[ subject ]</a>
+              <a href="author.html#167">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

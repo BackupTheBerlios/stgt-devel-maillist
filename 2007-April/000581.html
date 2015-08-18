@@ -1,0 +1,451 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] VTL patch, take 2
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20patch%2C%20take%202&In-Reply-To=%3C20070420144341W.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000560.html">
+   <LINK REL="Next"  HREF="000584.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] VTL patch, take 2</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20patch%2C%20take%202&In-Reply-To=%3C20070420144341W.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] VTL patch, take 2">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Apr 20 07:43:41 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000560.html">[Stgt-devel] VTL patch, take 2
+</A></li>
+        <LI>Next message: <A HREF="000584.html">[Stgt-devel] VTL patch, take 2
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#581">[ date ]</a>
+              <a href="thread.html#581">[ thread ]</a>
+              <a href="subject.html#581">[ subject ]</a>
+              <a href="author.html#581">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] VTL patch, take 2
+Date: Fri, 13 Apr 2007 07:28:04 +1000
+
+&gt;<i> SSC / SMC patches to SCSI Tgt code.
+</I>&gt;<i> 
+</I>&gt;<i> It is based from git commit :
+</I>&gt;<i>    ================================
+</I>&gt;<i> commit 47e15c234ca298d31b1709db592eef9db4bce0ca
+</I>&gt;<i> Author: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+</I>&gt;<i> Date:   Sat Apr 7 17:31:54 2007 +0900
+</I>&gt;<i> 
+</I>&gt;<i>     some shortcut options missing from tgtadm
+</I>&gt;<i> 
+</I>&gt;<i>     Signed-off-by: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+</I>&gt;<i>    ================================
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Additions from last patch include :
+</I>&gt;<i>  - Updated syntax to add/configure limited set of SMC / SSC parameters
+</I>&gt;<i>  - Start implementing structures for MODE SELECT / MODE SENSE op codes
+</I>&gt;<i>  - Start implementing structures for LOG SELECT / LOG SENSE op codes
+</I>&gt;<i> 
+</I>&gt;<i>  - SMC module includes:
+</I>&gt;<i>    Allocation of MODE pages and initialization to default values.
+</I>&gt;<i>    Ability to change Element Address Assignment
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> This is a work-in-progress and is being posted as an example of
+</I>&gt;<i> where/how I'm attempting to implement a VTL.
+</I>&gt;<i> 
+</I>&gt;<i> I need to update command parameter passing to recommended use of
+</I>&gt;<i> &quot;--params .....&quot;
+</I>
+I've attached a parser patch (taken from Linux kernel). See
+tgt_device_update() about how it works if you are not familiar with
+the Linux parser. I think that it works for you. And if so, I'll merge
+this patch shortly (though I need to change it slightly).
+
+
+&gt;<i> Next step is to implement the SCSI MODE SENSE op code so I can
+</I>&gt;<i> actually test what is being set is correct..
+</I>&gt;<i> 
+</I>&gt;<i> Note: in root of src is a 'tgt-setup' script which will (should)
+</I>&gt;<i> correctly configure the SSC &amp; SMC modules
+</I>
+I think that it would be better to create a new directory for example
+scripts.
+
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 96535f9..2e299dc 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -45,7 +45,7 @@ CFLAGS += -Wall -g -O2 -Wstrict-prototyp
+ 
+ PROGRAMS += tgtd tgtadm
+ TGTD_OBJS += tgtd.o mgmt.o target.o spc.o sbc.o mmc.o osd.o spt.o scsi.o log.o \
+-	driver.o util.o work.o
++	driver.o util.o work.o parser.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/parser.c b/usr/parser.c
+new file mode 100644
+index 0000000..75fe12c
+--- /dev/null
++++ b/usr/parser.c
+@@ -0,0 +1,216 @@
++/*
++ * lib/parser.c - simple parser for mount, etc. options.
++ *
++ * This source code is licensed under the GNU General Public License,
++ * Version 2.  See the file COPYING for more details.
++ */
++
++#include &lt;ctype.h&gt;
++#include &lt;errno.h&gt;
++#include &lt;inttypes.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++
++#include &quot;parser.h&quot;
++
++/**
++ * match_one: - Determines if a string matches a simple pattern
++ * @s: the string to examine for presense of the pattern
++ * @p: the string containing the pattern
++ * @args: array of %MAX_OPT_ARGS &amp;substring_t elements. Used to return match
++ * locations.
++ *
++ * Description: Determines if the pattern @p is present in string @s. Can only
++ * match extremely simple token=arg style patterns. If the pattern is found,
++ * the location(s) of the arguments will be returned in the @args array.
++ */
++static int match_one(char *s, char *p, substring_t args[])
++{
++	char *meta;
++	int argc = 0;
++
++	if (!p)
++		return 1;
++
++	while(1) {
++		int len = -1;
++		meta = strchr(p, '%');
++		if (!meta)
++			return strcmp(p, s) == 0;
++
++		if (strncmp(p, s, meta-p))
++			return 0;
++
++		s += meta - p;
++		p = meta + 1;
++
++		if (isdigit(*p))
++			len = strtoul(p, &amp;p, 10);
++		else if (*p == '%') {
++			if (*s++ != '%')
++				return 0;
++			p++;
++			continue;
++		}
++
++		if (argc &gt;= MAX_OPT_ARGS)
++			return 0;
++
++		args[argc].from = s;
++		switch (*p++) {
++		case 's':
++			if (strlen(s) == 0)
++				return 0;
++			else if (len == -1 || len &gt; strlen(s))
++				len = strlen(s);
++			args[argc].to = s + len;
++			break;
++		case 'd':
++			strtol(s, &amp;args[argc].to, 0);
++			goto num;
++		case 'u':
++			strtoul(s, &amp;args[argc].to, 0);
++			goto num;
++		case 'o':
++			strtoul(s, &amp;args[argc].to, 8);
++			goto num;
++		case 'x':
++			strtoul(s, &amp;args[argc].to, 16);
++		num:
++			if (args[argc].to == args[argc].from)
++				return 0;
++			break;
++		default:
++			return 0;
++		}
++		s = args[argc].to;
++		argc++;
++	}
++}
++
++/**
++ * match_token: - Find a token (and optional args) in a string
++ * @s: the string to examine for token/argument pairs
++ * @table: match_table_t describing the set of allowed option tokens and the
++ * arguments that may be associated with them. Must be terminated with a
++ * &amp;struct match_token whose pattern is set to the NULL pointer.
++ * @args: array of %MAX_OPT_ARGS &amp;substring_t elements. Used to return match
++ * locations.
++ *
++ * Description: Detects which if any of a set of token strings has been passed
++ * to it. Tokens can include up to MAX_OPT_ARGS instances of basic c-style
++ * format identifiers which will be taken into account when matching the
++ * tokens, and whose locations will be returned in the @args array.
++ */
++int match_token(char *s, match_table_t table, substring_t args[])
++{
++	struct match_token *p;
++
++	for (p = table; !match_one(s, p-&gt;pattern, args) ; p++)
++		;
++
++	return p-&gt;token;
++}
++
++/**
++ * match_number: scan a number in the given base from a substring_t
++ * @s: substring to be scanned
++ * @result: resulting integer on success
++ * @base: base to use when converting string
++ *
++ * Description: Given a &amp;substring_t and a base, attempts to parse the substring
++ * as a number in that base. On success, sets @result to the integer represented
++ * by the string and returns 0. Returns either -ENOMEM or -EINVAL on failure.
++ */
++static int match_number(substring_t *s, int *result, int base)
++{
++	char *endp;
++	char *buf;
++	int ret;
++
++	buf = malloc(s-&gt;to - s-&gt;from + 1);
++	if (!buf)
++		return -ENOMEM;
++	memcpy(buf, s-&gt;from, s-&gt;to - s-&gt;from);
++	buf[s-&gt;to - s-&gt;from] = '\0';
++	*result = strtol(buf, &amp;endp, base);
++	ret = 0;
++	if (endp == buf)
++		ret = -EINVAL;
++	free(buf);
++	return ret;
++}
++
++/**
++ * match_int: - scan a decimal representation of an integer from a substring_t
++ * @s: substring_t to be scanned
++ * @result: resulting integer on success
++ *
++ * Description: Attempts to parse the &amp;substring_t @s as a decimal integer. On
++ * success, sets @result to the integer represented by the string and returns 0.
++ * Returns either -ENOMEM or -EINVAL on failure.
++ */
++int match_int(substring_t *s, int *result)
++{
++	return match_number(s, result, 0);
++}
++
++/**
++ * match_octal: - scan an octal representation of an integer from a substring_t
++ * @s: substring_t to be scanned
++ * @result: resulting integer on success
++ *
++ * Description: Attempts to parse the &amp;substring_t @s as an octal integer. On
++ * success, sets @result to the integer represented by the string and returns
++ * 0. Returns either -ENOMEM or -EINVAL on failure.
++ */
++int match_octal(substring_t *s, int *result)
++{
++	return match_number(s, result, 8);
++}
++
++/**
++ * match_hex: - scan a hex representation of an integer from a substring_t
++ * @s: substring_t to be scanned
++ * @result: resulting integer on success
++ *
++ * Description: Attempts to parse the &amp;substring_t @s as a hexadecimal integer.
++ * On success, sets @result to the integer represented by the string and
++ * returns 0. Returns either -ENOMEM or -EINVAL on failure.
++ */
++int match_hex(substring_t *s, int *result)
++{
++	return match_number(s, result, 16);
++}
++
++/**
++ * match_strcpy: - copies the characters from a substring_t to a string
++ * @to: string to copy characters to.
++ * @s: &amp;substring_t to copy
++ *
++ * Description: Copies the set of characters represented by the given
++ * &amp;substring_t @s to the c-style string @to. Caller guarantees that @to is
++ * large enough to hold the characters of @s.
++ */
++void match_strcpy(char *to, substring_t *s)
++{
++	memcpy(to, s-&gt;from, s-&gt;to - s-&gt;from);
++	to[s-&gt;to - s-&gt;from] = '\0';
++}
++
++/**
++ * match_strdup: - allocate a new string with the contents of a substring_t
++ * @s: &amp;substring_t to copy
++ *
++ * Description: Allocates and returns a string filled with the contents of
++ * the &amp;substring_t @s. The caller is responsible for freeing the returned
++ * string with kfree().
++ */
++char *match_strdup(substring_t *s)
++{
++	char *p = malloc(s-&gt;to - s-&gt;from + 1);
++	if (p)
++		match_strcpy(p, s);
++	return p;
++}
+diff --git a/usr/parser.h b/usr/parser.h
+new file mode 100644
+index 0000000..fa33328
+--- /dev/null
++++ b/usr/parser.h
+@@ -0,0 +1,33 @@
++/*
++ * linux/include/linux/parser.h
++ *
++ * Header for lib/parser.c
++ * Intended use of these functions is parsing filesystem argument lists,
++ * but could potentially be used anywhere else that simple option=arg
++ * parsing is required.
++ */
++
++
++/* associates an integer enumerator with a pattern string. */
++struct match_token {
++	int token;
++	char *pattern;
++};
++
++typedef struct match_token match_table_t[];
++
++/* Maximum number of arguments that match_token will find in a pattern */
++enum {MAX_OPT_ARGS = 3};
++
++/* Describe the location within a string of a substring */
++typedef struct {
++	char *from;
++	char *to;
++} substring_t;
++
++int match_token(char *, match_table_t table, substring_t args[]);
++int match_int(substring_t *, int *result);
++int match_octal(substring_t *, int *result);
++int match_hex(substring_t *, int *result);
++void match_strcpy(char *, substring_t *);
++char *match_strdup(substring_t *);
+diff --git a/usr/target.c b/usr/target.c
+index 1a9fe68..1510078 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -29,6 +29,7 @@ #include &lt;unistd.h&gt;
+ #include &lt;sys/socket.h&gt;
+ 
+ #include &quot;list.h&quot;
++#include &quot;parser.h&quot;
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;driver.h&quot;
+@@ -338,9 +339,20 @@ int device_reserved(struct scsi_cmd *cmd
+ 	return -EBUSY;
+ }
+ 
+-int tgt_device_update(int tid, uint64_t dev_id, char *name)
++enum {
++	Opt_scsiid, Opt_scsisn, Opt_err,
++};
++
++static match_table_t tokens = {
++	{Opt_scsiid, &quot;Scsi_id=%s&quot;},
++	{Opt_scsisn, &quot;Scsi_sn=%s&quot;},
++	{Opt_err, NULL},
++};
++
++int tgt_device_update(int tid, uint64_t dev_id, char *params)
+ {
+ 	int err = 0;
++	char *p;
+ 	struct target *target;
+ 	struct scsi_lu *lu;
+ 
+@@ -354,12 +366,24 @@ int tgt_device_update(int tid, uint64_t
+ 		return TGTADM_NO_LUN;
+ 	}
+ 
+-	if (!strncmp(name, &quot;scsi_id=&quot;, 8))
+-		memcpy(lu-&gt;scsi_id, name + 8, sizeof(lu-&gt;scsi_id) - 1);
+-	else if (!strncmp(name, &quot;scsi_sn=&quot;, 8))
+-		memcpy(lu-&gt;scsi_sn, name + 8, sizeof(lu-&gt;scsi_sn) - 1);
+-	else
+-		err = TGTADM_INVALID_REQUEST;
++	while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
++		substring_t args[MAX_OPT_ARGS];
++		int token;
++		if (!*p)
++			continue;
++		token = match_token(p, tokens, args);
++
++		switch (token) {
++		case Opt_scsiid:
++			match_strcpy(lu-&gt;scsi_id, &amp;args[0]);
++			break;
++		case Opt_scsisn:
++			match_strcpy(lu-&gt;scsi_sn, &amp;args[0]);
++			break;
++		default:
++			err = TGTADM_INVALID_REQUEST;
++		}
++	}
+ 
+ 	return err;
+ }
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000560.html">[Stgt-devel] VTL patch, take 2
+</A></li>
+	<LI>Next message: <A HREF="000584.html">[Stgt-devel] VTL patch, take 2
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#581">[ date ]</a>
+              <a href="thread.html#581">[ thread ]</a>
+              <a href="subject.html#581">[ subject ]</a>
+              <a href="author.html#581">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

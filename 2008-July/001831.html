@@ -1,0 +1,325 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/2] fcoe: add lu reset support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20fcoe%3A%20add%20lu%20reset%20support&In-Reply-To=%3C1216801490-9337-3-git-send-email-michaelc%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001838.html">
+   <LINK REL="Next"  HREF="001835.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/2] fcoe: add lu reset support</H1>
+    <B>michaelc at cs.wisc.edu</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20fcoe%3A%20add%20lu%20reset%20support&In-Reply-To=%3C1216801490-9337-3-git-send-email-michaelc%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/2] fcoe: add lu reset support">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Wed Jul 23 10:24:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001838.html">[Stgt-devel] RFC: fcoe bug fixes
+</A></li>
+        <LI>Next message: <A HREF="001835.html">[Stgt-devel] Student caauses stir with Hittler costume
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1831">[ date ]</a>
+              <a href="thread.html#1831">[ thread ]</a>
+              <a href="subject.html#1831">[ subject ]</a>
+              <a href="author.html#1831">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+
+This adds lun reset support. It also only supports one
+target for now.
+
+Signed-off-by: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+---
+ usr/fcoe/fcoe_if.c         |    8 ++++
+ usr/fcoe/openfc_scst.c     |   36 +++++++++++++++++++
+ usr/fcoe/openfc_scst_pkt.h |    2 +
+ usr/fcoe/openfc_target.c   |   81 +++++++++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 126 insertions(+), 1 deletions(-)
+
+diff --git a/usr/fcoe/fcoe_if.c b/usr/fcoe/fcoe_if.c
+index 9470f70..28d8140 100644
+--- a/usr/fcoe/fcoe_if.c
++++ b/usr/fcoe/fcoe_if.c
+@@ -34,6 +34,7 @@
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;driver.h&quot;
++#include &quot;target.h&quot;
+ 
+ #include &quot;fc_types.h&quot;
+ #include &quot;fc_frame.h&quot;
+@@ -46,6 +47,9 @@
+ #include &quot;fcoe_def.h&quot;
+ 
+ extern int fcoe_cmd_done(uint64_t nid, int result, struct scsi_cmd *scmd);
++extern int fcoe_tmf_done(struct mgmt_req *mreq);
++extern int fcoe_target_create(struct target *t);
++extern void fcoe_target_destroy(int tid);
+ 
+ static struct openfc_port_operations fcoe_port_ops = {
+ 	.send = fcoe_xmit,
+@@ -214,8 +218,12 @@ static int fcoe_init(int index, char *args)
+ static struct tgt_driver fcoe = {
+ 	.name			= &quot;fcoe&quot;,
+ 	.use_kernel		= 0,
++	.target_create		= fcoe_target_create,
++	.target_destroy		= fcoe_target_destroy,
+ 	.init			= fcoe_init,
++
+ 	.cmd_end_notify		= fcoe_cmd_done,
++	.mgmt_end_notify	= fcoe_tmf_done,
+ 	.default_bst		= &quot;rdwr&quot;,
+ };
+ 
+diff --git a/usr/fcoe/openfc_scst.c b/usr/fcoe/openfc_scst.c
+index f24fc28..4e7fa56 100644
+--- a/usr/fcoe/openfc_scst.c
++++ b/usr/fcoe/openfc_scst.c
+@@ -137,6 +137,7 @@ void openfct_rcv_cmd(struct fc_seq *sp, struct fc_frame *fp, void *arg)
+ 		pkt-&gt;lun = net64_get((net64_t *) &amp; fcmd-&gt;fc_lun);
+ 		memcpy(pkt-&gt;lunp, fcmd-&gt;fc_lun, 8);
+ 		memcpy(pkt-&gt;cdb, fcmd-&gt;fc_cdb, 16);
++
+ 		fc_seq_set_recv(sp, openfct_rcv_data, (void *)pkt);
+ 		openfct_process_scsi_cmd(hba, pkt, fcmd);
+ 		break;
+@@ -151,11 +152,15 @@ void openfc_scst_completion(void *arg)
+ 	struct fc_scsi_pkt *pkt  = arg;
+ 	struct scsi_cmd *scmd = &amp;pkt-&gt;scmd;
+ 
++	eprintf(&quot;pkt-&gt;cnt %u\n&quot;, pkt-&gt;cnt);
++
+ 	if (!(--pkt-&gt;cnt)) {
+ 		if (pkt-&gt;seq_ptr)
+ 			fc_seq_exch_complete(pkt-&gt;seq_ptr);
+ 		pkt-&gt;seq_ptr = NULL;
+ 
++		if (!(pkt-&gt;flags &amp; OPENFC_TMF_PKT))
++			target_cmd_done(scmd);
+ 		if (scsi_get_in_buffer(scmd))
+ 			free(scsi_get_in_buffer(scmd));
+ 		if (scsi_get_out_buffer(scmd))
+@@ -164,6 +169,37 @@ void openfc_scst_completion(void *arg)
+ 	}
+ }
+ 
++void openfct_scsi_send_tmf_rsp(struct fc_scsi_pkt *pkt, uint8_t rsp)
++{
++	struct fc_seq  *sp = pkt-&gt;seq_ptr;
++	struct fc_frame *fp;
++	struct fcp_resp *fc_rp;
++	struct fcp_resp_ext *fc_exrp;
++	struct fcp_resp_rsp_info *fc_rsp_info;
++	unsigned int len;
++
++	len = sizeof(*fc_rp) + sizeof(*fc_exrp) + sizeof(*fc_rsp_info);
++
++	fp = fc_frame_alloc(pkt-&gt;openfcp-&gt;fcs_port, len);
++	if (!fp)
++		return;
++	pkt-&gt;cnt = 1;
++	fp-&gt;fr_destructor = openfc_scst_completion;
++	fp-&gt;fr_arg = pkt;
++	fc_rp = fc_frame_payload_get(fp, sizeof(*fc_rp));
++	memset(fc_rp, 0, len);
++	sp = fc_seq_start_next(sp);
++
++	fc_rp-&gt;fr_flags = SS_RESPONSE_INFO_LEN_VALID;
++	fc_exrp = (struct fcp_resp_ext *) (fc_rp + 1);
++	net32_put(&amp;fc_exrp-&gt;fr_rsp_len, sizeof(*fc_rsp_info));
++
++	fc_rsp_info = (struct fcp_resp_rsp_info *) (fc_exrp + 1);
++	fc_rsp_info-&gt;rsp_code = rsp;
++
++	fc_seq_send_last(sp, fp, FC_RCTL_DD_CMD_STATUS, FC_TYPE_FCP);
++}
++
+ void openfct_scsi_send_status(struct fc_scsi_pkt *pkt)
+ {
+ 	struct fc_seq  *sp = pkt-&gt;seq_ptr;
+diff --git a/usr/fcoe/openfc_scst_pkt.h b/usr/fcoe/openfc_scst_pkt.h
+index d7089d0..a63cfd6 100644
+--- a/usr/fcoe/openfc_scst_pkt.h
++++ b/usr/fcoe/openfc_scst_pkt.h
+@@ -67,6 +67,7 @@ struct openfct_tgt;
+ #define OPENFC_CMD_WAIT_FOR_DATA 5
+ 
+ #define OPENFC_SENSE_VALID 1
++#define OPENFC_TMF_PKT 2
+ /*
+  * Status entry SCSI status bit definitions.
+  */
+@@ -89,6 +90,7 @@ struct openfct_sess {
+ 
+ struct openfct_tgt {
+ 	u_int32_t	handle;
++	int		tid;
+ 	void	       *ha;
+ 	int		status;
+ 	/* Target's flags, serialized by ha-&gt;hardware_lock */
+diff --git a/usr/fcoe/openfc_target.c b/usr/fcoe/openfc_target.c
+index dcecefe..60d3e27 100644
+--- a/usr/fcoe/openfc_target.c
++++ b/usr/fcoe/openfc_target.c
+@@ -13,6 +13,7 @@
+ #include &quot;util.h&quot;
+ #include &quot;tgtd.h&quot;
+ #include &quot;scsi.h&quot;
++#include &quot;target.h&quot;
+ 
+ #include &quot;fc_types.h&quot;
+ #include &quot;fc_port.h&quot;
+@@ -30,6 +31,9 @@ extern void openfct_rcv_cmd(struct fc_seq *sp, struct fc_frame *fp, void *arg);
+ extern void openfct_send_xfer_rdy(struct fc_scsi_pkt *);
+ extern void openfct_scsi_send_status(struct fc_scsi_pkt *pkt);
+ extern int openfct_scsi_send_data_status(struct fc_scsi_pkt *pkt);
++extern void openfct_scsi_send_tmf_rsp(struct fc_scsi_pkt *pkt, uint8_t rsp);
++
++static struct target *fc_target;
+ 
+ static struct openfct_sess *openfct_find_sess_by_fcid(struct openfct_tgt *tgt,
+ 						      u_int32_t fcid)
+@@ -61,7 +65,7 @@ int fcoe_cmd_done(uint64_t nid, int result, struct scsi_cmd *scmd)
+ 		pkt-&gt;residual = scsi_get_in_resid(scmd);
+ 
+ 		if (scsi_get_result(scmd) != SAM_STAT_GOOD) {
+-			pkt-&gt;flags = OPENFC_SENSE_VALID;
++			pkt-&gt;flags |= OPENFC_SENSE_VALID;
+ 			pkt-&gt;rq_result |= SS_SENSE_LEN_VALID;
+ 			data_sense_flag = 1;
+ 		}
+@@ -97,6 +101,54 @@ static int cmd_attr(struct fcp_cmnd *fcmd)
+ 	return attr;
+ }
+ 
++int fcoe_tmf_done(struct mgmt_req *mreq)
++{
++	struct fc_scsi_pkt *pkt;
++	uint8_t rsp;
++
++	dprintf(&quot;tmf result %d\n&quot;, mreq-&gt;result);
++
++	pkt = (struct fc_scsi_pkt *) (unsigned long) mreq-&gt;mid;
++	switch (mreq-&gt;result) {
++	case 0:
++		rsp = FCP_TMF_CMPL;
++		break;
++	default:
++		/* we do not seem to get enough info to return something else */
++		rsp = FCP_TMF_FAILED;
++	}
++
++	openfct_scsi_send_tmf_rsp(pkt, rsp);
++	return 0;
++}
++
++static int openfct_process_tmf(struct fc_scsi_pkt *fsp, struct fcp_cmnd *fcmd)
++{
++	int fn = 0, err = 0;
++
++	dprintf(&quot;tmf cmd %0x\n&quot;, fcmd-&gt;fc_tm_flags);
++
++	switch (fcmd-&gt;fc_tm_flags) {
++	case FCP_TMF_LUN_RESET:
++		fn = LOGICAL_UNIT_RESET;
++		break;
++	default:
++		err = -ENOSYS;
++		eprintf(&quot;Unsupported task management function %d.\n&quot;,
++			fcmd-&gt;fc_tm_flags);
++	}
++
++	if (!err) {
++		fsp-&gt;flags |= OPENFC_TMF_PKT;
++		/* tid is busted - need a target create */
++		target_mgmt_request(fc_target-&gt;tid, fsp-&gt;fcid,
++				    (unsigned long ) fsp, fn,
++				    fcmd-&gt;fc_lun, fsp-&gt;exid, 0);
++	}
++	return err;
++
++}
++
+ int openfct_process_scsi_cmd(struct openfchba_softc *openfcp,
+ 			     struct fc_scsi_pkt *fsp, struct fcp_cmnd *fcmd)
+ {
+@@ -126,6 +178,10 @@ int openfct_process_scsi_cmd(struct openfchba_softc *openfcp,
+ 	}
+ 
+ 	fsp-&gt;tgt = tgt;
++
++	if (fcmd-&gt;fc_tm_flags)
++		return openfct_process_tmf(fsp, fcmd);
++
+ 	memcpy(scmd-&gt;lun, fsp-&gt;lunp, 8);
+ 	scmd-&gt;scb = fsp-&gt;cdb;
+ 	scmd-&gt;tag = fsp-&gt;exid;
+@@ -302,6 +358,29 @@ static struct fcs_create_args openfct_fcs_args = {
+ 
+ };
+ 
++/*
++ * We currently only support one target
++ */
++int fcoe_target_create(struct target *t)
++{
++	if (fc_target) {
++		eprintf(&quot;Only one fcoe target supported. Currently fcoe tid &quot;
++			&quot;%u is running\n&quot;, fc_target-&gt;tid);
++		return -EINVAL;
++	}
++	fc_target = t;
++	return 0;
++}
++
++void fcoe_target_destroy(int tid)
++{
++	if (!fc_target)
++		return;
++	if (fc_target-&gt;tid != tid)
++		return;
++	fc_target = NULL;
++}
++
+ /**
+  * openfct_attach: Called by bus code for each adapter
+  */
+-- 
+1.5.5.1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001838.html">[Stgt-devel] RFC: fcoe bug fixes
+</A></li>
+	<LI>Next message: <A HREF="001835.html">[Stgt-devel] Student caauses stir with Hittler costume
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1831">[ date ]</a>
+              <a href="thread.html#1831">[ thread ]</a>
+              <a href="subject.html#1831">[ subject ]</a>
+              <a href="author.html#1831">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

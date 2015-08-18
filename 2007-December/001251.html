@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi tcp: optimize rx
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20tcp%3A%20optimize%20rx&In-Reply-To=%3C20071229190158.GA17878%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001250.html">
+   <LINK REL="Next"  HREF="001252.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi tcp: optimize rx</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20tcp%3A%20optimize%20rx&In-Reply-To=%3C20071229190158.GA17878%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi tcp: optimize rx">pw at osc.edu
+       </A><BR>
+    <I>Sat Dec 29 20:01:58 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001250.html">[Stgt-devel] FCOE woes
+</A></li>
+        <LI>Next message: <A HREF="001252.html">[Stgt-devel] [PATCH] iscsi tcp: optimize rx
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1251">[ date ]</a>
+              <a href="thread.html#1251">[ thread ]</a>
+              <a href="subject.html#1251">[ subject ]</a>
+              <a href="author.html#1251">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Avoid another trip through the event loop in the case of an
+RX with no AHS, by jumping up to the top of the state machine
+directly.  This saves about 500 ns per command on my hardware.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsid.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 8872818..bbab32d 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1845,9 +1845,11 @@ again:
+ 		if (conn-&gt;rx_size) {
+ 			conn-&gt;rx_buffer = conn-&gt;req.ahs;
+ 			conn-&gt;rx_iostate = IOSTATE_RX_AHS;
+-		} else
++		} else {
+ 			conn-&gt;rx_iostate = hdigest ?
+ 				IOSTATE_RX_INIT_HDIGEST : IOSTATE_RX_INIT_DATA;
++			goto again;
++		}
+ 
+ 		/*
+ 		 * if the datasize is zero, we must go to
+-- 
+1.5.3.6
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001250.html">[Stgt-devel] FCOE woes
+</A></li>
+	<LI>Next message: <A HREF="001252.html">[Stgt-devel] [PATCH] iscsi tcp: optimize rx
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1251">[ date ]</a>
+              <a href="thread.html#1251">[ thread ]</a>
+              <a href="subject.html#1251">[ subject ]</a>
+              <a href="author.html#1251">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

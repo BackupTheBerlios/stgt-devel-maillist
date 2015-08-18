@@ -1,0 +1,241 @@
+From fujita.tomonori at lab.ntt.co.jp  Mon Mar  6 02:23:30 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 06 Mar 2006 10:23:30 +0900
+Subject: [Stgt-devel] scsi-target git tree
+Message-ID: <20060306102330B.tomof@acm.org>
+
+James created the scsi-target git tree (James, thanks a lot):
+
+master.kernel.org:/pub/scm/linux/kernel/git/jejb/scsi-target-2.6.git
+
+It is based on the third submission and we've made some changes after
+that. We'll send paches to scsi-ml for synchronizing it with the
+latest in the subversion tree. Then we will work on the git tree
+directly about in-kernel tgt code.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Wed Mar 15 05:34:49 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Wed, 15 Mar 2006 13:34:49 +0900
+Subject: [Stgt-devel] IBM vscsi target driver
+Message-ID: <20060315133449X.fujita.tomonori@lab.ntt.co.jp>
+
+Hi James and Linda,
+
+I've added TMF support to tgt and the ibmvstgt driver (though it has
+not tested heavily yet) so that the driver provides the features that
+the original ibmvscsis does and it is ready for wider exposure, I
+think.
+
+I'm thinking about submitting ibmvstgt after the patchset that I've
+submitted to scsi-ml is merged to the scsi-target tree.
+
+Here's a couple of questions before that:
+
+a) naming ?
+
+I have no preference in the driver name as long as it meets the
+criteria for the mainline inclusion. Are IBM guys happy about
+'ibmvstgt'? or any suggestions?
+
+b) IB's srp.h
+
+IB people created include/scsi/srp.h. Does the driver need to use it
+instead of the old srp header file (drivers/scsi/ibmvscsi/srp.h) to
+go into the scsi-target tree?
+
+
+From johan at capvert.se  Wed Mar 15 06:42:39 2006
+From: johan at capvert.se (johan at capvert.se)
+Date: Wed, 15 Mar 2006 06:42:39 +0100
+Subject: Ang: [Stgt-devel] IBM vscsi target driver
+Message-ID: <OF11F75518.609A2565-ONC1257132.0020CA6E@capvert.ins>
+
+                                               Hi!  
+
+Fujita, I don?t think you should include IBM in the name. What?s wrong 
+with "vstgt" ?
+
+               Best regards from/Med v?nliga h?lsningar fr?n
+
+                                 Johan Kragsterman
+
+                               http://www.capvert.se
+
+
+
+
+FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+S?nt av: stgt-devel-admin at berlios.de
+2006-03-15 05:34
+
+ 
+        Till:   James.Bottomley at SteelEye.com, lxiep at us.ibm.com
+        Kopia:  stgt-devel at lists.berlios.de
+        ?rende: [Stgt-devel] IBM vscsi target driver
+
+
+Hi James and Linda,
+
+I've added TMF support to tgt and the ibmvstgt driver (though it has
+not tested heavily yet) so that the driver provides the features that
+the original ibmvscsis does and it is ready for wider exposure, I
+think.
+
+I'm thinking about submitting ibmvstgt after the patchset that I've
+submitted to scsi-ml is merged to the scsi-target tree.
+
+Here's a couple of questions before that:
+
+a) naming ?
+
+I have no preference in the driver name as long as it meets the
+criteria for the mainline inclusion. Are IBM guys happy about
+'ibmvstgt'? or any suggestions?
+
+b) IB's srp.h
+
+IB people created include/scsi/srp.h. Does the driver need to use it
+instead of the old srp header file (drivers/scsi/ibmvscsi/srp.h) to
+go into the scsi-target tree?
+_______________________________________________
+Stgt-devel mailing list
+Stgt-devel at lists.berlios.de
+http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20060315/cd2a483c/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Wed Mar 15 07:18:10 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Wed, 15 Mar 2006 15:18:10 +0900
+Subject: Ang: [Stgt-devel] IBM vscsi target driver
+In-Reply-To: <OF11F75518.609A2565-ONC1257132.0020CA6E@capvert.ins>
+References: <OF11F75518.609A2565-ONC1257132.0020CA6E@capvert.ins>
+Message-ID: <20060315151810X.fujita.tomonori@lab.ntt.co.jp>
+
+From: johan at capvert.se
+Subject: Ang: [Stgt-devel] IBM vscsi target driver
+Date: Wed, 15 Mar 2006 06:42:39 +0100
+
+First, please stop using stgt-devel-admin at berlios.de.
+
+> Fujita, I don?t think you should include IBM in the name. What?s wrong 
+> with "vstgt" ?
+
+I'm not sure. The driver (ibmvstgt) works only for IBM pSeries.
+
+
+tgt provides common features for all SCSI target drivers (tgt has been
+already merged into the scsi-target git tree and the -mm tree).
+
+ibmvstgt is a driver for IBM pSeries's virtual machine
+environments. It works with tgt.
+
+
+From hch at infradead.org  Wed Mar 15 09:35:29 2006
+From: hch at infradead.org (Christoph Hellwig)
+Date: Wed, 15 Mar 2006 08:35:29 +0000
+Subject: Ang: [Stgt-devel] IBM vscsi target driver
+In-Reply-To: <OF11F75518.609A2565-ONC1257132.0020CA6E@capvert.ins>
+References: <OF11F75518.609A2565-ONC1257132.0020CA6E@capvert.ins>
+Message-ID: <20060315083529.GB4284@infradead.org>
+
+On Wed, Mar 15, 2006 at 06:42:39AM +0100, johan at capvert.se wrote:
+>                                                Hi!  
+> 
+> Fujita, I don?t think you should include IBM in the name. What?s wrong 
+> with "vstgt" ?
+
+Nothing per see, but there's a fair chance we'll get various different
+virtual scsi targets..  The initiator side also has the ibm in the
+name.
+
+
+
+From johan at capvert.se  Wed Mar 15 12:28:12 2006
+From: johan at capvert.se (johan at capvert.se)
+Date: Wed, 15 Mar 2006 12:28:12 +0100
+Subject: Ang: Re: Ang: [Stgt-devel] IBM vscsi target driver
+Message-ID: <OF8498087C.0C3D3A46-ONC1257132.003EC74D@capvert.ins>
+
+                                               Hi!
+
+
+Shure, but if you want to use ibm in the name, I would be worried about
+copyright issues. You better make shure ibm is giving their support on
+this, otherwise they could send their laywers, and that is something we
+want to avoid, isn?t it?
+
+               Best regards from/Med v?nliga h?lsningar fr?n
+
+                                 Johan Kragsterman
+
+                               http://www.capvert.se
+
+
+                                                                                                                    
+                    Christoph                                                                                       
+                    Hellwig              Till:   johan at capvert.se                                                   
+                    <hch at infradead       Kopia:  FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>,                   
+                    .org>                 James.Bottomley at SteelEye.com, lxiep at us.ibm.com,                           
+                                          stgt-devel at lists.berlios.de, stgt-devel-admin at berlios.de                  
+                    2006-03-15           ?rende: Re: Ang: [Stgt-devel] IBM vscsi target driver                      
+                    09:35                                                                                           
+                                                                                                                    
+                                                                                                                    
+
+
+
+
+On Wed, Mar 15, 2006 at 06:42:39AM +0100, johan at capvert.se wrote:
+>                                                Hi!
+>
+> Fujita, I don?t think you should include IBM in the name. What?s wrong
+> with "vstgt" ?
+
+Nothing per see, but there's a fair chance we'll get various different
+virtual scsi targets..  The initiator side also has the ibm in the
+name.
+
+
+
+
+
+
+
+From tomof at acm.org  Thu Mar 16 01:26:54 2006
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Thu, 16 Mar 2006 09:26:54 +0900
+Subject: [Stgt-devel] scsi-target git tree
+In-Reply-To: <20060306102330B.tomof@acm.org>
+References: <20060306102330B.tomof@acm.org>
+Message-ID: <20060316092654N.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: [Stgt-devel] scsi-target git tree
+Date: Mon, 06 Mar 2006 10:23:30 +0900
+
+> James created the scsi-target git tree (James, thanks a lot):
+> 
+> master.kernel.org:/pub/scm/linux/kernel/git/jejb/scsi-target-2.6.git
+> 
+> It is based on the third submission and we've made some changes after
+> that. We'll send paches to scsi-ml for synchronizing it with the
+> latest in the subversion tree. Then we will work on the git tree
+> directly about in-kernel tgt code.
+
+We have sent some patches to scsi-ml:
+
+http://marc.theaimsgroup.com/?l=linux-scsi&m=114199144502121&w=2
+http://marc.theaimsgroup.com/?l=linux-scsi&m=114246767604419&w=2
+http://marc.theaimsgroup.com/?l=linux-scsi&m=114246767626915&w=2
+http://marc.theaimsgroup.com/?l=linux-scsi&m=114246767700080&w=2
+
+
+you can get the latest tgt code by applying all the patches to the
+scsi-target git tree.
+
+

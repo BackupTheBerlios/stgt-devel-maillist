@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C5eb093080708120312i1287f1f7p2fcaed789bf70cc7%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000937.html">
+   <LINK REL="Next"  HREF="000940.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Alexander Nezhinsky</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C5eb093080708120312i1287f1f7p2fcaed789bf70cc7%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">nezhinsky at gmail.com
+       </A><BR>
+    <I>Sun Aug 12 12:12:32 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000937.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000940.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#938">[ date ]</a>
+              <a href="thread.html#938">[ thread ]</a>
+              <a href="subject.html#938">[ subject ]</a>
+              <a href="author.html#938">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> &gt; and tells us to ignore MaxRecvDataSegmentLength.  But it doesn't say
+</I>&gt;<i> &gt; how we should figure out the limit for data-type PDUs, i.e. for RDMA
+</I>&gt;<i> &gt; transfers, or even if there should be one.  The phrase &quot;control
+</I>&gt;<i> &gt; PDUs&quot; means non-RDMA transfers.
+</I>&gt;<i>
+</I>&gt;<i> There are no &quot;data-type&quot; PDUs in ISER, that's why no limit for them is
+</I>&gt;<i> mentioned. Control type PDUs can carry unsolicited data, but that is true
+</I>&gt;<i> only for write ops. As to RDMA ops, the initiator communicates the size of
+</I>&gt;<i> transfer and registration key, allowing the target to do the transfer, be it
+</I>&gt;<i> read or write, in on or several RDMA ops, as many as it likes.
+</I>
+iSER spec is silent about the granularity of RDMA transfers
+because it says nothing about the meaning of MaxBurstLength and
+MaxRecvDataSegmentLength, when applied to the solicited data of
+a write op, and to the entire data of a read op.
+
+On the other hand, it maps R2T PDUs to RDMA Reads,
+and Data-IN to RDMA Writes (changing their meaning), but does not
+require that their sizes must be governed by either
+MaxBurstLength (for R2Ts) or MaxRecvDataSegmentLength
+(for Data-INs).
+
+Thus we can interpret them freely, from the formal point of view.
+Moreover, this does not contradict the spirit of the protocol,
+which makes all RDMA transfers a target's responsibility.
+
+&gt;<i> &gt; One approach would be to have the target RDMA the entire data
+</I>&gt;<i> &gt; segment in a single operation.  This approach minimizes the
+</I>&gt;<i> &gt; overhead, but doesn't let us pipeline and may not be possible for
+</I>&gt;<i> &gt; large transfer sizes.  The OS won't let us pin all the memory
+</I>&gt;<i> &gt; required for the transfer, perhaps.
+</I>
+Another approach is to break both read and write RDMA transfers into
+smaller units, allowing internal queuing, pipelining and efficient use
+of memory.
+
+This means that the target should set for itself some internal values
+of MaxBurstLength and Data-IN's MaxRecvDataSegmentLength.
+These values will govern generation of R2Ts and Data-IN and these,
+in turn, will initiate a series of RDMA transfers with the desired granularity.
+
+&gt;<i> &gt; Instead I've added another patch that changes the MaxRDSL in the
+</I>&gt;<i> &gt; target to be whatever was negotiated for IRDSL.  Since I see no way
+</I>&gt;<i> &gt; in the spec how the target could send data in a control type PDU,
+</I>&gt;<i> &gt; IRDSL wasn't doing anything for us anyway.  And open-iscsi uses its
+</I>&gt;<i> &gt; conn-&gt;max_recv_dlength as the starting point for IRDSL, which seems
+</I>&gt;<i> &gt; reasonable.
+</I>
+One example of target sending data in a control type PDU is a Response
+PDU carrying sense data. Other types are Text-Responses outside Login
+phase and some Task mgmt Responses (for higher error levels).
+Anyway, the negotiated IRDSL value don't explicitly affect the target.
+It just guarantees that the initiator is able to receive our PDUs.
+
+To summarize, the proposed approach uses the following policy:
+
+1. If MaxRDSL declared by the other side is different from the negotiated
+value of IRDSL, ignore it.
+2. If no MaxRDSL was declared by the initiator, do not declare one
+of your own. Otherwise declare the negotiated value of TRDSL.
+3. In any case set the internal MRDSL values to those negotiated as
+IRDSL,ORDSL.
+
+4. When negotiating MaxBurstLength agree with any value proposed by
+the initiator (it won't be used anyway). When negotiating IRDSL agree
+with any value proposed by the initiator (unless there are some special
+considerations regarding the potential control PDUs), and then use it
+of course, when applicable.
+
+5. Set some internal value for MaxBurstLength and use it to generate
+R2T PDUs effectively splitting the RDMA Read transfers into smaller
+portions of  limited size.
+6. Introduce a new internal variable DataInMaxDSL that holds the
+value of MRDSL to be internally applied to generation of Data-INs,
+This effectively splits the RDMA Write transfers into smaller portions
+of  limited size.
+
+The internal values of MaxBurstLength  and DataInMaxDSL should try
+to achieve good performance, while making reasonable memory
+allocation requirements etc. They may be either hardcoded or tunable.
+
+Alexander Nezhinsky
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000937.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000940.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#938">[ date ]</a>
+              <a href="thread.html#938">[ thread ]</a>
+              <a href="subject.html#938">[ subject ]</a>
+              <a href="author.html#938">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

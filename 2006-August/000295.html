@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C20060803073302V.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000293.html">
+   <LINK REL="Next"  HREF="000298.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C20060803073302V.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] User-mode iSER">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Aug  3 00:33:02 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000293.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000298.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+Subject: Re: [Stgt-devel] User-mode iSER
+Date: Wed, 02 Aug 2006 10:58:40 -0500
+
+&gt;<i> On Wed, 2006-08-02 at 07:21 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> [...snip...]
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Also, won't a user-mode approach support virtual target devices more
+</I>&gt;<i> &gt; &gt; easily? 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; There's no difference. Note that we try to push a small portion of the
+</I>&gt;<i> &gt; iSCSI tcp driver into kernel (iSCSI protocol processing). Both
+</I>&gt;<i> &gt; approaches perform SCSI protocol processing, I/O in user space.
+</I>&gt;<i> &gt; I think that you can easily implement any kind of vitalization, device
+</I>&gt;<i> &gt; vitalization (like virtual tape library) and backing vitalization
+</I>&gt;<i> &gt; (snapshot, encryption, compression, etc) in user space with both
+</I>&gt;<i> &gt; approaches.
+</I>&gt;<i> 
+</I>&gt;<i> Yes, I think this is true, in the current design, the target device I/O
+</I>&gt;<i> is done in user space, so adding a new device type to trunk/usr is just
+</I>&gt;<i> as easy. The event that initiates this I/O though comes from the kernel
+</I>&gt;<i> over a netlink socket.
+</I>
+We don't use netlink because it turned out that we cannot pass
+user-space pointers via netlik due to its philosophy.
+
+The pathch to replace netlink is at:
+<A HREF="http://marc.theaimsgroup.com/?l=linux-scsi&amp;m=115413498823780&amp;w=2">http://marc.theaimsgroup.com/?l=linux-scsi&amp;m=115413498823780&amp;w=2</A>
+
+The reason why we cannot netlink is at:
+<A HREF="http://lkml.org/lkml/2006/4/19/165">http://lkml.org/lkml/2006/4/19/165</A>
+
+
+&gt;<i> Moving this all to user-space &quot;might&quot; make this perform better and
+</I>&gt;<i> simplify the architecture.
+</I>&gt;<i>
+</I>&gt;<i> Do you think this is true or does it create as many problems as it
+</I>&gt;<i> solves?
+</I>
+I'm not sure. That might be true if we think about only target drivers
+that can be implemented in user-space (iSCSI tcp for generic NICs,
+iSER), but we also need to support target drivers that needs in-kernel
+support.
+
+Anyway, as I said in the first mail, we don't know where iSCSI tcp for
+generic NICs and iSER drivers live. So just wait for few days.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000293.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000298.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

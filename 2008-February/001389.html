@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20yet%20another%20tgtd%20iSCSI%20misbehaviour%20%28aborted%0A%20journal%2C%20remounting%20ro%29&In-Reply-To=%3C200802111318.m1BDICOd031915%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001388.html">
+   <LINK REL="Next"  HREF="001390.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20yet%20another%20tgtd%20iSCSI%20misbehaviour%20%28aborted%0A%20journal%2C%20remounting%20ro%29&In-Reply-To=%3C200802111318.m1BDICOd031915%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)">tomof at acm.org
+       </A><BR>
+    <I>Mon Feb 11 14:18:08 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001388.html">[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+</A></li>
+        <LI>Next message: <A HREF="001390.html">[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1389">[ date ]</a>
+              <a href="thread.html#1389">[ thread ]</a>
+              <a href="subject.html#1389">[ subject ]</a>
+              <a href="author.html#1389">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt;
+Subject: Re: [Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+Date: Mon, 11 Feb 2008 14:01:42 +0100
+
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; On Wed, 06 Feb 2008 10:45:54 +0100
+</I>&gt;<i> &gt; Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; It seems there is yet another problem (?) in tgtd.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; It can be easily reproduced when the initiator crashes and then starts 
+</I>&gt;<i> &gt;&gt; again. I tested it only with diskless machines booted off iSCSI.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; To reproduce:
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; 1. Start tgtd, apply settings with tgtadm
+</I>&gt;<i> &gt;&gt; 2. Start a diskless initiator:
+</I>&gt;<i> &gt;&gt;   a) a diskless initiator fetches the kernel and the initrd via PXE/tftp
+</I>&gt;<i> &gt;&gt;   b) kernel executes initrd; initrd brings the interface up
+</I>&gt;<i> &gt;&gt;   c) initrd starts the iSCSI connection with &quot;iscsistart&quot; command from 
+</I>&gt;<i> &gt;&gt; open-iscsi
+</I>&gt;<i> &gt;&gt;   d) we switch to a new root, system boots fine
+</I>&gt;<i> &gt;&gt;   e) IMPORTANT - system starts iscsid now (/etc/init.d/open-iscsi start)
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; So far, everything was fine and unproblematic.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; 3. Now, crash your initiator machine (i.e. press reboot button)[1].
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; 4. Initiator starts just fine again - the connection was established 
+</I>&gt;<i> &gt;&gt; with &quot;iscsistart&quot;.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; 5. IMPORTANT - start iscsid now (/etc/init.d/open-iscsi start). The 
+</I>&gt;<i> &gt;&gt; initiator will report &quot;connection1:0: iscsi: detected conn error (1011)&quot; 
+</I>&gt;<i> &gt;&gt; and eventually, will break the connection, remount fs readonly etc. 
+</I>&gt;<i> &gt;&gt; scary things will happen.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;   a) there is a workaround to that: when initiator reports 
+</I>&gt;<i> &gt;&gt; &quot;connection1:0: iscsi: detected conn error...&quot; - kill tgtd, and start it 
+</I>&gt;<i> &gt;&gt; again. Initiator will reconnect flawlessly
+</I>&gt;<i> &gt;&gt;   b) if you don't kill/start tgtd again, connection will break and fs 
+</I>&gt;<i> &gt;&gt; will be remounted ro.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; The issue does not happen with IET or SCST.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; It looks like:
+</I>&gt;<i> &gt;&gt; - tgtd has an established connection with an initiator
+</I>&gt;<i> &gt;&gt; - initiator is killed, but tgtd still thinks initiator is connected
+</I>&gt;<i> &gt;&gt; to it
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Did you confirm this? 'tgtadm --op show --mode target' shows you the
+</I>&gt;<i> &gt; active initiators (and its connections).
+</I>&gt;<i> 
+</I>&gt;<i> Yes, as I remember, it was showing multiple initiators connected.
+</I>
+If so, the target has two independent sessions (the same IP address
+doesn't matter). It should be ok.
+
+
+&gt;<i> - when we start iscsid on the initiator, it confuses tgtd, tgtd
+</I>&gt;<i> breaks and has to be restarted
+</I>
+This isn't the case. Are you sure that tgtd started to close the
+connection (I mean that the initiator might start to close the
+connection)?
+
+We need to know why the connection was closed. Can you perform
+`tcpdump -w dump.cap -s 1600` and send dump.cap?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001388.html">[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+</A></li>
+	<LI>Next message: <A HREF="001390.html">[Stgt-devel] yet another tgtd iSCSI misbehaviour (aborted journal, remounting ro)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1389">[ date ]</a>
+              <a href="thread.html#1389">[ thread ]</a>
+              <a href="subject.html#1389">[ subject ]</a>
+              <a href="author.html#1389">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

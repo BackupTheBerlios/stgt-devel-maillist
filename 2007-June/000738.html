@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question for pass-through target design
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C46603741.308%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000758.html">
+   <LINK REL="Next"  HREF="000749.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question for pass-through target design</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C46603741.308%40vlnb.net%3E"
+       TITLE="[Stgt-devel] Question for pass-through target design">vst at vlnb.net
+       </A><BR>
+    <I>Fri Jun  1 17:12:01 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000758.html">[Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4
+</A></li>
+        <LI>Next message: <A HREF="000749.html">[PATCH] Add new module entry points for configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#738">[ date ]</a>
+              <a href="thread.html#738">[ thread ]</a>
+              <a href="subject.html#738">[ subject ]</a>
+              <a href="author.html#738">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Vladislav Bolkhovitin wrote:
+&gt;<i> So, if you need in-kernel pass-through I would suggest you to look at
+</I>&gt;<i> SCST project (<A HREF="http://scst.sf.net">http://scst.sf.net</A>), which is currently stable and mature,
+</I>&gt;<i> although also not fully finished yet. It was historically from the very
+</I>&gt;<i> beginning designed for full feature in-kernel pass-through for not only
+</I>&gt;<i> stateless SCSI devices, like disks, but also for stateful SCSI devices
+</I>&gt;<i> (like SSC ones a.k.a. tapes), where the correct handling of all above is
+</I>&gt;<i> essential. In additional to considerably better performance, the
+</I>&gt;<i> complete in-kernel approach makes the code simpler, smaller and cleaner
+</I>&gt;<i> as well as allows such things as zero-copy buffered file IO, i.e. when 
+</I>&gt;<i> data are sent to remote initiators or received from them directly 
+</I>&gt;<i> from/to the page cache (currently under development). For those who need 
+</I>&gt;<i> implementing SCSI devices in the user space scst_user module is about to 
+</I>&gt;<i> be added. Since the SCSI state machine is in kernel the interface 
+</I>&gt;<i> provided by scst_user is very simple, it essentially consists from only 
+</I>&gt;<i> a single IOCTL and allows to have overhead as low as a single syscall 
+</I>&gt;<i> per SCSI command without any additional context switches. It is already 
+</I>&gt;<i> implemented and works. For some legal reasons I can't at the moment 
+</I>&gt;<i> publish it, but you can see its full description in the project's SVN 
+</I>&gt;<i> docs (you can get them using command &quot;svn co 
+</I>&gt;<i> <A HREF="https://svn.sourceforge.net/svnroot/scst/trunk/doc">https://svn.sourceforge.net/svnroot/scst/trunk/doc</A>&quot;).
+</I>
+Now I released scst_user module and it is available from the SCST SVN, 
+so you can check how simply it allows to write SCSI devices, like a VTL, 
+in the user space.
+
+Vlad
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000758.html">[Stgt-devel] [Patch 2/2] Add-ability-to-dynamically-set-SCSI-Inquiry-params - Try 4
+</A></li>
+	<LI>Next message: <A HREF="000749.html">[PATCH] Add new module entry points for configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#738">[ date ]</a>
+              <a href="thread.html#738">[ thread ]</a>
+              <a href="subject.html#738">[ subject ]</a>
+              <a href="author.html#738">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

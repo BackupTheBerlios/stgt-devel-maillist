@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi: add assign_lun script
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20add%20assign_lun%20script&In-Reply-To=%3C200712301105.lBUB54cL007357%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001253.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi: add assign_lun script</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20add%20assign_lun%20script&In-Reply-To=%3C200712301105.lBUB54cL007357%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi: add assign_lun script">tomof at acm.org
+       </A><BR>
+    <I>Sun Dec 30 12:05:02 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001253.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1254">[ date ]</a>
+              <a href="thread.html#1254">[ thread ]</a>
+              <a href="subject.html#1254">[ subject ]</a>
+              <a href="author.html#1254">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+Subject: [Stgt-devel] [PATCH] iscsi: add assign_lun script
+Date: Sun, 30 Dec 2007 10:51:16 +0200
+
+&gt;<i> Add a script that will create a target, add a device to
+</I>&gt;<i> the target and define the initiator that can connect to it.
+</I>
+Can you move this to usr/scripts? I guess that this could be improved
+to handle other protocols later on.
+
+There would be a better name since this script does more than
+assigning a logical unit, that is, creates a new target, add a lun,
+and enable an initiator to access to the target.
+
+
+&gt;<i> Signed-off-by: Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/scripts/assign_lun |  127 ++++++++++++++++++++++++++++++++++++++++++
+</I>&gt;<i>  1 files changed, 127 insertions(+), 0 deletions(-)
+</I>&gt;<i>  create mode 100755 usr/iscsi/scripts/assign_lun
+</I>
+(snip)
+
+
+&gt;<i> +#!/bin/bash
+</I>&gt;<i> +
+</I>&gt;<i> +verify_params()
+</I>&gt;<i> +{
+</I>&gt;<i> +	# Make sure that the device exists
+</I>&gt;<i> +	if ! [ -b $dev ]; then
+</I>&gt;<i> +		echo &quot;$dev is not a device&quot;;
+</I>&gt;<i> +		exit 1;
+</I>
+Hmm, would be better to have:
+
+        if ! [ -b $dev -o -f $dev ]; then
+
+We can use a regular file as a logical unit.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001253.html">[Stgt-devel] [PATCH] iscsi: add assign_lun script
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1254">[ date ]</a>
+              <a href="thread.html#1254">[ thread ]</a>
+              <a href="subject.html#1254">[ subject ]</a>
+              <a href="author.html#1254">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

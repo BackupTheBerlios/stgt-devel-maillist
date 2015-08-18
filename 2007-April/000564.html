@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tgtif.c doesn't compile
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtif.c%20doesn%27t%20compile&In-Reply-To=%3C46205390.3070109%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000563.html">
+   <LINK REL="Next"  HREF="000565.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tgtif.c doesn't compile</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtif.c%20doesn%27t%20compile&In-Reply-To=%3C46205390.3070109%40torque.net%3E"
+       TITLE="[Stgt-devel] tgtif.c doesn't compile">dougg at torque.net
+       </A><BR>
+    <I>Sat Apr 14 06:07:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000563.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+        <LI>Next message: <A HREF="000565.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#564">[ date ]</a>
+              <a href="thread.html#564">[ thread ]</a>
+              <a href="subject.html#564">[ subject ]</a>
+              <a href="author.html#564">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: Douglas Gilbert &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dougg at torque.net</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] tgtif.c doesn't compile
+</I>&gt;<i> Date: Fri, 13 Apr 2007 11:48:50 -0400
+</I>&gt;<i> 
+</I>&gt;&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;&gt;&gt;<i> From: Douglas Gilbert &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dougg at torque.net</A>&gt;
+</I>&gt;&gt;&gt;<i> Subject: [Stgt-devel] tgtif.c doesn't compile
+</I>&gt;&gt;&gt;<i> Date: Thu, 12 Apr 2007 16:11:28 -0400
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> The sense_len, sense_uaddr fields are not in scsi/scsi_tgt_if.h
+</I>&gt;&gt;&gt;&gt;<i> in Linus, linux-2.6-block.git,bsg, or linux-2.6-target kernels.
+</I>&gt;&gt;&gt;&gt;<i> Where else should I be looking?
+</I>&gt;&gt;&gt;<i> Please use James' scsi-misc master branch or linux-2.6-target tgt
+</I>&gt;&gt;&gt;<i> branch.
+</I>&gt;&gt;<i> Tomo,
+</I>&gt;&gt;<i> Following a link from stgt.berlios.de I went here:
+</I>&gt;&gt;<i> <A HREF="http://git.kernel.org/?p=linux/kernel/git/tomo/linux-2.6-target.git;a=summary">http://git.kernel.org/?p=linux/kernel/git/tomo/linux-2.6-target.git;a=summary</A>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> which shows this information:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> description	scsi-target tree
+</I>&gt;&gt;<i> owner	FUJITA Tomonori
+</I>&gt;&gt;<i> last change	Thu, 22 Mar 2007 02:45:50 +0000
+</I>&gt;&gt;<i> URL	<A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A>
+</I>&gt;&gt;<i> 	<A HREF="http://www.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">http://www.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> So I cloned that repository and it has only one branch: &quot;main&quot;
+</I>&gt;<i> 
+</I>&gt;<i> Strange. I just tried and it looks fine.
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp$ git-clone <A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A>
+</I>&gt;<i> remote: Generating pack...
+</I>&gt;<i> remote: Done counting 442181 objects.
+</I>&gt;<i> remote: Deltifying 442181 objects.
+</I>&gt;<i> remote:  100% (442181/442181) done
+</I>&gt;<i> remote: Total 442181 (delta 353734), reused 424382 (delta 335945)
+</I>&gt;<i> Checking files out...
+</I>&gt;<i>  100% (21617/21617) done
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp$ cd linux-2.6-target/
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp/linux-2.6-target$ git-branch
+</I>&gt;<i> * master
+</I>&gt;<i>   origin
+</I>&gt;<i>   sgv3
+</I>&gt;<i>   tgt
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp/linux-2.6-target$ git-checkout tgt
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp/linux-2.6-target$ grep sense_len include/scsi/scsi_tgt_if.h
+</I>&gt;<i>                         uint32_t sense_len;
+</I>
+Tomo,
+And I just tried it again:
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at target</A> git]# git clone <A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A> linux-2.6-target
+Initialized empty Git repository in /usr/src/git/linux-2.6-target/.git/
+remote: Generating pack...
+remote: Done counting 442181 objects.
+remote: Deltifying 442181 objects.
+remote:  100% (442181/442181) done
+Indexing 442181 objects.
+remote: Total 442181 (delta 353734), reused 424382 (delta 335945)
+ 100% (442181/442181) done
+Resolving 353734 deltas.
+ 100% (353734/353734) done
+Checking files out...
+ 100% (21617/21617) done
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at target</A> git]# cd linux-2.6-target
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at target</A> linux-2.6-target]# git branch
+* master
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at target</A> linux-2.6-target]# git --version
+git version 1.5.0.6
+
+
+Doug Gilbert
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000563.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+	<LI>Next message: <A HREF="000565.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#564">[ date ]</a>
+              <a href="thread.html#564">[ thread ]</a>
+              <a href="subject.html#564">[ subject ]</a>
+              <a href="author.html#564">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

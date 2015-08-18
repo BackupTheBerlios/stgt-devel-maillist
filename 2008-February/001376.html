@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C200802091641.m19GffI5008280%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001370.html">
+   <LINK REL="Next"  HREF="001378.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Update%20%28Re%3A%20open%20iSCSI%20over%20iSER%20target%20RPM%20...%29&In-Reply-To=%3C200802091641.m19GffI5008280%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)">tomof at acm.org
+       </A><BR>
+    <I>Sat Feb  9 17:41:36 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001370.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+        <LI>Next message: <A HREF="001378.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1376">[ date ]</a>
+              <a href="thread.html#1376">[ thread ]</a>
+              <a href="subject.html#1376">[ subject ]</a>
+              <a href="author.html#1376">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Joe Landman &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">landman at scalableinformatics.com</A>&gt;
+Subject: [Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+Date: Thu, 07 Feb 2008 11:05:03 -0500
+
+&gt;<i> Update:
+</I>&gt;<i> 
+</I>&gt;<i> [<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at woody</A> etc]# dd if=/dev/zero of=/big/local.file bs=256k count=100000
+</I>&gt;<i> 100000+0 records in
+</I>&gt;<i> 100000+0 records out
+</I>&gt;<i> 26214400000 bytes (26 GB) copied, 58.7484 seconds, 446 MB/s
+</I>&gt;<i> 
+</I>&gt;<i> Better. I rebuilt OFED 1.2.5.5.  Are there specific recommended tuning 
+</I>&gt;<i> guides for iSER?  Backing store in this case are real disks, and we can 
+</I>&gt;<i> sink/source &gt;750 MB/s on them, so I am not worried about disk IO 
+</I>&gt;<i> bottlenecks, more worried about bad config of iSCSI/iSER.
+</I>&gt;<i> 
+</I>&gt;<i> BTW:  the 2TB LUN limit I asked about is still here in this code.  Same 
+</I>&gt;<i> machines (initiator and target) used for SRP reported correct LUN sizes. 
+</I>&gt;<i>   Here we are using the -868 open-iscsi initiator, and the tgt RPM 
+</I>&gt;<i> announced.  I would like to dig into this.
+</I>&gt;<i> 
+</I>&gt;<i> This is what I am getting in dmesg for this iSER target:
+</I>&gt;<i> 
+</I>&gt;<i> iscsi: registered transport (tcp)
+</I>&gt;<i> iscsi: registered transport (iser)
+</I>&gt;<i> iser: iser_connect:connecting to: 10.2.1.2, port 0xbc0c
+</I>&gt;<i> iser: iser_cma_handler:event 0 conn ffff81024b9f69c0 id ffff810209748c00
+</I>&gt;<i> iser: iser_cma_handler:event 2 conn ffff81024b9f69c0 id ffff810209748c00
+</I>&gt;<i> iser: iser_create_ib_conn_res:setting conn ffff81024b9f69c0 cma_id 
+</I>&gt;<i> ffff810209748c00: fmr_pool ffff81024bfb32c0 qp ffff8101cb16d600
+</I>&gt;<i> iser: iser_cma_handler:event 9 conn ffff81024b9f69c0 id ffff810209748c00
+</I>&gt;<i> iser: iscsi_iser_ep_poll:ib conn ffff81024b9f69c0 rc = 1
+</I>&gt;<i> scsi13 : iSCSI Initiator over iSER, v.0.1
+</I>&gt;<i> iser: iscsi_iser_conn_bind:binding iscsi conn ffff81021b65fa90 to 
+</I>&gt;<i> iser_conn ffff81024b9f69c0
+</I>&gt;<i>    Vendor: IET       Model: Controller        Rev: 0001
+</I>&gt;<i>    Type:   RAID                               ANSI SCSI revision: 05
+</I>&gt;<i> scsi 13:0:0:0: Attached scsi generic sg2 type 12
+</I>&gt;<i>    Vendor: IET       Model: VIRTUAL-DISK      Rev: 0001
+</I>&gt;<i>    Type:   Direct-Access                      ANSI SCSI revision: 05
+</I>&gt;<i> sdc : very big device. try to use READ CAPACITY(16).
+</I>&gt;<i> sdc : READ CAPACITY(16) failed.
+</I>&gt;<i> sdc : status=1, message=00, host=0, driver=08
+</I>&gt;<i> sdc : use 0xffffffff as device size
+</I>&gt;<i> SCSI device sdc: 4294967296 512-byte hdwr sectors (2199023 MB)
+</I>&gt;<i> sdc: Write Protect is off
+</I>&gt;<i> sdc: Mode Sense: 79 00 00 08
+</I>&gt;<i> SCSI device sdc: drive cache: write back
+</I>&gt;<i> sdc : very big device. try to use READ CAPACITY(16).
+</I>&gt;<i> sdc : READ CAPACITY(16) failed.
+</I>&gt;<i> sdc : status=1, message=00, host=0, driver=08
+</I>&gt;<i> sdc : use 0xffffffff as device size
+</I>&gt;<i> SCSI device sdc: 4294967296 512-byte hdwr sectors (2199023 MB)
+</I>&gt;<i> sdc: Write Protect is off
+</I>&gt;<i> sdc: Mode Sense: 79 00 00 08
+</I>&gt;<i> SCSI device sdc: drive cache: write back
+</I>&gt;<i>   sdc: unknown partition table
+</I>&gt;<i> sd 13:0:0:1: Attached scsi disk sdc
+</I>&gt;<i> sd 13:0:0:1: Attached scsi generic sg3 type 0
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> and this is what we get in SRP
+</I>&gt;<i> 
+</I>&gt;<i> scsi6 : SRP.T10:0008F104039862A4
+</I>&gt;<i>    Vendor: SCST_BIO  Model: vdisk0            Rev:  096
+</I>&gt;<i>    Type:   Direct-Access                      ANSI SCSI revision: 04
+</I>&gt;<i> sdc : very big device. try to use READ CAPACITY(16).
+</I>&gt;<i> SCSI device sdc: 12693355130 512-byte hdwr sectors (6498998 MB)
+</I>&gt;<i> sdc: Write Protect is off
+</I>&gt;<i> sdc: Mode Sense: 6b 00 10 08
+</I>&gt;<i> SCSI device sdc: drive cache: write back w/ FUA
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> This looks suspiciously like a 2^32 limit somewhere.
+</I>
+Can you try the latest git tree
+(65a3f8b0c14305aaee5bcaade569b40882e8dd88)? It works for me:
+
+scsi3 : iSCSI Initiator over TCP/IP
+scsi 3:0:0:0: RAID              IET      Controller       0001 PQ: 0 ANSI: 5
+scsi 3:0:0:1: Direct-Access     IET      VIRTUAL-DISK     0001 PQ: 0 ANSI: 5
+sd 3:0:0:1: [sdb] Very big device. Trying to use READ CAPACITY(16).
+sd 3:0:0:1: [sdb] 12884901888 512-byte hardware sectors (6597070 MB)
+sd 3:0:0:1: [sdb] Write Protect is off
+sd 3:0:0:1: [sdb] Mode Sense: 79 00 00 08
+sd 3:0:0:1: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+
+
+Somehow I forgot to add READ_CAPACITY_16 support. I would appreciate
+it if you could read and write on over 2TB position properly.
+
+
+&gt;<i> Our exported device is
+</I>&gt;<i> 
+</I>&gt;<i> [<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at jr1</A> ~]# parted /dev/sdb print
+</I>&gt;<i> 
+</I>&gt;<i> Model: Areca jrvs1 (scsi)
+</I>&gt;<i> Disk /dev/sdb: 6500GB
+</I>&gt;<i> Sector size (logical/physical): 512B/512B
+</I>&gt;<i> Partition Table: loop
+</I>&gt;<i> 
+</I>&gt;<i> Number  Start   End     Size    File system  Flags
+</I>&gt;<i>   1      0.00kB  6500GB  6500GB  xfs
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> and this is what tgtadm reports
+</I>&gt;<i> 
+</I>&gt;<i> [<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at jr1</A> ~]# tgtadm --lld iscsi --op show --mode target
+</I>&gt;<i> Target 1: iqn.2001-04.com.jr1-jackrabbit.small
+</I>&gt;<i>      System information:
+</I>&gt;<i>          Driver: iscsi
+</I>&gt;<i>          Status: running
+</I>&gt;<i>      I_T nexus information:
+</I>&gt;<i>          I_T nexus: 4
+</I>&gt;<i>              Initiator: iqn.1996-04.voltaire.com:01:dfa8888a3fd
+</I>&gt;<i>              Connection: 0
+</I>&gt;<i>                  RDMA IP Address: 10.2.1.1
+</I>&gt;<i>      LUN information:
+</I>&gt;<i>          LUN: 0
+</I>&gt;<i>              Type: controller
+</I>&gt;<i>              SCSI ID: deadbeaf1:0
+</I>&gt;<i>              SCSI SN: beaf10
+</I>&gt;<i>              Size: 0
+</I>&gt;<i>              Online: No
+</I>&gt;<i>              Poweron/Reset: Yes
+</I>&gt;<i>              Removable media: No
+</I>&gt;<i>              Backing store: No backing store
+</I>&gt;<i>          LUN: 1
+</I>&gt;<i>              Type: disk
+</I>&gt;<i>              SCSI ID: deadbeaf1:1
+</I>&gt;<i>              SCSI SN: beaf11
+</I>&gt;<i>              Size: 5T
+</I>&gt;<i>              Online: Yes
+</I>&gt;<i>              Poweron/Reset: No
+</I>&gt;<i>              Removable media: No
+</I>&gt;<i>              Backing store: /dev/sdb
+</I>&gt;<i>      Account information:
+</I>&gt;<i>      ACL information:
+</I>&gt;<i>          10.2.1.1
+</I>&gt;<i> 
+</I>&gt;<i> So it looks like the LUN 1 is approximately correct (5T ???) on the 
+</I>&gt;<i> target, and incorrect when the initiator asks for it.
+</I>
+I changed tgt to show the capacity like Linux does:
+
+
+Target 1: iqn.2007-03:marks-vtl-tgt:tulip
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+        I_T nexus: 1
+            Initiator: iqn.2005-03.org.open-iscsi:d38a581f3318
+            Connection: 0
+                IP Address: 192.168.11.15
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: Yes
+            Poweron/Reset: Yes
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: disk
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 6597070 MB
+            Online: Yes
+            Poweron/Reset: No
+            Removable media: No
+            Backing store: /dev/sde
+    Account information:
+    ACL information:
+        ALL
+
+
+&gt;<i> Please note that I have successfully used the full 6+TB as an iSCSI 
+</I>&gt;<i> target using the SCST-iscsi code, so I do know that the initiator works 
+</I>&gt;<i> correctly.
+</I>&gt;<i> 
+</I>&gt;<i> Is there a source RPM/tree for this target?
+</I>
+I guess that RedHat, SUSE, and OFED have tgt RPMs now so I think that
+you can find something.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001370.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+	<LI>Next message: <A HREF="001378.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1376">[ date ]</a>
+              <a href="thread.html#1376">[ thread ]</a>
+              <a href="subject.html#1376">[ subject ]</a>
+              <a href="author.html#1376">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

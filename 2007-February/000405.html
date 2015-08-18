@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070223082613B.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000404.html">
+   <LINK REL="Next"  HREF="000407.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070223082613B.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Feb 23 00:26:13 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000404.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000407.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#405">[ date ]</a>
+              <a href="thread.html#405">[ thread ]</a>
+              <a href="subject.html#405">[ subject ]</a>
+              <a href="author.html#405">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH 4/4] OSD command parser
+Date: Wed, 21 Feb 2007 13:30:58 -0500
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Mon, 19 Feb 2007 23:32 +0900:
+</I>&gt;<i> &gt; I put a patch to support various device types:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; <A HREF="http://zaal.org/tgt/device-types.diff">http://zaal.org/tgt/device-types.diff</A>
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I don't merge it because:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; - only iscsi + AIO works (sg and ibmvio are broken).
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; - there are still lots of things to implement
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; - huge cleanup is necessary
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I took an approach discussed a long time ago in IET mailing list. Each
+</I>&gt;<i> &gt; device type has its own function array (like sbc_mode_sense). spc code
+</I>&gt;<i> &gt; exports some common functions. A LLD can cleanly replace functions in
+</I>&gt;<i> &gt; arrays (so we can kill dirty hack in tgt_driver struct). A transport
+</I>&gt;<i> &gt; class also needs that (though we don't implement yet).
+</I>&gt;<i> 
+</I>&gt;<i> That would be a reasonable approach, although the tables will be
+</I>&gt;<i> very sparse.  I shouldn't have too much trouble factoring out my
+</I>&gt;<i> current osd_cmd_perform into separate functions with shared
+</I>&gt;<i> routines.  If you check your patch in, I'll do this and try to help
+</I>&gt;<i> fix up the bugs and missing pieces.
+</I>
+More work is necessary before merging that patch. I'll try to finish
+it this weekend.
+
+
+&gt;<i> We'll still have to do something with bkio_submit_t to support
+</I>&gt;<i> bidirectional and to support returning both data and sense.  I have
+</I>&gt;<i> such a thing for OSD but have not tried to make all the other
+</I>&gt;<i> devices fit it pending your perusal.
+</I>
+If you send these patches, I'll try to fix and merge them.
+
+
+&gt;<i> The other largish piece I'm carrying around is AHS support for
+</I>&gt;<i> iscsi.
+</I>
+ditto.
+
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000404.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000407.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#405">[ date ]</a>
+              <a href="thread.html#405">[ thread ]</a>
+              <a href="subject.html#405">[ subject ]</a>
+              <a href="author.html#405">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

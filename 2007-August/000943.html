@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46C1B65F.9070504%40voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000936.html">
+   <LINK REL="Next"  HREF="000944.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C46C1B65F.9070504%40voltaire.com%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">erezz at voltaire.com
+       </A><BR>
+    <I>Tue Aug 14 16:04:15 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000936.html">[PATCH] iser fix initiator dlength
+</A></li>
+        <LI>Next message: <A HREF="000944.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#943">[ date ]</a>
+              <a href="thread.html#943">[ thread ]</a>
+              <a href="subject.html#943">[ subject ]</a>
+              <a href="author.html#943">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Pete Wyckoff wrote:
+
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Sun, 12 Aug 2007 17:03 +0300:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> I ran the following command:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> sgp_dd bs=512 of=/dev/null if=/dev/sg3 bpt=256 thr=8 time=1 count=8000
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> and got the following error:
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> I'm on travel this week, but want to fix this!  Everything works
+</I>&gt;<i> here unfortunately.  WC status 10 == IBV_WC_REM_ACCESS_ERR, which
+</I>&gt;<i> means that the other side was somehow unhappy.  Maybe wrong rkey.
+</I>&gt;<i> We've never seen that error, even in testing, so I will probably ask
+</I>&gt;<i> you for more debugging information on both sides.
+</I>&gt;<i>
+</I>&gt;<i> If you are motivated, you might check the key and VA that appears
+</I>&gt;<i> in the initiator request and make sure the target tries to use those
+</I>&gt;<i> same values when it does RDMA.
+</I>&gt;<i>   
+</I>
+Pete,
+
+I went over the iSER target code, and something looks strange (unless
+I'm missing something here):
+
+iscsi_iser_read calls iser_parse_hdr, which reads the iSER header and
+saves the remote va &amp; stag on the conn_info object. Later,
+iser_rdma_read/write is called (from another context?), and uses the
+remote va &amp; stag. The problem that I see is: what happens if another cmd
+is received before RDMA read/write is performed for the 1st cmd?
+
+I can see that on the log file:
+
+The last 3 cmds that were received have stags 6004a, 6004b &amp; 6004c
+respectively.
+
+[iSER]:iSCSI control type PDU.
+[iSER]:rem_write_stag 6004a rem_write_va 69cea000.
+[iSER]:iscsi_iser_read ret 48.
+tgtd: iscsi_scsi_cmd_rx_start(1462) 1 2a 0 8192 131072 1 42
+[iSER]:meml 0x634d88 buf 0x2aaaaad30010.
+tgtd: iscsi_scsi_cmd_rx_start(1489) 0 122880 0 8192
+[iSER]:in iscsi_iser_read buf 0x2aaaaad302b0 nbytes 8192.
+[iSER]:iscsi_iser_read ret 8192.
+tgtd: iscsi_task_queue(1403) 42 42 1
+tgtd: iser_event_modify(1435) ep 0 events 5
+tgtd: iser_event_modify(1442) ep 0 was already on the list.  Track?
+[iSER]:handle_wc() Done processing recv 0x642228, reposted it.
+[iSER]:handle_wc() Incoming Cmd - COMPLETE (8268 bytes).
+[iSER]:in iscsi_iser_read buf 0x636eb0 nbytes 48.
+[iSER]:iSCSI control type PDU.
+[iSER]:rem_write_stag 6004b rem_write_va 6a74a000.
+[iSER]:iscsi_iser_read ret 48.
+tgtd: iscsi_scsi_cmd_rx_start(1462) 1 2a 0 8192 131072 1 43
+[iSER]:meml 0x634da0 buf 0x2aaaaadb1010.
+tgtd: iscsi_scsi_cmd_rx_start(1489) 0 122880 0 8192
+[iSER]:in iscsi_iser_read buf 0x2aaaaadb12b0 nbytes 8192.
+[iSER]:iscsi_iser_read ret 8192.
+tgtd: iscsi_task_queue(1403) 43 43 1
+tgtd: iser_event_modify(1435) ep 0 events 5
+tgtd: iser_event_modify(1442) ep 0 was already on the list.  Track?
+[iSER]:handle_wc() Done processing recv 0x6432f8, reposted it.
+[iSER]:handle_wc() Incoming Cmd - COMPLETE (8268 bytes).
+[iSER]:in iscsi_iser_read buf 0x636eb0 nbytes 48.
+[iSER]:iSCSI control type PDU.
+[iSER]:rem_write_stag 6004c rem_write_va 6a18a000.
+[iSER]:iscsi_iser_read ret 48.
+
+Later, RDMA read is performed for the cmds. For all cmds, the stag is
+6004c - just like the last stag that was received:
+
+[iSER]:in iser_rdma_read.
+[iSER]:in iser_post_rdma_wr size 122880 rem_va 6a18a000 rem_stag 6004c
+wr_id = 0x63f010 (itt = 0x3d)
+.
+[iSER]:iser_post_rdma_wr() Exit rdma = 0x63f010.
+tgtd: iser_progress(1382) trying tx on fd 0 conn 0x636d90
+tgtd: iscsi_task_tx_start(1750) found a task 3e 131072 8192 122880
+[iSER]:in iser_rdma_read.
+[iSER]:in iser_post_rdma_wr size 122880 rem_va 6a1a8000 rem_stag 6004c
+wr_id = 0x63f090 (itt = 0x3e)
+.
+[iSER]:iser_post_rdma_wr() Exit rdma = 0x63f090.
+tgtd: iser_progress(1382) trying tx on fd 0 conn 0x636d90
+tgtd: iscsi_task_tx_start(1750) found a task 3f 131072 8192 122880
+[iSER]:in iser_rdma_read.
+[iSER]:in iser_post_rdma_wr size 122880 rem_va 6a1c6000 rem_stag 6004c
+wr_id = 0x63f110 (itt = 0x3f)
+
+Erez
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000936.html">[PATCH] iser fix initiator dlength
+</A></li>
+	<LI>Next message: <A HREF="000944.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#943">[ date ]</a>
+              <a href="thread.html#943">[ thread ]</a>
+              <a href="subject.html#943">[ subject ]</a>
+              <a href="author.html#943">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

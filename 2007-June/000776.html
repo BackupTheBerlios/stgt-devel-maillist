@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Merge%20lu_phy_attr%20struct%20into%20scsi_lu%0A%20struct&In-Reply-To=%3C20070614233751W.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000774.html">
+   <LINK REL="Next"  HREF="000777.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%5D%20Merge%20lu_phy_attr%20struct%20into%20scsi_lu%0A%20struct&In-Reply-To=%3C20070614233751W.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Jun 15 00:20:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000774.html">[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct
+</A></li>
+        <LI>Next message: <A HREF="000777.html">[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu	struct
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#776">[ date ]</a>
+              <a href="thread.html#776">[ thread ]</a>
+              <a href="subject.html#776">[ subject ]</a>
+              <a href="author.html#776">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct
+Date: Thu, 14 Jun 2007 18:25:15 +1000
+
+&gt;<i> No advantage of having the lu_phy_attr structure. Moved all
+</I>&gt;<i> fields into the scsi_lu structure.
+</I>
+I think that it would be nice to have lu_phy_attr for clean
+separation.
+
+My preference is (as you did in the previous patch):
+
+struct scsi_lu {
+	...
+	struct lu_phy_attr attrs;
+};
+
+
+After applying the 'add dynamic lu configuration' patch, I can change
+and apply the your previous patch.
+
+
+&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;<i> index 35645b1..a4c787b 100644
+</I>&gt;<i> --- a/usr/tgtd.h
+</I>&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;<i> @@ -30,7 +30,13 @@ struct tgt_cmd_queue {
+</I>&gt;<i>  	struct list_head queue;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> -struct lu_phy_attr {
+</I>&gt;<i> +struct scsi_lu {
+</I>&gt;<i> +	int fd;
+</I>&gt;<i> +	uint64_t addr; /* persistent mapped address */
+</I>&gt;<i> +	uint64_t size;
+</I>&gt;<i> +	uint64_t lun;
+</I>&gt;<i> +	char *path;
+</I>&gt;<i> +
+</I>&gt;<i>  	char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i>  	char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i>  
+</I>&gt;<i> @@ -44,14 +50,6 @@ struct lu_phy_attr {
+</I>&gt;<i>  	char online;		/* Logical Unit online ? */
+</I>&gt;<i>  	char reset;		/* Power-on or reset has occured */
+</I>&gt;<i>  	char sense_format;	/* Descrptor format sense data supported */
+</I>&gt;<i> -};
+</I>&gt;<i> -
+</I>&gt;<i> -struct scsi_lu {
+</I>&gt;<i> -	int fd;
+</I>&gt;<i> -	uint64_t addr; /* persistent mapped address */
+</I>&gt;<i> -	uint64_t size;
+</I>&gt;<i> -	uint64_t lun;
+</I>&gt;<i> -	char *path;
+</I>&gt;<i>  
+</I>&gt;<i>  	/* the list of devices belonging to a target */
+</I>&gt;<i>  	struct list_head device_siblings;
+</I>&gt;<i> @@ -63,7 +61,6 @@ struct scsi_lu {
+</I>&gt;<i>  	uint64_t reserve_id;
+</I>&gt;<i>  
+</I>&gt;<i>  	/* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i> -	struct lu_phy_attr *attrs;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i>  struct scsi_cmd {
+</I>&gt;<i> -- 
+</I>&gt;<i> 1.5.2.1
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000774.html">[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu struct
+</A></li>
+	<LI>Next message: <A HREF="000777.html">[Stgt-devel] [Patch] Merge lu_phy_attr struct into scsi_lu	struct
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#776">[ date ]</a>
+              <a href="thread.html#776">[ thread ]</a>
+              <a href="subject.html#776">[ subject ]</a>
+              <a href="author.html#776">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

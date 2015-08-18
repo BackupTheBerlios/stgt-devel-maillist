@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C5eb093080608061041r2d824819i989027d93b73dcd6%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000314.html">
+   <LINK REL="Next"  HREF="000316.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Alexander Nezhinsky</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C5eb093080608061041r2d824819i989027d93b73dcd6%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] User-mode iSER">nezhinsky at gmail.com
+       </A><BR>
+    <I>Sun Aug  6 19:41:16 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000314.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000316.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#315">[ date ]</a>
+              <a href="thread.html#315">[ thread ]</a>
+              <a href="subject.html#315">[ subject ]</a>
+              <a href="author.html#315">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE> Fujita,
+
+
+
+&gt;<i> For further information, see:
+</I>&gt;<i> Documentation/block/barrier.txt
+</I>
+
+ First of all, thanx for the reference.
+
+
+&gt;<i> As far as I understand, SYNCHRONIZE_CACHE command is not intended as a
+</I>&gt;<i> tool
+</I>&gt;<i> &gt; to be used by the initiators to avoid possible cache-related data
+</I>&gt;<i> &gt; corruption. It rather should be used &quot;to ensure that the data was
+</I>&gt;<i> written
+</I>&gt;<i> &gt; and any detected errors reported&quot; (citation from SBC-2 spec).
+</I>&gt;<i> &gt; In case of power-off, h/w failures etc. the target should guarantee that
+</I>&gt;<i> all
+</I>&gt;<i> &gt; cached data are written to the medium (or backed up, saved
+</I>&gt;<i> etc.)  regardless
+</I>&gt;<i> &gt; of the initiator's actions.
+</I>&gt;<i> &gt; At some points (presumably related to application semantics) initiator
+</I>&gt;<i> may
+</I>&gt;<i> &gt; be interested to receive either success status or all possible errors
+</I>&gt;<i> &gt; resulting from the actual I/O, but this command should not be used to
+</I>&gt;<i> &gt; guarantee data integrity.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; &gt; Modern operating systems and applications
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt; &gt; (like file systems) does not
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; &gt; need help from battery-backed memory to enjoy
+</I>&gt;<i> &gt; &gt; &gt; &gt; write-behind cache on
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; &gt; SAN target devices for better performance without data
+</I>&gt;<i> corruption
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; &gt; risks. So page cache is always useful.
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; How does linux cope with this? I never saw anything that &quot;funky&quot; in the
+</I>&gt;<i> scsi
+</I>&gt;<i> &gt; command logs sent by a linux initiator.
+</I>&gt;<i>
+</I>&gt;<i> Interesting. I just created one file on ext3 with iSCSI and saw
+</I>&gt;<i> several SYNCHRONIZE_CACHE commands. :)
+</I>&gt;<i>
+</I>&gt;<i> For your convenience, I've put the tcpdump log.
+</I>&gt;<i>
+</I>&gt;<i> <A HREF="http://zaal.org/cache.cap">http://zaal.org/cache.cap</A>
+</I>
+
+After playing a bit with our system i understood why we don't see
+SYNCHRONIZE_CACHE
+commnds. All our disks are reported &quot;write-through&quot;. So there is no need to
+sync cache.
+
+But anyway, I meant primarily the modes of operation that are not
+file-system related.
+For example, with etx3 sync'ing the journal is clearly  the kind of
+&quot;application-related&quot; operation that needs an explicit flush/barrier.
+My question was mainly related to the cases when no such need occurs
+naturally.
+What if the user works with the raw unpartitioned device -- does he still
+get a guarantee of correct operation under failures? And if it is done
+through sg driver (not through the block device subsystem)?
+Do you imply that if the devices are reported as write-back (plus capable of
+performing flushes etc) then the problem is solved even if the cache is
+de-facto volatile?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20060806/bcc2f64b/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20060806/bcc2f64b/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000314.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000316.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#315">[ date ]</a>
+              <a href="thread.html#315">[ thread ]</a>
+              <a href="subject.html#315">[ subject ]</a>
+              <a href="author.html#315">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

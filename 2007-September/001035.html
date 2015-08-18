@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070909153032.GA27634%40lemming.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001049.html">
+   <LINK REL="Next"  HREF="001036.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070909153032.GA27634%40lemming.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Sun Sep  9 17:30:32 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001049.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001036.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1035">[ date ]</a>
+              <a href="thread.html#1035">[ thread ]</a>
+              <a href="subject.html#1035">[ subject ]</a>
+              <a href="author.html#1035">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I experimented a little further with iSER in latest <A HREF="git://git.osc.edu/tgt">git://git.osc.edu/tgt</A>
+
+Summary:
+ - 2.6.21 seems to be a good kernel. 2.6.22 or newer, or RedHat's OFED 1.2
+   patched kernels all seem to have iSER bugs that make them unusable.
+ - as everything works in 2.6.21 presumably this means there's nothing
+   wrong with the iSER implementation in tgtd. well done! :)
+
+with 2.6.18-32.el5 (RHEL5 kernel w/OFED 1.2) I get the below read
+corruption problems on just the raw iSER device (/dev/sdc):
+   # ls -l file.1m 
+  -rw-r--r-- 1 root root 1048576 Sep  7 02:02 file.1m
+   # dd if=file.1m of=/dev/sdc bs=1M count=1
+   # for i in `seq 0 9`; do dd if=/dev/sdc of=file.1m.copy.$i bs=1M count=1; done
+   # md5sum file.1m* | sort
+  274b3110146c844578050b6445061c58  file.1m
+  274b3110146c844578050b6445061c58  file.1m.copy.0
+  274b3110146c844578050b6445061c58  file.1m.copy.1
+  274b3110146c844578050b6445061c58  file.1m.copy.2
+  274b3110146c844578050b6445061c58  file.1m.copy.4
+  274b3110146c844578050b6445061c58  file.1m.copy.5
+  274b3110146c844578050b6445061c58  file.1m.copy.6
+  274b3110146c844578050b6445061c58  file.1m.copy.8
+  3925690d020b07b3af4f631903040820  file.1m.copy.9
+  5bb8f0621f73a9de271604ef044adaf8  file.1m.copy.7
+  b153b34fc88b410eb99d145bc3f81106  file.1m.copy.3
+about 10 to 20% of reads are incorrect at bs=1M. reads are ok below
+bs=500k or so.
+
+with the 2.6.22.6 kernel and iSER I couldn't find any corruption
+issues using dd to /dev/sdc. however (as reported previously) if I put
+an ext3 filesystem on the iSER device and then dd to a file in the ext3
+filsystem then pretty much immediately I get:
+  Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196611, length 1
+  Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196612, length 1
+  Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196613, length 1
+  ...
+
+I get the same type of errors with 2.6.23-rc5 too.
+
+with 2.6.21 (mem=512M) on the initiator side and 2.6.21 or 2.6.22.6
+(7.1g ramdisk as backing store) then everything seems to work fine.
+eg. bonnie++
+
+Version  1.03       ------Sequential Output------ --Sequential Input- --Random-
+                    -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+x11            512M 80329  99 521771 99 224506 44 85983  95 525440 49 +++++ +++
+x11              1G 80649  99 484939 92 207655 43 59377  98 488031 41 13703  14
+x11              2G 79976  99 461833 94 208618 42 74189  97 467245 39 10060  13
+x11              4G 79873  99 487361 97 210199 43 87312  98 484341 42  8459  13
+                    ------Sequential Create------ --------Random Create--------
+                    -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+                 64 80318  99 +++++ +++ 86949  99 80277  99 +++++ +++ 83630 100
+                256 68904  97 436942 98 61886  83 67777  95 +++++ +++ 48291  69
+                512 40226  62 34164  25 37500  65 44426  67 22325  18 28473  53
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001049.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001036.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1035">[ date ]</a>
+              <a href="thread.html#1035">[ thread ]</a>
+              <a href="subject.html#1035">[ subject ]</a>
+              <a href="author.html#1035">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

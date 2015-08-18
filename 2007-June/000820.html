@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] SCC vs SES
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SCC%20vs%20SES&In-Reply-To=%3C467A30D9.8030101%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000819.html">
+   <LINK REL="Next"  HREF="000824.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] SCC vs SES</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SCC%20vs%20SES&In-Reply-To=%3C467A30D9.8030101%40gmail.com%3E"
+       TITLE="[Stgt-devel] SCC vs SES">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Jun 21 10:03:37 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000819.html">[Stgt-devel] getting started.
+</A></li>
+        <LI>Next message: <A HREF="000824.html">[Stgt-devel] SCC vs SES
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#820">[ date ]</a>
+              <a href="thread.html#820">[ thread ]</a>
+              <a href="subject.html#820">[ subject ]</a>
+              <a href="author.html#820">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hello One and all.
+
+Just brushing up on the recent changes to the stgt with regards to the 
+SCC module.
+
+The most recent draft doco at the T10 site I could locate is dated 12 
+Sept 1997 (scc2r04.pdf)
+
+ From my 10 minute read of these standards, the 'scc' device appears to 
+be aimed at the RAID Disk array and fine grain control of disks within a 
+RAID array (hot-swap spares, redirecting SCSI commands to a device 
+within an array, etc).
+
+While this model will suit the existing SBC / MMC modules, the SES (SCSI 
+Enclosure Service) model would IMO be a better 'fit'.
+
+i.e. The target 'owner' is an enclosure, rather than a SCSI Controller..
+
+This way, the enclosure can be parent to all devices within the target.
+
+Having the SES be the 'parent' for all LUN within the target, a SCC 
+module could then become a LUN within the SES framework (if this 
+functionality is required) to direct SCSI commands to the SBC/MMC type 
+devices within the target.
+
+The SES model would be a better fit with regards to virtual libraries. 
+i.e. Each stgt target is an Enclosure with x number of logical units 
+within the enclosure.
+
+
+ From a practical point of view - As there is no SCC unique code behind 
+the SCC target, both the SCC or SES models will work.
+
+I could see potential issues where a (unknown / as yet untested) SCSI 
+initiators finding a SCC controlling a set of LUNs which happened to be 
+tape drives and/or medium changer may fail...
+
+
+Thoughts ?
+
+
+Regards
+Mark Harvey
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000819.html">[Stgt-devel] getting started.
+</A></li>
+	<LI>Next message: <A HREF="000824.html">[Stgt-devel] SCC vs SES
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#820">[ date ]</a>
+              <a href="thread.html#820">[ thread ]</a>
+              <a href="subject.html#820">[ subject ]</a>
+              <a href="author.html#820">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

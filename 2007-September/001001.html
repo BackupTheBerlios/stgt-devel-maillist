@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070903132326.GA8441%40lemming.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000999.html">
+   <LINK REL="Next"  HREF="001002.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20070903132326.GA8441%40lemming.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Mon Sep  3 15:23:26 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000999.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within INQUIRY op code
+</A></li>
+        <LI>Next message: <A HREF="001002.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1001">[ date ]</a>
+              <a href="thread.html#1001">[ thread ]</a>
+              <a href="subject.html#1001">[ subject ]</a>
+              <a href="author.html#1001">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+an iSER implementation is pretty exciting - thanks for all your
+hard work!
+
+I've been trying out <A HREF="git://git.osc.edu/tgt">git://git.osc.edu/tgt</A> but I seem to have hit a
+problem with larger i/o :-/ hopefully I'm just doing something silly as
+I'm fairly new to iSCSI and even newer to tgtd.
+
+so I can connect to an iSCSI/iSER target and small dd's to the device
+work eg.
+ # dd if=/dev/zero of=/dev/sdc bs=1M count=10
+ 10+0 records in
+ 10+0 records out
+ 10485760 bytes (10 MB) copied, 0.020379 seconds, 515 MB/s
+
+however a slightly larger dd
+  # dd if=/dev/zero of=/dev/sdc bs=1M count=100
+hits troubles (it appears to eventually complete, albeit with speeds in
+the kB/s range) and the iSCSI device is usually left in a non-working
+state afterwards eg. &quot;fdisk -l &lt;device&gt;&quot; gives no output.
+
+logs from tgtd -d 9 and from the initiator side are attached.
+
+there are ~millions of these:
+ tgtd: iscsi_iser_write_begin(1014) Unable to find send slot
+ [iSER]:in iscsi_iser_write_begin nbytes 48.
+at the end of the tgtd logs, so for brevity I truncated the file after
+a few 100 of them.
+
+dd works as expected when I use TCP or IPoIB instead of iSER.
+I tried tgtd in iSER mode with both standard centos5 kernels and ofed
+(1.1) and also 2.6.22.6 + ofed1.2. logs are from the latter.
+
+if it matters:
+the backing store for the iSER target is a file in a 7.1g ramfs.
+the client is booted into a kernel with mem=512M.
+centos5, x86_64, dual dual-core Xeon 5150.
+
+target/server setup is:
+ mount -t ramfs none -o rw,size=7100M,mode=755 /mnt/ramdisk
+ dd if=/dev/zero of=/mnt/ramdisk/file bs=1M count=7000
+ modprobe ib_iser
+ tgtd
+ tgtadm --lld iscsi --mode target --op new --tid 1 --targetname yo
+ tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address ALL
+ tgtadm --lld iscsi --mode target --op update --tid 1 --name MaxRecvDataSegmentLength --value 262144
+ tgtadm --lld iscsi --mode target --op update --tid 1 --name FirstBurstLength --value 262144
+ tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 --backing-store /mnt/ramdisk/file
+
+initiator/client setup is:
+ /etc/iscsi/iscsid.conf:
+   node.startup = manual
+   node.session.timeo.replacement_timeout = 120
+   node.conn[0].timeo.login_timeout = 15
+   node.conn[0].timeo.logout_timeout = 15
+   node.conn[0].timeo.noop_out_interval = 10
+   node.conn[0].timeo.noop_out_timeout = 15
+   node.session.iscsi.InitialR2T = No
+   node.session.iscsi.ImmediateData = Yes
+   node.conn[0].iscsi.HeaderDigest = None
+   node.conn[0].iscsi.DataDigest = None
+
+ modprobe ib_iser
+ /etc/init.d/iscsid start
+ iscsiadm --mode discovery --type sendtargets --portal $ip
+ iscsiadm --mode node --targetname yo --portal $ip:3260 --op update -n node.transport_name -v iser
+ iscsiadm --mode node --targetname yo --portal $ip:3260 --login
+
+please let me know if you'd like more info or for me to try
+something else out.
+
+cheers,
+robin
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: tgtd_log.100m.1.short.txt.gz
+Type: application/x-gzip
+Size: 12551 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070903/621e3312/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070903/621e3312/attachment.bin</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: initiator_log.1.txt.gz
+Type: application/x-gzip
+Size: 1159 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070903/621e3312/attachment-0001.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070903/621e3312/attachment-0001.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000999.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within INQUIRY op code
+</A></li>
+	<LI>Next message: <A HREF="001002.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1001">[ date ]</a>
+              <a href="thread.html#1001">[ thread ]</a>
+              <a href="subject.html#1001">[ subject ]</a>
+              <a href="author.html#1001">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

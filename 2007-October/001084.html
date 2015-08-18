@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 20/20] iser wait for rdma completion
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2020/20%5D%20iser%20wait%20for%20rdma%20completion&In-Reply-To=%3Ca38a932a9bfedb8e76284f706b40d2ba9debe57a.1192554396.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001089.html">
+   <LINK REL="Next"  HREF="001088.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 20/20] iser wait for rdma completion</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2020/20%5D%20iser%20wait%20for%20rdma%20completion&In-Reply-To=%3Ca38a932a9bfedb8e76284f706b40d2ba9debe57a.1192554396.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 20/20] iser wait for rdma completion">pw at osc.edu
+       </A><BR>
+    <I>Tue Oct 16 17:21:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001089.html">[Stgt-devel] [PATCH 19/20] iser flush before disconn
+</A></li>
+        <LI>Next message: <A HREF="001088.html">[Stgt-devel] [PATCH 12/20] iser task transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1084">[ date ]</a>
+              <a href="thread.html#1084">[ thread ]</a>
+              <a href="subject.html#1084">[ subject ]</a>
+              <a href="author.html#1084">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>If we just sent a DATA_IN, do not do anything else until the completion
+arrives.  Sending the response back to the initiator before the RDMA
+completed could be disastrous.  The completion handler will put us back
+on the tx list.
+
+Likely very much unneeded.  Local RDMA Write completion means nothing.
+Rely on the fact that the Send goes after the RDMA Write operations,
+but no need to wait for them to complete, just ensure they all went out.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/iscsi/iscsi_rdma.c |   21 +++++++++++++++++----
+ usr/iscsi/iscsid.c     |   19 ++++++++++++++-----
+ 2 files changed, 31 insertions(+), 9 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+index f4c6c23..ab4b3f2 100644
+--- a/usr/iscsi/iscsi_rdma.c
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -94,6 +94,7 @@ struct rdmalist {
+ 	struct ibv_send_wr wr;
+ 	struct list_head list;
+ 	struct iscsi_task *task;  /* to get iser_task for remote stag and va */
++	int final_rdma;
+ };
+ 
+ /*
+@@ -917,6 +918,14 @@ static void handle_wc(struct ibv_wc *wc)
+ 
+ 		iscsi_rdma_event_modify(ci-&gt;iscsi_conn, EPOLLIN | EPOLLOUT);
+ 		list_add(&amp;rdmal-&gt;list, &amp;ci-&gt;rdmal);
++
++		/* now let it transmit the final response, as we know
++		 * the RDMAs have completed */
++		if (rdmal-&gt;final_rdma) {
++			struct iscsi_task *task = rdmal-&gt;task;
++			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
++		}
++
+ 		if (waiting_rdma_slot) {
+ 			waiting_rdma_slot = 0;
+ 			num_tx_ready = 1;
+@@ -1374,7 +1383,8 @@ static void iscsi_iser_write_end(struct iscsi_connection *iscsi_conn)
+  */
+ static int iser_post_rdma_wr(struct conn_info *ci, struct iscsi_task *task,
+ 			     void *buf, ssize_t size, int op,
+-			     uint64_t remote_va, uint32_t remote_rkey)
++			     uint64_t remote_va, uint32_t remote_rkey,
++			     int final_rdma)
+ {
+ 	int ret;
+ 	struct rdmalist *rdmal;
+@@ -1395,6 +1405,8 @@ static int iser_post_rdma_wr(struct conn_info *ci, struct iscsi_task *task,
+ 	rdmal-&gt;wr.wr.rdma.remote_addr = remote_va;
+ 	rdmal-&gt;wr.wr.rdma.rkey = remote_rkey;
+ 
++	rdmal-&gt;final_rdma = final_rdma;
++
+ 	ret = ibv_post_send(ci-&gt;qp_hndl, &amp;rdmal-&gt;wr, &amp;bad_wr);
+ 	if (ret)
+ 		eprintf(&quot;ibv_post_send ret %d\n&quot;, ret);
+@@ -1423,7 +1435,7 @@ static int iscsi_rdma_rdma_read(struct iscsi_connection *conn)
+ 		(unsigned long long) itask-&gt;rem_write_va);
+ 
+ 	ret = iser_post_rdma_wr(ci, task, buf, len, IBV_WR_RDMA_READ,
+-				itask-&gt;rem_write_va, itask-&gt;rem_write_stag);
++				itask-&gt;rem_write_va, itask-&gt;rem_write_stag, 0);
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
+@@ -1448,6 +1460,7 @@ static int iscsi_rdma_rdma_write(struct iscsi_connection *conn)
+ 	struct iser_task *itask = task-&gt;trans_data;
+ 	struct iscsi_pdu *rsp = &amp;conn-&gt;rsp;
+ 	struct iscsi_data_rsp *datain = (struct iscsi_data_rsp *) &amp;rsp-&gt;bhs;
++	int final_rdma = (task-&gt;offset == task-&gt;len);
+ 	uint32_t offset;
+ 	int ret;
+ 
+@@ -1458,7 +1471,7 @@ static int iscsi_rdma_rdma_write(struct iscsi_connection *conn)
+ 
+ 	ret = iser_post_rdma_wr(ci, task, rsp-&gt;data, rsp-&gt;datasize,
+ 				IBV_WR_RDMA_WRITE, itask-&gt;rem_read_va + offset,
+-				itask-&gt;rem_read_stag);
++				itask-&gt;rem_read_stag, final_rdma);
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
+@@ -1467,7 +1480,7 @@ static int iscsi_rdma_rdma_write(struct iscsi_connection *conn)
+ 	 * rdma to finish before sending the completion.  Then we'll stick
+ 	 * ourselves back on the list.
+ 	 */
+-	if (task-&gt;offset == task-&gt;len) {
++	if (final_rdma) {
+ 		iscsi_rdma_event_modify(ci-&gt;iscsi_conn, EPOLLIN);
+ 	} else {
+ 		/* poke ourselves to do the next rdma */
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 7f882fa..3479ee7 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1708,12 +1708,21 @@ static int iscsi_scsi_cmd_tx_done(struct iscsi_connection *conn)
+ 	case ISCSI_OP_R2T:
+ 		break;
+ 	case ISCSI_OP_SCSI_DATA_IN:
+-		if (task-&gt;offset &lt; task-&gt;len || task-&gt;result != 0
+-		   || task-&gt;dir == BIDIRECTIONAL || conn-&gt;tp-&gt;rdma) {
+-			dprintf(&quot;more data or sense or bidir %x\n&quot;, hdr-&gt;itt);
+-			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-			return 0;
++		if (conn-&gt;tp-&gt;rdma) {
++			/* keep sending RDMA writes, but wait until they
++			 * are done before sending final response */
++			if (task-&gt;offset &lt; task-&gt;len)
++			    list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
++		} else {
++			if (task-&gt;offset &lt; task-&gt;len || task-&gt;result != 0
++			   || task-&gt;dir == BIDIRECTIONAL) {
++				dprintf(&quot;more data or sense or bidir %x\n&quot;,
++					hdr-&gt;itt);
++				list_add_tail(&amp;task-&gt;c_list,
++					      &amp;task-&gt;conn-&gt;tx_clist);
++			}
+ 		}
++		break;
+ 	case ISCSI_OP_SCSI_CMD_RSP:
+ 		iscsi_free_cmd_task(task);
+ 		break;
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001089.html">[Stgt-devel] [PATCH 19/20] iser flush before disconn
+</A></li>
+	<LI>Next message: <A HREF="001088.html">[Stgt-devel] [PATCH 12/20] iser task transport data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1084">[ date ]</a>
+              <a href="thread.html#1084">[ thread ]</a>
+              <a href="subject.html#1084">[ subject ]</a>
+              <a href="author.html#1084">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

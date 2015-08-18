@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Fix MODE SENSE handling
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Fix%20MODE%20SENSE%20handling&In-Reply-To=%3C87od6l2otr.fsf%40powerkom-dd.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001684.html">
+   <LINK REL="Next"  HREF="001682.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Fix MODE SENSE handling</H1>
+    <B>Arne Redlich</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Fix%20MODE%20SENSE%20handling&In-Reply-To=%3C87od6l2otr.fsf%40powerkom-dd.de%3E"
+       TITLE="[Stgt-devel] [PATCH] Fix MODE SENSE handling">agr at powerkom-dd.de
+       </A><BR>
+    <I>Sun Jun  1 16:48:48 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001684.html">[Stgt-devel] [PATCH] Fix INQUIRY handling
+</A></li>
+        <LI>Next message: <A HREF="001682.html">[Stgt-devel] bathes expulsion
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1678">[ date ]</a>
+              <a href="thread.html#1678">[ thread ]</a>
+              <a href="subject.html#1678">[ subject ]</a>
+              <a href="author.html#1678">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>TGT does not support changeable parameter mode pages (PAGE CTRL = 0x1).
+
+Signed-off-by: Arne Redlich &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">agr at powerkom-dd.de</A>&gt;
+---
+ usr/spc.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/usr/spc.c b/usr/spc.c
+index dace9ad..be7ee5e 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -359,7 +359,7 @@ static int build_mode_page(uint8_t *data, struct mode_pg *pg, uint16_t *alloc_le
+  */
+ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ {
+-	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode;
++	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode, pctrl;
+ 	uint16_t alloc_len, len = 0;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+@@ -369,12 +369,17 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	mode6 = (scb[0] == 0x1a);
+ 	dbd = scb[1] &amp; 0x8; /* Disable Block Descriptors */
+ 	pcode = scb[2] &amp; 0x3f;
++	pctrl = (scb[2] &amp; 0xc0) &gt;&gt; 6;
+ 	subpcode = scb[3];
+ 
+ 	/* Currently not implemented */
+ 	if (subpcode)
+ 		goto sense;
+ 
++	/* Changeable values are currently not implemented */
++	if (pctrl == 0x1)
++		goto sense;
++
+ 	data = scsi_get_in_buffer(cmd);
+ 
+ 	if (mode6) {
+-- 
+1.5.4.3
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001684.html">[Stgt-devel] [PATCH] Fix INQUIRY handling
+</A></li>
+	<LI>Next message: <A HREF="001682.html">[Stgt-devel] bathes expulsion
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1678">[ date ]</a>
+              <a href="thread.html#1678">[ thread ]</a>
+              <a href="subject.html#1678">[ subject ]</a>
+              <a href="author.html#1678">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

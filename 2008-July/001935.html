@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Make changes so that VTL stuff works properly ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%20properly%20...&In-Reply-To=%3Cmailman.45.1331738484.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001933.html">
+   <LINK REL="Next"  HREF="001934.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Make changes so that VTL stuff works properly ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Make%20changes%20so%20that%20VTL%20stuff%20works%20properly%20...&In-Reply-To=%3Cmailman.45.1331738484.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Make changes so that VTL stuff works properly ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Mon Jul 28 23:34:12 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001933.html">[Stgt-devel] I have verified that my changes to smc.c work with the	current SSC code and the MMC code ...
+</A></li>
+        <LI>Next message: <A HREF="001934.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works properly	...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1935">[ date ]</a>
+              <a href="thread.html#1935">[ thread ]</a>
+              <a href="subject.html#1935">[ subject ]</a>
+              <a href="author.html#1935">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>There are three changes here.
+
+In target.h I expose device_lookup for use by the smc.c code.
+
+In target.h I modify tgt_device_path_update so that we can call it to
+both open and close a file that has been allocated to a
+data_transfer_station.
+
+In smc.c I modified set_slot_full and set_slot_empty to call the
+modified tgt_device_path_update to achieve my goals. We call
+device_lookup to figure out the device we are interested in.
+
+I have tested this by loading and unloading tapes and DVDs, doing tar
+to the drive and using cdrecord on the device, and verifying with lsof
+that the tgtd has the files open when they are in the transfer station
+and does not have them open when the station has been unloaded.
+
+It all seems to work. I have attached the patch as well because gmail
+seems to kill patches ... I hope the attached patch is OK.
+
+---
+ usr/smc.c    |   34 ++++++++++++++++++++++++----------
+ usr/target.c |   15 ++++++++++-----
+ usr/target.h |    2 ++
+ 3 files changed, 36 insertions(+), 15 deletions(-)
+
+diff --git a/usr/smc.c b/usr/smc.c
+index 9d7f681..0848101 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -47,12 +47,18 @@
+ #include &quot;smc.h&quot;
+ #include &quot;media.h&quot;
+
+-static int set_slot_full(struct slot *s, uint16_t src, char *path)
++static int set_slot_full(struct target *target, struct slot *s, uint16_t src, c
+har *path)
+ {
+        int err = 0;
+
+-       if (path)
+-               err = dtd_load_unload(s-&gt;drive_tid, s-&gt;drive_lun, LOAD, path);
++       if (path) {
++               struct scsi_lu *lu = device_lookup(target, s-&gt;drive_lun);
++
++               if (!lu)
++                       return 1;  /* we could not find the LU ... */
++
++               err = tgt_device_path_update(target, lu, path);
++       }
+        if (err)
+                return err;
+
+@@ -62,13 +68,20 @@ static int set_slot_full(struct slot *s, uint16_t src, char
+*path)
+        return err;
+ }
+
+-static void set_slot_empty(struct slot *s)
++static void set_slot_empty(struct target *target, struct slot *s)
+ {
+        s-&gt;status &amp;= 0xfe;
+        s-&gt;last_addr = 0;
+        memset(s-&gt;barcode, ' ', sizeof(s-&gt;barcode));
+-       if (s-&gt;element_type == ELEMENT_DATA_TRANSFER)
+-               dtd_load_unload(s-&gt;drive_tid, s-&gt;drive_lun, UNLOAD, NULL);
++
++       if (s-&gt;element_type == ELEMENT_DATA_TRANSFER) {
++               struct scsi_lu *lu = device_lookup(target, s-&gt;drive_lun);
++
++               if (!lu)
++                       return 1;  /* we could not find the LU ... */
++
++               (void)tgt_device_path_update(target, lu, NULL);
++       }
+ }
+
+ static int test_slot_full(struct slot *s)
+@@ -355,6 +368,7 @@ sense:
+ static int smc_move_medium(int host_no, struct scsi_cmd *cmd)
+ {
+        struct smc_info *smc = dtype_priv(cmd-&gt;dev);
++       struct target *tgt = cmd-&gt;c_target;
+        uint8_t *scb;
+        uint16_t src;
+        uint16_t dest;
+@@ -410,15 +424,15 @@ static int smc_move_medium(int host_no, struct scsi_cmd *c
+md)
+                        goto sense;
+                }
+
+-               if (set_slot_full(dest_slot, src, path)) {
++               if (set_slot_full(tgt, dest_slot, src, path)) {
+                        key = HARDWARE_ERROR;
+                        asc = ASC_MECHANICAL_POSITIONING_ERROR;
+                        goto sense;
+                }
+        } else
+-               set_slot_full(dest_slot, src, NULL);
++               set_slot_full(tgt, dest_slot, src, NULL);
+
+-       set_slot_empty(src_slot);
++       set_slot_empty(tgt, src_slot);
+
+        scsi_set_in_resid_by_actual(cmd, 0);
+        return SAM_STAT_GOOD;
+@@ -626,7 +640,7 @@ static int config_slot(struct scsi_lu *lu, struct tmp_param
+*tmp)
+                if (!s)
+                        break;  // Slot not found..
+                strncpy(s-&gt;barcode, tmp-&gt;barcode, sizeof(s-&gt;barcode));
+-               set_slot_full(s, 0, NULL);
++               set_slot_full(lu-&gt;tgt, s, 0, NULL);
+                ret = TGTADM_SUCCESS;
+                break;
+        case ELEMENT_DATA_TRANSFER:
+diff --git a/usr/target.c b/usr/target.c
+index 7abaa54..863ec9b 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -297,7 +297,7 @@ int it_nexus_destroy(int tid, uint64_t itn_id)
+        return 0;
+ }
+
+-static struct scsi_lu *device_lookup(struct target *target, uint64_t lun)
++struct scsi_lu *device_lookup(struct target *target, uint64_t lun)
+ {
+        struct scsi_lu *lu;
+
+@@ -347,7 +347,7 @@ int tgt_device_path_update(struct target *target, struct scs
+i_lu *lu, char *path
+        uint64_t size;
+
+        if (lu-&gt;path) {
+-               if (lu-&gt;attrs.online)
++               if (path &amp;&amp; lu-&gt;attrs.online)
+                        return TGTADM_INVALID_REQUEST;
+
+                lu-&gt;dev_type_template.lu_offline(lu);
+@@ -359,6 +359,10 @@ int tgt_device_path_update(struct target *target, struct sc
+si_lu *lu, char *path
+                lu-&gt;path = NULL;
+        }
+
++       /* Were we called to close the file? */
++       if (!path)
++               return 0;
++
+        path = strdup(path);
+        if (!path)
+                return TGTADM_NOMEM;
+@@ -418,7 +422,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, c
+har *params,
+        struct it_nexus_lu_info *itn_lu;
+        struct it_nexus *itn;
+
+-       dprintf(&quot;%d %&quot; PRIu64 &quot;\n&quot;, tid, lun);
++       eprintf(&quot;%d %&quot; PRIu64 &quot; params: %s\n&quot;, tid, lun, params);
+
+        while ((p = strsep(&amp;params, &quot;,&quot;)) != NULL) {
+                substring_t args[MAX_OPT_ARGS];
+@@ -452,8 +456,9 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, c
+har *params,
+        }
+
+        bst = target-&gt;bst;
+-       if (backing) {
++       /*if (backing) {*/
+                if (bstype) {
++                       eprintf(&quot;backing store trying: %s\n&quot;, bstype);
+                        bst = get_backingstore_template(bstype);
+                        if (!bst) {
+                                eprintf(&quot;failed to find bstype, %s\n&quot;, bstype);
+@@ -461,7 +466,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, c
+har *params,
+                                goto out;
+                        }
+                }
+-       }
++       /*}*/
+
+        t = device_type_lookup(dev_type);
+        if (!t) {
+diff --git a/usr/target.h b/usr/target.h
+index 8fe30aa..4d4768a 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -87,4 +87,6 @@ static inline int queue_active(const struct tgt_cmd_queue *q)
+        \
+ QUEUE_FNS(BLOCKED, blocked)
+ QUEUE_FNS(DELETED, deleted)
+
++struct scsi_lu *device_lookup(struct target *target, uint64_t lun);
++
+ #endif
+--
+1.5.5.1
+
+------=_Part_14668_12538439.1217282277331
+Content-Type: application/octet-stream;
+ name=0003-Make-changes-so-that-VTL-stuff-works-properly.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fj7mf6pb0
+Content-Disposition: attachment;
+ filename=0003-Make-changes-so-that-VTL-stuff-works-properly.patch
+
+RnJvbSBhMTZkMzY4YTI5Mjk4MTcwZGYyYzIxZmQxOWQ4NDkwYzI0OGYwNmIxIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBSaWNoYXJkIFNoYXJwZSA8cmVhbHJpY2hhcmRzaGFycGVAZ21h
+aWwuY29tPgpEYXRlOiBNb24sIDI4IEp1bCAyMDA4IDE0OjM0OjEyIC0wNzAwClN1YmplY3Q6IFtQ
+QVRDSF0gTWFrZSBjaGFuZ2VzIHNvIHRoYXQgVlRMIHN0dWZmIHdvcmtzIHByb3Blcmx5IC4uLgoK
+LS0tCiB1c3Ivc21jLmMgICAgfCAgIDM0ICsrKysrKysrKysrKysrKysrKysrKysrKy0tLS0tLS0t
+LS0KIHVzci90YXJnZXQuYyB8ICAgMTUgKysrKysrKysrKy0tLS0tCiB1c3IvdGFyZ2V0LmggfCAg
+ICAyICsrCiAzIGZpbGVzIGNoYW5nZWQsIDM2IGluc2VydGlvbnMoKyksIDE1IGRlbGV0aW9ucygt
+KQoKZGlmZiAtLWdpdCBhL3Vzci9zbWMuYyBiL3Vzci9zbWMuYwppbmRleCA5ZDdmNjgxLi4wODQ4
+MTAxIDEwMDY0NAotLS0gYS91c3Ivc21jLmMKKysrIGIvdXNyL3NtYy5jCkBAIC00NywxMiArNDcs
+MTggQEAKICNpbmNsdWRlICJzbWMuaCIKICNpbmNsdWRlICJtZWRpYS5oIgogCi1zdGF0aWMgaW50
+IHNldF9zbG90X2Z1bGwoc3RydWN0IHNsb3QgKnMsIHVpbnQxNl90IHNyYywgY2hhciAqcGF0aCkK
+K3N0YXRpYyBpbnQgc2V0X3Nsb3RfZnVsbChzdHJ1Y3QgdGFyZ2V0ICp0YXJnZXQsIHN0cnVjdCBz
+bG90ICpzLCB1aW50MTZfdCBzcmMsIGNoYXIgKnBhdGgpCiB7CiAJaW50IGVyciA9IDA7CiAKLQlp
+ZiAocGF0aCkKLQkJZXJyID0gZHRkX2xvYWRfdW5sb2FkKHMtPmRyaXZlX3RpZCwgcy0+ZHJpdmVf
+bHVuLCBMT0FELCBwYXRoKTsKKwlpZiAocGF0aCkgeworCQlzdHJ1Y3Qgc2NzaV9sdSAqbHUgPSBk
+ZXZpY2VfbG9va3VwKHRhcmdldCwgcy0+ZHJpdmVfbHVuKTsKKworCQlpZiAoIWx1KQorCQkJcmV0
+dXJuIDE7ICAvKiB3ZSBjb3VsZCBub3QgZmluZCB0aGUgTFUgLi4uICovCisKKwkJZXJyID0gdGd0
+X2RldmljZV9wYXRoX3VwZGF0ZSh0YXJnZXQsIGx1LCBwYXRoKTsKKwl9CiAJaWYgKGVycikKIAkJ
+cmV0dXJuIGVycjsKIApAQCAtNjIsMTMgKzY4LDIwIEBAIHN0YXRpYyBpbnQgc2V0X3Nsb3RfZnVs
+bChzdHJ1Y3Qgc2xvdCAqcywgdWludDE2X3Qgc3JjLCBjaGFyICpwYXRoKQogCXJldHVybiBlcnI7
+CiB9CiAKLXN0YXRpYyB2b2lkIHNldF9zbG90X2VtcHR5KHN0cnVjdCBzbG90ICpzKQorc3RhdGlj
+IHZvaWQgc2V0X3Nsb3RfZW1wdHkoc3RydWN0IHRhcmdldCAqdGFyZ2V0LCBzdHJ1Y3Qgc2xvdCAq
+cykKIHsKIAlzLT5zdGF0dXMgJj0gMHhmZTsKIAlzLT5sYXN0X2FkZHIgPSAwOwogCW1lbXNldChz
+LT5iYXJjb2RlLCAnICcsIHNpemVvZihzLT5iYXJjb2RlKSk7Ci0JaWYgKHMtPmVsZW1lbnRfdHlw
+ZSA9PSBFTEVNRU5UX0RBVEFfVFJBTlNGRVIpCi0JCWR0ZF9sb2FkX3VubG9hZChzLT5kcml2ZV90
+aWQsIHMtPmRyaXZlX2x1biwgVU5MT0FELCBOVUxMKTsKKworCWlmIChzLT5lbGVtZW50X3R5cGUg
+PT0gRUxFTUVOVF9EQVRBX1RSQU5TRkVSKSB7CisJCXN0cnVjdCBzY3NpX2x1ICpsdSA9IGRldmlj
+ZV9sb29rdXAodGFyZ2V0LCBzLT5kcml2ZV9sdW4pOworCQorCQlpZiAoIWx1KQorCQkJcmV0dXJu
+IDE7ICAvKiB3ZSBjb3VsZCBub3QgZmluZCB0aGUgTFUgLi4uICovCisKKwkJKHZvaWQpdGd0X2Rl
+dmljZV9wYXRoX3VwZGF0ZSh0YXJnZXQsIGx1LCBOVUxMKTsKKwl9CiB9CiAKIHN0YXRpYyBpbnQg
+dGVzdF9zbG90X2Z1bGwoc3RydWN0IHNsb3QgKnMpCkBAIC0zNTUsNiArMzY4LDcgQEAgc2Vuc2U6
+CiBzdGF0aWMgaW50IHNtY19tb3ZlX21lZGl1bShpbnQgaG9zdF9ubywgc3RydWN0IHNjc2lfY21k
+ICpjbWQpCiB7CiAJc3RydWN0IHNtY19pbmZvICpzbWMgPSBkdHlwZV9wcml2KGNtZC0+ZGV2KTsK
+KwlzdHJ1Y3QgdGFyZ2V0ICp0Z3QgPSBjbWQtPmNfdGFyZ2V0OwogCXVpbnQ4X3QgKnNjYjsKIAl1
+aW50MTZfdCBzcmM7CiAJdWludDE2X3QgZGVzdDsKQEAgLTQxMCwxNSArNDI0LDE1IEBAIHN0YXRp
+YyBpbnQgc21jX21vdmVfbWVkaXVtKGludCBob3N0X25vLCBzdHJ1Y3Qgc2NzaV9jbWQgKmNtZCkK
+IAkJCWdvdG8gc2Vuc2U7CiAJCX0KIAotCQlpZiAoc2V0X3Nsb3RfZnVsbChkZXN0X3Nsb3QsIHNy
+YywgcGF0aCkpIHsKKwkJaWYgKHNldF9zbG90X2Z1bGwodGd0LCBkZXN0X3Nsb3QsIHNyYywgcGF0
+aCkpIHsKIAkJCWtleSA9IEhBUkRXQVJFX0VSUk9SOwogCQkJYXNjID0gQVNDX01FQ0hBTklDQUxf
+UE9TSVRJT05JTkdfRVJST1I7CiAJCQlnb3RvIHNlbnNlOwogCQl9CiAJfSBlbHNlCi0JCXNldF9z
+bG90X2Z1bGwoZGVzdF9zbG90LCBzcmMsIE5VTEwpOworCQlzZXRfc2xvdF9mdWxsKHRndCwgZGVz
+dF9zbG90LCBzcmMsIE5VTEwpOwogCi0Jc2V0X3Nsb3RfZW1wdHkoc3JjX3Nsb3QpOworCXNldF9z
+bG90X2VtcHR5KHRndCwgc3JjX3Nsb3QpOwogCiAJc2NzaV9zZXRfaW5fcmVzaWRfYnlfYWN0dWFs
+KGNtZCwgMCk7CiAJcmV0dXJuIFNBTV9TVEFUX0dPT0Q7CkBAIC02MjYsNyArNjQwLDcgQEAgc3Rh
+dGljIGludCBjb25maWdfc2xvdChzdHJ1Y3Qgc2NzaV9sdSAqbHUsIHN0cnVjdCB0bXBfcGFyYW0g
+KnRtcCkKIAkJaWYgKCFzKQogCQkJYnJlYWs7CS8vIFNsb3Qgbm90IGZvdW5kLi4KIAkJc3RybmNw
+eShzLT5iYXJjb2RlLCB0bXAtPmJhcmNvZGUsIHNpemVvZihzLT5iYXJjb2RlKSk7Ci0JCXNldF9z
+bG90X2Z1bGwocywgMCwgTlVMTCk7CisJCXNldF9zbG90X2Z1bGwobHUtPnRndCwgcywgMCwgTlVM
+TCk7CiAJCXJldCA9IFRHVEFETV9TVUNDRVNTOwogCQlicmVhazsKIAljYXNlIEVMRU1FTlRfREFU
+QV9UUkFOU0ZFUjoKZGlmZiAtLWdpdCBhL3Vzci90YXJnZXQuYyBiL3Vzci90YXJnZXQuYwppbmRl
+eCA3YWJhYTU0Li44NjNlYzliIDEwMDY0NAotLS0gYS91c3IvdGFyZ2V0LmMKKysrIGIvdXNyL3Rh
+cmdldC5jCkBAIC0yOTcsNyArMjk3LDcgQEAgaW50IGl0X25leHVzX2Rlc3Ryb3koaW50IHRpZCwg
+dWludDY0X3QgaXRuX2lkKQogCXJldHVybiAwOwogfQogCi1zdGF0aWMgc3RydWN0IHNjc2lfbHUg
+KmRldmljZV9sb29rdXAoc3RydWN0IHRhcmdldCAqdGFyZ2V0LCB1aW50NjRfdCBsdW4pCitzdHJ1
+Y3Qgc2NzaV9sdSAqZGV2aWNlX2xvb2t1cChzdHJ1Y3QgdGFyZ2V0ICp0YXJnZXQsIHVpbnQ2NF90
+IGx1bikKIHsKIAlzdHJ1Y3Qgc2NzaV9sdSAqbHU7CiAKQEAgLTM0Nyw3ICszNDcsNyBAQCBpbnQg
+dGd0X2RldmljZV9wYXRoX3VwZGF0ZShzdHJ1Y3QgdGFyZ2V0ICp0YXJnZXQsIHN0cnVjdCBzY3Np
+X2x1ICpsdSwgY2hhciAqcGF0aAogCXVpbnQ2NF90IHNpemU7CiAKIAlpZiAobHUtPnBhdGgpIHsK
+LQkJaWYgKGx1LT5hdHRycy5vbmxpbmUpCisJCWlmIChwYXRoICYmIGx1LT5hdHRycy5vbmxpbmUp
+CiAJCQlyZXR1cm4gVEdUQURNX0lOVkFMSURfUkVRVUVTVDsKIAogCQlsdS0+ZGV2X3R5cGVfdGVt
+cGxhdGUubHVfb2ZmbGluZShsdSk7CkBAIC0zNTksNiArMzU5LDEwIEBAIGludCB0Z3RfZGV2aWNl
+X3BhdGhfdXBkYXRlKHN0cnVjdCB0YXJnZXQgKnRhcmdldCwgc3RydWN0IHNjc2lfbHUgKmx1LCBj
+aGFyICpwYXRoCiAJCWx1LT5wYXRoID0gTlVMTDsKIAl9CiAKKwkvKiBXZXJlIHdlIGNhbGxlZCB0
+byBjbG9zZSB0aGUgZmlsZT8gKi8KKwlpZiAoIXBhdGgpCisJCXJldHVybiAwOworCiAJcGF0aCA9
+IHN0cmR1cChwYXRoKTsKIAlpZiAoIXBhdGgpCiAJCXJldHVybiBUR1RBRE1fTk9NRU07CkBAIC00
+MTgsNyArNDIyLDcgQEAgaW50IHRndF9kZXZpY2VfY3JlYXRlKGludCB0aWQsIGludCBkZXZfdHlw
+ZSwgdWludDY0X3QgbHVuLCBjaGFyICpwYXJhbXMsCiAJc3RydWN0IGl0X25leHVzX2x1X2luZm8g
+Kml0bl9sdTsKIAlzdHJ1Y3QgaXRfbmV4dXMgKml0bjsKIAotCWRwcmludGYoIiVkICUiIFBSSXU2
+NCAiXG4iLCB0aWQsIGx1bik7CisJZXByaW50ZigiJWQgJSIgUFJJdTY0ICIgcGFyYW1zOiAlc1xu
+IiwgdGlkLCBsdW4sIHBhcmFtcyk7CiAKIAl3aGlsZSAoKHAgPSBzdHJzZXAoJnBhcmFtcywgIiwi
+KSkgIT0gTlVMTCkgewogCQlzdWJzdHJpbmdfdCBhcmdzW01BWF9PUFRfQVJHU107CkBAIC00NTIs
+OCArNDU2LDkgQEAgaW50IHRndF9kZXZpY2VfY3JlYXRlKGludCB0aWQsIGludCBkZXZfdHlwZSwg
+dWludDY0X3QgbHVuLCBjaGFyICpwYXJhbXMsCiAJfQogCiAJYnN0ID0gdGFyZ2V0LT5ic3Q7Ci0J
+aWYgKGJhY2tpbmcpIHsKKwkvKmlmIChiYWNraW5nKSB7Ki8KIAkJaWYgKGJzdHlwZSkgeworCQkJ
+ZXByaW50ZigiYmFja2luZyBzdG9yZSB0cnlpbmc6ICVzXG4iLCBic3R5cGUpOwogCQkJYnN0ID0g
+Z2V0X2JhY2tpbmdzdG9yZV90ZW1wbGF0ZShic3R5cGUpOwogCQkJaWYgKCFic3QpIHsKIAkJCQll
+cHJpbnRmKCJmYWlsZWQgdG8gZmluZCBic3R5cGUsICVzXG4iLCBic3R5cGUpOwpAQCAtNDYxLDcg
+KzQ2Niw3IEBAIGludCB0Z3RfZGV2aWNlX2NyZWF0ZShpbnQgdGlkLCBpbnQgZGV2X3R5cGUsIHVp
+bnQ2NF90IGx1biwgY2hhciAqcGFyYW1zLAogCQkJCWdvdG8gb3V0OwogCQkJfQogCQl9Ci0JfQor
+CS8qfSovCiAKIAl0ID0gZGV2aWNlX3R5cGVfbG9va3VwKGRldl90eXBlKTsKIAlpZiAoIXQpIHsK
+ZGlmZiAtLWdpdCBhL3Vzci90YXJnZXQuaCBiL3Vzci90YXJnZXQuaAppbmRleCA4ZmUzMGFhLi40
+ZDQ3NjhhIDEwMDY0NAotLS0gYS91c3IvdGFyZ2V0LmgKKysrIGIvdXNyL3RhcmdldC5oCkBAIC04
+Nyw0ICs4Nyw2IEBAIHN0YXRpYyBpbmxpbmUgaW50IHF1ZXVlX2FjdGl2ZShjb25zdCBzdHJ1Y3Qg
+dGd0X2NtZF9xdWV1ZSAqcSkJCVwKIFFVRVVFX0ZOUyhCTE9DS0VELCBibG9ja2VkKQogUVVFVUVf
+Rk5TKERFTEVURUQsIGRlbGV0ZWQpCiAKK3N0cnVjdCBzY3NpX2x1ICpkZXZpY2VfbG9va3VwKHN0
+cnVjdCB0YXJnZXQgKnRhcmdldCwgdWludDY0X3QgbHVuKTsKKwogI2VuZGlmCi0tIAoxLjUuNS4x
+Cgo=
+------=_Part_14668_12538439.1217282277331--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001933.html">[Stgt-devel] I have verified that my changes to smc.c work with the	current SSC code and the MMC code ...
+</A></li>
+	<LI>Next message: <A HREF="001934.html">[Stgt-devel] [PATCH] Make changes so that VTL stuff works properly	...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1935">[ date ]</a>
+              <a href="thread.html#1935">[ thread ]</a>
+              <a href="subject.html#1935">[ subject ]</a>
+              <a href="author.html#1935">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

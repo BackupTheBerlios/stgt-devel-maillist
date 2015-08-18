@@ -1,0 +1,60 @@
+From michaelc at cs.wisc.edu  Wed Oct  4 07:38:31 2006
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Wed, 04 Oct 2006 01:38:31 -0400
+Subject: [Stgt-devel] [PATCH 1/2] fix task leaks on conn close
+Message-ID: <452348D7.9020606@cs.wisc.edu>
+
+The attached patch adds a connection refcount and forces the cleanup of
+pending tasks or tasks that are not going to get completed by are not
+running in tgtd. The refcout is needed for the latter. When those
+commands have completed we then release the connection.
+
+This patch only handles the memory issues. Should we actually not close
+the connection endpoints and should we send the result of the commands
+that were executing in tgtd when they finally complete? For some like
+linux-iscsi or open-iscsi, when the connection is dropped we assume the
+command is not executed, but tgtd might actually complete it. Is either
+wrong?
+
+I will send a seperate patch to fix the command completeion issue above
+and the session leak.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 01-add-refcount-to-conn.patch
+Type: text/x-patch
+Size: 10123 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20061004/76c487d2/attachment.bin>
+
+From michaelc at cs.wisc.edu  Wed Oct  4 07:40:07 2006
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Wed, 04 Oct 2006 01:40:07 -0400
+Subject: [Stgt-devel] [PATCH 2/2] fix tmf return values
+Message-ID: <45234937.6020603@cs.wisc.edu>
+
+tgtd returns 0 or a -Exyz value. For the iscsi tmf response we want to
+translate those values to a iscsi value. The attached patch does this.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 02-fix-tmf-result.patch
+Type: text/x-patch
+Size: 874 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20061004/8367a437/attachment.bin>
+
+From michaelc at cs.wisc.edu  Wed Oct  4 08:26:18 2006
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Wed, 04 Oct 2006 02:26:18 -0400
+Subject: [Stgt-devel] [PATCH] add release session
+Message-ID: <4523540A.80202@cs.wisc.edu>
+
+This patch frees the session when all the connections have been freed.
+This was made over the other 2 patches.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 03-add-refcount-to-sess.patch
+Type: text/x-patch
+Size: 2095 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20061004/d919991e/attachment.bin>
+

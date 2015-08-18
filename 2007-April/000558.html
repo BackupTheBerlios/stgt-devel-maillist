@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] VTL patch, take 2
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20patch%2C%20take%202&In-Reply-To=%3Cf29db9a80704121428m1ccf2dc1x49485fc77772c128%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000565.html">
+   <LINK REL="Next"  HREF="000559.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] VTL patch, take 2</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20VTL%20patch%2C%20take%202&In-Reply-To=%3Cf29db9a80704121428m1ccf2dc1x49485fc77772c128%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] VTL patch, take 2">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Apr 12 23:28:04 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000565.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+        <LI>Next message: <A HREF="000559.html">[Stgt-devel] VTL patch, take 2
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#558">[ date ]</a>
+              <a href="thread.html#558">[ thread ]</a>
+              <a href="subject.html#558">[ subject ]</a>
+              <a href="author.html#558">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>SSC / SMC patches to SCSI Tgt code.
+
+It is based from git commit :
+   ================================
+commit 47e15c234ca298d31b1709db592eef9db4bce0ca
+Author: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+Date:   Sat Apr 7 17:31:54 2007 +0900
+
+    some shortcut options missing from tgtadm
+
+    Signed-off-by: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+   ================================
+
+
+Additions from last patch include :
+ - Updated syntax to add/configure limited set of SMC / SSC parameters
+ - Start implementing structures for MODE SELECT / MODE SENSE op codes
+ - Start implementing structures for LOG SELECT / LOG SENSE op codes
+
+ - SMC module includes:
+   Allocation of MODE pages and initialization to default values.
+   Ability to change Element Address Assignment
+
+
+
+This is a work-in-progress and is being posted as an example of
+where/how I'm attempting to implement a VTL.
+
+I need to update command parameter passing to recommended use of
+&quot;--params .....&quot;
+
+Next step is to implement the SCSI MODE SENSE op code so I can
+actually test what is being set is correct..
+
+Note: in root of src is a 'tgt-setup' script which will (should)
+correctly configure the SSC &amp; SMC modules
+
+As always, feedback welcome.
+
+Regards
+Mark
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: tgt-vtl.diff
+Type: text/x-patch
+Size: 71673 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20070413/4fa66760/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20070413/4fa66760/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000565.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+	<LI>Next message: <A HREF="000559.html">[Stgt-devel] VTL patch, take 2
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#558">[ date ]</a>
+              <a href="thread.html#558">[ thread ]</a>
+              <a href="subject.html#558">[ subject ]</a>
+              <a href="author.html#558">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Unable to open RDMA device
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Unable%20to%20open%20RDMA%20device&In-Reply-To=%3C20080430192721.GA31260%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001556.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Unable to open RDMA device</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Unable%20to%20open%20RDMA%20device&In-Reply-To=%3C20080430192721.GA31260%40osc.edu%3E"
+       TITLE="[Stgt-devel] Unable to open RDMA device">pw at osc.edu
+       </A><BR>
+    <I>Wed Apr 30 21:27:21 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001556.html">[Stgt-devel] Unable to open RDMA device
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1559">[ date ]</a>
+              <a href="thread.html#1559">[ thread ]</a>
+              <a href="subject.html#1559">[ subject ]</a>
+              <a href="author.html#1559">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">cameron at harr.org</A> wrote on Tue, 29 Apr 2008 14:49 -0600:
+&gt;<i> I'm trying to get iSer going, but my transport always seems to be stuck 
+</I>&gt;<i> at tcp and I'm not getting the performance I want (sgp_dd, other stuff). 
+</I>&gt;<i> I was getting some help from Eric Z. but figure this list might be a 
+</I>&gt;<i> little faster. FWIW, I currently have the 
+</I>&gt;<i> scsi-target-utils-0.2-20071227_1 rpm installed.
+</I>&gt;<i> 
+</I>&gt;<i> In trying to get down at my problem, I've looked at a few things, and I 
+</I>&gt;<i> just noticed that when I try to restart tgtd, I get the following:
+</I>&gt;<i> 
+</I>&gt;<i> Starting SCSI target daemon: CMA: unable to open RDMA device  OK  ]
+</I>&gt;<i> /bin/bash: line 1: 31787 Segmentation fault      tgtd
+</I>&gt;<i>                                                            [FAILED]
+</I>&gt;<i> 
+</I>&gt;<i> and then just a single line in messages:
+</I>&gt;<i> 
+</I>&gt;<i> Apr 29 14:41:40 test05 kernel: tgtd[31787]: segfault at 000000000000010c 
+</I>&gt;<i> rip 00000032dfc06be2 rsp 00007fff4b7d2930 error 4
+</I>&gt;<i> 
+</I>&gt;<i> I couldn't see anything in the archives about CMA. Any suggestions?
+</I>
+Guess I'd go back to basic debugging here.  Run the startup script
+with &quot;-x&quot; to see exactly what it's doing.  Start tgtd by hand and
+see if it dies.  Recompile with -g and start it in the debugger,
+then run it until you get a traceback.  There's not much to go on
+so far.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001556.html">[Stgt-devel] Unable to open RDMA device
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1559">[ date ]</a>
+              <a href="thread.html#1559">[ thread ]</a>
+              <a href="subject.html#1559">[ subject ]</a>
+              <a href="author.html#1559">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

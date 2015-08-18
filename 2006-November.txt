@@ -1,0 +1,543 @@
+From pw at osc.edu  Fri Nov  3 01:45:48 2006
+From: pw at osc.edu (Pete Wyckoff)
+Date: Thu, 2 Nov 2006 19:45:48 -0500
+Subject: [Stgt-devel] iscsi target works, minor fixes
+Message-ID: <20061103004548.GA25149@osc.edu>
+
+I've been playing with the user-space iscsi target, looking at the
+latest stgt SVN and linux-2.6-target git today.  One little fix I
+need in the userspace code is this:
+
+Index: trunk/usr/bd_aio.c
+===================================================================
+--- trunk/usr/bd_aio.c	(revision 609)
++++ trunk/usr/bd_aio.c	(working copy)
+@@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+ 
+ 	for (i = 0; i < nr; i++) {
+ 		iocb = bai->events[i].obj;
+-		dprintf("%p\n", iocb->data);
+-		target_cmd_io_done(iocb->data, 0);
++		dprintf("%p\n", bai->events[i].data);
++		target_cmd_io_done(bai->events[i].data, 0);
+ 	}
+ }
+ 
+While I don't understand exactly what's going on, this data pointer
+from struct io_event is the correct struct cmd *, and without the
+patch, tgtd segfaults trying to access fields in the (bogus) cmd
+from iocb->data.
+
+It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+was the wrong one to apply?  There was one minor reject that was
+easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+linux-2.6-target.git + aiopoll + other minor patches.
+
+You may want this, but it doesn't change any behavior:
+
+diff --git a/drivers/scsi/scsi_tgt_lib.c b/drivers/scsi/scsi_tgt_lib.c
+index e01f458..6e92b97 100644
+--- a/drivers/scsi/scsi_tgt_lib.c
++++ b/drivers/scsi/scsi_tgt_lib.c
+@@ -108,7 +108,6 @@ struct scsi_cmnd *scsi_host_get_command(
+ 
+ 	rq->special = cmd;
+ 	rq->cmd_type = REQ_TYPE_SPECIAL;
+-	rq->cmd_flags |= REQ_TYPE_BLOCK_PC;
+ 	rq->end_io_data = tcmd;
+ 
+ 	bio_list_init(&tcmd->xfer_list);
+
+
+What goes in cmd_flags are bit fields like REQ_SOFTBARRIER.  You're
+not supposed to try to put another REQ_TYPE in there.  You do want
+SPECIAL, not BLOCK_PC, since you are allocating your own struct
+scsi_cmnd and putting it into rq->special.
+
+Basic mkfs and dd seem to work just fine.  Thanks for the code.
+
+		-- Pete
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Nov  3 15:28:55 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 03 Nov 2006 23:28:55 +0900
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <20061103004548.GA25149@osc.edu>
+References: <20061103004548.GA25149@osc.edu>
+Message-ID: <200611031428.kA3ESuQk025138@r-dd.iij4u.or.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] iscsi target works, minor fixes
+Date: Thu, 2 Nov 2006 19:45:48 -0500
+
+> I've been playing with the user-space iscsi target, looking at the
+> latest stgt SVN and linux-2.6-target git today.  One little fix I
+> need in the userspace code is this:
+> 
+> Index: trunk/usr/bd_aio.c
+> ===================================================================
+> --- trunk/usr/bd_aio.c	(revision 609)
+> +++ trunk/usr/bd_aio.c	(working copy)
+> @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+>  
+>  	for (i = 0; i < nr; i++) {
+>  		iocb = bai->events[i].obj;
+> -		dprintf("%p\n", iocb->data);
+> -		target_cmd_io_done(iocb->data, 0);
+> +		dprintf("%p\n", bai->events[i].data);
+> +		target_cmd_io_done(bai->events[i].data, 0);
+>  	}
+>  }
+>  
+> While I don't understand exactly what's going on, this data pointer
+> from struct io_event is the correct struct cmd *, and without the
+> patch, tgtd segfaults trying to access fields in the (bogus) cmd
+> from iocb->data.
+
+It works with 2.6.18 for me. The kernel aio code sets io_event->obj to
+iocb. We set iocb->data to cmd.
+
+I've not tested aiopoll patch with the current git tree. I'll do after
+sending this mail. But we must replace the aiopoll patch with
+something as soon as possible.
+
+By the way, does the kernel crash when you kill the tgtd daemon (it's
+due to the aiopoll problem)?
+
+If so, try to remove the logical units before killing the daemon.
+
+First, you can see the current configuration:
+
+lily:/home/fujita/tgt# ./usr/tgtadm --lld iscsi --op show
+tid 1: lld iscsi: iqn.2001-04.com.example:storage.disk2.amiens.sys1.xyz
+        lun 0: path /dev/hdc1
+
+Second, remove the lu:
+
+lily:/home/fujita/tgt# ./usr/tgtadm --lld iscsi --op delete --tid 1 --lun 0
+
+Then, see the configuration again:
+
+lily:/home/fujita/tgt# ./usr/tgtadm --lld iscsi --op show
+tid 1: lld iscsi: iqn.2001-04.com.example:storage.disk2.amiens.sys1.xyz
+
+The lu has gone. Hopefully, you can kill the daemon safely.
+
+
+> It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+> was the wrong one to apply?  There was one minor reject that was
+> easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+> linux-2.6-target.git + aiopoll + other minor patches.
+
+I see. I'll update the patch later.
+
+
+> You may want this, but it doesn't change any behavior:
+> 
+> diff --git a/drivers/scsi/scsi_tgt_lib.c b/drivers/scsi/scsi_tgt_lib.c
+> index e01f458..6e92b97 100644
+> --- a/drivers/scsi/scsi_tgt_lib.c
+> +++ b/drivers/scsi/scsi_tgt_lib.c
+> @@ -108,7 +108,6 @@ struct scsi_cmnd *scsi_host_get_command(
+>  
+>  	rq->special = cmd;
+>  	rq->cmd_type = REQ_TYPE_SPECIAL;
+> -	rq->cmd_flags |= REQ_TYPE_BLOCK_PC;
+>  	rq->end_io_data = tcmd;
+>  
+>  	bio_list_init(&tcmd->xfer_list);
+> 
+> 
+> What goes in cmd_flags are bit fields like REQ_SOFTBARRIER.  You're
+> not supposed to try to put another REQ_TYPE in there.  You do want
+> SPECIAL, not BLOCK_PC, since you are allocating your own struct
+> scsi_cmnd and putting it into rq->special.
+
+Thanks. You are right. Seems that REQ_TYPE_BLOCK_PC blongs to
+cmd_type. I just merged the fix in -mm kernel without seeing the
+details.
+
+Anyway, we can remove the cmd_type and cmd_flags parts. They are
+useless now. The old version needs them but now we don't, I think.
+
+
+> Basic mkfs and dd seem to work just fine.  Thanks for the code.
+
+Nice. Thanks for testings. I think that the basic operations are ok,
+but there are still many things to polish.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Fri Nov  3 17:04:55 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 04 Nov 2006 01:04:55 +0900
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <20061103004548.GA25149@osc.edu>
+References: <20061103004548.GA25149@osc.edu>
+Message-ID: <200611031604.kA3G4uHf003736@r-dd.iij4u.or.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] iscsi target works, minor fixes
+Date: Thu, 2 Nov 2006 19:45:48 -0500
+
+> I've been playing with the user-space iscsi target, looking at the
+> latest stgt SVN and linux-2.6-target git today.  One little fix I
+> need in the userspace code is this:
+> 
+> Index: trunk/usr/bd_aio.c
+> ===================================================================
+> --- trunk/usr/bd_aio.c	(revision 609)
+> +++ trunk/usr/bd_aio.c	(working copy)
+> @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+>  
+>  	for (i = 0; i < nr; i++) {
+>  		iocb = bai->events[i].obj;
+> -		dprintf("%p\n", iocb->data);
+> -		target_cmd_io_done(iocb->data, 0);
+> +		dprintf("%p\n", bai->events[i].data);
+> +		target_cmd_io_done(bai->events[i].data, 0);
+>  	}
+>  }
+>  
+> While I don't understand exactly what's going on, this data pointer
+> from struct io_event is the correct struct cmd *, and without the
+> patch, tgtd segfaults trying to access fields in the (bogus) cmd
+> from iocb->data.
+> 
+> It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+> was the wrong one to apply?  There was one minor reject that was
+> easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+> linux-2.6-target.git + aiopoll + other minor patches.
+
+The lastest git tree and the updated aiopoll patch
+(patch/aiopoll-git.diff) work for me.
+
+Is iocb->data bogus? It means that io_event->obj does not refer to
+the appropriate iocb. I have no idea why.
+
+
+From michaelc at cs.wisc.edu  Fri Nov  3 18:43:47 2006
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Fri, 03 Nov 2006 11:43:47 -0600
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <20061103004548.GA25149@osc.edu>
+References: <20061103004548.GA25149@osc.edu>
+Message-ID: <454B7FD3.8070503@cs.wisc.edu>
+
+Pete Wyckoff wrote:
+> I've been playing with the user-space iscsi target, looking at the
+> latest stgt SVN and linux-2.6-target git today.  One little fix I
+> need in the userspace code is this:
+> 
+> Index: trunk/usr/bd_aio.c
+> ===================================================================
+> --- trunk/usr/bd_aio.c	(revision 609)
+> +++ trunk/usr/bd_aio.c	(working copy)
+> @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+>  
+>  	for (i = 0; i < nr; i++) {
+>  		iocb = bai->events[i].obj;
+> -		dprintf("%p\n", iocb->data);
+> -		target_cmd_io_done(iocb->data, 0);
+> +		dprintf("%p\n", bai->events[i].data);
+> +		target_cmd_io_done(bai->events[i].data, 0);
+>  	}
+>  }
+>  
+> While I don't understand exactly what's going on, this data pointer
+> from struct io_event is the correct struct cmd *, and without the
+> patch, tgtd segfaults trying to access fields in the (bogus) cmd
+> from iocb->data.
+
+What arch are you using? I think I was hitting this same problem but
+only on x86_64 for some reason. On x86 it worked ok.
+
+> 
+> It could be related to the aiopoll-2.6.18-rc4.patch; perhaps that
+> was the wrong one to apply?  There was one minor reject that was
+> easy to fix up.  My kernel is v2.6.19-rc4 + the 9 patches in tomo's
+> linux-2.6-target.git + aiopoll + other minor patches.
+> 
+> You may want this, but it doesn't change any behavior:
+> 
+> diff --git a/drivers/scsi/scsi_tgt_lib.c b/drivers/scsi/scsi_tgt_lib.c
+> index e01f458..6e92b97 100644
+> --- a/drivers/scsi/scsi_tgt_lib.c
+> +++ b/drivers/scsi/scsi_tgt_lib.c
+> @@ -108,7 +108,6 @@ struct scsi_cmnd *scsi_host_get_command(
+>  
+>  	rq->special = cmd;
+>  	rq->cmd_type = REQ_TYPE_SPECIAL;
+> -	rq->cmd_flags |= REQ_TYPE_BLOCK_PC;
+>  	rq->end_io_data = tcmd;
+>  
+>  	bio_list_init(&tcmd->xfer_list);
+> 
+> 
+> What goes in cmd_flags are bit fields like REQ_SOFTBARRIER.  You're
+> not supposed to try to put another REQ_TYPE in there.  You do want
+> SPECIAL, not BLOCK_PC, since you are allocating your own struct
+> scsi_cmnd and putting it into rq->special.
+> 
+
+SPECIAL and BLOCK_PC may not make much difference here because we are
+not submitting the request to scsi-ml. It stays in tgt. Maybe to stay
+consistent with scsi-ml SPECIAL would be best for now though.
+
+
+From pw at osc.edu  Fri Nov  3 21:48:25 2006
+From: pw at osc.edu (Pete Wyckoff)
+Date: Fri, 3 Nov 2006 15:48:25 -0500
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <454B7FD3.8070503@cs.wisc.edu>
+References: <20061103004548.GA25149@osc.edu> <454B7FD3.8070503@cs.wisc.edu>
+Message-ID: <20061103204825.GC27114@osc.edu>
+
+michaelc at cs.wisc.edu wrote on Fri, 03 Nov 2006 11:43 -0600:
+> Pete Wyckoff wrote:
+> > While I don't understand exactly what's going on, this data pointer
+> > from struct io_event is the correct struct cmd *, and without the
+> > patch, tgtd segfaults trying to access fields in the (bogus) cmd
+> > from iocb->data.
+> 
+> What arch are you using? I think I was hitting this same problem but
+> only on x86_64 for some reason. On x86 it worked ok.
+
+Yes, this is x86_64.  I will try to figure out more where the
+values are ending up.
+
+		-- Pete
+
+
+From pw at osc.edu  Sat Nov  4 21:47:15 2006
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 4 Nov 2006 15:47:15 -0500
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <200611031428.kA3ESuQk025138@r-dd.iij4u.or.jp>
+References: <20061103004548.GA25149@osc.edu>
+	<200611031428.kA3ESuQk025138@r-dd.iij4u.or.jp>
+Message-ID: <20061104204715.GA14714@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Fri, 03 Nov 2006 23:28 +0900:
+> By the way, does the kernel crash when you kill the tgtd daemon (it's
+> due to the aiopoll problem)?
+
+It did, but backing out the old aiopoll patch and putting in your
+new 2.6.19-rc4 one made that go away.  No clue why---there appears
+to be no significant difference in the patches.  I also updated my
+2.6.19-rc4 tree with your git patches, but there was little changed
+there too.  The renaming of the kernel/user interface is all.
+
+The old crash, in case you are curious, was via an NMI-detected
+lockup.  Tgtd was here:
+
+    [<ffffffff8040263a>] _spin_lock_irqsave+0xa/0x20
+    [<ffffffff80242359>] remove_wait_queue+0x19/0x60
+    [<ffffffff802aa557>] ep_unregister_pollwait+0x37/0x70
+    [<ffffffff802aaee7>] ep_remove+0x27/0xf0
+    [<ffffffff802ab6f5>] eventpoll_release_file+0x65/0x90
+    [<ffffffff8027eb40>] __fput+0x90/0x1a0
+    [<ffffffff8027ec64>] fput+0x14/0x20
+    [<ffffffff8027c111>] filp_close+0x71/0x90
+
+Presumably something else was holding the wait_queue spinlock.  But
+deleting the lun first, or deleting the lun and deleting the target,
+both resulted in the same lockup.  Maybe not the oops you were
+expecting.
+
+		-- Pete
+
+
+From pw at osc.edu  Sat Nov  4 22:43:19 2006
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sat, 4 Nov 2006 16:43:19 -0500
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <200611031604.kA3G4uHf003736@r-dd.iij4u.or.jp>
+References: <20061103004548.GA25149@osc.edu>
+	<200611031604.kA3G4uHf003736@r-dd.iij4u.or.jp>
+Message-ID: <20061104214319.GB14714@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Sat, 04 Nov 2006 01:04 +0900:
+> From: Pete Wyckoff <pw at osc.edu>
+> Subject: [Stgt-devel] iscsi target works, minor fixes
+> Date: Thu, 2 Nov 2006 19:45:48 -0500
+> 
+> > --- trunk/usr/bd_aio.c	(revision 609)
+> > +++ trunk/usr/bd_aio.c	(working copy)
+> > @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+> >  
+> >  	for (i = 0; i < nr; i++) {
+> >  		iocb = bai->events[i].obj;
+> > -		dprintf("%p\n", iocb->data);
+> > -		target_cmd_io_done(iocb->data, 0);
+> > +		dprintf("%p\n", bai->events[i].data);
+> > +		target_cmd_io_done(bai->events[i].data, 0);
+> >  	}
+> >  }
+> 
+> Is iocb->data bogus? It means that io_event->obj does not refer to
+> the appropriate iocb. I have no idea why.
+
+Here's some logging from the latest stgt, with the extra %p in the debug
+message:
+
+tgtd: iscsi_scsi_cmd_rx_start(1189) 1 28 4096 1 c
+tgtd: iscsi_scsi_cmd_rx_start(1198) 0x538010
+tgtd: iscsi_task_queue(1122) c c 1
+tgtd: target_cmd_queue(287) 28 0
+tgtd: scsi_cmd_perform(477) 28 4096
+tgtd: bd_aio_cmd_submit(159) 8 0 4096 538010 0 0x7fffe26e8510 0x534940
+tgtd: target_cmd_queue(307) c 28 538010 0 4096 0 1
+tgtd: aio_event_handler(83) 0x7fffe26e8510 0x7fffe26e8520
+
+It's pretty clear to me that bai->events[i].data is what you should
+be using.  See the kernel's io_submit_one, where req->ki_user_data
+is set, then how it is returned to the user via event->data in
+aio_complete.  True, bai->events[i].obj gets set to the address of
+the iocb passed in, but as you used an iocb on the stack in
+bd_aio_cmd_submit, that cannot be trusted.
+
+		-- Pete
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Nov  5 16:45:55 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 06 Nov 2006 00:45:55 +0900
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <20061104214319.GB14714@osc.edu>
+References: <20061103004548.GA25149@osc.edu>
+	<200611031604.kA3G4uHf003736@r-dd.iij4u.or.jp>
+	<20061104214319.GB14714@osc.edu>
+Message-ID: <200611051545.kA5Fjw7P006009@r-dd.iij4u.or.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] iscsi target works, minor fixes
+Date: Sat, 4 Nov 2006 16:43:19 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Sat, 04 Nov 2006 01:04 +0900:
+> > From: Pete Wyckoff <pw at osc.edu>
+> > Subject: [Stgt-devel] iscsi target works, minor fixes
+> > Date: Thu, 2 Nov 2006 19:45:48 -0500
+> > 
+> > > --- trunk/usr/bd_aio.c	(revision 609)
+> > > +++ trunk/usr/bd_aio.c	(working copy)
+> > > @@ -74,8 +74,8 @@ static void aio_event_handler(int fd, in
+> > >  
+> > >  	for (i = 0; i < nr; i++) {
+> > >  		iocb = bai->events[i].obj;
+> > > -		dprintf("%p\n", iocb->data);
+> > > -		target_cmd_io_done(iocb->data, 0);
+> > > +		dprintf("%p\n", bai->events[i].data);
+> > > +		target_cmd_io_done(bai->events[i].data, 0);
+> > >  	}
+> > >  }
+> > 
+> > Is iocb->data bogus? It means that io_event->obj does not refer to
+> > the appropriate iocb. I have no idea why.
+> 
+> Here's some logging from the latest stgt, with the extra %p in the debug
+> message:
+> 
+> tgtd: iscsi_scsi_cmd_rx_start(1189) 1 28 4096 1 c
+> tgtd: iscsi_scsi_cmd_rx_start(1198) 0x538010
+> tgtd: iscsi_task_queue(1122) c c 1
+> tgtd: target_cmd_queue(287) 28 0
+> tgtd: scsi_cmd_perform(477) 28 4096
+> tgtd: bd_aio_cmd_submit(159) 8 0 4096 538010 0 0x7fffe26e8510 0x534940
+> tgtd: target_cmd_queue(307) c 28 538010 0 4096 0 1
+> tgtd: aio_event_handler(83) 0x7fffe26e8510 0x7fffe26e8520
+> 
+> It's pretty clear to me that bai->events[i].data is what you should
+> be using.  See the kernel's io_submit_one, where req->ki_user_data
+> is set, then how it is returned to the user via event->data in
+> aio_complete.  True, bai->events[i].obj gets set to the address of
+> the iocb passed in, but as you used an iocb on the stack in
+> bd_aio_cmd_submit, that cannot be trusted.
+
+Oh, terribly sorry. I planed to use the iocb in bd_aio_info structure
+then wrote the current makeshift code because of my laziness.
+
+I applied your patch for now. Thanks.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Nov  5 16:51:12 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 06 Nov 2006 00:51:12 +0900
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <20061104204715.GA14714@osc.edu>
+References: <20061103004548.GA25149@osc.edu>
+	<200611031428.kA3ESuQk025138@r-dd.iij4u.or.jp>
+	<20061104204715.GA14714@osc.edu>
+Message-ID: <200611051551.kA5FpEZ2006414@r-dd.iij4u.or.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] iscsi target works, minor fixes
+Date: Sat, 4 Nov 2006 15:47:15 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Fri, 03 Nov 2006 23:28 +0900:
+> > By the way, does the kernel crash when you kill the tgtd daemon (it's
+> > due to the aiopoll problem)?
+> 
+> It did, but backing out the old aiopoll patch and putting in your
+> new 2.6.19-rc4 one made that go away.  No clue why---there appears
+> to be no significant difference in the patches.  I also updated my
+> 2.6.19-rc4 tree with your git patches, but there was little changed
+> there too.  The renaming of the kernel/user interface is all.
+> 
+> The old crash, in case you are curious, was via an NMI-detected
+> lockup.  Tgtd was here:
+> 
+>     [<ffffffff8040263a>] _spin_lock_irqsave+0xa/0x20
+>     [<ffffffff80242359>] remove_wait_queue+0x19/0x60
+>     [<ffffffff802aa557>] ep_unregister_pollwait+0x37/0x70
+>     [<ffffffff802aaee7>] ep_remove+0x27/0xf0
+>     [<ffffffff802ab6f5>] eventpoll_release_file+0x65/0x90
+>     [<ffffffff8027eb40>] __fput+0x90/0x1a0
+>     [<ffffffff8027ec64>] fput+0x14/0x20
+>     [<ffffffff8027c111>] filp_close+0x71/0x90
+> 
+> Presumably something else was holding the wait_queue spinlock.  But
+> deleting the lun first, or deleting the lun and deleting the target,
+> both resulted in the same lockup.  Maybe not the oops you were
+> expecting.
+
+I expected something like that, however, I didn't dig into the
+details. I guess we have to drop the aiopoll patch rather than try to
+fix it.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Wed Nov  8 10:37:25 2006
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Wed, 08 Nov 2006 18:37:25 +0900
+Subject: [Stgt-devel] iscsi target works, minor fixes
+In-Reply-To: <20061104204715.GA14714@osc.edu>
+References: <20061103004548.GA25149@osc.edu>
+	<200611031428.kA3ESuQk025138@r-dd.iij4u.or.jp>
+	<20061104204715.GA14714@osc.edu>
+Message-ID: <20061108183725S.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] iscsi target works, minor fixes
+Date: Sat, 4 Nov 2006 15:47:15 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Fri, 03 Nov 2006 23:28 +0900:
+> > By the way, does the kernel crash when you kill the tgtd daemon (it's
+> > due to the aiopoll problem)?
+> 
+> It did, but backing out the old aiopoll patch and putting in your
+> new 2.6.19-rc4 one made that go away.  No clue why---there appears
+> to be no significant difference in the patches.  I also updated my
+> 2.6.19-rc4 tree with your git patches, but there was little changed
+> there too.  The renaming of the kernel/user interface is all.
+
+Now we switched from the aiopoll patch to CMD_EPOLL_WAIT interface.
+
+The aiopoll patch has been tested heavily (mainly by Xen people),
+however, it will not go to upstream so it doesn't make sense to use
+it.
+
+So far, I've not seen any problems.
+
+
+

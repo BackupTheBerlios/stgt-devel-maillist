@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] STGT fails compilation against FC Kernel 2.6.15
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20STGT%20fails%20compilation%20against%20FC%20Kernel%202.6.15&In-Reply-To=%3C1139446782.19695.70.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000223.html">
+   <LINK REL="Next"  HREF="000226.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] STGT fails compilation against FC Kernel 2.6.15</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20STGT%20fails%20compilation%20against%20FC%20Kernel%202.6.15&In-Reply-To=%3C1139446782.19695.70.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] STGT fails compilation against FC Kernel 2.6.15">mingz at ele.uri.edu
+       </A><BR>
+    <I>Thu Feb  9 01:59:42 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000223.html">[Stgt-devel] STGT fails compilation against FC Kernel 2.6.15
+</A></li>
+        <LI>Next message: <A HREF="000226.html">[Stgt-devel] STGT fails compilation against FC Kernel 2.6.15
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 2006-02-08 at 09:58 -0500, Ming Zhang wrote:
+&gt;<i> On Wed, 2006-02-08 at 14:28 +0100, Rehmann Oliver wrote:
+</I>&gt;<i> &gt; Dear Colleagues
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Just tried to compile rev. 284 of STGT on my FC4 box but it fails.
+</I>&gt;<i> &gt; Just for your information. 
+</I>&gt;<i> &gt; (Linux comet.ch.int.atosorigin.com 2.6.15-1.1830_FC4 #1 Thu Feb 2
+</I>&gt;<i> &gt; 17:23:41 EST 2006 i686 i686 i386 GNU/Linux)
+</I>&gt;<i> 
+</I>&gt;<i> it needs very latest kernel. try the 2.6.16rc
+</I>
+i was wrong here. i tried 2.6.16-rc2 and it does not work yet.
+
+@Mike or Tomof, could you tell us which kernel we should use? or we
+should use the patch u post on linux-scsi list instead? thanks
+
+
+&gt;<i> &gt; 
+</I>&gt;<i> &gt; BTW, any comments on how close to a production release (replacing
+</I>&gt;<i> &gt; IETD) we are ?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Is there already a project or SF-website for STGT ? 
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://developer.berlios.de/projects/stgt/">http://developer.berlios.de/projects/stgt/</A>
+</I>&gt;<i> 
+</I>&gt;<i> &gt; BTW, thank you for the official release of IETD 0.4.13 at SourceForge.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Regards,
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Oliver Rehmann 
+</I>&gt;<i> &gt; Manager IT 
+</I>&gt;<i> &gt; Atos Origin Telecom Schweiz AG 
+</I>&gt;<i> &gt; Binzmuehlestr. 95 
+</I>&gt;<i> &gt; 8050 Zurich 
+</I>&gt;<i> &gt; Switzerland 
+</I>&gt;<i> &gt; Phone +41 44 308 9515 
+</I>&gt;<i> &gt; Fax +41 44 308 9599 
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">oliver.rehmann at atosorigin.com</A> 
+</I>&gt;<i> &gt; www.atosorigin.com
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; ==========================================================================================
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; make -C istgt 
+</I>&gt;<i> &gt; make[1]: Entering directory `/user1/software/STGT/trunk/istgt' 
+</I>&gt;<i> &gt; make -C usr 
+</I>&gt;<i> &gt; make[2]: Entering directory `/user1/software/STGT/trunk/istgt/usr' 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o istgt.o istgt.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o conn.o conn.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o param.o param.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o iscsid.o iscsid.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o session.o session.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o target.o target.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o chap.o chap.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -I../../include -I../../usr   -c -o ctldev.o ctldev.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -shared -o istgt.so istgt.o conn.o param.o iscsid.o session.o
+</I>&gt;<i> &gt; target.o chap.o ctldev.o 
+</I>&gt;<i> &gt; make[2]: Leaving directory `/user1/software/STGT/trunk/istgt/usr' 
+</I>&gt;<i> &gt; make -C /lib/modules/2.6.15-1.1830_FC4/build
+</I>&gt;<i> &gt; SUBDIRS=/user1/software/STGT/trunk/istgt/kernel modules 
+</I>&gt;<i> &gt; make[2]: Entering directory `/usr/src/kernels/2.6.15-1.1830_FC4-i686' 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/iscsi.o 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/nthread.o 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/config.o 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/digest.o 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/conn.o 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/session.o 
+</I>&gt;<i> &gt;   CC [M]  /user1/software/STGT/trunk/istgt/kernel/param.o 
+</I>&gt;<i> &gt;   LD [M]  /user1/software/STGT/trunk/istgt/kernel/istgt.o 
+</I>&gt;<i> &gt;   Building modules, stage 2. 
+</I>&gt;<i> &gt;   MODPOST 
+</I>&gt;<i> &gt; *** Warning:
+</I>&gt;<i> &gt; &quot;tgt_cmd_create&quot; [/user1/software/STGT/trunk/istgt/kernel/istgt.ko]
+</I>&gt;<i> &gt; undefined! 
+</I>&gt;<i> &gt; *** Warning:
+</I>&gt;<i> &gt; &quot;tgt_msg_send&quot; [/user1/software/STGT/trunk/istgt/kernel/istgt.ko]
+</I>&gt;<i> &gt; undefined! 
+</I>&gt;<i> &gt; *** Warning:
+</I>&gt;<i> &gt; &quot;tgt_target_template_unregister&quot; [/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined! 
+</I>&gt;<i> &gt; *** Warning:
+</I>&gt;<i> &gt; &quot;tgt_session_destroy&quot; [/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined! 
+</I>&gt;<i> &gt; *** Warning:
+</I>&gt;<i> &gt; &quot;tgt_target_template_register&quot; [/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined! 
+</I>&gt;<i> &gt; *** Warning:
+</I>&gt;<i> &gt; &quot;tgt_session_create&quot; [/user1/software/STGT/trunk/istgt/kernel/istgt.ko] undefined! 
+</I>&gt;<i> &gt;   CC      /user1/software/STGT/trunk/istgt/kernel/istgt.mod.o 
+</I>&gt;<i> &gt;   LD [M]  /user1/software/STGT/trunk/istgt/kernel/istgt.ko 
+</I>&gt;<i> &gt; make[2]: Leaving directory `/usr/src/kernels/2.6.15-1.1830_FC4-i686' 
+</I>&gt;<i> &gt; make[1]: Leaving directory `/user1/software/STGT/trunk/istgt' 
+</I>&gt;<i> &gt; make -C usr 
+</I>&gt;<i> &gt; make[1]: Entering directory `/user1/software/STGT/trunk/usr' 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -DNETLINK_TGT=20   -c -o tgtd.o tgtd.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -DNETLINK_TGT=20   -c -o netlink.o netlink.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -DNETLINK_TGT=20   -c -o ipc.o ipc.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -DNETLINK_TGT=20   -c -o dl.o dl.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -DNETLINK_TGT=20   -c -o mgmt.o mgmt.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; cc -O2 -fno-inline -Wall -Wstrict-prototypes -fPIC
+</I>&gt;<i> &gt; -I/lib/modules/2.6.15-1.1830_FC4/build/include -I../include
+</I>&gt;<i> &gt; -DNETLINK_TGT=20   -c -o target.o target.c
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; In file included
+</I>&gt;<i> &gt; from /lib/modules/2.6.15-1.1830_FC4/build/include/linux/fs.h:9, 
+</I>&gt;<i> &gt;                  from target.c:24: 
+</I>&gt;<i> &gt; /lib/modules/2.6.15-1.1830_FC4/build/include/linux/config.h:8:2:
+</I>&gt;<i> &gt; error: #error including kernel header in userspace; use the glibc
+</I>&gt;<i> &gt; headers instead!
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; make[1]: *** [target.o] Error 1 
+</I>&gt;<i> &gt; make[1]: Leaving directory `/user1/software/STGT/trunk/usr' 
+</I>&gt;<i> &gt; make: *** [all] Error 2
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000223.html">[Stgt-devel] STGT fails compilation against FC Kernel 2.6.15
+</A></li>
+	<LI>Next message: <A HREF="000226.html">[Stgt-devel] STGT fails compilation against FC Kernel 2.6.15
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

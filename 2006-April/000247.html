@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20write%20performance%0A%09examples%20%3F&In-Reply-To=%3C20060418230422L.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000245.html">
+   <LINK REL="Next"  HREF="000249.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20write%20performance%0A%09examples%20%3F&In-Reply-To=%3C20060418230422L.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Apr 18 16:04:22 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000245.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+</A></li>
+        <LI>Next message: <A HREF="000249.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#247">[ date ]</a>
+              <a href="thread.html#247">[ thread ]</a>
+              <a href="subject.html#247">[ subject ]</a>
+              <a href="author.html#247">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ming.zhang.china at gmail.com</A>&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ming.zhang.china at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+Date: Mon, 17 Apr 2006 09:40:29 -0400
+
+&gt;<i> On Mon, 2006-04-17 at 13:55 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ming.zhang.china at gmail.com</A>&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ming.zhang.china at gmail.com</A>&gt;
+</I>&gt;<i> &gt; Subject: Re: [Iscsitarget-devel] write performance examples ?
+</I>&gt;<i> &gt; Date: Sun, 16 Apr 2006 21:44:55 -0400
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt; btw, stgt can directly work on page cache because it uses mmap
+</I>&gt;<i> &gt; &gt; interface?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Yes and No. As I said, Ardis can also directly work on page cache
+</I>&gt;<i> &gt; without using mmap.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; stgt performs I/O operations in user space unlike the
+</I>&gt;<i> &gt; others. Comparing it with the others does not make sense. You need to
+</I>&gt;<i> &gt; read IET/Ardis/stgt code to understand the details.
+</I>&gt;<i> 
+</I>&gt;<i> from users point of view, both stgt and iet provide a networked storage
+</I>&gt;<i> service (stgt can provide more). just like people can compare NFS,
+</I>&gt;<i> SAMBA, FTP performance with same HW, and choose the best one base on
+</I>&gt;<i> feature and performance, why people can not compare same protocol and
+</I>&gt;<i> different implementation solutions?
+</I>
+Of course, you can compare the performances by running them. But you
+cannot compare (or understand) the designs with simple sentences such
+as 'stgt can directly work on page cache because it uses mmap
+interface?'.
+
+
+-------------------------------------------------------
+This SF.Net email is sponsored by xPML, a groundbreaking scripting language
+that extends applications into web and mobile media. Attend the live webcast
+and join the prime developer group breaking into this new coding territory!
+<A HREF="http://sel.as-us.falkag.net/sel?cmd=lnk&amp;kid=110944&amp;bid=241720&amp;dat=121642">http://sel.as-us.falkag.net/sel?cmd=lnk&amp;kid=110944&amp;bid=241720&amp;dat=121642</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000245.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+</A></li>
+	<LI>Next message: <A HREF="000249.html">[Stgt-devel] Re: [Iscsitarget-devel] write performance	examples ?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#247">[ date ]</a>
+              <a href="thread.html#247">[ thread ]</a>
+              <a href="subject.html#247">[ subject ]</a>
+              <a href="author.html#247">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

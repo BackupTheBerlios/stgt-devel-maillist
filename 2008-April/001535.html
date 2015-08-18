@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/2] IB/iSER: Use offset from r2t header for	rdma
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20IB/iSER%3A%20Use%20offset%20from%20r2t%20header%20for%0A%09rdma&In-Reply-To=%3C694d48600804270555i6ee55843x51c416294fec6397%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001550.html">
+   <LINK REL="Next"  HREF="001538.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/2] IB/iSER: Use offset from r2t header for	rdma</H1>
+    <B>Eli Dorfman</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20IB/iSER%3A%20Use%20offset%20from%20r2t%20header%20for%0A%09rdma&In-Reply-To=%3C694d48600804270555i6ee55843x51c416294fec6397%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH 2/2] IB/iSER: Use offset from r2t header for	rdma">dorfman.eli at gmail.com
+       </A><BR>
+    <I>Sun Apr 27 14:55:00 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001550.html">[Stgt-devel] [PATCH 1/2] IB/iSER: Do not add unsolicited data	offset to VA in iSER header
+</A></li>
+        <LI>Next message: <A HREF="001538.html">[Stgt-devel] [ofa-general] [PATCH 2/2] IB/iSER: Use offset from	r2t header for rdma
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1535">[ date ]</a>
+              <a href="thread.html#1535">[ thread ]</a>
+              <a href="subject.html#1535">[ subject ]</a>
+              <a href="author.html#1535">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Use offset from r2t header for rdma instead of using
+internal offset counter.
+
+Signed-off-by: Eli Dorfman &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">elid at voltaire.com</A>&gt;
+---
+ usr/iscsi/iscsi_rdma.c |   16 +++++-----------
+ 1 files changed, 5 insertions(+), 11 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+index d46ddff..84f5949 100644
+--- a/usr/iscsi/iscsi_rdma.c
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -1447,28 +1447,22 @@ static int iscsi_rdma_rdma_read(struct
+iscsi_connection *conn)
+ 	struct iscsi_r2t_rsp *r2t = (struct iscsi_r2t_rsp *) &amp;conn-&gt;rsp.bhs;
+ 	uint8_t *buf;
+ 	uint32_t len;
++	uint32_t offset;
+ 	int ret;
+
+ 	buf = (uint8_t *) task-&gt;data + task-&gt;offset;
+ 	len = be32_to_cpu(r2t-&gt;data_length);
++	offset = be32_to_cpu(r2t-&gt;data_offset);
+
+-	dprintf(&quot;len %u stag %x va %llx\n&quot;,
++	dprintf(&quot;len %u stag %x va %llx offset %x\n&quot;,
+ 		len, itask-&gt;rem_write_stag,
+-		(unsigned long long) itask-&gt;rem_write_va);
++		(unsigned long long) itask-&gt;rem_write_va, offset);
+
+ 	ret = iser_post_rdma_wr(ci, task, buf, len, IBV_WR_RDMA_READ,
+-				itask-&gt;rem_write_va, itask-&gt;rem_write_stag);
++				itask-&gt;rem_write_va + offset, itask-&gt;rem_write_stag);
+ 	if (ret &lt; 0)
+ 		return ret;
+
+-	/*
+-	 * Initiator registers the entire buffer, but gives us a VA that
+-	 * is advanced by immediate + unsolicited data amounts.  Advance
+-	 * rem_va as we read, knowing that the target always grabs segments
+-	 * in order.
+-	 */
+-	itask-&gt;rem_write_va += len;
+-
+ 	return 0;
+ }
+
+-- 
+1.5.5
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001550.html">[Stgt-devel] [PATCH 1/2] IB/iSER: Do not add unsolicited data	offset to VA in iSER header
+</A></li>
+	<LI>Next message: <A HREF="001538.html">[Stgt-devel] [ofa-general] [PATCH 2/2] IB/iSER: Use offset from	r2t header for rdma
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1535">[ date ]</a>
+              <a href="thread.html#1535">[ thread ]</a>
+              <a href="subject.html#1535">[ subject ]</a>
+              <a href="author.html#1535">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

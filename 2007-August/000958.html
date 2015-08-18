@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20iser_task%20object%20%28was%3A%20dd%20fails%20with%20iSER%29&In-Reply-To=%3C39C75744D164D948A170E9792AF8E7CA110A57%40exil.voltaire.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000957.html">
+   <LINK REL="Next"  HREF="000959.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Adding iser_task object (was: dd fails with iSER)</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20iser_task%20object%20%28was%3A%20dd%20fails%20with%20iSER%29&In-Reply-To=%3C39C75744D164D948A170E9792AF8E7CA110A57%40exil.voltaire.com%3E"
+       TITLE="[Stgt-devel] Adding iser_task object (was: dd fails with iSER)">erezz at voltaire.com
+       </A><BR>
+    <I>Wed Aug 15 21:28:04 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000957.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+        <LI>Next message: <A HREF="000959.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#958">[ date ]</a>
+              <a href="thread.html#958">[ thread ]</a>
+              <a href="subject.html#958">[ subject ]</a>
+              <a href="author.html#958">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Wed, 15 Aug 2007 12:26 +0300:
+</I>&gt;&gt;<i> At first, I thought that this will be easy to fix - just move the va &amp;
+</I>&gt;&gt;<i> stag from the conn object to the task object. However, when ep_read
+</I>&gt;&gt;<i> (iscsi_iser_read in iSER's case) is called, the task isn't allocated
+</I>&gt;&gt;<i> yet. iSER must save the data from the received iSER header in some task
+</I>&gt;&gt;<i> object (e.g. iser_task).
+</I>&gt;<i> 
+</I>&gt;<i> You could add a new transport call .ep_task_init and call that near
+</I>&gt;<i> the iscsi_alloc_task() in iscsi_scsi_cmd_rx_start().  It gets the
+</I>&gt;<i> newly allocated struct iscsi_task.  The TCP case would be a noop.
+</I>&gt;<i> The RDMA case would take the cached rem_stag values from the
+</I>&gt;<i> connection structure and stick them in the task struct.  This is all
+</I>&gt;<i> done synchronously while working on the single received PDU so
+</I>&gt;<i> should be safe.  You only need to call -&gt;ep_task_init(task) in the
+</I>&gt;<i> SCSI command case, not TM functions or other places that will not do
+</I>&gt;<i> RDMA data transfers.
+</I>
+Do you mean to say that after do_recv is called and the va &amp; stag are saved on conn_info, we can be sure that no other new command will be received before iscsi_alloc task is called? If yes, it should be easy, and I already have some of the code for it.
+ 
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000957.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+	<LI>Next message: <A HREF="000959.html">[Stgt-devel] Adding iser_task object (was: dd fails with iSER)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#958">[ date ]</a>
+              <a href="thread.html#958">[ thread ]</a>
+              <a href="subject.html#958">[ subject ]</a>
+              <a href="author.html#958">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

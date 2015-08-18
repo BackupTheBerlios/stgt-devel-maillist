@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] segfault in the ssc code ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20segfault%20in%20the%20ssc%20code%20...&In-Reply-To=%3Cc9a3e4540807281537w7b3fb424y270f33b5bdc2d83b%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001931.html">
+   <LINK REL="Next"  HREF="001883.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] segfault in the ssc code ...</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20segfault%20in%20the%20ssc%20code%20...&In-Reply-To=%3Cc9a3e4540807281537w7b3fb424y270f33b5bdc2d83b%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] segfault in the ssc code ...">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue Jul 29 00:37:35 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001931.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+        <LI>Next message: <A HREF="001883.html">[PATCH] Allow -show to be used without a config file as well.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1936">[ date ]</a>
+              <a href="thread.html#1936">[ thread ]</a>
+              <a href="subject.html#1936">[ subject ]</a>
+              <a href="author.html#1936">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I think that looks fine.
+I dont think cdwriter can write to DVD+R though, you would need
+DVDwriter to do that.
+
+
+
+On Tue, Jul 29, 2008 at 3:10 AM, Richard Sharpe
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+&gt;<i> On Sun, Jul 27, 2008 at 1:47 PM, Richard Sharpe
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;<i> On Fri, Jul 25, 2008 at 11:01 PM, ronnie sahlberg
+</I>&gt;&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i> MMC also uses the media changer.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Please verify that the example of &quot;DVD jukebox&quot; that is described in
+</I>&gt;&gt;&gt;<i> README.mmc still works
+</I>&gt;&gt;&gt;<i> after your changes to the mediachanger.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Hmmm, with the July 15 snapshot, and this set of commands:
+</I>&gt;<i>
+</I>&gt;<i> OK, once I fixed the error in my config ... I am back to this error
+</I>&gt;<i> with DVDs and smc with the Jul 15 snapshot:
+</I>&gt;<i>
+</I>&gt;<i> Device seems to be: Generic mmc2 DVD-R/DVD-RW.
+</I>&gt;<i> cdrecord: Found DVD+ media but DVD+R/DVD+RW support code is missing.
+</I>&gt;<i> cdrecord: If you need DVD+R/DVD+RW support, ask the Author for cdrecord-ProDVD.
+</I>&gt;<i> cdrecord: Free test versions and free keys for personal use are at
+</I>&gt;<i> <A HREF="ftp://ftp.berlios.de/pub/cdrecord/ProDVD/">ftp://ftp.berlios.de/pub/cdrecord/ProDVD/</A>
+</I>&gt;<i> cdrecord: Sorry, no CD/DVD-Recorder or unsupported CD/DVD-Recorder
+</I>&gt;<i> found on this target.
+</I>&gt;<i> Using generic SCSI-3/mmc   CD-ROM driver (mmc_cd).
+</I>&gt;<i> Driver flags   : MMC-3 SWABAUDIO BURNFREE
+</I>&gt;<i> Supported modes: TAO PACKET SAO SAO/R96P SAO/R96R RAW/R16 RAW/R96P RAW/R96R
+</I>&gt;<i> cdrecord: Track 1 has unknown length.
+</I>&gt;<i> cdrecord: Use tsize= option in SAO mode to specify track size.
+</I>&gt;<i>
+</I>&gt;<i> This is the same error I get with my changes, so it would seem that I
+</I>&gt;<i> have not disturbed any functionality.
+</I>&gt;<i>
+</I>&gt;<i> Now to figure out what the track-size stuff should be ...
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001931.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+	<LI>Next message: <A HREF="001883.html">[PATCH] Allow -show to be used without a config file as well.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1936">[ date ]</a>
+              <a href="thread.html#1936">[ thread ]</a>
+              <a href="subject.html#1936">[ subject ]</a>
+              <a href="author.html#1936">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

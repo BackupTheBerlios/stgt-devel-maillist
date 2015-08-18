@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] ccording to SSC-2 Rev 8 the Read Block Limits return data is made up of 6 bytes, index 0-5:
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20ccording%20to%20SSC-2%20Rev%208%20the%20Read%20Block%20Limits%20return%20data%20is%20made%20up%20of%0A%206%20bytes%2C%20index%200-5%3A&In-Reply-To=%3Cmailman.41.1331738483.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001803.html">
+   <LINK REL="Next"  HREF="001806.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] ccording to SSC-2 Rev 8 the Read Block Limits return data is made up of 6 bytes, index 0-5:</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20ccording%20to%20SSC-2%20Rev%208%20the%20Read%20Block%20Limits%20return%20data%20is%20made%20up%20of%0A%206%20bytes%2C%20index%200-5%3A&In-Reply-To=%3Cmailman.41.1331738483.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] ccording to SSC-2 Rev 8 the Read Block Limits return data is made up of 6 bytes, index 0-5:">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sun Jul 20 08:00:06 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001803.html">[Stgt-devel] [PATCH] ssc.c set default to removable media
+</A></li>
+        <LI>Next message: <A HREF="001806.html">[Stgt-devel] redhat initd script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1808">[ date ]</a>
+              <a href="thread.html#1808">[ thread ]</a>
+              <a href="subject.html#1808">[ subject ]</a>
+              <a href="author.html#1808">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Byte 0 contains granularity (bits 0-4)
+Byte 1-3 contain  Maximum Block Length Limit (MSB first)
+Byte 4-5 contain Minimum Block Length Limit (MSB first)
+
+Since all bytes are zeroed first, Byte 1 is zero.
+
+I also added a defined value for the granularity, as defined by the
+Read Block Limits command, and calculate the blk_len out of it.
+Now you only need to change the GRANULARITY parameter.
+
+Signed-off-by: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+---
+ usr/ssc.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/usr/ssc.c b/usr/ssc.c
+index cd6623a..3c57b71 100644
+--- a/usr/ssc.c
++++ b/usr/ssc.c
+@@ -35,6 +35,7 @@
+ #include &quot;tgtadm_error.h&quot;
+ 
+ #define BLK_SHIFT	9
++#define GRANULARITY	9
+ 
+ 
+ static int ssc_rw(int host_no, struct scsi_cmd *cmd)
+@@ -73,16 +74,17 @@ static int ssc_read_block_limit(int host_no, struct scsi_cmd *cmd)
+ {
+ 	uint8_t *data;
+ 	uint8_t buf[256];
+-	uint16_t blk_len = 0x200;
++	uint16_t blk_len = 1 &lt;&lt; GRANULARITY;
+ 
+ 	memset(buf, 0, sizeof(buf));
+ 	data = buf;
+ 
+-	data[0] = 9;
+-	data[2] = blk_len &gt;&gt; 8;
++	data[0] = GRANULARITY;
++	data[1] = (blk_len &gt;&gt; 16) &amp;0x0ff;
++	data[2] = (blk_len &gt;&gt; 8) &amp;0x0ff;
+ 	data[3] = blk_len &amp; 0x0ff;
+-	data[5] = blk_len &gt;&gt; 8;
+-	data[6] = blk_len &amp; 0x0ff;
++	data[4] = (blk_len &gt;&gt; 8) &amp;0x0ff;
++	data[5] = blk_len &amp; 0x0ff;
+ 
+ 	memcpy(scsi_get_in_buffer(cmd), data, 6);
+ 	eprintf(&quot;In ssc_read_block_limit \n&quot;);
+@@ -102,7 +104,6 @@ static int ssc_lu_init(struct scsi_lu *lu)
+ 	lu-&gt;attrs.version_desc[0] = 0x0200; /* SSC no version claimed */
+ 	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+ 	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+-	lu-&gt;attrs.removable = 1;
+ 
+ 	data = lu-&gt;mode_block_descriptor;
+ 	size = lu-&gt;size &gt;&gt; BLK_SHIFT;
+-- 
+1.5.5.1
+
+
+--------------060303020504010608010207--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001803.html">[Stgt-devel] [PATCH] ssc.c set default to removable media
+</A></li>
+	<LI>Next message: <A HREF="001806.html">[Stgt-devel] redhat initd script
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1808">[ date ]</a>
+              <a href="thread.html#1808">[ thread ]</a>
+              <a href="subject.html#1808">[ subject ]</a>
+              <a href="author.html#1808">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

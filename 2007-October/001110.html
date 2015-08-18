@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 4/4] bs_mmap add O_SYNC to open()
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%204/4%5D%20bs_mmap%20add%20O_SYNC%20to%20open%28%29&In-Reply-To=%3C20071023213221.GE6091%40linux.vnet.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001109.html">
+   <LINK REL="Next"  HREF="001113.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 4/4] bs_mmap add O_SYNC to open()</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%204/4%5D%20bs_mmap%20add%20O_SYNC%20to%20open%28%29&In-Reply-To=%3C20071023213221.GE6091%40linux.vnet.ibm.com%3E"
+       TITLE="[Stgt-devel] [Patch 4/4] bs_mmap add O_SYNC to open()">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Tue Oct 23 23:32:21 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001109.html">[Stgt-devel] [Patch 3/4] (kernel) tgt_write process one entry
+</A></li>
+        <LI>Next message: <A HREF="001113.html">[Stgt-devel] iSER for stgt - wiki page
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1110">[ date ]</a>
+              <a href="thread.html#1110">[ thread ]</a>
+              <a href="subject.html#1110">[ subject ]</a>
+              <a href="author.html#1110">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add the O_SYNC flag to the open() call.
+
+Signed-off-by: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>
+
+---
+ usr/bs_mmap.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+Index: tgt/usr/bs_mmap.c
+===================================================================
+--- tgt.orig/usr/bs_mmap.c	2007-10-23 11:14:56.000000000 -0500
++++ tgt/usr/bs_mmap.c	2007-10-23 15:52:58.000000000 -0500
+@@ -229,7 +229,7 @@
+ 	INIT_LIST_HEAD(&amp;info-&gt;finished_list);
+ 	INIT_LIST_HEAD(&amp;info-&gt;pending_list);
+ 
+-	*fd = backed_file_open(path, O_RDWR| O_LARGEFILE, size);
++	*fd = backed_file_open(path, O_RDWR | O_LARGEFILE | O_SYNC, size);
+ 	if (*fd &lt; 0)
+ 		return *fd;
+ 
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001109.html">[Stgt-devel] [Patch 3/4] (kernel) tgt_write process one entry
+</A></li>
+	<LI>Next message: <A HREF="001113.html">[Stgt-devel] iSER for stgt - wiki page
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1110">[ date ]</a>
+              <a href="thread.html#1110">[ thread ]</a>
+              <a href="subject.html#1110">[ subject ]</a>
+              <a href="author.html#1110">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

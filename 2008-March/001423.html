@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080303231440W.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001421.html">
+   <LINK REL="Next"  HREF="001425.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C20080303231440W.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">tomof at acm.org
+       </A><BR>
+    <I>Mon Mar  3 15:14:37 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001421.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001425.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1423">[ date ]</a>
+              <a href="thread.html#1423">[ thread ]</a>
+              <a href="subject.html#1423">[ subject ]</a>
+              <a href="author.html#1423">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 02 Mar 2008 15:17:16 +0200
+Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A>&gt; wrote:
+
+&gt;<i> Pete Wyckoff wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Sun, 10 Feb 2008 14:54 +0200:
+</I>&gt;<i> &gt;   
+</I>&gt;<i> &gt;&gt; I'm trying to run some performance tests on iSER. I'm using the latest
+</I>&gt;<i> &gt;&gt; stgt build (tgt-20071227) against open-iscsi r865.15. When I run sgp_dd
+</I>&gt;<i> &gt;&gt; on a single LUN directly from the target machine, I get ~400 MB/sec
+</I>&gt;<i> &gt;&gt; (which is ok because it's the max throughput of that device). When I run
+</I>&gt;<i> &gt;&gt; it from the initiator, I get only ~240 MB/sec.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; Did you use any specific configuration when you did your measurements?
+</I>&gt;<i> &gt;&gt; Pete - according to your numbers, you got wire speed. I wonder why do I
+</I>&gt;<i> &gt;&gt; get 40% less than the physical storage throughput. BTW - when I use
+</I>&gt;<i> &gt;&gt; another iSCSI over iSER target, I get 400 MB/sec from the initiator.
+</I>&gt;<i> &gt;&gt;     
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Here's a patch that will log timestamps.  I use these to pinpoint
+</I>&gt;<i> &gt; where the time is going.  First check for anomalies:  plot it up
+</I>&gt;<i> &gt; with line number on the x axis, time stamp on y, make sure it is
+</I>&gt;<i> &gt; smooth.
+</I>&gt;<i> 
+</I>&gt;<i> It is almost smooth. From time to time, you can see that it takes time
+</I>&gt;<i> before iser_rx_progress is called. I guess that the cq is empty for a
+</I>&gt;<i> short time. I don't think that this is the real problem.
+</I>&gt;<i> 
+</I>&gt;<i> &gt;   Then pick one operation:  zoom in with the plot and your
+</I>&gt;<i> &gt; editor to look at the times for a single read/write, from when the
+</I>&gt;<i> &gt; request first appears to when the response goes out.
+</I>&gt;<i> &gt;   
+</I>&gt;<i> 
+</I>&gt;<i> Here's an example of a single command execution:
+</I>&gt;<i> 
+</I>&gt;<i> 27892 tgtd: [16:40:38.907547] iser_rx_progress(1101) entry
+</I>&gt;<i> 27893 tgtd: [16:40:38.907558] handle_wc(897) incoming cmd, len 76
+</I>&gt;<i> 27894 tgtd: [16:40:38.907568] iscsi_iser_read(1301) buf 0x529fc8 nbytes 48
+</I>&gt;<i> 27895 tgtd: [16:40:38.907578] iser_parse_hdr(1265) control type PDU
+</I>&gt;<i> 27896 tgtd: [16:40:38.907587] iser_parse_hdr(1271) rstag 9b320086 va
+</I>&gt;<i> 3f1fc000
+</I>&gt;<i> 27897 tgtd: [16:40:38.907597] iscsi_scsi_cmd_rx_start(1466) 1 28 0 0
+</I>&gt;<i> 524288 1 b
+</I>&gt;<i> 27898 tgtd: [16:40:38.907607] iscsi_rdma_alloc_data_buf(1659) malloc
+</I>&gt;<i> 0x2acf61554000 sz 524288
+</I>&gt;<i> 27899 tgtd: [16:40:38.907617] iscsi_task_queue(1411) 388b 388b 1
+</I>&gt;<i> 27900 tgtd: [16:40:38.907627] target_cmd_queue(763) 0x535de8 28 1
+</I>&gt;<i> 27901 tgtd: [16:40:38.907637] target_cmd_queue(783) 0x535de8 28 1 1
+</I>&gt;<i> 
+</I>&gt;<i> this is where bs work starts:
+</I>&gt;<i> 27902 tgtd: [16:40:38.907649] tgtd: [16:40:38.907650]
+</I>&gt;<i> bs_thread_worker_fn(151) got 0x535de8
+</I>&gt;<i> 27903 target_cmd_queue(794) b 28 (nil) 0x2acf61554000 262144 0 524288 0 4
+</I>&gt;<i> 27904 tgtd: [16:40:38.907676] iscsi_rdma_event_modify(1628) tx ready
+</I>&gt;<i> adding 0x529eb0
+</I>&gt;<i> 27905 tgtd: [16:40:38.907686] handle_wc(922) incoming cmd proc done, repost
+</I>&gt;<i> 27906 tgtd: [16:40:38.907697] iser_tx_progress(1017) entry
+</I>&gt;<i> 27907 tgtd: [16:40:38.907706] iser_tx_progress(1028) trying tx
+</I>&gt;<i> 27908 tgtd: [16:40:38.907716] iscsi_task_tx_start(1784) no more data
+</I>&gt;<i> 27909 tgtd: [16:40:38.907725] iscsi_rdma_event_modify(1633) tx ready
+</I>&gt;<i> removing 0x529eb0
+</I>&gt;<i> 
+</I>&gt;<i> this is where bs work ends (130 us):
+</I>&gt;<i> 27910 tgtd: [16:40:38.907779] bs_rdwr_request(114) io done 0x535de8 28
+</I>&gt;<i> 524288 524288
+</I>&gt;<i> 27911 tgtd: [16:40:38.907796] bs_thread_ack_fn(82) found 0x535de8
+</I>&gt;<i> 27912 tgtd: [16:40:38.907813] bs_thread_request_done(122) back to tgtd,
+</I>&gt;<i> 0x535de8
+</I>&gt;<i> 27913 tgtd: [16:40:38.907825] iscsi_rdma_event_modify(1628) tx ready
+</I>&gt;<i> adding 0x529eb0
+</I>&gt;<i> 27914 tgtd: [16:40:38.907837] iser_tx_progress(1017) entry
+</I>&gt;<i> 27915 tgtd: [16:40:38.907846] iser_tx_progress(1028) trying tx
+</I>&gt;<i> 27916 tgtd: [16:40:38.907856] iscsi_task_tx_start(1759) found a task b
+</I>&gt;<i> 524288 0 0
+</I>&gt;<i> 27917 tgtd: [16:40:38.907865] iscsi_data_rsp_build(974) 524288 524288
+</I>&gt;<i> 524288 524288 b
+</I>&gt;<i> 27918 tgtd: [16:40:38.907875] iscsi_rdma_rdma_write(1491) offset 0 len
+</I>&gt;<i> 524288 stag 9b320086 va 3f1fc000
+</I>&gt;<i> 27919 tgtd: [16:40:38.907885] iscsi_rdma_event_modify(1633) tx ready
+</I>&gt;<i> removing 0x529eb0
+</I>&gt;<i> 27920 tgtd: [16:40:38.907895] iscsi_scsi_cmd_tx_done(1707) more data or
+</I>&gt;<i> sense or bidir b
+</I>&gt;<i> 27921 tgtd: [16:40:38.908269] iser_rx_progress(1101) entry
+</I>&gt;<i> 27922 tgtd: [16:40:38.908280] handle_wc(932) RDMA write done
+</I>&gt;<i> 27923 tgtd: [16:40:38.908289] iscsi_rdma_event_modify(1628) tx ready
+</I>&gt;<i> adding 0x529eb0
+</I>&gt;<i> 27924 tgtd: [16:40:38.908298] iser_tx_progress(1017) entry
+</I>&gt;<i> 27925 tgtd: [16:40:38.908308] iser_tx_progress(1028) trying tx
+</I>&gt;<i> 27926 tgtd: [16:40:38.908317] iscsi_task_tx_start(1759) found a task b
+</I>&gt;<i> 524288 524288 0
+</I>&gt;<i> 27927 tgtd: [16:40:38.908327] iscsi_cmd_rsp_build(901) 0x535d28 28
+</I>&gt;<i> 27928 tgtd: [16:40:38.908336] iscsi_iser_write_begin(1352) new sendl
+</I>&gt;<i> 0x2aaab45f7090 len 48
+</I>&gt;<i> 27929 tgtd: [16:40:38.908347] iscsi_iser_write_end(1387) sendl
+</I>&gt;<i> 0x2aaab45f7090 len 76
+</I>&gt;<i> 27930 tgtd: [16:40:38.908356] iscsi_iser_write_end(1402) inc progress to
+</I>&gt;<i> finish cmd
+</I>&gt;<i> 27931 tgtd: [16:40:38.908366] __cmd_done(855) 8 (nil) 0x2acf61554000 0
+</I>&gt;<i> 524288 0
+</I>&gt;<i> 27932 tgtd: [16:40:38.908376] iscsi_rdma_free_data_buf(1678) free
+</I>&gt;<i> 0x2acf61554000
+</I>&gt;<i> 
+</I>&gt;<i> It seems that bs work takes a lot of time. For example: if I run
+</I>&gt;<i> disktest on the same device directly from the target machine (i.e. tgt
+</I>&gt;<i> is not involved) in the following way:
+</I>&gt;<i> 
+</I>&gt;<i> disktest -PT -T100 -h1 -K64 -B256k -ID /dev/sdc -r
+</I>&gt;<i> 
+</I>&gt;<i> I get ~13000 iops -&gt; each IO takes ~77 us (compared to 130 us only for
+</I>&gt;<i> bs work with tgt). I'm not familiar with the bs code in tgt, so I'm not
+</I>&gt;<i> sure what should be done here.
+</I>
+The problem is that Linux lacks a nice event notification
+mechanism. The main thread uses epoll to wait on events. I/O threads
+(pthread) use pipe to notify the main thread of I/O completion. It's
+not effective at all.
+
+
+&gt;<i> Another thing that looks strange - from looking at the logs, I don't see
+</I>&gt;<i> that work is done in parallel. A command is received, iSCSI processing
+</I>&gt;<i> is done and it is sent to bs processing (which seems to be idle until
+</I>&gt;<i> that point in time). Now, nothing happens until bs processing is
+</I>&gt;<i> complete. I will try to look more into the code and try to understand
+</I>&gt;<i> it, but can someone try to elaborate on this?
+</I>
+sgp_dd issues only one SCSI command at a time?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001421.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001425.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1423">[ date ]</a>
+              <a href="thread.html#1423">[ thread ]</a>
+              <a href="subject.html#1423">[ subject ]</a>
+              <a href="author.html#1423">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

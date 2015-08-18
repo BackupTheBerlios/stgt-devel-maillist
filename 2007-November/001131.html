@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Ideas on more flexible cd handling
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Ideas%20on%20more%20flexible%20cd%20handling&In-Reply-To=%3C472C40F1.5090906%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001133.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Ideas on more flexible cd handling</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Ideas%20on%20more%20flexible%20cd%20handling&In-Reply-To=%3C472C40F1.5090906%40gmail.com%3E"
+       TITLE="[Stgt-devel] Ideas on more flexible cd handling">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sat Nov  3 10:35:45 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001133.html">[Stgt-devel] Ideas on more flexible cd handling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1131">[ date ]</a>
+              <a href="thread.html#1131">[ thread ]</a>
+              <a href="subject.html#1131">[ subject ]</a>
+              <a href="author.html#1131">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>At the moment it is possible to export a CD iso through tgt but it is 
+not very flexible.
+
+What I would like to see is that an eject command on the initiator side
+&quot;ejects&quot; the iso image on the tgt side, effectively replacing the cd iso 
+image by /dev/null or /dev/zero on the backing store. On the initiator 
+side it looks like no cd is inserted now. When, at the target side, I 
+add again a backing store (a new iso cd image) to the cd LUN it will 
+send a CD inserted message up to the initiator.
+
+The same can be used for the virtual tapes as it has the same principle 
+(tape ejected/tape inserted).
+
+This could then be tied into a cd/tape changer device which could manage 
+a directory containing iso/tape images.
+
+In fact you can argue the same for disks, albeit not a standard way of 
+using them, but it would have the same result of inserting a new 
+(SATA/SAS/SCSI) disk to a controller with hotplug insertion.
+
+So what do people think of this idea?
+
+Albert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001133.html">[Stgt-devel] Ideas on more flexible cd handling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1131">[ date ]</a>
+              <a href="thread.html#1131">[ thread ]</a>
+              <a href="subject.html#1131">[ subject ]</a>
+              <a href="author.html#1131">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

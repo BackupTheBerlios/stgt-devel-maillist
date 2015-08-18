@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH 6/7] example on how to use dvdrecorder to write to the
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%206/7%5D%20example%20on%20how%20to%20use%20dvdrecorder%20to%20write%20to%20the&In-Reply-To=%3Cmailman.24.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001586.html">
+   <LINK REL="Next"  HREF="001590.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH 6/7] example on how to use dvdrecorder to write to the</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%206/7%5D%20example%20on%20how%20to%20use%20dvdrecorder%20to%20write%20to%20the&In-Reply-To=%3Cmailman.24.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH 6/7] example on how to use dvdrecorder to write to the">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Fri May  2 14:39:39 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001586.html">[PATCH 5/7] modepage for write parameters
+</A></li>
+        <LI>Next message: <A HREF="001590.html">[PATCH 7/7] change how we handle dvdrecorder close track
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1588">[ date ]</a>
+              <a href="thread.html#1588">[ thread ]</a>
+              <a href="subject.html#1588">[ subject ]</a>
+              <a href="author.html#1588">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>emulated disk
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ doc/README.mmc |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/doc/README.mmc b/doc/README.mmc
+index 265b95a..6f7074d 100644
+--- a/doc/README.mmc
++++ b/doc/README.mmc
+@@ -37,6 +37,13 @@ operations in which case it may or may not work.
+ It is the intent that the emulation will be enhanced to provide compatibility
+ with all DVD burning applications on all important platforms.
+
++The emulation is also compatible with Linux:dvdrecorder but you must
++specify the command arguments -dao -ignsize -overburn
++
++Example:
++dvdrecord -dao -ignsize -overburn dev=/dev/sg3 ./IMAGE.iso
++
++
+ Please report incompatibilities with other burning applications other than
+ Windows/DVD-Decrypter to <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A> and I will try to
+ enhance the emulation to also support your application of choice.
+-- 
+1.5.5
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001586.html">[PATCH 5/7] modepage for write parameters
+</A></li>
+	<LI>Next message: <A HREF="001590.html">[PATCH 7/7] change how we handle dvdrecorder close track
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1588">[ date ]</a>
+              <a href="thread.html#1588">[ thread ]</a>
+              <a href="subject.html#1588">[ subject ]</a>
+              <a href="author.html#1588">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

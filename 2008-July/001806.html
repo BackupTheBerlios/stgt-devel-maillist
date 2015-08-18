@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] redhat initd script
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20redhat%20initd%20script&In-Reply-To=%3C4882E17C.1000700%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001808.html">
+   <LINK REL="Next"  HREF="001810.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] redhat initd script</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20redhat%20initd%20script&In-Reply-To=%3C4882E17C.1000700%40gmail.com%3E"
+       TITLE="[Stgt-devel] redhat initd script">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sun Jul 20 08:55:56 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001808.html">[PATCH] ccording to SSC-2 Rev 8 the Read Block Limits return data is made up of 6 bytes, index 0-5:
+</A></li>
+        <LI>Next message: <A HREF="001810.html">[Stgt-devel] Bug report - create a file on mounted FS (ext3) with	dd fails
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1806">[ date ]</a>
+              <a href="thread.html#1806">[ thread ]</a>
+              <a href="subject.html#1806">[ subject ]</a>
+              <a href="author.html#1806">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Please consider the following startup script for inclusion.
+Attached is the one for Redhat/Fedora, already included in the 
+scsi-target-utils package,
+but slightly modified (ie using the  --op delete --mode system options 
+to stop it) and a
+show option to show the configured targets.
+
+Few things missing, a framework to start up with predefined target 
+setups, and the
+chkconfig sequence numbers need to be fine tuned. The target should 
+start up before
+open-iscsi and stop after it.
+
+Albert
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: initd.redhat
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080720/c22ca3dc/attachment.ksh">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080720/c22ca3dc/attachment.ksh</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001808.html">[PATCH] ccording to SSC-2 Rev 8 the Read Block Limits return data is made up of 6 bytes, index 0-5:
+</A></li>
+	<LI>Next message: <A HREF="001810.html">[Stgt-devel] Bug report - create a file on mounted FS (ext3) with	dd fails
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1806">[ date ]</a>
+              <a href="thread.html#1806">[ thread ]</a>
+              <a href="subject.html#1806">[ subject ]</a>
+              <a href="author.html#1806">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

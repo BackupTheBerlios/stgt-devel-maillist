@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] fix task leaks on conn close
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fix%20task%20leaks%20on%20conn%20close&In-Reply-To=%3C452348D7.9020606%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000342.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] fix task leaks on conn close</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20fix%20task%20leaks%20on%20conn%20close&In-Reply-To=%3C452348D7.9020606%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] fix task leaks on conn close">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Wed Oct  4 07:38:31 CEST 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000342.html">[Stgt-devel] [PATCH 2/2] fix tmf return values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#341">[ date ]</a>
+              <a href="thread.html#341">[ thread ]</a>
+              <a href="subject.html#341">[ subject ]</a>
+              <a href="author.html#341">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>The attached patch adds a connection refcount and forces the cleanup of
+pending tasks or tasks that are not going to get completed by are not
+running in tgtd. The refcout is needed for the latter. When those
+commands have completed we then release the connection.
+
+This patch only handles the memory issues. Should we actually not close
+the connection endpoints and should we send the result of the commands
+that were executing in tgtd when they finally complete? For some like
+linux-iscsi or open-iscsi, when the connection is dropped we assume the
+command is not executed, but tgtd might actually complete it. Is either
+wrong?
+
+I will send a seperate patch to fix the command completeion issue above
+and the session leak.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 01-add-refcount-to-conn.patch
+Type: text/x-patch
+Size: 10123 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20061004/76c487d2/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20061004/76c487d2/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000342.html">[Stgt-devel] [PATCH 2/2] fix tmf return values
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#341">[ date ]</a>
+              <a href="thread.html#341">[ thread ]</a>
+              <a href="subject.html#341">[ subject ]</a>
+              <a href="author.html#341">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

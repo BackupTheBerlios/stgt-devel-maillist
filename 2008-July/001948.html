@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%0A%09persistent%09device%09binding&In-Reply-To=%3C20080729200345E.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001947.html">
+   <LINK REL="Next"  HREF="001949.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%0A%09persistent%09device%09binding&In-Reply-To=%3C20080729200345E.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Jul 29 13:02:51 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001947.html">[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding
+</A></li>
+        <LI>Next message: <A HREF="001949.html">[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1948">[ date ]</a>
+              <a href="thread.html#1948">[ thread ]</a>
+              <a href="subject.html#1948">[ subject ]</a>
+              <a href="author.html#1948">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 29 Jul 2008 13:51:55 +0300
+Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at Voltaire.COM</A>&gt; wrote:
+
+&gt;<i> Eli Dorfman wrote:
+</I>&gt;<i> &gt;&gt;&gt; maybe use the following format :
+</I>&gt;<i> &gt;&gt;&gt; &lt;target xyz&gt;
+</I>&gt;<i> &gt;&gt;&gt;     &lt;backing-store /dev/sdb&gt;
+</I>&gt;<i> &gt;&gt;&gt;           properties  custom # use properties specified below or
+</I>&gt;<i> &gt;&gt;&gt; default (generate the deadbeaf id) or direct (get real serial number)
+</I>&gt;<i> &gt;&gt;&gt;           serial-number 12345678
+</I>&gt;<i> &gt;&gt;&gt;           vendor myvendor
+</I>&gt;<i> &gt;&gt;&gt;     &lt;/backing-store&gt;
+</I>&gt;<i> &gt;&gt;&gt; &lt;/target&gt;
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; what do you think?
+</I>&gt;<i> &gt;&gt; Hmm, 'properties custom' looks unnecessary for me. If a device file of
+</I>&gt;<i> &gt;&gt; a disk drive is used as backing-store and none of the properties are
+</I>&gt;<i> &gt;&gt; specified, we can use the physical properties.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; we need something like properties to differentiate between disk (read
+</I>&gt;<i> &gt; real props), file (generate unique serial number
+</I>&gt;<i> &gt; disk-sn-partition-filename) and custom (applicable to any case).
+</I>&gt;<i> &gt; we can call this attribute: &quot;type&quot; which can accept 3 values disk,
+</I>&gt;<i> &gt; file or custom (default).
+</I>&gt;<i> 
+</I>&gt;<i> This is what I suggest:
+</I>&gt;<i> 
+</I>&gt;<i> &lt;target iqn.2007-04.com.example:san.monitoring&gt;
+</I>&gt;<i>    &lt;backing-store /tmp/ramdisk/lun1&gt;
+</I>&gt;<i>       type default
+</I>&gt;<i>       serial 12345678
+</I>&gt;<i>       vendor my_vendor
+</I>&gt;<i>       product_id my_id
+</I>&gt;<i>       product_rev my_rev
+</I>&gt;<i>    &lt;/backing-store&gt;
+</I>&gt;<i> 
+</I>&gt;<i>    &lt;backing-store /dev/sdc&gt;
+</I>&gt;<i>       type disk
+</I>&gt;<i>    &lt;/backing-store&gt;
+</I>&gt;<i> &lt;/target&gt;
+</I>&gt;<i> 
+</I>&gt;<i> The reason we use XML is that the original implementation used XML.
+</I>&gt;<i> 
+</I>&gt;<i> We suggest two types:
+</I>&gt;<i> 1. disk: &quot;real&quot; physical devices, where we read the properties from the device itself - i.e. storage disks.
+</I>&gt;<i> 2. default - use default tgt values. 
+</I>&gt;<i>    We can also override the properties with user defined values (optional).
+</I>&gt;<i> 
+</I>&gt;<i> The reason for the type attribute is to differentiate between these two types.
+</I>
+I don't know anything about XML but should it be something like?
+
+&lt;target iqn.2007-04.com.example:san.monitoring&gt;
+   &lt;lun 0&gt;
+     type sbc
+     backing-store
+
+
+I think that OpenSolaris has a xml file to store iSCSI target
+configuration persistently. It might provide us some ideas.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001947.html">[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding
+</A></li>
+	<LI>Next message: <A HREF="001949.html">[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1948">[ date ]</a>
+              <a href="thread.html#1948">[ thread ]</a>
+              <a href="subject.html#1948">[ subject ]</a>
+              <a href="author.html#1948">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

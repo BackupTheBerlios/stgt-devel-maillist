@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%09Linux%20kernel&In-Reply-To=%3C47A889AB.9090301%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001378.html">
+   <LINK REL="Next"  HREF="001347.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%20the%20mainstream%0A%09Linux%20kernel&In-Reply-To=%3C47A889AB.9090301%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel">mangoo at wpkg.org
+       </A><BR>
+    <I>Tue Feb  5 17:07:07 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001378.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+        <LI>Next message: <A HREF="001347.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1346">[ date ]</a>
+              <a href="thread.html#1346">[ thread ]</a>
+              <a href="subject.html#1346">[ subject ]</a>
+              <a href="author.html#1346">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Tue, 05 Feb 2008 08:14:01 +0100
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> James Bottomley schrieb:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> These are both features being independently worked on, are they not?
+</I>&gt;&gt;&gt;<i> Even if they weren't, the combination of the size of SCST in kernel plus
+</I>&gt;&gt;&gt;<i> the problem of having to find a migration path for the current STGT
+</I>&gt;&gt;&gt;<i> users still looks to me to involve the greater amount of work.
+</I>&gt;&gt;<i> I don't want to be mean, but does anyone actually use STGT in
+</I>&gt;&gt;<i> production? Seriously?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> In the latest development version of STGT, it's only possible to stop
+</I>&gt;&gt;<i> the tgtd target daemon using KILL / 9 signal - which also means all
+</I>&gt;&gt;<i> iSCSI initiator connections are corrupted when tgtd target daemon is
+</I>&gt;&gt;<i> started again (kernel upgrade, target daemon upgrade, server reboot etc.).
+</I>&gt;<i> 
+</I>&gt;<i> I don't know what &quot;iSCSI initiator connections are corrupted&quot;
+</I>&gt;<i> mean. But if you reboot a server, how can an iSCSI target
+</I>&gt;<i> implementation keep iSCSI tcp connections?
+</I>
+The problem with tgtd is that you can't start it (configured) in an
+&quot;atomic&quot; way.
+Usually, one will start tgtd and it's configuration in a script (I 
+replaced some parameters with &quot;...&quot; to make it shorter and more readable):
+
+
+tgtd
+tgtadm --op new ...
+tgtadm --lld iscsi --op new ...
+
+
+However, this won't work - tgtd goes immediately in the background as it 
+is still starting, and the first tgtadm commands will fail:
+
+# bash -x tgtd-start
++ tgtd
++ tgtadm --op new --mode target ...
+tgtadm: can't connect to the tgt daemon, Connection refused
+tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+not connected
++ tgtadm --lld iscsi --op new --mode account ...
+tgtadm: can't connect to the tgt daemon, Connection refused
+tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+not connected
++ tgtadm --lld iscsi --op bind --mode account --tid 1 ...
+tgtadm: can't find the target
++ tgtadm --op new --mode logicalunit --tid 1 --lun 1 ...
+tgtadm: can't find the target
++ tgtadm --op bind --mode target --tid 1 -I ALL
+tgtadm: can't find the target
++ tgtadm --op new --mode target --tid 2 ...
++ tgtadm --op new --mode logicalunit --tid 2 --lun 1 ...
++ tgtadm --op bind --mode target --tid 2 -I ALL
+
+
+OK, if tgtd takes longer to start, perhaps it's a good idea to sleep a 
+second right after tgtd?
+
+tgtd
+sleep 1
+tgtadm --op new ...
+tgtadm --lld iscsi --op new ...
+
+
+No, it is not a good idea - if tgtd listens on port 3260 *and* is 
+unconfigured yet,  any reconnecting initiator will fail, like below:
+
+end_request: I/O error, dev sdb, sector 7045192
+Buffer I/O error on device sdb, logical block 880649
+lost page write due to I/O error on sdb
+Aborting journal on device sdb.
+ext3_abort called.
+EXT3-fs error (device sdb): ext3_journal_start_sb: Detected aborted journal
+Remounting filesystem read-only
+end_request: I/O error, dev sdb, sector 7045880
+Buffer I/O error on device sdb, logical block 880735
+lost page write due to I/O error on sdb
+end_request: I/O error, dev sdb, sector 6728
+Buffer I/O error on device sdb, logical block 841
+lost page write due to I/O error on sdb
+end_request: I/O error, dev sdb, sector 7045192
+Buffer I/O error on device sdb, logical block 880649
+lost page write due to I/O error on sdb
+end_request: I/O error, dev sdb, sector 7045880
+Buffer I/O error on device sdb, logical block 880735
+lost page write due to I/O error on sdb
+__journal_remove_journal_head: freeing b_frozen_data
+__journal_remove_journal_head: freeing b_frozen_data
+
+
+Ouch.
+
+So the only way to start/restart tgtd reliably is to do hacks which are 
+needed with yet another iSCSI kernel implementation (IET): use iptables.
+
+iptables &lt;block iSCSI traffic&gt;
+tgtd
+sleep 1
+tgtadm --op new ...
+tgtadm --lld iscsi --op new ...
+iptables &lt;unblock iSCSI traffic&gt;
+
+
+A bit ugly, isn't it?
+Having to tinker with a firewall in order to start a daemon is by no 
+means a sign of a well-tested and mature project.
+
+That's why I asked how many people use stgt in a production environment 
+- James was worried about a potential migration path for current users.
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001378.html">[Stgt-devel] Update (Re: open iSCSI over iSER target RPM ...)
+</A></li>
+	<LI>Next message: <A HREF="001347.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1346">[ date ]</a>
+              <a href="thread.html#1346">[ thread ]</a>
+              <a href="subject.html#1346">[ subject ]</a>
+              <a href="author.html#1346">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

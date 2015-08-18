@@ -1,0 +1,3418 @@
+From pw at osc.edu  Fri Jan 19 16:54:08 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Fri, 19 Jan 2007 10:54:08 -0500
+Subject: [Stgt-devel] [PATCH] stgt: avoid confusing debug message
+Message-ID: <20070119155408.GA1223@osc.edu>
+
+Do not print errno in debug message when read returns 0.  Rewrote
+the logic a bit too so it is easier to follow.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+Index: usr/iscsi/iscsid.c
+===================================================================
+--- usr/iscsi/iscsid.c	(revision 766)
++++ usr/iscsi/iscsid.c	(working copy)
+@@ -1520,12 +1520,18 @@ static void iscsi_rx_handler(int fd, str
+ 	case IOSTATE_READ_AHS_DATA:
+ 	read_again:
+ 		res = conn->tp->ep_read(fd, conn->rx_buffer, conn->rx_size);
+-		if (res <= 0) {
+-			if (res == 0 || (errno != EINTR && errno != EAGAIN)) {
++		if (res == 0) {
++			conn->state = STATE_CLOSE;
++			break;
++		} else if (res < 0) {
++			if (errno == EINTR)
++				goto read_again;
++			else if (errno == EAGAIN)
++				break;
++			else {
+ 				conn->state = STATE_CLOSE;
+ 				dprintf("%d %d, %m\n", res, errno);
+-			} else if (errno == EINTR)
+-				goto read_again;
++			}
+ 			break;
+ 		}
+ 		conn->rx_size -= res;
+
+
+From pw at osc.edu  Fri Jan 19 18:01:42 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Fri, 19 Jan 2007 12:01:42 -0500
+Subject: [Stgt-devel] supporting non-block devices
+Message-ID: <20070119170142.GB1223@osc.edu>
+
+We've been using the fine stgt code as the target for our OSD-2
+emulator.  OSDs are devices that store objects rather than blocks,
+and they have a quite different SCSI command set, and do not support
+all the block commands in SBC3, e.g.:  there is no READ_10 command
+or its friends.  See http://www.t10.org/drafts.htm#osd2 for the
+draft.
+
+Do you have any interest in supporting non-block devices in stgt?
+The way we hack in OSD support now is unattractive.  To do it nicely
+would require changing the abstractions a bit.
+
+In particular, we want the iscsi transport, but do not want the
+aio_bdt.  So I define a new tgt_driver that uses most of the iscsi
+functions, but points to a new osd_bdt, and redefines scsi_inquiry.
+(This is all userspace, no kernel tgt code.)
+
+In scsi_cmd_perform, most of the scb[] types are supported by OSDs
+so we would like to use that code.  But not READ* and WRITE*.  And
+all the new OSD commands come via a VARLEN_CMD (0x7f) for which I've
+added a new varlen_submit() function in the osd_bdt that does the
+command parsing and actual execution.  Kludgy since this should not
+be part of the bdt.
+
+Some ideas, if interested.  You could use a table to lookup scb[0]
+to find a handler function, then let devices fill or override table
+entries.  Or call a device's scsi_cmd_perform first to see if it
+wants to deal with the scb itself or let the generic handler do it.
+
+Your thoughts?
+
+		-- Pete
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sat Jan 20 14:50:18 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 20 Jan 2007 22:50:18 +0900
+Subject: [Stgt-devel] [PATCH] stgt: avoid confusing debug message
+In-Reply-To: <20070119155408.GA1223@osc.edu>
+References: <20070119155408.GA1223@osc.edu>
+Message-ID: <20070120225018I.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] [PATCH] stgt: avoid confusing debug message
+Date: Fri, 19 Jan 2007 10:54:08 -0500
+
+> Do not print errno in debug message when read returns 0.
+
+Too verbose?
+
+> Rewrote the logic a bit too so it is easier to follow.
+
+Yeah. Merged.
+
+
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+> 
+> Index: usr/iscsi/iscsid.c
+> ===================================================================
+> --- usr/iscsi/iscsid.c	(revision 766)
+> +++ usr/iscsi/iscsid.c	(working copy)
+> @@ -1520,12 +1520,18 @@ static void iscsi_rx_handler(int fd, str
+>  	case IOSTATE_READ_AHS_DATA:
+>  	read_again:
+>  		res = conn->tp->ep_read(fd, conn->rx_buffer, conn->rx_size);
+> -		if (res <= 0) {
+> -			if (res == 0 || (errno != EINTR && errno != EAGAIN)) {
+> +		if (res == 0) {
+> +			conn->state = STATE_CLOSE;
+> +			break;
+> +		} else if (res < 0) {
+> +			if (errno == EINTR)
+> +				goto read_again;
+> +			else if (errno == EAGAIN)
+> +				break;
+> +			else {
+>  				conn->state = STATE_CLOSE;
+>  				dprintf("%d %d, %m\n", res, errno);
+> -			} else if (errno == EINTR)
+> -				goto read_again;
+> +			}
+>  			break;
+>  		}
+>  		conn->rx_size -= res;
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+> 
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sat Jan 20 15:04:45 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 20 Jan 2007 23:04:45 +0900
+Subject: [Stgt-devel] supporting non-block devices
+In-Reply-To: <20070119170142.GB1223@osc.edu>
+References: <20070119170142.GB1223@osc.edu>
+Message-ID: <20070120230445G.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] supporting non-block devices
+Date: Fri, 19 Jan 2007 12:01:42 -0500
+
+> We've been using the fine stgt code as the target for our OSD-2
+> emulator.  OSDs are devices that store objects rather than blocks,
+> and they have a quite different SCSI command set, and do not support
+> all the block commands in SBC3, e.g.:  there is no READ_10 command
+> or its friends.  See http://www.t10.org/drafts.htm#osd2 for the
+> draft.
+> 
+> Do you have any interest in supporting non-block devices in stgt?
+
+Yeah. I plan to add OSD support at least (see enum
+tgtadm_target_type).
+
+
+> The way we hack in OSD support now is unattractive.  To do it nicely
+> would require changing the abstractions a bit.
+> 
+> In particular, we want the iscsi transport, but do not want the
+> aio_bdt.  So I define a new tgt_driver that uses most of the iscsi
+> functions, but points to a new osd_bdt, and redefines scsi_inquiry.
+> (This is all userspace, no kernel tgt code.)
+> 
+> In scsi_cmd_perform, most of the scb[] types are supported by OSDs
+> so we would like to use that code.  But not READ* and WRITE*.  And
+> all the new OSD commands come via a VARLEN_CMD (0x7f) for which I've
+> added a new varlen_submit() function in the osd_bdt that does the
+> command parsing and actual execution.  Kludgy since this should not
+> be part of the bdt.
+
+I plan to split the current scsi command code; spc.c and sbc.c. The
+device type specific code (sbc.c, osd.c, etc) can use functions in
+spc.c.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sat Jan 20 16:22:44 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 21 Jan 2007 00:22:44 +0900
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <1165856307.2769.135.camel@localhost.localdomain>
+References: <1165856307.2769.135.camel@localhost.localdomain>
+Message-ID: <200701201522.l0KFMiAg017657@r-dd.iij4u.or.jp>
+
+From: Ming Zhang <blackmagic02881 at gmail.com>
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+Date: Mon, 11 Dec 2006 11:58:27 -0500
+
+> Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+> same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+> r598.
+> 
+> Want to know how efficient stgt handle context switch. 
+> 
+> run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+
+(snip)
+
+> run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+> operations/sec. yes, 250.
+
+OK. I did some tests too. As we know, aioepoll isn't effective.
+
+The sg_turs test doesn't need AIO code. So I just tried epoll for
+event notification.
+
+- tgt (patched)
+
+paris:~# sg_turs -t -n=1000 /dev/sg3
+time to perform commands was 0.125131 secs; 7991.62 operations/sec
+Completed 1000 Test Unit Ready commands with 0 errors
+
+- IET
+
+paris:~# sg_turs -t -n=1000 /dev/sg3
+time to perform commands was 0.128747 secs; 7767.17 operations/sec
+Completed 1000 Test Unit Ready commands with 0 errors
+
+
+Well, not bad at all. And I heard that kevent is more effective than
+epoll.
+
+
+Note that aioepoll affects only user-mode target drivers (now only
+iSCSI). The kernel target drivers don't need AIO code (can use
+epoll). So they should have no performance problem. And as I said
+before, I think that the iSCSI target driver is ok in real workloads.
+
+I've attached the patch for people who are interested:
+
+
+Index: usr/tgtd.c
+===================================================================
+--- usr/tgtd.c	(revision 767)
++++ usr/tgtd.c	(working copy)
+@@ -212,13 +212,13 @@
+ 		return;
+ 	}
+ 
+-	iocb = iocbs;
+-	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1);
+-	err = io_submit(ctx, 1, &iocb);
+-
++/* 	iocb = iocbs; */
++/* 	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1); */
++/* 	err = io_submit(ctx, 1, &iocb); */
+ retry:
+-	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &timeout);
++/* 	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &timeout); */
+ 
++	nevent = epoll_wait(ep_fd, events, ARRAY_SIZE(events), -1);
+ 	if (nevent < 0) {
+ 		if (errno != EINTR) {
+ 			eprintf("%m\n");
+@@ -226,18 +226,22 @@
+ 		}
+ 	} else if (nevent) {
+ 		for (i = 0; i < nevent; i++) {
+-			if (iocb == aioevents[i].obj) {
+-				int j;
+-				for (j = 0; j < aioevents[i].res; j++) {
+-					tev = (struct tgt_event *) events[j].data.ptr;
+-					tev->handler(tev->fd, events[j].events, tev->data);
+-				}
+ 
+-				err = io_submit(ctx, 1, &iocb);
+-			} else {
+-				/* FIXME */
+-				target_cmd_io_done(aioevents[i].data, 0);
+-			}
++			tev = (struct tgt_event *) events[i].data.ptr;
++			tev->handler(tev->fd, events[i].events, tev->data);
++
++/* 			if (iocb == aioevents[i].obj) { */
++/* 				int j; */
++/* 				for (j = 0; j < aioevents[i].res; j++) { */
++/* 					tev = (struct tgt_event *) events[j].data.ptr; */
++/* 					tev->handler(tev->fd, events[j].events, tev->data); */
++/* 				} */
++
++/* 				err = io_submit(ctx, 1, &iocb); */
++/* 			} else { */
++/* 				/\* FIXME *\/ */
++/* 				target_cmd_io_done(aioevents[i].data, 0); */
++/* 			} */
+ 		}
+ 	} else
+ 		schedule();
+Index: usr/bd_aio.c
+===================================================================
+--- usr/bd_aio.c	(revision 767)
++++ usr/bd_aio.c	(working copy)
+@@ -75,21 +75,21 @@
+ 	struct iocb iocb, *io;
+ 	int err;
+ 
+-	*async = 1;
++	*async = 0;
+ 
+-	io = &iocb;
+-	memset(io, 0, sizeof(*io));
++/* 	io = &iocb; */
++/* 	memset(io, 0, sizeof(*io)); */
+ 
+-	dprintf("%d %d %u %lx %" PRIx64 " %p %p\n", dev->fd, rw, datalen, *uaddr, offset,
+-		io, key);
++/* 	dprintf("%d %d %u %lx %" PRIx64 " %p %p\n", dev->fd, rw, datalen, *uaddr, offset, */
++/* 		io, key); */
+ 
+-	if (rw == READ)
+-		io_prep_pread(io, dev->fd, (void *) *uaddr, datalen, offset);
+-	else
+-		io_prep_pwrite(io, dev->fd, (void *) *uaddr, datalen, offset);
++/* 	if (rw == READ) */
++/* 		io_prep_pread(io, dev->fd, (void *) *uaddr, datalen, offset); */
++/* 	else */
++/* 		io_prep_pwrite(io, dev->fd, (void *) *uaddr, datalen, offset); */
+ 
+-	io->data = key;
+-	err = io_submit(ctx, 1, &io);
++/* 	io->data = key; */
++/* 	err = io_submit(ctx, 1, &io); */
+ 
+ 	return 0;
+ }
+
+
+From blackmagic02881 at gmail.com  Sat Jan 20 16:30:58 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Sat, 20 Jan 2007 10:30:58 -0500
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <200701201522.l0KFMiAg017657@r-dd.iij4u.or.jp>
+References: <1165856307.2769.135.camel@localhost.localdomain>
+	<200701201522.l0KFMiAg017657@r-dd.iij4u.or.jp>
+Message-ID: <1169307059.2762.19.camel@localhost.localdomain>
+
+On Sun, 2007-01-21 at 00:22 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <blackmagic02881 at gmail.com>
+> Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> Date: Mon, 11 Dec 2006 11:58:27 -0500
+> 
+> > Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+> > same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+> > r598.
+> > 
+> > Want to know how efficient stgt handle context switch. 
+> > 
+> > run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+> 
+> (snip)
+> 
+> > run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+> > operations/sec. yes, 250.
+> 
+> OK. I did some tests too. As we know, aioepoll isn't effective.
+> 
+> The sg_turs test doesn't need AIO code. So I just tried epoll for
+> event notification.
+> 
+> - tgt (patched)
+> 
+> paris:~# sg_turs -t -n=1000 /dev/sg3
+> time to perform commands was 0.125131 secs; 7991.62 operations/sec
+> Completed 1000 Test Unit Ready commands with 0 errors
+> 
+> - IET
+> 
+> paris:~# sg_turs -t -n=1000 /dev/sg3
+> time to perform commands was 0.128747 secs; 7767.17 operations/sec
+> Completed 1000 Test Unit Ready commands with 0 errors
+> 
+> 
+> Well, not bad at all. And I heard that kevent is more effective than
+> epoll.
+
+the # looks pretty good. thanks for testing. maybe it is bounded by your
+network now? could you try a open-iscsi via loopback?
+
+what is the CPU utilization during test?
+
+> 
+> 
+> Note that aioepoll affects only user-mode target drivers (now only
+> iSCSI). The kernel target drivers don't need AIO code (can use
+> epoll). So they should have no performance problem. And as I said
+> before, I think that the iSCSI target driver is ok in real workloads.
+
+do you have a road map for stgt? see, need to read your reply for Pete
+to know OSD is already under your plan.
+
+
+> 
+> I've attached the patch for people who are interested:
+> 
+> 
+> Index: usr/tgtd.c
+> ===================================================================
+> --- usr/tgtd.c	(revision 767)
+> +++ usr/tgtd.c	(working copy)
+> @@ -212,13 +212,13 @@
+>  		return;
+>  	}
+>  
+> -	iocb = iocbs;
+> -	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1);
+> -	err = io_submit(ctx, 1, &iocb);
+> -
+> +/* 	iocb = iocbs; */
+> +/* 	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1); */
+> +/* 	err = io_submit(ctx, 1, &iocb); */
+>  retry:
+> -	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &timeout);
+> +/* 	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &timeout); */
+>  
+> +	nevent = epoll_wait(ep_fd, events, ARRAY_SIZE(events), -1);
+>  	if (nevent < 0) {
+>  		if (errno != EINTR) {
+>  			eprintf("%m\n");
+> @@ -226,18 +226,22 @@
+>  		}
+>  	} else if (nevent) {
+>  		for (i = 0; i < nevent; i++) {
+> -			if (iocb == aioevents[i].obj) {
+> -				int j;
+> -				for (j = 0; j < aioevents[i].res; j++) {
+> -					tev = (struct tgt_event *) events[j].data.ptr;
+> -					tev->handler(tev->fd, events[j].events, tev->data);
+> -				}
+>  
+> -				err = io_submit(ctx, 1, &iocb);
+> -			} else {
+> -				/* FIXME */
+> -				target_cmd_io_done(aioevents[i].data, 0);
+> -			}
+> +			tev = (struct tgt_event *) events[i].data.ptr;
+> +			tev->handler(tev->fd, events[i].events, tev->data);
+> +
+> +/* 			if (iocb == aioevents[i].obj) { */
+> +/* 				int j; */
+> +/* 				for (j = 0; j < aioevents[i].res; j++) { */
+> +/* 					tev = (struct tgt_event *) events[j].data.ptr; */
+> +/* 					tev->handler(tev->fd, events[j].events, tev->data); */
+> +/* 				} */
+> +
+> +/* 				err = io_submit(ctx, 1, &iocb); */
+> +/* 			} else { */
+> +/* 				/\* FIXME *\/ */
+> +/* 				target_cmd_io_done(aioevents[i].data, 0); */
+> +/* 			} */
+>  		}
+>  	} else
+>  		schedule();
+> Index: usr/bd_aio.c
+> ===================================================================
+> --- usr/bd_aio.c	(revision 767)
+> +++ usr/bd_aio.c	(working copy)
+> @@ -75,21 +75,21 @@
+>  	struct iocb iocb, *io;
+>  	int err;
+>  
+> -	*async = 1;
+> +	*async = 0;
+>  
+> -	io = &iocb;
+> -	memset(io, 0, sizeof(*io));
+> +/* 	io = &iocb; */
+> +/* 	memset(io, 0, sizeof(*io)); */
+>  
+> -	dprintf("%d %d %u %lx %" PRIx64 " %p %p\n", dev->fd, rw, datalen, *uaddr, offset,
+> -		io, key);
+> +/* 	dprintf("%d %d %u %lx %" PRIx64 " %p %p\n", dev->fd, rw, datalen, *uaddr, offset, */
+> +/* 		io, key); */
+>  
+> -	if (rw == READ)
+> -		io_prep_pread(io, dev->fd, (void *) *uaddr, datalen, offset);
+> -	else
+> -		io_prep_pwrite(io, dev->fd, (void *) *uaddr, datalen, offset);
+> +/* 	if (rw == READ) */
+> +/* 		io_prep_pread(io, dev->fd, (void *) *uaddr, datalen, offset); */
+> +/* 	else */
+> +/* 		io_prep_pwrite(io, dev->fd, (void *) *uaddr, datalen, offset); */
+>  
+> -	io->data = key;
+> -	err = io_submit(ctx, 1, &io);
+> +/* 	io->data = key; */
+> +/* 	err = io_submit(ctx, 1, &io); */
+>  
+>  	return 0;
+>  }
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sat Jan 20 16:47:43 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 21 Jan 2007 00:47:43 +0900
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <1169307059.2762.19.camel@localhost.localdomain>
+References: <1165856307.2769.135.camel@localhost.localdomain>
+	<200701201522.l0KFMiAg017657@r-dd.iij4u.or.jp>
+	<1169307059.2762.19.camel@localhost.localdomain>
+Message-ID: <20070121004743Z.fujita.tomonori@lab.ntt.co.jp>
+
+From: Ming Zhang <blackmagic02881 at gmail.com>
+Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+Date: Sat, 20 Jan 2007 10:30:58 -0500
+
+> On Sun, 2007-01-21 at 00:22 +0900, FUJITA Tomonori wrote:
+> > From: Ming Zhang <blackmagic02881 at gmail.com>
+> > Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> > Date: Mon, 11 Dec 2006 11:58:27 -0500
+> > 
+> > > Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+> > > same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+> > > r598.
+> > > 
+> > > Want to know how efficient stgt handle context switch. 
+> > > 
+> > > run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+> > 
+> > (snip)
+> > 
+> > > run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+> > > operations/sec. yes, 250.
+> > 
+> > OK. I did some tests too. As we know, aioepoll isn't effective.
+> > 
+> > The sg_turs test doesn't need AIO code. So I just tried epoll for
+> > event notification.
+> > 
+> > - tgt (patched)
+> > 
+> > paris:~# sg_turs -t -n=1000 /dev/sg3
+> > time to perform commands was 0.125131 secs; 7991.62 operations/sec
+> > Completed 1000 Test Unit Ready commands with 0 errors
+> > 
+> > - IET
+> > 
+> > paris:~# sg_turs -t -n=1000 /dev/sg3
+> > time to perform commands was 0.128747 secs; 7767.17 operations/sec
+> > Completed 1000 Test Unit Ready commands with 0 errors
+> > 
+> > 
+> > Well, not bad at all. And I heard that kevent is more effective than
+> > epoll.
+> 
+> the # looks pretty good. thanks for testing. maybe it is bounded by your
+> network now? could you try a open-iscsi via loopback?
+
+For what do we need to know the performance in unreal environments? I
+access Linux boxes remotely. So I don't want to crash them.
+
+Anyway, the patch is available so you can try.
+
+
+> > Note that aioepoll affects only user-mode target drivers (now only
+> > iSCSI). The kernel target drivers don't need AIO code (can use
+> > epoll). So they should have no performance problem. And as I said
+> > before, I think that the iSCSI target driver is ok in real workloads.
+> 
+> do you have a road map for stgt? see, need to read your reply for Pete
+> to know OSD is already under your plan.
+
+Well, I decided not to plan anything. I was supposed to finish iSER
+target code however I'm playing with other stuff like sg v4.
+
+
+From blackmagic02881 at gmail.com  Sat Jan 20 16:52:42 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Sat, 20 Jan 2007 10:52:42 -0500
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <20070121004743Z.fujita.tomonori@lab.ntt.co.jp>
+References: <1165856307.2769.135.camel@localhost.localdomain>
+	<200701201522.l0KFMiAg017657@r-dd.iij4u.or.jp>
+	<1169307059.2762.19.camel@localhost.localdomain>
+	<20070121004743Z.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1169308362.2762.24.camel@localhost.localdomain>
+
+On Sun, 2007-01-21 at 00:47 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <blackmagic02881 at gmail.com>
+> Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> Date: Sat, 20 Jan 2007 10:30:58 -0500
+> 
+> > On Sun, 2007-01-21 at 00:22 +0900, FUJITA Tomonori wrote:
+> > > From: Ming Zhang <blackmagic02881 at gmail.com>
+> > > Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> > > Date: Mon, 11 Dec 2006 11:58:27 -0500
+> > > 
+> > > > Pulled out the linux-2.6-target git tree, compiled stgt and iet under
+> > > > same kernel. Export a 4 disk raid0 device to ini. Ini is open-iscsi
+> > > > r598.
+> > > > 
+> > > > Want to know how efficient stgt handle context switch. 
+> > > > 
+> > > > run  sg_turs -t -n=10000 /dev/sg0 on IET drive. results is 2521/sec.
+> > > 
+> > > (snip)
+> > > 
+> > > > run  sg_turs -t -n=10000 /dev/sg0 on stgt drive. results is 250
+> > > > operations/sec. yes, 250.
+> > > 
+> > > OK. I did some tests too. As we know, aioepoll isn't effective.
+> > > 
+> > > The sg_turs test doesn't need AIO code. So I just tried epoll for
+> > > event notification.
+> > > 
+> > > - tgt (patched)
+> > > 
+> > > paris:~# sg_turs -t -n=1000 /dev/sg3
+> > > time to perform commands was 0.125131 secs; 7991.62 operations/sec
+> > > Completed 1000 Test Unit Ready commands with 0 errors
+> > > 
+> > > - IET
+> > > 
+> > > paris:~# sg_turs -t -n=1000 /dev/sg3
+> > > time to perform commands was 0.128747 secs; 7767.17 operations/sec
+> > > Completed 1000 Test Unit Ready commands with 0 errors
+> > > 
+> > > 
+> > > Well, not bad at all. And I heard that kevent is more effective than
+> > > epoll.
+> > 
+> > the # looks pretty good. thanks for testing. maybe it is bounded by your
+> > network now? could you try a open-iscsi via loopback?
+> 
+> For what do we need to know the performance in unreal environments? I
+> access Linux boxes remotely. So I don't want to crash them.
+> 
+> Anyway, the patch is available so you can try.
+
+sure.
+
+> 
+> 
+> > > Note that aioepoll affects only user-mode target drivers (now only
+> > > iSCSI). The kernel target drivers don't need AIO code (can use
+> > > epoll). So they should have no performance problem. And as I said
+> > > before, I think that the iSCSI target driver is ok in real workloads.
+> > 
+> > do you have a road map for stgt? see, need to read your reply for Pete
+> > to know OSD is already under your plan.
+> 
+> Well, I decided not to plan anything. I was supposed to finish iSER
+> target code however I'm playing with other stuff like sg v4.
+
+this does not do good for stgt project in long term. u can always lay it
+out and people know how to contribute more efficiently.
+
+
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sat Jan 20 17:05:07 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sun, 21 Jan 2007 01:05:07 +0900
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <1169308362.2762.24.camel@localhost.localdomain>
+References: <1169307059.2762.19.camel@localhost.localdomain>
+	<20070121004743Z.fujita.tomonori@lab.ntt.co.jp>
+	<1169308362.2762.24.camel@localhost.localdomain>
+Message-ID: <20070121010507A.fujita.tomonori@lab.ntt.co.jp>
+
+From: Ming Zhang <blackmagic02881 at gmail.com>
+Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+Date: Sat, 20 Jan 2007 10:52:42 -0500
+
+> > > do you have a road map for stgt? see, need to read your reply for Pete
+> > > to know OSD is already under your plan.
+> > 
+> > Well, I decided not to plan anything. I was supposed to finish iSER
+> > target code however I'm playing with other stuff like sg v4.
+> 
+> this does not do good for stgt project in long term. u can always lay it
+> out and people know how to contribute more efficiently.
+
+I can't say when something will be implemented. But I said what the
+project needs (and what I want to do). So I think that people know how
+to contribute.
+
+
+From blackmagic02881 at gmail.com  Sat Jan 20 17:08:00 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Sat, 20 Jan 2007 11:08:00 -0500
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <20070121010507A.fujita.tomonori@lab.ntt.co.jp>
+References: <1169307059.2762.19.camel@localhost.localdomain>
+	<20070121004743Z.fujita.tomonori@lab.ntt.co.jp>
+	<1169308362.2762.24.camel@localhost.localdomain>
+	<20070121010507A.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1169309280.2762.26.camel@localhost.localdomain>
+
+On Sun, 2007-01-21 at 01:05 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <blackmagic02881 at gmail.com>
+> Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> Date: Sat, 20 Jan 2007 10:52:42 -0500
+> 
+> > > > do you have a road map for stgt? see, need to read your reply for Pete
+> > > > to know OSD is already under your plan.
+> > > 
+> > > Well, I decided not to plan anything. I was supposed to finish iSER
+> > > target code however I'm playing with other stuff like sg v4.
+> > 
+> > this does not do good for stgt project in long term. u can always lay it
+> > out and people know how to contribute more efficiently.
+> 
+> I can't say when something will be implemented. But I said what the
+> project needs (and what I want to do). So I think that people know how
+> to contribute.
+
+sure. maybe i missed some email traffic here, then could u have wish
+list here? thanks.
+
+
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From pw at osc.edu  Sun Jan 21 17:50:12 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sun, 21 Jan 2007 11:50:12 -0500
+Subject: [Stgt-devel] supporting non-block devices
+In-Reply-To: <20070120230445G.fujita.tomonori@lab.ntt.co.jp>
+References: <20070119170142.GB1223@osc.edu>
+	<20070120230445G.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <20070121165012.GB24269@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Sat, 20 Jan 2007 23:04 +0900:
+> I plan to split the current scsi command code; spc.c and sbc.c. The
+> device type specific code (sbc.c, osd.c, etc) can use functions in
+> spc.c.
+
+Sounds good.  I've broken out scsi_cmd_perform to do just SPC
+commands, first.  Then it looks at target type and calls into SBC or
+OSD to perform specific command sets.  This makes things pretty
+modular for us.
+
+Problem is, we are using our OSD emulator to actually process the
+commands, not a chunk of hardware.  If you had OSD hardware, you
+would presumably use something like LU_BS_RAW and the sg_bdt.
+Instead I have an osdemu_bdt with a cmd_submit function that makes
+calls out to this emulator library.  I don't want to put that in
+stgt, as it's a mess and quite beyond the scope of stgt.
+
+I can send you a patch that recognizes OSD commands and calls
+the bdt submit function, but I can't send a useful bdt that would
+do anything with the commands.  (They don't translate easily into
+read/write on a backing device, as you certainly know.)  Suggestions?
+
+		-- Pete
+
+
+From pw at osc.edu  Sun Jan 21 17:26:28 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Sun, 21 Jan 2007 11:26:28 -0500
+Subject: [Stgt-devel] [PATCH] stgt: compile fixes
+Message-ID: <20070121162628.GA24269@osc.edu>
+
+These show up on x86_64 gcc 4.1.1.  Trivial fixes.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+
+Index: scsi.c
+===================================================================
+--- scsi.c	(revision 767)
++++ scsi.c	(working copy)
+@@ -224,7 +224,8 @@ static int __inquiry(struct tgt_device *
+ 			result = SAM_STAT_GOOD;
+ 
+ 			if (dev && strlen(dev->scsi_sn)) {
+-				char *p, *q;
++				uint8_t *p;
++				char *q;
+ 
+ 				p = data + 4 + tmp - 1;
+ 				q = dev->scsi_sn + SCSI_SN_LEN - 1;
+@@ -241,7 +242,8 @@ static int __inquiry(struct tgt_device *
+ 			data[5] = 0x1;
+ 			data[7] = tmp;
+ 			if (dev)
+-				strncpy(data + 8, dev->scsi_id, SCSI_ID_LEN);
++				strncpy((char *) data + 8, dev->scsi_id,
++				        SCSI_ID_LEN);
+ 			*len = tmp + 8;
+ 			result = SAM_STAT_GOOD;
+ 		}
+Index: target.c
+===================================================================
+--- target.c	(revision 767)
++++ target.c	(working copy)
+@@ -352,7 +352,7 @@ static int cmd_enabled(struct tgt_cmd_qu
+ 
+ 	if (cmd->attribute != MSG_SIMPLE_TAG)
+ 		dprintf("non simple attribute %" PRIx64 " %x %" PRIu64 " %d\n",
+-			cmd->tag, cmd->attribute, cmd->dev ? cmd->dev->lun : ~0ULL,
++			cmd->tag, cmd->attribute, cmd->dev ? cmd->dev->lun : (uint64_t) -1,
+ 			q->active_cmd);
+ 
+ 	switch (cmd->attribute) {
+@@ -477,7 +477,7 @@ int target_cmd_queue(uint64_t nid, uint8
+ 	} else {
+ 		set_cmd_queued(cmd);
+ 		dprintf("blocked %" PRIx64 " %x %" PRIu64 " %d\n",
+-			tag, scb[0], cmd->dev ? cmd->dev->lun : ~0ULL,
++			tag, scb[0], cmd->dev ? cmd->dev->lun : (uint64_t) -1,
+ 			q->active_cmd);
+ 
+ 		memcpy(cmd->scb, scb, sizeof(cmd->scb));
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jan 22 07:39:52 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 22 Jan 2007 15:39:52 +0900
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <1169309280.2762.26.camel@localhost.localdomain>
+References: <1169308362.2762.24.camel@localhost.localdomain>
+	<20070121010507A.fujita.tomonori@lab.ntt.co.jp>
+	<1169309280.2762.26.camel@localhost.localdomain>
+Message-ID: <20070122153952C.fujita.tomonori@lab.ntt.co.jp>
+
+From: Ming Zhang <blackmagic02881 at gmail.com>
+Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+Date: Sat, 20 Jan 2007 11:08:00 -0500
+
+> On Sun, 2007-01-21 at 01:05 +0900, FUJITA Tomonori wrote:
+> > From: Ming Zhang <blackmagic02881 at gmail.com>
+> > Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> > Date: Sat, 20 Jan 2007 10:52:42 -0500
+> > 
+> > > > > do you have a road map for stgt? see, need to read your reply for Pete
+> > > > > to know OSD is already under your plan.
+> > > > 
+> > > > Well, I decided not to plan anything. I was supposed to finish iSER
+> > > > target code however I'm playing with other stuff like sg v4.
+> > > 
+> > > this does not do good for stgt project in long term. u can always lay it
+> > > out and people know how to contribute more efficiently.
+> > 
+> > I can't say when something will be implemented. But I said what the
+> > project needs (and what I want to do). So I think that people know how
+> > to contribute.
+> 
+> sure. maybe i missed some email traffic here, then could u have wish
+> list here? thanks.
+
+Here's something that I think about. Mike also has some different
+ideas, I think.
+
+
+- FC target mode drivers
+
+First, we need to figure out how to add target mode support to
+mainline scsi_transport_fc. Then we need more tweaks in the user-space
+code.
+
+
+- user-space passthrough
+
+sg v4 is necessary for the user-space target drivers' passthrough.
+
+
+- AIO event notification
+
+The user-space target drivers (only iSCSI now, possibly SRP later on)
+need the event notification to handle both synchronous and
+asynchronous file descriptors. We use the aio epoll patch (that would
+be merged into mainline at 2.6.21), but it's not effective. We need
+something like kevent.
+
+
+- backing-storage disk images
+
+bd_mmap/aio support only raw images. They should support fancy disk
+images (like QCOW, vmdk, etc) to enjoy snapshot without using LVM.
+Adding QCOW to bd_mmap is quite simple, but a bit tricky to bd_aio
+(see Xen's blktap code). Without code duplication, we need to add disk
+images to both bd_mmap/aio.
+
+
+- rearrange backing storage code
+
+Now the backing storage code includes: file I/O (bd_mmap/aio/xen) and
+user-space passthrough (bd_sg). The design are hacky. The backing
+storage code will be more complicated (supports the fancy disk images,
+OSD, etc). We need to reconsider the design at some future time.
+
+
+- kernel-space passthrough
+
+We need a new kernel module for the kernel-space target drivers'
+passthrough. Seems it's ok by James as long as it's cleanly
+implemented.
+
+
+- persistent reservations
+
+Nice though I'm not sure this is that important.
+
+
+- backing-storage virtualization
+
+Virtual tape support would be nice but it needs lot of work and I have
+no plan to implement this.
+
+Virtual cdrom support isn't difficult but I'm not sure people really
+need it.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jan 22 08:03:06 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 22 Jan 2007 16:03:06 +0900
+Subject: [Stgt-devel] [PATCH] stgt: compile fixes
+In-Reply-To: <20070121162628.GA24269@osc.edu>
+References: <20070121162628.GA24269@osc.edu>
+Message-ID: <20070122160306X.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] [PATCH] stgt: compile fixes
+Date: Sun, 21 Jan 2007 11:26:28 -0500
+
+> These show up on x86_64 gcc 4.1.1.  Trivial fixes.
+
+Thanks.
+
+
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+> 
+> Index: scsi.c
+> ===================================================================
+> --- scsi.c	(revision 767)
+> +++ scsi.c	(working copy)
+> @@ -224,7 +224,8 @@ static int __inquiry(struct tgt_device *
+>  			result = SAM_STAT_GOOD;
+>  
+>  			if (dev && strlen(dev->scsi_sn)) {
+> -				char *p, *q;
+> +				uint8_t *p;
+> +				char *q;
+>  
+>  				p = data + 4 + tmp - 1;
+>  				q = dev->scsi_sn + SCSI_SN_LEN - 1;
+> @@ -241,7 +242,8 @@ static int __inquiry(struct tgt_device *
+>  			data[5] = 0x1;
+>  			data[7] = tmp;
+>  			if (dev)
+> -				strncpy(data + 8, dev->scsi_id, SCSI_ID_LEN);
+> +				strncpy((char *) data + 8, dev->scsi_id,
+> +				        SCSI_ID_LEN);
+>  			*len = tmp + 8;
+>  			result = SAM_STAT_GOOD;
+>  		}
+> Index: target.c
+> ===================================================================
+> --- target.c	(revision 767)
+> +++ target.c	(working copy)
+> @@ -352,7 +352,7 @@ static int cmd_enabled(struct tgt_cmd_qu
+>  
+>  	if (cmd->attribute != MSG_SIMPLE_TAG)
+>  		dprintf("non simple attribute %" PRIx64 " %x %" PRIu64 " %d\n",
+> -			cmd->tag, cmd->attribute, cmd->dev ? cmd->dev->lun : ~0ULL,
+> +			cmd->tag, cmd->attribute, cmd->dev ? cmd->dev->lun : (uint64_t) -1,
+>  			q->active_cmd);
+
+UINT64_MAX works?
+
+# I'd like to remove this dirty check on luns but it's necessary for
+# some time.
+
+
+>  	switch (cmd->attribute) {
+> @@ -477,7 +477,7 @@ int target_cmd_queue(uint64_t nid, uint8
+>  	} else {
+>  		set_cmd_queued(cmd);
+>  		dprintf("blocked %" PRIx64 " %x %" PRIu64 " %d\n",
+> -			tag, scb[0], cmd->dev ? cmd->dev->lun : ~0ULL,
+> +			tag, scb[0], cmd->dev ? cmd->dev->lun : (uint64_t) -1,
+>  			q->active_cmd);
+
+ditto.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jan 22 08:23:59 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 22 Jan 2007 16:23:59 +0900
+Subject: [Stgt-devel] supporting non-block devices
+In-Reply-To: <20070121165012.GB24269@osc.edu>
+References: <20070119170142.GB1223@osc.edu>
+	<20070120230445G.fujita.tomonori@lab.ntt.co.jp>
+	<20070121165012.GB24269@osc.edu>
+Message-ID: <20070122162359R.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] supporting non-block devices
+Date: Sun, 21 Jan 2007 11:50:12 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Sat, 20 Jan 2007 23:04 +0900:
+> > I plan to split the current scsi command code; spc.c and sbc.c. The
+> > device type specific code (sbc.c, osd.c, etc) can use functions in
+> > spc.c.
+> 
+> Sounds good.  I've broken out scsi_cmd_perform to do just SPC
+> commands, first.  Then it looks at target type and calls into SBC or
+> OSD to perform specific command sets.  This makes things pretty
+> modular for us.
+> 
+> Problem is, we are using our OSD emulator to actually process the
+> commands, not a chunk of hardware.  If you had OSD hardware, you
+> would presumably use something like LU_BS_RAW and the sg_bdt.
+> Instead I have an osdemu_bdt with a cmd_submit function that makes
+> calls out to this emulator library.  I don't want to put that in
+> stgt, as it's a mess and quite beyond the scope of stgt.
+
+Well, I plan to implement a OSD emulator (osd.c).
+
+
+From blackmagic02881 at gmail.com  Mon Jan 22 15:38:52 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 22 Jan 2007 09:38:52 -0500
+Subject: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+In-Reply-To: <20070122153952C.fujita.tomonori@lab.ntt.co.jp>
+References: <1169308362.2762.24.camel@localhost.localdomain>
+	<20070121010507A.fujita.tomonori@lab.ntt.co.jp>
+	<1169309280.2762.26.camel@localhost.localdomain>
+	<20070122153952C.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <1169476732.2784.19.camel@localhost.localdomain>
+
+On Mon, 2007-01-22 at 15:39 +0900, FUJITA Tomonori wrote:
+> From: Ming Zhang <blackmagic02881 at gmail.com>
+> Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> Date: Sat, 20 Jan 2007 11:08:00 -0500
+> 
+> > On Sun, 2007-01-21 at 01:05 +0900, FUJITA Tomonori wrote:
+> > > From: Ming Zhang <blackmagic02881 at gmail.com>
+> > > Subject: Re: [Stgt-devel] sg_turs on stgt iscsi drive is very slow
+> > > Date: Sat, 20 Jan 2007 10:52:42 -0500
+> > > 
+> > > > > > do you have a road map for stgt? see, need to read your reply for Pete
+> > > > > > to know OSD is already under your plan.
+> > > > > 
+> > > > > Well, I decided not to plan anything. I was supposed to finish iSER
+> > > > > target code however I'm playing with other stuff like sg v4.
+> > > > 
+> > > > this does not do good for stgt project in long term. u can always lay it
+> > > > out and people know how to contribute more efficiently.
+> > > 
+> > > I can't say when something will be implemented. But I said what the
+> > > project needs (and what I want to do). So I think that people know how
+> > > to contribute.
+> > 
+> > sure. maybe i missed some email traffic here, then could u have wish
+> > list here? thanks.
+> 
+> Here's something that I think about. Mike also has some different
+> ideas, I think.
+> 
+
+thanks a lot!
+
+> 
+> - FC target mode drivers
+> 
+> First, we need to figure out how to add target mode support to
+> mainline scsi_transport_fc. Then we need more tweaks in the user-space
+> code.
+> 
+> 
+> - user-space passthrough
+> 
+> sg v4 is necessary for the user-space target drivers' passthrough.
+> 
+> 
+> - AIO event notification
+> 
+> The user-space target drivers (only iSCSI now, possibly SRP later on)
+> need the event notification to handle both synchronous and
+> asynchronous file descriptors. We use the aio epoll patch (that would
+> be merged into mainline at 2.6.21), but it's not effective. We need
+> something like kevent.
+> 
+> 
+> - backing-storage disk images
+> 
+> bd_mmap/aio support only raw images. They should support fancy disk
+> images (like QCOW, vmdk, etc) to enjoy snapshot without using LVM.
+> Adding QCOW to bd_mmap is quite simple, but a bit tricky to bd_aio
+> (see Xen's blktap code). Without code duplication, we need to add disk
+> images to both bd_mmap/aio.
+> 
+> 
+> - rearrange backing storage code
+> 
+> Now the backing storage code includes: file I/O (bd_mmap/aio/xen) and
+> user-space passthrough (bd_sg). The design are hacky. The backing
+> storage code will be more complicated (supports the fancy disk images,
+> OSD, etc). We need to reconsider the design at some future time.
+> 
+> 
+> - kernel-space passthrough
+> 
+> We need a new kernel module for the kernel-space target drivers'
+> passthrough. Seems it's ok by James as long as it's cleanly
+> implemented.
+> 
+> 
+> - persistent reservations
+> 
+> Nice though I'm not sure this is that important.
+> 
+> 
+> - backing-storage virtualization
+> 
+> Virtual tape support would be nice but it needs lot of work and I have
+> no plan to implement this.
+> 
+> Virtual cdrom support isn't difficult but I'm not sure people really
+> need it.
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From pw at osc.edu  Mon Jan 22 20:01:32 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Mon, 22 Jan 2007 14:01:32 -0500
+Subject: [Stgt-devel] supporting non-block devices
+In-Reply-To: <20070122162359R.fujita.tomonori@lab.ntt.co.jp>
+References: <20070119170142.GB1223@osc.edu>
+	<20070120230445G.fujita.tomonori@lab.ntt.co.jp>
+	<20070121165012.GB24269@osc.edu>
+	<20070122162359R.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <20070122190132.GA1477@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Mon, 22 Jan 2007 16:23 +0900:
+> From: Pete Wyckoff <pw at osc.edu>
+> Subject: Re: [Stgt-devel] supporting non-block devices
+> Date: Sun, 21 Jan 2007 11:50:12 -0500
+> 
+> > fujita.tomonori at lab.ntt.co.jp wrote on Sat, 20 Jan 2007 23:04 +0900:
+> > > I plan to split the current scsi command code; spc.c and sbc.c. The
+> > > device type specific code (sbc.c, osd.c, etc) can use functions in
+> > > spc.c.
+> > 
+> > Sounds good.  I've broken out scsi_cmd_perform to do just SPC
+> > commands, first.  Then it looks at target type and calls into SBC or
+> > OSD to perform specific command sets.  This makes things pretty
+> > modular for us.
+> > 
+> > Problem is, we are using our OSD emulator to actually process the
+> > commands, not a chunk of hardware.  If you had OSD hardware, you
+> > would presumably use something like LU_BS_RAW and the sg_bdt.
+> > Instead I have an osdemu_bdt with a cmd_submit function that makes
+> > calls out to this emulator library.  I don't want to put that in
+> > stgt, as it's a mess and quite beyond the scope of stgt.
+> 
+> Well, I plan to implement a OSD emulator (osd.c).
+
+That's great.  We'll be happy to use it.  In the mean time I'll send
+the "generic" patches on stgt that are needed to understand OSD
+commands, separating out sbc from spc as we talked about.
+
+		-- Pete
+
+
+From pw at osc.edu  Mon Jan 22 20:02:45 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Mon, 22 Jan 2007 14:02:45 -0500
+Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+Message-ID: <20070122190245.GB1477@osc.edu>
+
+Compile fixes.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+ usr/scsi.c   |    6 ++++--
+ usr/target.c |    4 ++--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 9e91a9f..e65e893 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -224,7 +224,8 @@ static int __inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+ 			result = SAM_STAT_GOOD;
+ 
+ 			if (dev && strlen(dev->scsi_sn)) {
+-				char *p, *q;
++				uint8_t *p;
++				char *q;
+ 
+ 				p = data + 4 + tmp - 1;
+ 				q = dev->scsi_sn + SCSI_SN_LEN - 1;
+@@ -241,7 +242,8 @@ static int __inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+ 			data[5] = 0x1;
+ 			data[7] = tmp;
+ 			if (dev)
+-				strncpy(data + 8, dev->scsi_id, SCSI_ID_LEN);
++				strncpy((char *) data + 8, dev->scsi_id,
++				        SCSI_ID_LEN);
+ 			*len = tmp + 8;
+ 			result = SAM_STAT_GOOD;
+ 		}
+diff --git a/usr/target.c b/usr/target.c
+index e0a4698..93e7531 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -352,7 +352,7 @@ static int cmd_enabled(struct tgt_cmd_queue *q, struct cmd *cmd)
+ 
+ 	if (cmd->attribute != MSG_SIMPLE_TAG)
+ 		dprintf("non simple attribute %" PRIx64 " %x %" PRIu64 " %d\n",
+-			cmd->tag, cmd->attribute, cmd->dev ? cmd->dev->lun : ~0ULL,
++			cmd->tag, cmd->attribute, cmd->dev ? cmd->dev->lun : UINT64_MAX,
+ 			q->active_cmd);
+ 
+ 	switch (cmd->attribute) {
+@@ -477,7 +477,7 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 	} else {
+ 		set_cmd_queued(cmd);
+ 		dprintf("blocked %" PRIx64 " %x %" PRIu64 " %d\n",
+-			tag, scb[0], cmd->dev ? cmd->dev->lun : ~0ULL,
++			tag, scb[0], cmd->dev ? cmd->dev->lun : UINT64_MAX,
+ 			q->active_cmd);
+ 
+ 		memcpy(cmd->scb, scb, sizeof(cmd->scb));
+-- 
+1.4.4.2
+
+
+
+From pw at osc.edu  Mon Jan 22 20:03:34 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Mon, 22 Jan 2007 14:03:34 -0500
+Subject: [Stgt-devel] [PATCH 2/4] track target type
+Message-ID: <20070122190334.GC1477@osc.edu>
+
+Track target type (block, mmc, osd, etc.) and pass it to
+scsi_cmd_perform.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+ usr/scsi.c   |    2 +-
+ usr/target.c |    7 +++++--
+ usr/target.h |    1 +
+ usr/tgtd.h   |   10 +++++++++-
+ 4 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/usr/scsi.c b/usr/scsi.c
+index e65e893..82ddb0d 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -482,7 +482,7 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
+ 		     int *len, uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 		     uint8_t *try_map, uint64_t *offset, uint8_t *lun_buf,
+ 		     struct tgt_device *dev, struct list_head *dev_list, int *async,
+-		     void *key, bkio_submit_t *submit)
++		     void *key, bkio_submit_t *submit, enum scsi_target_type target_type)
+ {
+ 	int result = SAM_STAT_GOOD;
+ 	uint8_t *data = NULL, *scb = pdu;
+diff --git a/usr/target.c b/usr/target.c
+index 93e7531..3d0f790 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -462,7 +462,8 @@ int target_cmd_queue(uint64_t nid, uint8_t *scb, uint8_t rw,
+ 					  &uaddr, &rw, &mmapped, &offset,
+ 					  lun, cmd->dev,
+ 					  &target->device_list, &async, (void *) cmd,
+-					  target->bdt->bd_cmd_submit);
++					  target->bdt->bd_cmd_submit,
++					  target->target_type);
+ 
+ 		cmd_post_perform(q, cmd, uaddr, len, mmapped);
+ 
+@@ -530,7 +531,8 @@ static void post_cmd_done(struct tgt_cmd_queue *q)
+ 						  cmd->lun, cmd->dev,
+ 						  &cmd->c_target->device_list,
+ 						  &async, (void *) cmd,
+-						  cmd->c_target->bdt->bd_cmd_submit);
++						  cmd->c_target->bdt->bd_cmd_submit,
++						  cmd->c_target->target_type);
+ 			cmd->rw = rw;
+ 			cmd_post_perform(q, cmd, cmd->uaddr, len, mmapped);
+ 			set_cmd_processed(cmd);
+@@ -1275,6 +1277,7 @@ int tgt_target_create(int lld, int tid, char *args, int t_type, int bs_type)
+ 		target->bdt = tgt_drivers[lld]->default_bdt;
+ 	}
+ 
++	target->target_type = t_type;
+ 	target->target_state = SCSI_TARGET_RUNNING;
+ 	target->lid = lld;
+ 
+diff --git a/usr/target.h b/usr/target.h
+index 0cca55f..e19ca73 100644
+--- a/usr/target.h
++++ b/usr/target.h
+@@ -39,6 +39,7 @@ struct target {
+ 	int lid;
+ 
+ 	enum scsi_target_iotype target_iotype;
++	enum scsi_target_type target_type;
+ 	enum scsi_target_state target_state;
+ 
+ 	struct list_head target_siblings;
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index ef046aa..090f84a 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -21,6 +21,13 @@ enum scsi_target_iotype {
+ 	SCSI_TARGET_RAWIO,
+ };
+ 
++enum scsi_target_type {
++	SCSI_TARGET_SBC, /* disk */
++	SCSI_TARGET_SSC, /* tape */
++	SCSI_TARGET_MMC, /* cdrom */
++	SCSI_TARGET_OSD, /* object storage device */
++};
++
+ enum scsi_target_state {
+ 	SCSI_TARGET_SUSPENDED = 1,
+ 	SCSI_TARGET_RUNNING,
+@@ -111,7 +118,8 @@ extern int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu, in
+ 			    uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 			    uint8_t *try_map, uint64_t *offset, uint8_t *lun,
+ 			    struct tgt_device *dev, struct list_head *dev_list,
+-			    int *async, void *key, bkio_submit_t *submit);
++			    int *async, void *key, bkio_submit_t *submit,
++			    enum scsi_target_type target_type);
+ 
+ extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 			    uint8_t ascode, uint8_t ascodeq);
+-- 
+1.4.4.2
+
+
+
+From pw at osc.edu  Mon Jan 22 20:04:31 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Mon, 22 Jan 2007 14:04:31 -0500
+Subject: [Stgt-devel] [PATCH 3/4] block/primary separation
+Message-ID: <20070122190431.GD1477@osc.edu>
+
+Separate block commands from primary commands.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+ usr/Makefile |    2 +-
+ usr/sbc.c    |  307 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/scsi.c   |  339 ++++++++--------------------------------------------------
+ usr/tgtd.h   |    5 +
+ 4 files changed, 359 insertions(+), 294 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 80b8f8f..7b828e0 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -45,7 +45,7 @@ INCLUDES += -I.
+ CFLAGS += -Wall -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDES)
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o
++TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o sbc.o log.o driver.o util.o work.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/sbc.c b/usr/sbc.c
+new file mode 100644
+index 0000000..a727924
+--- /dev/null
++++ b/usr/sbc.c
+@@ -0,0 +1,307 @@
++/*
++ * SCSI block command processing
++ *
++ * (C) 2004 - 2005 FUJITA Tomonori <tomof at acm.org>
++ * (C) 2005 Mike Christie <michaelc at cs.wisc.edu>
++ */
++
++#include <errno.h>
++#include <fcntl.h>
++#include <inttypes.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdint.h>
++#include <syscall.h>
++#include <unistd.h>
++#include <linux/fs.h>
++
++#include "list.h"
++#include "util.h"
++#include "tgtd.h"
++#include "driver.h"
++#include "scsi.h"
++
++#define BLK_SHIFT	9
++
++static int insert_disconnect_pg(uint8_t *ptr)
++{
++	unsigned char disconnect_pg[] = {0x02, 0x0e, 0x80, 0x80, 0x00, 0x0a, 0x00, 0x00,
++                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
++
++	memcpy(ptr, disconnect_pg, sizeof(disconnect_pg));
++	return sizeof(disconnect_pg);
++}
++
++static int insert_caching_pg(uint8_t *ptr)
++{
++	unsigned char caching_pg[] = {0x08, 0x12, 0x14, 0x00, 0xff, 0xff, 0x00, 0x00,
++				      0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0x00, 0x00,
++				      0x00, 0x00, 0x00, 0x00};
++
++	memcpy(ptr, caching_pg, sizeof(caching_pg));
++	return sizeof(caching_pg);
++}
++
++static int insert_ctrl_m_pg(uint8_t *ptr)
++{
++	unsigned char ctrl_m_pg[] = {0x0a, 0x0a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
++				     0x00, 0x00, 0x02, 0x4b};
++
++	memcpy(ptr, ctrl_m_pg, sizeof(ctrl_m_pg));
++	return sizeof(ctrl_m_pg);
++}
++
++static int insert_iec_m_pg(uint8_t *ptr)
++{
++	unsigned char iec_m_pg[] = {0x1c, 0xa, 0x08, 0x00, 0x00, 0x00, 0x00,
++				    0x00, 0x00, 0x00, 0x00, 0x00};
++
++	memcpy(ptr, iec_m_pg, sizeof(iec_m_pg));
++	return sizeof(iec_m_pg);
++}
++
++static int insert_format_m_pg(uint8_t *ptr)
++{
++	unsigned char format_m_pg[] = {0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++				       0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
++				       0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00};
++	memcpy(ptr, format_m_pg, sizeof(format_m_pg));
++	return sizeof(format_m_pg);
++}
++
++static int insert_geo_m_pg(uint8_t *ptr, uint64_t sec)
++{
++	unsigned char geo_m_pg[] = {0x04, 0x16, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
++				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++				    0x00, 0x00, 0x00, 0x00, 0x3a, 0x98, 0x00, 0x00};
++	uint32_t ncyl, *p;
++
++	/* assume 0xff heads, 15krpm. */
++	memcpy(ptr, geo_m_pg, sizeof(geo_m_pg));
++	ncyl = sec >> 14; /* 256 * 64 */
++	p = (uint32_t *)(ptr + 1);
++	*p = *p | __cpu_to_be32(ncyl);
++	return sizeof(geo_m_pg);
++}
++
++int mode_sense(struct tgt_device *dev, uint8_t *scb, uint8_t *data, int *len)
++{
++	int result = SAM_STAT_GOOD;
++	uint8_t pcode = scb[2] & 0x3f;
++	uint64_t size;
++
++	*len = 4;
++	size = dev->size >> BLK_SHIFT;
++
++	if ((scb[1] & 0x8))
++		data[3] = 0;
++	else {
++		data[3] = 8;
++		*len += 8;
++		*(uint32_t *)(data + 4) = (size >> 32) ?
++			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
++		*(uint32_t *)(data + 8) = __cpu_to_be32(1 << BLK_SHIFT);
++	}
++
++	switch (pcode) {
++	case 0x0:
++		break;
++	case 0x2:
++		*len += insert_disconnect_pg(data + *len);
++		break;
++	case 0x3:
++		*len += insert_format_m_pg(data + *len);
++		break;
++	case 0x4:
++		*len += insert_geo_m_pg(data + *len, size);
++		break;
++	case 0x8:
++		*len += insert_caching_pg(data + *len);
++		break;
++	case 0xa:
++		*len += insert_ctrl_m_pg(data + *len);
++		break;
++	case 0x1c:
++		*len += insert_iec_m_pg(data + *len);
++		break;
++	case 0x3f:
++		*len += insert_disconnect_pg(data + *len);
++		*len += insert_format_m_pg(data + *len);
++		*len += insert_geo_m_pg(data + *len, size);
++		*len += insert_caching_pg(data + *len);
++		*len += insert_ctrl_m_pg(data + *len);
++		*len += insert_iec_m_pg(data + *len);
++		break;
++	default:
++		result = SAM_STAT_CHECK_CONDITION;
++		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
++					0x24, 0);
++	}
++
++	data[0] = *len - 1;
++
++	return result;
++}
++
++static int read_capacity(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
++{
++	uint32_t *data = (uint32_t *) p;
++	uint64_t size;
++
++	if (!(scb[8] & 0x1) & (scb[2] | scb[3] | scb[4] | scb[5])) {
++		*len = sense_data_build(p, 0x70, ILLEGAL_REQUEST,
++					0x24, 0);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	size = dev->size >> BLK_SHIFT;
++
++	data[0] = (size >> 32) ?
++		__cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
++	data[1] = __cpu_to_be32(1U << BLK_SHIFT);
++	*len = 8;
++
++	return SAM_STAT_GOOD;
++}
++
++static int sync_cache(struct tgt_device *dev, uint8_t *data, int *len)
++{
++	int err;
++
++	err = fsync(dev->fd);
++
++	switch (err) {
++	case EROFS:
++	case EINVAL:
++	case EBADF:
++	case EIO:
++		/*
++		 * is this the right sense code?
++		 * what should I put for the asc/ascq?
++		 */
++		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST, 0, 0);
++		return SAM_STAT_CHECK_CONDITION;
++	default:
++		*len = 0;
++		return SAM_STAT_GOOD;
++	}
++}
++
++static int sevice_action(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
++{
++	uint32_t *data = (uint32_t *) p;
++	uint64_t *data64, size;
++
++	size = dev->size >> BLK_SHIFT;
++
++	data64 = (uint64_t *) data;
++	data64[0] = __cpu_to_be64(size - 1);
++	data[2] = __cpu_to_be32(1UL << BLK_SHIFT);
++
++	*len = 12;
++
++	return SAM_STAT_GOOD;
++}
++
++static uint64_t scsi_cmd_data_offset(uint8_t *scb)
++{
++	uint64_t off;
++
++	switch (scb[0]) {
++	case READ_6:
++	case WRITE_6:
++		off = ((scb[1] & 0x1f) << 16) + (scb[2] << 8) + scb[3];
++		break;
++	case READ_10:
++	case WRITE_10:
++	case WRITE_VERIFY:
++		off = __be32_to_cpu(*(uint32_t *) &scb[2]);
++		break;
++	case READ_16:
++	case WRITE_16:
++		off = __be64_to_cpu(*(uint64_t *) &scb[2]);
++		break;
++	default:
++		off = 0;
++		break;
++	}
++
++	return off << BLK_SHIFT;
++}
++
++int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
++                      unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++		      uint64_t *offset, struct tgt_device *dev, int *async,
++		      void *key, bkio_submit_t *submit)
++{
++	int result = SAM_STAT_GOOD;
++	uint8_t *data = NULL;
++
++	switch (scb[0]) {
++	case READ_CAPACITY:
++		data = get_zeroed_page();
++		result = read_capacity(dev, scb, data, len);
++		break;
++	case MODE_SENSE:
++		data = get_zeroed_page();
++		result = mode_sense(dev, scb, data, len);
++		break;
++	case SERVICE_ACTION_IN:
++		data = get_zeroed_page();
++		result = sevice_action(dev, scb, data, len);
++		break;
++	case SYNCHRONIZE_CACHE:
++		data = get_zeroed_page();
++		result = sync_cache(dev, data, len);
++		break;
++	case START_STOP:
++	case VERIFY:
++		*len = 0;
++		break;
++	case READ_6:
++	case READ_10:
++	case READ_16:
++	case WRITE_6:
++	case WRITE_10:
++	case WRITE_16:
++	case WRITE_VERIFY:
++		switch (scb[0]) {
++		case READ_6:
++		case READ_10:
++		case READ_16:
++			*rw = READ;
++			break;
++		case WRITE_6:
++		case WRITE_10:
++		case WRITE_16:
++		case WRITE_VERIFY:
++			*rw = WRITE;
++			break;
++		}
++
++		*offset = scsi_cmd_data_offset(scb);
++		result = submit(dev, scb, *rw, datalen, uaddr, *offset, async, key);
++		if (result == SAM_STAT_GOOD) {
++			*len = datalen;
++			*try_map = 1;
++		} else {
++			*rw = READ;
++			*offset = 0;
++			data = get_zeroed_page();
++			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
++						0x25, 0);
++		}
++		break;
++	default:
++		eprintf("unknown command %x %u\n", scb[0], datalen);
++		*len = 0;
++		break;
++	}
++
++	if (data)
++		*uaddr = (unsigned long) data;
++
++	return result;
++}
++
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 82ddb0d..277924c 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -43,126 +43,6 @@ int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 	return len + 8;
+ }
+ 
+-static int insert_disconnect_pg(uint8_t *ptr)
+-{
+-	unsigned char disconnect_pg[] = {0x02, 0x0e, 0x80, 0x80, 0x00, 0x0a, 0x00, 0x00,
+-                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, disconnect_pg, sizeof(disconnect_pg));
+-	return sizeof(disconnect_pg);
+-}
+-
+-static int insert_caching_pg(uint8_t *ptr)
+-{
+-	unsigned char caching_pg[] = {0x08, 0x12, 0x14, 0x00, 0xff, 0xff, 0x00, 0x00,
+-				      0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0x00, 0x00,
+-				      0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, caching_pg, sizeof(caching_pg));
+-	return sizeof(caching_pg);
+-}
+-
+-static int insert_ctrl_m_pg(uint8_t *ptr)
+-{
+-	unsigned char ctrl_m_pg[] = {0x0a, 0x0a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				     0x00, 0x00, 0x02, 0x4b};
+-
+-	memcpy(ptr, ctrl_m_pg, sizeof(ctrl_m_pg));
+-	return sizeof(ctrl_m_pg);
+-}
+-
+-static int insert_iec_m_pg(uint8_t *ptr)
+-{
+-	unsigned char iec_m_pg[] = {0x1c, 0xa, 0x08, 0x00, 0x00, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x00};
+-
+-	memcpy(ptr, iec_m_pg, sizeof(iec_m_pg));
+-	return sizeof(iec_m_pg);
+-}
+-
+-static int insert_format_m_pg(uint8_t *ptr)
+-{
+-	unsigned char format_m_pg[] = {0x03, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				       0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
+-				       0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00};
+-	memcpy(ptr, format_m_pg, sizeof(format_m_pg));
+-	return sizeof(format_m_pg);
+-}
+-
+-static int insert_geo_m_pg(uint8_t *ptr, uint64_t sec)
+-{
+-	unsigned char geo_m_pg[] = {0x04, 0x16, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-				    0x00, 0x00, 0x00, 0x00, 0x3a, 0x98, 0x00, 0x00};
+-	uint32_t ncyl, *p;
+-
+-	/* assume 0xff heads, 15krpm. */
+-	memcpy(ptr, geo_m_pg, sizeof(geo_m_pg));
+-	ncyl = sec >> 14; /* 256 * 64 */
+-	p = (uint32_t *)(ptr + 1);
+-	*p = *p | __cpu_to_be32(ncyl);
+-	return sizeof(geo_m_pg);
+-}
+-
+-static int mode_sense(struct tgt_device *dev, uint8_t *scb, uint8_t *data, int *len)
+-{
+-	int result = SAM_STAT_GOOD;
+-	uint8_t pcode = scb[2] & 0x3f;
+-	uint64_t size;
+-
+-	*len = 4;
+-	size = dev->size >> BLK_SHIFT;
+-
+-	if ((scb[1] & 0x8))
+-		data[3] = 0;
+-	else {
+-		data[3] = 8;
+-		*len += 8;
+-		*(uint32_t *)(data + 4) = (size >> 32) ?
+-			__cpu_to_be32(0xffffffff) : __cpu_to_be32(size);
+-		*(uint32_t *)(data + 8) = __cpu_to_be32(1 << BLK_SHIFT);
+-	}
+-
+-	switch (pcode) {
+-	case 0x0:
+-		break;
+-	case 0x2:
+-		*len += insert_disconnect_pg(data + *len);
+-		break;
+-	case 0x3:
+-		*len += insert_format_m_pg(data + *len);
+-		break;
+-	case 0x4:
+-		*len += insert_geo_m_pg(data + *len, size);
+-		break;
+-	case 0x8:
+-		*len += insert_caching_pg(data + *len);
+-		break;
+-	case 0xa:
+-		*len += insert_ctrl_m_pg(data + *len);
+-		break;
+-	case 0x1c:
+-		*len += insert_iec_m_pg(data + *len);
+-		break;
+-	case 0x3f:
+-		*len += insert_disconnect_pg(data + *len);
+-		*len += insert_format_m_pg(data + *len);
+-		*len += insert_geo_m_pg(data + *len, size);
+-		*len += insert_caching_pg(data + *len);
+-		*len += insert_ctrl_m_pg(data + *len);
+-		*len += insert_iec_m_pg(data + *len);
+-		break;
+-	default:
+-		result = SAM_STAT_CHECK_CONDITION;
+-		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+-					0x24, 0);
+-	}
+-
+-	data[0] = *len - 1;
+-
+-	return result;
+-}
+-
+ #define VENDOR_ID	"IET"
+ #define PRODUCT_ID	"VIRTUAL-DISK"
+ #define PRODUCT_REV	"0"
+@@ -331,50 +211,6 @@ static int report_luns(int lid, struct list_head *dev_list, uint8_t *lun_buf,
+ 	return fn(dev_list, lun_buf, scb, p, len);
+ }
+ 
+-static int read_capacity(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
+-{
+-	uint32_t *data = (uint32_t *) p;
+-	uint64_t size;
+-
+-	if (!(scb[8] & 0x1) & (scb[2] | scb[3] | scb[4] | scb[5])) {
+-		*len = sense_data_build(p, 0x70, ILLEGAL_REQUEST,
+-					0x24, 0);
+-		return SAM_STAT_CHECK_CONDITION;
+-	}
+-
+-	size = dev->size >> BLK_SHIFT;
+-
+-	data[0] = (size >> 32) ?
+-		__cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);
+-	data[1] = __cpu_to_be32(1U << BLK_SHIFT);
+-	*len = 8;
+-
+-	return SAM_STAT_GOOD;
+-}
+-
+-static int sync_cache(struct tgt_device *dev, uint8_t *data, int *len)
+-{
+-	int err;
+-
+-	err = fsync(dev->fd);
+-
+-	switch (err) {
+-	case EROFS:
+-	case EINVAL:
+-	case EBADF:
+-	case EIO:
+-		/*
+-		 * is this the right sense code?
+-		 * what should I put for the asc/ascq?
+-		 */
+-		*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST, 0, 0);
+-		return SAM_STAT_CHECK_CONDITION;
+-	default:
+-		*len = 0;
+-		return SAM_STAT_GOOD;
+-	}
+-}
+-
+ /*
+  * TODO: We always assume autosense.
+  */
+@@ -385,70 +221,6 @@ static int request_sense(uint8_t *data, int* len)
+ 	return SAM_STAT_GOOD;
+ }
+ 
+-static int sevice_action(struct tgt_device *dev, uint8_t *scb, uint8_t *p, int *len)
+-{
+-	uint32_t *data = (uint32_t *) p;
+-	uint64_t *data64, size;
+-
+-	size = dev->size >> BLK_SHIFT;
+-
+-	data64 = (uint64_t *) data;
+-	data64[0] = __cpu_to_be64(size - 1);
+-	data[2] = __cpu_to_be32(1UL << BLK_SHIFT);
+-
+-	*len = 12;
+-
+-	return SAM_STAT_GOOD;
+-}
+-
+-static uint64_t scsi_cmd_data_offset(uint8_t *scb)
+-{
+-	uint64_t off;
+-
+-	switch (scb[0]) {
+-	case READ_6:
+-	case WRITE_6:
+-		off = ((scb[1] & 0x1f) << 16) + (scb[2] << 8) + scb[3];
+-		break;
+-	case READ_10:
+-	case WRITE_10:
+-	case WRITE_VERIFY:
+-		off = __be32_to_cpu(*(uint32_t *) &scb[2]);
+-		break;
+-	case READ_16:
+-	case WRITE_16:
+-		off = __be64_to_cpu(*(uint64_t *) &scb[2]);
+-		break;
+-	default:
+-		off = 0;
+-		break;
+-	}
+-
+-	return off << BLK_SHIFT;
+-}
+-
+-static int scsi_cmd_rw(uint8_t *scb, uint8_t *rw)
+-{
+-	int is_alloc = 0;
+-
+-	switch (scb[0]) {
+-	case READ_6:
+-	case READ_10:
+-	case READ_16:
+-		*rw = READ;
+-		break;
+-	case WRITE_6:
+-	case WRITE_10:
+-	case WRITE_16:
+-	case WRITE_VERIFY:
+-		*rw = WRITE;
+-		break;
+-	default:
+-		is_alloc = 1;
+-	}
+-	return is_alloc;
+-}
+-
+ #define        TGT_INVALID_DEV_ID      ~0ULL
+ 
+ static uint64_t __scsi_get_devid(uint8_t *p)
+@@ -478,22 +250,35 @@ uint64_t scsi_get_devid(int lid, uint8_t *p)
+ 	return fn(p);
+ }
+ 
+-int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
++void *get_zeroed_page(void)
++{
++	int ret;
++	void *page;
++
++	ret = posix_memalign(&page, PAGE_SIZE, PAGE_SIZE);
++	if (ret) {
++		eprintf("out of memory");
++		exit(1);
++	}
++	memset(page, 0, PAGE_SIZE);
++	return page;
++}
++
++/*
++ * Handle generic SPC activities, and call to target type-specific handler.
++ */
++int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+ 		     int *len, uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 		     uint8_t *try_map, uint64_t *offset, uint8_t *lun_buf,
+ 		     struct tgt_device *dev, struct list_head *dev_list, int *async,
+ 		     void *key, bkio_submit_t *submit, enum scsi_target_type target_type)
+ {
+ 	int result = SAM_STAT_GOOD;
+-	uint8_t *data = NULL, *scb = pdu;
++	uint8_t *data = NULL;
+ 
+ 	dprintf("%x %u\n", scb[0], datalen);
+ 
+ 	*async = *offset = 0;
+-	if (scsi_cmd_rw(scb, rw)) {
+-		data = valloc(PAGE_SIZE);
+-		memset(data, 0, PAGE_SIZE);
+-	}
+ 
+ 	if (!dev) {
+ 		switch (scb[0]) {
+@@ -502,11 +287,7 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
+ 		case REPORT_LUNS:
+ 			break;
+ 		default:
+-			*offset = 0;
+-			if (!data) {
+-				data = valloc(PAGE_SIZE);
+-				memset(data, 0, PAGE_SIZE);
+-			}
++			data = get_zeroed_page();
+ 			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+ 						0x25, 0);
+ 			result = SAM_STAT_CHECK_CONDITION;
+@@ -526,91 +307,63 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu,
+ 				/* these commands are always allowed. */
+ 				break;
+ 			default:
+-			*offset = 0;
+-			if (data) {
+-				free(data);
+-				data = NULL;
+-			}
+-
+-			*len = 0;
+-			result = SAM_STAT_RESERVATION_CONFLICT;
+-			goto out;
++				*len = 0;
++				result = SAM_STAT_RESERVATION_CONFLICT;
++				goto out;
+ 			}
+ 		}
+ 	}
+ 
++	/*
++	 * Generic SPC commands
++	 */
+ 	switch (scb[0]) {
+ 	case INQUIRY:
++		data = get_zeroed_page();
+ 		result = inquiry(lid, dev, host_no, lun_buf, scb, data, len);
+-		break;
++		goto out;
+ 	case REPORT_LUNS:
+ 		*len = datalen;
++		data = get_zeroed_page();
+ 		result = report_luns(lid, dev_list, lun_buf, scb, data, len);
+-		break;
+-	case READ_CAPACITY:
+-		result = read_capacity(dev, scb, data, len);
+-		break;
+-	case MODE_SENSE:
+-		result = mode_sense(dev, scb, data, len);
+-		break;
++		goto out;
+ 	case REQUEST_SENSE:
++		data = get_zeroed_page();
+ 		result = request_sense(data, len);
+-		break;
+-	case SERVICE_ACTION_IN:
+-		result = sevice_action(dev, scb, data, len);
+-		break;
+-	case SYNCHRONIZE_CACHE:
+-		result = sync_cache(dev, data, len);
+-		break;
+-	case START_STOP:
++		goto out;
+ 	case TEST_UNIT_READY:
+-	case VERIFY:
+ 		*len = 0;
+-		break;
+-	case READ_6:
+-	case READ_10:
+-	case READ_16:
+-	case WRITE_6:
+-	case WRITE_10:
+-	case WRITE_16:
+-	case WRITE_VERIFY:
+-		*offset = scsi_cmd_data_offset(scb);
+-		result = submit(dev, scb, *rw, datalen, uaddr, *offset, async, key);
+-		if (result == SAM_STAT_GOOD) {
+-			*len = datalen;
+-			*try_map = 1;
+-		} else {
+-			*rw = READ;
+-			*offset = 0;
+-			if (!data)
+-				data = valloc(PAGE_SIZE);
+-			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+-						0x25, 0);
+-		}
+-		break;
++		goto out;
+ 	case RESERVE:
+ 	case RESERVE_10:
+ 		result = device_reserve(nid, dev->lun, nid);
+ 		if (result)
+ 			result = SAM_STAT_RESERVATION_CONFLICT;
+ 		*len = 0;
+-		break;
++		goto out;
+ 	case RELEASE:
+ 	case RELEASE_10:
+ 		result = device_release(nid, dev->lun, host_no, 0);
+ 		if (result)
+ 			result = SAM_STAT_RESERVATION_CONFLICT;
+ 		*len = 0;
+-		break;
+-	default:
+-		eprintf("unknown command %x %u\n", scb[0], datalen);
+-		*len = 0;
+-		break;
++		goto out;
+ 	}
+ 
++	/*
++	 * Specific device command set
++	 */
++	if (target_type == SCSI_TARGET_SBC)
++		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
++		                           try_map, offset, dev, async, key,
++					   submit);
++	else
++		eprintf("unknown target type %d\n", target_type);
++
+ out:
+ 	if (data)
+ 		*uaddr = (unsigned long) data;
+ 
+ 	return result;
+ }
++
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 090f84a..262dc9c 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -114,12 +114,17 @@ extern void target_mgmt_request(uint64_t nid, uint64_t req_id, int function,
+ extern void target_cmd_io_done(void *key, int result);
+ 
+ extern uint64_t scsi_get_devid(int lid, uint8_t *pdu);
++extern void *get_zeroed_page(void);
+ extern int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *pdu, int *len,
+ 			    uint32_t datalen, unsigned long *uaddr, uint8_t *rw,
+ 			    uint8_t *try_map, uint64_t *offset, uint8_t *lun,
+ 			    struct tgt_device *dev, struct list_head *dev_list,
+ 			    int *async, void *key, bkio_submit_t *submit,
+ 			    enum scsi_target_type target_type);
++int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
++                      unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++		      uint64_t *offset, struct tgt_device *dev, int *async,
++		      void *key, bkio_submit_t *submit);
+ 
+ extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 			    uint8_t ascode, uint8_t ascodeq);
+-- 
+1.4.4.2
+
+
+
+From pw at osc.edu  Mon Jan 22 20:08:39 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Mon, 22 Jan 2007 14:08:39 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+Message-ID: <20070122190839.GE1477@osc.edu>
+
+Add command parser for OSD commands.
+
+Signed-off-by: Pete Wyckoff <pw at osc.edu>
+---
+ usr/Makefile |    2 +-
+ usr/osd.c    |  182 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/scsi.c   |    4 +
+ usr/scsi.h   |   31 ++++++++++
+ usr/tgtd.h   |    6 ++
+ 5 files changed, 224 insertions(+), 1 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 7b828e0..181f0cc 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -45,7 +45,7 @@ INCLUDES += -I.
+ CFLAGS += -Wall -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDES)
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o sbc.o log.o driver.o util.o work.o
++TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o sbc.o osd.o log.o driver.o util.o work.o
+ 
+ all: $(PROGRAMS)
+ 
+diff --git a/usr/osd.c b/usr/osd.c
+new file mode 100644
+index 0000000..34a330f
+--- /dev/null
++++ b/usr/osd.c
+@@ -0,0 +1,182 @@
++/*
++ * Parse OSD command set, using functions in SPC as necessary.
++ *
++ * (C) 2006 Pete Wyckoff <pw at osc.edu>
++ */
++#include <inttypes.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include "list.h"
++#include "util.h"
++#include "tgtd.h"
++#include "scsi.h"
++
++#define VENDOR_ID	"STGT"
++#define PRODUCT_ID	"OSD"
++#define PRODUCT_REV	"0"
++
++/*
++ * OSD-specific inquiry.
++ */
++int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
++                uint8_t *scb, uint8_t *data, int *len)
++{
++	int result = SAM_STAT_CHECK_CONDITION;
++
++	/* EVPD means need a page code */
++	if ((scb[1] & 0x3) == 0 && scb[2] != 0)
++		return result;
++
++	dprintf("%x %x\n", scb[1], scb[2]);
++
++	data[0] = TYPE_OSD;
++	if (!dev)
++		data[0] = TYPE_NO_LUN;
++
++	if ((scb[1] & 0x1) == 0) {
++		/* evpd == 0, standard inquiry */
++		dprintf("standard inquiry\n");
++		data[2] = 5;  /* modern version */
++		data[3] = 0x02;  /* modern response format */
++		data[7] = 0x02;  /* support command queueing */
++		memset(data + 8, 0x20, 28);
++		memcpy(data + 8,
++		       VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
++		memcpy(data + 16,
++		       PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
++		memcpy(data + 32,
++		       PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
++		*len = 36;
++		if (dev) {
++			data[58] = 0x03;
++			data[59] = 0x40;  /* osd */
++			data[60] = 0x09;
++			data[61] = 0x60;  /* iscsi */
++			data[62] = 0x03;
++			data[63] = 0x00;  /* spc3 */
++			*len = 64;
++		}
++		data[4] = *len - 5;  /* additional length */
++		result = SAM_STAT_GOOD;
++	} else {
++		/* request particular page code */
++		dprintf("page %x\n", scb[2]);
++		if (!dev)
++			return result;
++		data[1] = scb[2];
++		if (scb[2] == 0x0) {
++			/* supported VPD pages */
++			data[3] = 3;
++			data[4] = 0x0;
++			data[5] = 0x80;
++			data[6] = 0x83;
++			*len = 7;
++			result = SAM_STAT_GOOD;
++		} else if (scb[2] == 0x80) {
++			/* unit serial number "    " */
++			data[3] = 4;
++			memset(data + 4, 0x20, 4);
++			*len = 8;
++			result = SAM_STAT_GOOD;
++		} else if (scb[2] == 0x83) {
++			/* device identification */
++			data[3] = SCSI_ID_LEN + 4;
++			data[4] = 0x1;
++			data[5] = 0x1;
++			data[7] = SCSI_ID_LEN;
++			if (dev)
++				memcpy(data + 8, dev->scsi_id, SCSI_ID_LEN);
++			*len = SCSI_ID_LEN + 8;
++			result = SAM_STAT_GOOD;
++		}
++	}
++
++	if (result != SAM_STAT_GOOD)
++		goto err;
++
++	*len = min_t(int, *len, scb[4]);
++
++	return SAM_STAT_GOOD;
++
++err:
++	*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
++				0x24, 0);
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++int osd_cmd_perform(uint8_t *cdb, int *len, uint32_t datalen,
++                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++                    uint64_t *offset, struct tgt_device *dev, int *async,
++                    void *key, bkio_submit_t *submit)
++{
++	int ret = SAM_STAT_GOOD;
++	uint8_t *data = NULL;
++	uint16_t action;
++
++	switch (cdb[0]) {
++	/* there are other optional non-varlen commands */
++	case VARLEN_CDB:
++		dprintf("cdb[0] %x datalen %u\n", cdb[0], datalen);
++		if (cdb[7] != 200-8)
++			eprintf("request size %d wrong, should be 200\n",
++			        cdb[7]+8);
++
++		action = (cdb[8] << 8) | cdb[9];
++
++		switch (action) {
++		case OSD_APPEND:
++		case OSD_CREATE:
++		case OSD_CREATE_AND_WRITE:
++		case OSD_CREATE_COLLECTION:
++		case OSD_CREATE_PARTITION:
++		case OSD_FLUSH:
++		case OSD_FLUSH_COLLECTION:
++		case OSD_FLUSH_OSD:
++		case OSD_FLUSH_PARTITION:
++		case OSD_FORMAT_OSD:
++		case OSD_GET_ATTRIBUTES:
++		case OSD_GET_MEMBER_ATTRIBUTES:
++		case OSD_LIST:
++		case OSD_LIST_COLLECTION:
++		case OSD_PERFORM_SCSI_COMMAND:
++		case OSD_PERFORM_TASK_MGMT_FUNC:
++		case OSD_QUERY:
++		case OSD_READ:
++		case OSD_REMOVE:
++		case OSD_REMOVE_COLLECTION:
++		case OSD_REMOVE_MEMBER_OBJECTS:
++		case OSD_REMOVE_PARTITION:
++		case OSD_SET_ATTRIBUTES:
++		case OSD_SET_KEY:
++		case OSD_SET_MASTER_KEY:
++		case OSD_SET_MEMBER_ATTRIBUTES:
++		case OSD_WRITE:
++			ret = submit(dev, cdb, *rw, datalen, uaddr, *offset,
++			             async, key);
++			if (ret == SAM_STAT_GOOD) {
++				*len = datalen;
++			} else {
++				data = get_zeroed_page();
++				*len = sense_data_build(data, 0x70,
++				                        ILLEGAL_REQUEST, 0x25,
++							0);
++			}
++			break;
++		default:
++			eprintf("unknown service action 0x%04x\n", action);
++		}
++		break;
++	default:
++		eprintf("unknown command %x %u\n", cdb[0], datalen);
++		*len = 0;
++		break;
++	}
++
++	if (data)
++		*uaddr = (unsigned long) data;
++
++	return ret;
++}
++
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 277924c..d102f5e 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -357,6 +357,10 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+ 		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+ 		                           try_map, offset, dev, async, key,
+ 					   submit);
++	else if (target_type == SCSI_TARGET_OSD)
++		result = osd_cmd_perform(scb, len, datalen, uaddr, rw,
++		                         try_map, offset, dev, async, key,
++					 submit);
+ 	else
+ 		eprintf("unknown target type %d\n", target_type);
+ 
+diff --git a/usr/scsi.h b/usr/scsi.h
+index 154508d..20aa2a8 100644
+--- a/usr/scsi.h
++++ b/usr/scsi.h
+@@ -69,6 +69,7 @@
+ #define MODE_SENSE_10         0x5a
+ #define PERSISTENT_RESERVE_IN 0x5e
+ #define PERSISTENT_RESERVE_OUT 0x5f
++#define VARLEN_CDB            0x7f
+ #define REPORT_LUNS           0xa0
+ #define MOVE_MEDIUM           0xa5
+ #define EXCHANGE_MEDIUM       0xa6
+@@ -87,6 +88,35 @@
+ #define SERVICE_ACTION_IN     0x9e
+ #define	SAI_READ_CAPACITY_16  0x10
+ 
++/* varlen cdb service actions for OSD-2 (before SNIA changes 17 jan 07) */
++#define OSD_APPEND			0x8807
++#define OSD_CREATE			0x8802
++#define OSD_CREATE_AND_WRITE		0x8812
++#define OSD_CREATE_COLLECTION		0x8815
++#define OSD_CREATE_PARTITION		0x880b
++#define OSD_FLUSH			0x8808
++#define OSD_FLUSH_COLLECTION		0x881a
++#define OSD_FLUSH_OSD			0x881c
++#define OSD_FLUSH_PARTITION		0x881b
++#define OSD_FORMAT_OSD			0x8801
++#define OSD_GET_ATTRIBUTES		0x880e
++#define OSD_GET_MEMBER_ATTRIBUTES	0x8822
++#define OSD_LIST			0x8803
++#define OSD_LIST_COLLECTION		0x8817
++#define OSD_PERFORM_SCSI_COMMAND	0x8f7e
++#define OSD_PERFORM_TASK_MGMT_FUNC	0x8f7f
++#define OSD_QUERY			0x8820
++#define OSD_READ			0x8805
++#define OSD_REMOVE			0x880a
++#define OSD_REMOVE_COLLECTION		0x8816
++#define OSD_REMOVE_MEMBER_OBJECTS	0x8821
++#define OSD_REMOVE_PARTITION		0x880c
++#define OSD_SET_ATTRIBUTES		0x880f
++#define OSD_SET_KEY			0x8818
++#define OSD_SET_MASTER_KEY		0x8819
++#define OSD_SET_MEMBER_ATTRIBUTES	0x8823
++#define OSD_WRITE			0x8806
++
+ #define SAM_STAT_GOOD            0x00
+ #define SAM_STAT_CHECK_CONDITION 0x02
+ #define SAM_STAT_CONDITION_MET   0x04
+@@ -127,6 +157,7 @@
+ #define TYPE_RAID           0x0c
+ #define TYPE_ENCLOSURE      0x0d
+ #define TYPE_RBC	    0x0e
++#define TYPE_OSD            0x11
+ #define TYPE_NO_LUN         0x7f
+ 
+ #define	MSG_SIMPLE_TAG	0x20
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 262dc9c..3b75da3 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -125,6 +125,12 @@ int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+                       unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+ 		      uint64_t *offset, struct tgt_device *dev, int *async,
+ 		      void *key, bkio_submit_t *submit);
++int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
++                uint8_t *scb, uint8_t *data, int *len);
++int osd_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
++                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
++                    uint64_t *offset, struct tgt_device *dev, int *async,
++                    void *key, bkio_submit_t *submit);
+ 
+ extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+ 			    uint8_t ascode, uint8_t ascodeq);
+-- 
+1.4.4.2
+
+
+
+From blackmagic02881 at gmail.com  Mon Jan 22 20:21:59 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 22 Jan 2007 14:21:59 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <20070122190839.GE1477@osc.edu>
+References: <20070122190839.GE1477@osc.edu>
+Message-ID: <1169493719.2784.44.camel@localhost.localdomain>
+
+On Mon, 2007-01-22 at 14:08 -0500, Pete Wyckoff wrote:
+
+<snip>
+
+> +
+> +/*
+> + * OSD-specific inquiry.
+> + */
+> +int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+> +                uint8_t *scb, uint8_t *data, int *len)
+
+
+where this osd_inquiry get called?
+
+> +{
+> +	int result = SAM_STAT_CHECK_CONDITION;
+> +
+> +	/* EVPD means need a page code */
+> +	if ((scb[1] & 0x3) == 0 && scb[2] != 0)
+> +		return result;
+> +
+> +	dprintf("%x %x\n", scb[1], scb[2]);
+> +
+> +	data[0] = TYPE_OSD;
+> +	if (!dev)
+> +		data[0] = TYPE_NO_LUN;
+> +
+> +	if ((scb[1] & 0x1) == 0) {
+> +		/* evpd == 0, standard inquiry */
+> +		dprintf("standard inquiry\n");
+> +		data[2] = 5;  /* modern version */
+> +		data[3] = 0x02;  /* modern response format */
+> +		data[7] = 0x02;  /* support command queueing */
+> +		memset(data + 8, 0x20, 28);
+> +		memcpy(data + 8,
+> +		       VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
+> +		memcpy(data + 16,
+> +		       PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
+> +		memcpy(data + 32,
+> +		       PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
+> +		*len = 36;
+> +		if (dev) {
+> +			data[58] = 0x03;
+> +			data[59] = 0x40;  /* osd */
+> +			data[60] = 0x09;
+> +			data[61] = 0x60;  /* iscsi */
+> +			data[62] = 0x03;
+> +			data[63] = 0x00;  /* spc3 */
+> +			*len = 64;
+> +		}
+> +		data[4] = *len - 5;  /* additional length */
+> +		result = SAM_STAT_GOOD;
+> +	} else {
+> +		/* request particular page code */
+> +		dprintf("page %x\n", scb[2]);
+> +		if (!dev)
+> +			return result;
+> +		data[1] = scb[2];
+> +		if (scb[2] == 0x0) {
+> +			/* supported VPD pages */
+> +			data[3] = 3;
+> +			data[4] = 0x0;
+> +			data[5] = 0x80;
+> +			data[6] = 0x83;
+> +			*len = 7;
+> +			result = SAM_STAT_GOOD;
+> +		} else if (scb[2] == 0x80) {
+> +			/* unit serial number "    " */
+> +			data[3] = 4;
+> +			memset(data + 4, 0x20, 4);
+> +			*len = 8;
+> +			result = SAM_STAT_GOOD;
+> +		} else if (scb[2] == 0x83) {
+> +			/* device identification */
+> +			data[3] = SCSI_ID_LEN + 4;
+> +			data[4] = 0x1;
+> +			data[5] = 0x1;
+> +			data[7] = SCSI_ID_LEN;
+> +			if (dev)
+> +				memcpy(data + 8, dev->scsi_id, SCSI_ID_LEN);
+> +			*len = SCSI_ID_LEN + 8;
+> +			result = SAM_STAT_GOOD;
+> +		}
+> +	}
+> +
+> +	if (result != SAM_STAT_GOOD)
+> +		goto err;
+> +
+> +	*len = min_t(int, *len, scb[4]);
+> +
+> +	return SAM_STAT_GOOD;
+> +
+> +err:
+> +	*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+> +				0x24, 0);
+> +	return SAM_STAT_CHECK_CONDITION;
+> +}
+> +
+> +int osd_cmd_perform(uint8_t *cdb, int *len, uint32_t datalen,
+> +                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+> +                    uint64_t *offset, struct tgt_device *dev, int *async,
+> +                    void *key, bkio_submit_t *submit)
+> +{
+> +	int ret = SAM_STAT_GOOD;
+> +	uint8_t *data = NULL;
+> +	uint16_t action;
+> +
+> +	switch (cdb[0]) {
+> +	/* there are other optional non-varlen commands */
+> +	case VARLEN_CDB:
+> +		dprintf("cdb[0] %x datalen %u\n", cdb[0], datalen);
+> +		if (cdb[7] != 200-8)
+> +			eprintf("request size %d wrong, should be 200\n",
+> +			        cdb[7]+8);
+> +
+> +		action = (cdb[8] << 8) | cdb[9];
+> +
+> +		switch (action) {
+> +		case OSD_APPEND:
+> +		case OSD_CREATE:
+> +		case OSD_CREATE_AND_WRITE:
+> +		case OSD_CREATE_COLLECTION:
+> +		case OSD_CREATE_PARTITION:
+> +		case OSD_FLUSH:
+> +		case OSD_FLUSH_COLLECTION:
+> +		case OSD_FLUSH_OSD:
+> +		case OSD_FLUSH_PARTITION:
+> +		case OSD_FORMAT_OSD:
+> +		case OSD_GET_ATTRIBUTES:
+> +		case OSD_GET_MEMBER_ATTRIBUTES:
+> +		case OSD_LIST:
+> +		case OSD_LIST_COLLECTION:
+> +		case OSD_PERFORM_SCSI_COMMAND:
+> +		case OSD_PERFORM_TASK_MGMT_FUNC:
+> +		case OSD_QUERY:
+> +		case OSD_READ:
+> +		case OSD_REMOVE:
+> +		case OSD_REMOVE_COLLECTION:
+> +		case OSD_REMOVE_MEMBER_OBJECTS:
+> +		case OSD_REMOVE_PARTITION:
+> +		case OSD_SET_ATTRIBUTES:
+> +		case OSD_SET_KEY:
+> +		case OSD_SET_MASTER_KEY:
+> +		case OSD_SET_MEMBER_ATTRIBUTES:
+> +		case OSD_WRITE:
+> +			ret = submit(dev, cdb, *rw, datalen, uaddr, *offset,
+> +			             async, key);
+> +			if (ret == SAM_STAT_GOOD) {
+> +				*len = datalen;
+> +			} else {
+> +				data = get_zeroed_page();
+> +				*len = sense_data_build(data, 0x70,
+> +				                        ILLEGAL_REQUEST, 0x25,
+> +							0);
+> +			}
+> +			break;
+> +		default:
+> +			eprintf("unknown service action 0x%04x\n", action);
+> +		}
+> +		break;
+> +	default:
+> +		eprintf("unknown command %x %u\n", cdb[0], datalen);
+> +		*len = 0;
+> +		break;
+> +	}
+> +
+> +	if (data)
+> +		*uaddr = (unsigned long) data;
+> +
+> +	return ret;
+> +}
+> +
+> diff --git a/usr/scsi.c b/usr/scsi.c
+> index 277924c..d102f5e 100644
+> --- a/usr/scsi.c
+> +++ b/usr/scsi.c
+> @@ -357,6 +357,10 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+>  		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+>  		                           try_map, offset, dev, async, key,
+>  					   submit);
+> +	else if (target_type == SCSI_TARGET_OSD)
+> +		result = osd_cmd_perform(scb, len, datalen, uaddr, rw,
+> +		                         try_map, offset, dev, async, key,
+> +					 submit);
+>  	else
+>  		eprintf("unknown target type %d\n", target_type);
+>  
+> diff --git a/usr/scsi.h b/usr/scsi.h
+> index 154508d..20aa2a8 100644
+> --- a/usr/scsi.h
+> +++ b/usr/scsi.h
+> @@ -69,6 +69,7 @@
+>  #define MODE_SENSE_10         0x5a
+>  #define PERSISTENT_RESERVE_IN 0x5e
+>  #define PERSISTENT_RESERVE_OUT 0x5f
+> +#define VARLEN_CDB            0x7f
+>  #define REPORT_LUNS           0xa0
+>  #define MOVE_MEDIUM           0xa5
+>  #define EXCHANGE_MEDIUM       0xa6
+> @@ -87,6 +88,35 @@
+>  #define SERVICE_ACTION_IN     0x9e
+>  #define	SAI_READ_CAPACITY_16  0x10
+>  
+> +/* varlen cdb service actions for OSD-2 (before SNIA changes 17 jan 07) */
+> +#define OSD_APPEND			0x8807
+> +#define OSD_CREATE			0x8802
+> +#define OSD_CREATE_AND_WRITE		0x8812
+> +#define OSD_CREATE_COLLECTION		0x8815
+> +#define OSD_CREATE_PARTITION		0x880b
+> +#define OSD_FLUSH			0x8808
+> +#define OSD_FLUSH_COLLECTION		0x881a
+> +#define OSD_FLUSH_OSD			0x881c
+> +#define OSD_FLUSH_PARTITION		0x881b
+> +#define OSD_FORMAT_OSD			0x8801
+> +#define OSD_GET_ATTRIBUTES		0x880e
+> +#define OSD_GET_MEMBER_ATTRIBUTES	0x8822
+> +#define OSD_LIST			0x8803
+> +#define OSD_LIST_COLLECTION		0x8817
+> +#define OSD_PERFORM_SCSI_COMMAND	0x8f7e
+> +#define OSD_PERFORM_TASK_MGMT_FUNC	0x8f7f
+> +#define OSD_QUERY			0x8820
+> +#define OSD_READ			0x8805
+> +#define OSD_REMOVE			0x880a
+> +#define OSD_REMOVE_COLLECTION		0x8816
+> +#define OSD_REMOVE_MEMBER_OBJECTS	0x8821
+> +#define OSD_REMOVE_PARTITION		0x880c
+> +#define OSD_SET_ATTRIBUTES		0x880f
+> +#define OSD_SET_KEY			0x8818
+> +#define OSD_SET_MASTER_KEY		0x8819
+> +#define OSD_SET_MEMBER_ATTRIBUTES	0x8823
+> +#define OSD_WRITE			0x8806
+> +
+>  #define SAM_STAT_GOOD            0x00
+>  #define SAM_STAT_CHECK_CONDITION 0x02
+>  #define SAM_STAT_CONDITION_MET   0x04
+> @@ -127,6 +157,7 @@
+>  #define TYPE_RAID           0x0c
+>  #define TYPE_ENCLOSURE      0x0d
+>  #define TYPE_RBC	    0x0e
+> +#define TYPE_OSD            0x11
+>  #define TYPE_NO_LUN         0x7f
+>  
+>  #define	MSG_SIMPLE_TAG	0x20
+> diff --git a/usr/tgtd.h b/usr/tgtd.h
+> index 262dc9c..3b75da3 100644
+> --- a/usr/tgtd.h
+> +++ b/usr/tgtd.h
+> @@ -125,6 +125,12 @@ int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+>                        unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+>  		      uint64_t *offset, struct tgt_device *dev, int *async,
+>  		      void *key, bkio_submit_t *submit);
+> +int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+> +                uint8_t *scb, uint8_t *data, int *len);
+> +int osd_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+> +                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+> +                    uint64_t *offset, struct tgt_device *dev, int *async,
+> +                    void *key, bkio_submit_t *submit);
+>  
+>  extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+>  			    uint8_t ascode, uint8_t ascodeq);
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From blackmagic02881 at gmail.com  Mon Jan 22 20:26:25 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 22 Jan 2007 14:26:25 -0500
+Subject: [Stgt-devel] [PATCH 3/4] block/primary separation
+In-Reply-To: <20070122190431.GD1477@osc.edu>
+References: <20070122190431.GD1477@osc.edu>
+Message-ID: <1169493985.2784.49.camel@localhost.localdomain>
+
+On Mon, 2007-01-22 at 14:04 -0500, Pete Wyckoff wrote:
+
+<snip>
+
+>  
+> +	/*
+> +	 * Generic SPC commands
+> +	 */
+>  	switch (scb[0]) {
+>  	case INQUIRY:
+> +		data = get_zeroed_page();
+>  		result = inquiry(lid, dev, host_no, lun_buf, scb, data, len);
+> -		break;
+> +		goto out;
+>  	case REPORT_LUNS:
+>  		*len = datalen;
+> +		data = get_zeroed_page();
+>  		result = report_luns(lid, dev_list, lun_buf, scb, data, len);
+> -		break;
+> -	case READ_CAPACITY:
+> -		result = read_capacity(dev, scb, data, len);
+> -		break;
+> -	case MODE_SENSE:
+> -		result = mode_sense(dev, scb, data, len);
+> -		break;
+> +		goto out;
+>  	case REQUEST_SENSE:
+> +		data = get_zeroed_page();
+>  		result = request_sense(data, len);
+> -		break;
+> -	case SERVICE_ACTION_IN:
+> -		result = sevice_action(dev, scb, data, len);
+> -		break;
+> -	case SYNCHRONIZE_CACHE:
+> -		result = sync_cache(dev, data, len);
+> -		break;
+> -	case START_STOP:
+> +		goto out;
+>  	case TEST_UNIT_READY:
+> -	case VERIFY:
+>  		*len = 0;
+> -		break;
+> -	case READ_6:
+> -	case READ_10:
+> -	case READ_16:
+> -	case WRITE_6:
+> -	case WRITE_10:
+> -	case WRITE_16:
+> -	case WRITE_VERIFY:
+> -		*offset = scsi_cmd_data_offset(scb);
+> -		result = submit(dev, scb, *rw, datalen, uaddr, *offset, async, key);
+> -		if (result == SAM_STAT_GOOD) {
+> -			*len = datalen;
+> -			*try_map = 1;
+> -		} else {
+> -			*rw = READ;
+> -			*offset = 0;
+> -			if (!data)
+> -				data = valloc(PAGE_SIZE);
+> -			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+> -						0x25, 0);
+> -		}
+> -		break;
+> +		goto out;
+>  	case RESERVE:
+>  	case RESERVE_10:
+>  		result = device_reserve(nid, dev->lun, nid);
+>  		if (result)
+>  			result = SAM_STAT_RESERVATION_CONFLICT;
+>  		*len = 0;
+> -		break;
+> +		goto out;
+>  	case RELEASE:
+>  	case RELEASE_10:
+>  		result = device_release(nid, dev->lun, host_no, 0);
+>  		if (result)
+>  			result = SAM_STAT_RESERVATION_CONFLICT;
+>  		*len = 0;
+> -		break;
+> -	default:
+> -		eprintf("unknown command %x %u\n", scb[0], datalen);
+> -		*len = 0;
+> -		break;
+> +		goto out;
+
+from switch will goto out and then return? when this target specific
+command processing will be called?
+
+>  	}
+>  
+> +	/*
+> +	 * Specific device command set
+> +	 */
+> +	if (target_type == SCSI_TARGET_SBC)
+> +		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+> +		                           try_map, offset, dev, async, key,
+> +					   submit);
+> +	else
+> +		eprintf("unknown target type %d\n", target_type);
+> +
+>  out:
+>  	if (data)
+>  		*uaddr = (unsigned long) data;
+>  
+>  	return result;
+>  }
+
+	
+
+
+> +
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From blackmagic02881 at gmail.com  Mon Jan 22 20:35:10 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Mon, 22 Jan 2007 14:35:10 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <1169493719.2784.44.camel@localhost.localdomain>
+References: <20070122190839.GE1477@osc.edu>
+	<1169493719.2784.44.camel@localhost.localdomain>
+Message-ID: <1169494510.2784.58.camel@localhost.localdomain>
+
+On Mon, 2007-01-22 at 14:22 -0500, Ming Zhang wrote:
+> On Mon, 2007-01-22 at 14:08 -0500, Pete Wyckoff wrote:
+> 
+> <snip>
+> 
+> > +
+> > +/*
+> > + * OSD-specific inquiry.
+> > + */
+> > +int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+> > +                uint8_t *scb, uint8_t *data, int *len)
+> 
+> 
+> where this osd_inquiry get called?
+
+ok i found it called in inquiry() which check target type again.
+
+not a good idea. suggest to keep in a way like IET code, for each target
+type, call its foo_cmd_perform(), and make some common spc function as
+helper functions.
+
+
+
+
+> 
+> > +{
+> > +	int result = SAM_STAT_CHECK_CONDITION;
+> > +
+> > +	/* EVPD means need a page code */
+> > +	if ((scb[1] & 0x3) == 0 && scb[2] != 0)
+> > +		return result;
+> > +
+> > +	dprintf("%x %x\n", scb[1], scb[2]);
+> > +
+> > +	data[0] = TYPE_OSD;
+> > +	if (!dev)
+> > +		data[0] = TYPE_NO_LUN;
+> > +
+> > +	if ((scb[1] & 0x1) == 0) {
+> > +		/* evpd == 0, standard inquiry */
+> > +		dprintf("standard inquiry\n");
+> > +		data[2] = 5;  /* modern version */
+> > +		data[3] = 0x02;  /* modern response format */
+> > +		data[7] = 0x02;  /* support command queueing */
+> > +		memset(data + 8, 0x20, 28);
+> > +		memcpy(data + 8,
+> > +		       VENDOR_ID, min_t(size_t, strlen(VENDOR_ID), 8));
+> > +		memcpy(data + 16,
+> > +		       PRODUCT_ID, min_t(size_t, strlen(PRODUCT_ID), 16));
+> > +		memcpy(data + 32,
+> > +		       PRODUCT_REV, min_t(size_t, strlen(PRODUCT_REV), 4));
+> > +		*len = 36;
+> > +		if (dev) {
+> > +			data[58] = 0x03;
+> > +			data[59] = 0x40;  /* osd */
+> > +			data[60] = 0x09;
+> > +			data[61] = 0x60;  /* iscsi */
+> > +			data[62] = 0x03;
+> > +			data[63] = 0x00;  /* spc3 */
+> > +			*len = 64;
+> > +		}
+> > +		data[4] = *len - 5;  /* additional length */
+> > +		result = SAM_STAT_GOOD;
+> > +	} else {
+> > +		/* request particular page code */
+> > +		dprintf("page %x\n", scb[2]);
+> > +		if (!dev)
+> > +			return result;
+> > +		data[1] = scb[2];
+> > +		if (scb[2] == 0x0) {
+> > +			/* supported VPD pages */
+> > +			data[3] = 3;
+> > +			data[4] = 0x0;
+> > +			data[5] = 0x80;
+> > +			data[6] = 0x83;
+> > +			*len = 7;
+> > +			result = SAM_STAT_GOOD;
+> > +		} else if (scb[2] == 0x80) {
+> > +			/* unit serial number "    " */
+> > +			data[3] = 4;
+> > +			memset(data + 4, 0x20, 4);
+> > +			*len = 8;
+> > +			result = SAM_STAT_GOOD;
+> > +		} else if (scb[2] == 0x83) {
+> > +			/* device identification */
+> > +			data[3] = SCSI_ID_LEN + 4;
+> > +			data[4] = 0x1;
+> > +			data[5] = 0x1;
+> > +			data[7] = SCSI_ID_LEN;
+> > +			if (dev)
+> > +				memcpy(data + 8, dev->scsi_id, SCSI_ID_LEN);
+> > +			*len = SCSI_ID_LEN + 8;
+> > +			result = SAM_STAT_GOOD;
+> > +		}
+> > +	}
+> > +
+> > +	if (result != SAM_STAT_GOOD)
+> > +		goto err;
+> > +
+> > +	*len = min_t(int, *len, scb[4]);
+> > +
+> > +	return SAM_STAT_GOOD;
+> > +
+> > +err:
+> > +	*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+> > +				0x24, 0);
+> > +	return SAM_STAT_CHECK_CONDITION;
+> > +}
+> > +
+> > +int osd_cmd_perform(uint8_t *cdb, int *len, uint32_t datalen,
+> > +                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+> > +                    uint64_t *offset, struct tgt_device *dev, int *async,
+> > +                    void *key, bkio_submit_t *submit)
+> > +{
+> > +	int ret = SAM_STAT_GOOD;
+> > +	uint8_t *data = NULL;
+> > +	uint16_t action;
+> > +
+> > +	switch (cdb[0]) {
+> > +	/* there are other optional non-varlen commands */
+> > +	case VARLEN_CDB:
+> > +		dprintf("cdb[0] %x datalen %u\n", cdb[0], datalen);
+> > +		if (cdb[7] != 200-8)
+> > +			eprintf("request size %d wrong, should be 200\n",
+> > +			        cdb[7]+8);
+> > +
+> > +		action = (cdb[8] << 8) | cdb[9];
+> > +
+> > +		switch (action) {
+> > +		case OSD_APPEND:
+> > +		case OSD_CREATE:
+> > +		case OSD_CREATE_AND_WRITE:
+> > +		case OSD_CREATE_COLLECTION:
+> > +		case OSD_CREATE_PARTITION:
+> > +		case OSD_FLUSH:
+> > +		case OSD_FLUSH_COLLECTION:
+> > +		case OSD_FLUSH_OSD:
+> > +		case OSD_FLUSH_PARTITION:
+> > +		case OSD_FORMAT_OSD:
+> > +		case OSD_GET_ATTRIBUTES:
+> > +		case OSD_GET_MEMBER_ATTRIBUTES:
+> > +		case OSD_LIST:
+> > +		case OSD_LIST_COLLECTION:
+> > +		case OSD_PERFORM_SCSI_COMMAND:
+> > +		case OSD_PERFORM_TASK_MGMT_FUNC:
+> > +		case OSD_QUERY:
+> > +		case OSD_READ:
+> > +		case OSD_REMOVE:
+> > +		case OSD_REMOVE_COLLECTION:
+> > +		case OSD_REMOVE_MEMBER_OBJECTS:
+> > +		case OSD_REMOVE_PARTITION:
+> > +		case OSD_SET_ATTRIBUTES:
+> > +		case OSD_SET_KEY:
+> > +		case OSD_SET_MASTER_KEY:
+> > +		case OSD_SET_MEMBER_ATTRIBUTES:
+> > +		case OSD_WRITE:
+> > +			ret = submit(dev, cdb, *rw, datalen, uaddr, *offset,
+> > +			             async, key);
+> > +			if (ret == SAM_STAT_GOOD) {
+> > +				*len = datalen;
+> > +			} else {
+> > +				data = get_zeroed_page();
+> > +				*len = sense_data_build(data, 0x70,
+> > +				                        ILLEGAL_REQUEST, 0x25,
+> > +							0);
+> > +			}
+> > +			break;
+> > +		default:
+> > +			eprintf("unknown service action 0x%04x\n", action);
+> > +		}
+> > +		break;
+> > +	default:
+> > +		eprintf("unknown command %x %u\n", cdb[0], datalen);
+> > +		*len = 0;
+> > +		break;
+> > +	}
+> > +
+> > +	if (data)
+> > +		*uaddr = (unsigned long) data;
+> > +
+> > +	return ret;
+> > +}
+> > +
+> > diff --git a/usr/scsi.c b/usr/scsi.c
+> > index 277924c..d102f5e 100644
+> > --- a/usr/scsi.c
+> > +++ b/usr/scsi.c
+> > @@ -357,6 +357,10 @@ int scsi_cmd_perform(uint64_t nid, int lid, int host_no, uint8_t *scb,
+> >  		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+> >  		                           try_map, offset, dev, async, key,
+> >  					   submit);
+> > +	else if (target_type == SCSI_TARGET_OSD)
+> > +		result = osd_cmd_perform(scb, len, datalen, uaddr, rw,
+> > +		                         try_map, offset, dev, async, key,
+> > +					 submit);
+> >  	else
+> >  		eprintf("unknown target type %d\n", target_type);
+> >  
+> > diff --git a/usr/scsi.h b/usr/scsi.h
+> > index 154508d..20aa2a8 100644
+> > --- a/usr/scsi.h
+> > +++ b/usr/scsi.h
+> > @@ -69,6 +69,7 @@
+> >  #define MODE_SENSE_10         0x5a
+> >  #define PERSISTENT_RESERVE_IN 0x5e
+> >  #define PERSISTENT_RESERVE_OUT 0x5f
+> > +#define VARLEN_CDB            0x7f
+> >  #define REPORT_LUNS           0xa0
+> >  #define MOVE_MEDIUM           0xa5
+> >  #define EXCHANGE_MEDIUM       0xa6
+> > @@ -87,6 +88,35 @@
+> >  #define SERVICE_ACTION_IN     0x9e
+> >  #define	SAI_READ_CAPACITY_16  0x10
+> >  
+> > +/* varlen cdb service actions for OSD-2 (before SNIA changes 17 jan 07) */
+> > +#define OSD_APPEND			0x8807
+> > +#define OSD_CREATE			0x8802
+> > +#define OSD_CREATE_AND_WRITE		0x8812
+> > +#define OSD_CREATE_COLLECTION		0x8815
+> > +#define OSD_CREATE_PARTITION		0x880b
+> > +#define OSD_FLUSH			0x8808
+> > +#define OSD_FLUSH_COLLECTION		0x881a
+> > +#define OSD_FLUSH_OSD			0x881c
+> > +#define OSD_FLUSH_PARTITION		0x881b
+> > +#define OSD_FORMAT_OSD			0x8801
+> > +#define OSD_GET_ATTRIBUTES		0x880e
+> > +#define OSD_GET_MEMBER_ATTRIBUTES	0x8822
+> > +#define OSD_LIST			0x8803
+> > +#define OSD_LIST_COLLECTION		0x8817
+> > +#define OSD_PERFORM_SCSI_COMMAND	0x8f7e
+> > +#define OSD_PERFORM_TASK_MGMT_FUNC	0x8f7f
+> > +#define OSD_QUERY			0x8820
+> > +#define OSD_READ			0x8805
+> > +#define OSD_REMOVE			0x880a
+> > +#define OSD_REMOVE_COLLECTION		0x8816
+> > +#define OSD_REMOVE_MEMBER_OBJECTS	0x8821
+> > +#define OSD_REMOVE_PARTITION		0x880c
+> > +#define OSD_SET_ATTRIBUTES		0x880f
+> > +#define OSD_SET_KEY			0x8818
+> > +#define OSD_SET_MASTER_KEY		0x8819
+> > +#define OSD_SET_MEMBER_ATTRIBUTES	0x8823
+> > +#define OSD_WRITE			0x8806
+> > +
+> >  #define SAM_STAT_GOOD            0x00
+> >  #define SAM_STAT_CHECK_CONDITION 0x02
+> >  #define SAM_STAT_CONDITION_MET   0x04
+> > @@ -127,6 +157,7 @@
+> >  #define TYPE_RAID           0x0c
+> >  #define TYPE_ENCLOSURE      0x0d
+> >  #define TYPE_RBC	    0x0e
+> > +#define TYPE_OSD            0x11
+> >  #define TYPE_NO_LUN         0x7f
+> >  
+> >  #define	MSG_SIMPLE_TAG	0x20
+> > diff --git a/usr/tgtd.h b/usr/tgtd.h
+> > index 262dc9c..3b75da3 100644
+> > --- a/usr/tgtd.h
+> > +++ b/usr/tgtd.h
+> > @@ -125,6 +125,12 @@ int block_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+> >                        unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+> >  		      uint64_t *offset, struct tgt_device *dev, int *async,
+> >  		      void *key, bkio_submit_t *submit);
+> > +int osd_inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+> > +                uint8_t *scb, uint8_t *data, int *len);
+> > +int osd_cmd_perform(uint8_t *scb, int *len, uint32_t datalen,
+> > +                    unsigned long *uaddr, uint8_t *rw, uint8_t *try_map,
+> > +                    uint64_t *offset, struct tgt_device *dev, int *async,
+> > +                    void *key, bkio_submit_t *submit);
+> >  
+> >  extern int sense_data_build(uint8_t *data, uint8_t res_code, uint8_t key,
+> >  			    uint8_t ascode, uint8_t ascodeq);
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From pw at osc.edu  Tue Jan 23 17:19:17 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Tue, 23 Jan 2007 11:19:17 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <1169494510.2784.58.camel@localhost.localdomain>
+References: <20070122190839.GE1477@osc.edu>
+	<1169493719.2784.44.camel@localhost.localdomain>
+	<1169494510.2784.58.camel@localhost.localdomain>
+Message-ID: <20070123161917.GB2885@osc.edu>
+
+blackmagic02881 at gmail.com wrote on Mon, 22 Jan 2007 14:35 -0500:
+> not a good idea. suggest to keep in a way like IET code, for each target
+> type, call its foo_cmd_perform(), and make some common spc function as
+> helper functions.
+
+I think you're saying that I should duplicate the switch() logic for
+the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+type-specific functions.  This would reduce scsi_cmd_perform() into
+just a check on the target type, with no handling of SPC commands,
+e.g. INQUIRY.
+
+I'm not opposed to doing that, just don't have a good reason to do
+so.  As the OSD work progresses this may become clear to me (PERFORM
+SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+
+		-- Pete
+
+
+From blackmagic02881 at gmail.com  Tue Jan 23 17:24:16 2007
+From: blackmagic02881 at gmail.com (Ming Zhang)
+Date: Tue, 23 Jan 2007 11:24:16 -0500
+Subject: [Stgt-devel] [PATCH 4/4] OSD command parser
+In-Reply-To: <20070123161917.GB2885@osc.edu>
+References: <20070122190839.GE1477@osc.edu>
+	<1169493719.2784.44.camel@localhost.localdomain>
+	<1169494510.2784.58.camel@localhost.localdomain>
+	<20070123161917.GB2885@osc.edu>
+Message-ID: <1169569456.2803.64.camel@localhost.localdomain>
+
+On Tue, 2007-01-23 at 11:19 -0500, Pete Wyckoff wrote:
+> blackmagic02881 at gmail.com wrote on Mon, 22 Jan 2007 14:35 -0500:
+> > not a good idea. suggest to keep in a way like IET code, for each target
+> > type, call its foo_cmd_perform(), and make some common spc function as
+> > helper functions.
+> 
+> I think you're saying that I should duplicate the switch() logic for
+> the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+> type-specific functions.  This would reduce scsi_cmd_perform() into
+> just a check on the target type, with no handling of SPC commands,
+> e.g. INQUIRY.
+
+exactly. because even it is a SPC command, it is handled differently
+from type to type.
+
+> 
+> I'm not opposed to doing that, just don't have a good reason to do
+> so.  As the OSD work progresses this may become clear to me (PERFORM
+> SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+
+good reason is simpler interface, each particular target type only
+fulfill a few interface in order to accomplish the work. and less extern
+functions define in .h.
+
+> 
+> 		-- Pete
+-- 
+http://blackmagic02881.wordpress.com/
+
+
+
+From bastian at waldi.eu.org  Sun Jan 28 19:52:58 2007
+From: bastian at waldi.eu.org (Bastian Blank)
+Date: Sun, 28 Jan 2007 19:52:58 +0100
+Subject: [Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+Message-ID: <20070128185258.GA18860@wavehammer.waldi.eu.org>
+
+Hi folks
+
+I'm not really sure if this is a ibmvstgt or a generic aio problem.
+
+I tried ibmvstgt on my openpower and the kernel shows the following
+warning several times:
+| Jan 28 15:11:15 waldi kernel: Badness at arch/powerpc/mm/slb.c:95
+| Jan 28 15:11:15 waldi kernel: Call Trace:
+| Jan 28 15:11:15 waldi kernel: [C00000000282B750] [C00000000000EC94] .show_stack+0x68/0x1b0 (unreliable)
+| Jan 28 15:11:15 waldi kernel: [C00000000282B7F0] [C00000000015ED64] .report_bug+0x94/0xe8
+| Jan 28 15:11:15 waldi kernel: [C00000000282B880] [C0000000000228DC] .program_check_exception+0x140/0x54c
+| Jan 28 15:11:15 waldi kernel: [C00000000282B920] [C000000000004774] program_check_common+0xf4/0x100
+| Jan 28 15:11:15 waldi kernel: --- Exception: 700 at .slb_flush_and_rebolt+0xc/0xe0
+| Jan 28 15:11:15 waldi kernel:     LR = .switch_slb+0xac/0x1a0
+| Jan 28 15:11:15 waldi kernel: [C00000000282BC10] [FFFFFFFFFFFFFFFF] 0xffffffffffffffff (unreliable)
+| Jan 28 15:11:15 waldi kernel: [C00000000282BCB0] [C0000000000E1750] .aio_kick_handler+0x128/0x278
+| Jan 28 15:11:15 waldi kernel: [C00000000282BD60] [C000000000066380] .run_workqueue+0xec/0x1d4
+| Jan 28 15:11:15 waldi kernel: [C00000000282BE00] [C000000000066F2C] .worker_thread+0x164/0x1bc
+| Jan 28 15:11:15 waldi kernel: [C00000000282BEE0] [C00000000006B6E8] .kthread+0x120/0x170
+| Jan 28 15:11:15 waldi kernel: [C00000000282BF90] [C000000000024204] .kernel_thread+0x4c/0x68
+
+One possibility:
+aio_kick_handler calls use_mm. use_mm calls switch_mm. It seems that
+90aef12e6dd609e1ad7fb70044eedc78ca55ee5e changed that from activate_mm.
+
+activate_mm on powerpc disables interupts and calls swtich_mm. So
+switch_mm is now called with interrupts enabled and runs into the
+WARN_ON.
+
+Bastian
+
+-- 
+She won' go Warp 7, Cap'n!  The batteries are dead!
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jan 29 09:07:40 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 29 Jan 2007 17:07:40 +0900
+Subject: [Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+In-Reply-To: <20070128185258.GA18860@wavehammer.waldi.eu.org>
+References: <20070128185258.GA18860@wavehammer.waldi.eu.org>
+Message-ID: <20070129170740O.fujita.tomonori@lab.ntt.co.jp>
+
+From: Bastian Blank <bastian at waldi.eu.org>
+Subject: ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+Date: Sun, 28 Jan 2007 19:52:58 +0100
+
+> I'm not really sure if this is a ibmvstgt or a generic aio problem.
+
+You use 2.6.20-rc6 with the aio-epoll-wait patch, right?
+
+I think that this is due to the aio-epoll-wait patch because without
+using ibmvstgt target driver, simple aio workload crashes 2.6.20-rc6
+with the aio-epoll-wait patch on my POWER box. I cannot recall since
+when the patch doesn't work on POWER.
+
+If you are interested in only ibmvstgt target driver, use the
+following patch. It uses epoll instead of AIO for event
+notification. ibmvstgt target driver (and most of the kernel-space
+target drivers) uses mmapped I/O and does not need AIO. The user-space
+target drivers (like iSCSI) need the aio-epoll-wait patch though.
+
+
+Index: usr/tgtd.c
+===================================================================
+--- usr/tgtd.c	(revision 771)
++++ usr/tgtd.c	(working copy)
+@@ -202,9 +202,6 @@
+ 	int nevent, i, err;
+ 	struct epoll_event events[1024];
+ 	struct tgt_event *tev;
+-	struct iocb iocbs[1], *iocb;
+-	struct io_event aioevents[2048];
+-	struct timespec timeout = {1, 0};
+ 
+ 	err = io_queue_init(2048, &ctx);
+ 	if (err) {
+@@ -212,13 +209,8 @@
+ 		return;
+ 	}
+ 
+-	iocb = iocbs;
+-	io_prep_epoll_wait(iocb, ep_fd, events, ARRAY_SIZE(events), -1);
+-	err = io_submit(ctx, 1, &iocb);
+-
+ retry:
+-	nevent = io_getevents(ctx, 1, ARRAY_SIZE(aioevents), aioevents, &timeout);
+-
++	nevent = epoll_wait(ep_fd, events, ARRAY_SIZE(events), -1);
+ 	if (nevent < 0) {
+ 		if (errno != EINTR) {
+ 			eprintf("%m\n");
+@@ -226,18 +218,8 @@
+ 		}
+ 	} else if (nevent) {
+ 		for (i = 0; i < nevent; i++) {
+-			if (iocb == aioevents[i].obj) {
+-				int j;
+-				for (j = 0; j < aioevents[i].res; j++) {
+-					tev = (struct tgt_event *) events[j].data.ptr;
+-					tev->handler(tev->fd, events[j].events, tev->data);
+-				}
+-
+-				err = io_submit(ctx, 1, &iocb);
+-			} else {
+-				/* FIXME */
+-				target_cmd_io_done(aioevents[i].data, 0);
+-			}
++			tev = (struct tgt_event *) events[i].data.ptr;
++			tev->handler(tev->fd, events[i].events, tev->data);
+ 		}
+ 	} else
+ 		schedule();
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jan 29 10:20:17 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 29 Jan 2007 18:20:17 +0900
+Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+In-Reply-To: <20070122190245.GB1477@osc.edu>
+References: <20070122190245.GB1477@osc.edu>
+Message-ID: <20070129182017S.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+Date: Mon, 22 Jan 2007 14:02:45 -0500
+
+> Compile fixes.
+> 
+> Signed-off-by: Pete Wyckoff <pw at osc.edu>
+> ---
+>  usr/scsi.c   |    6 ++++--
+>  usr/target.c |    4 ++--
+>  2 files changed, 6 insertions(+), 4 deletions(-)
+> 
+> diff --git a/usr/scsi.c b/usr/scsi.c
+> index 9e91a9f..e65e893 100644
+> --- a/usr/scsi.c
+> +++ b/usr/scsi.c
+> @@ -224,7 +224,8 @@ static int __inquiry(struct tgt_device *dev, int host_no, uint8_t *lun_buf,
+>  			result = SAM_STAT_GOOD;
+>  
+>  			if (dev && strlen(dev->scsi_sn)) {
+> -				char *p, *q;
+> +				uint8_t *p;
+> +				char *q;
+
+Thanks, merged.
+
+
+From pw at osc.edu  Mon Jan 29 16:14:18 2007
+From: pw at osc.edu (Pete Wyckoff)
+Date: Mon, 29 Jan 2007 10:14:18 -0500
+Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+In-Reply-To: <20070129182017S.fujita.tomonori@lab.ntt.co.jp>
+References: <20070122190245.GB1477@osc.edu>
+	<20070129182017S.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <20070129151418.GA32250@osc.edu>
+
+fujita.tomonori at lab.ntt.co.jp wrote on Mon, 29 Jan 2007 18:20 +0900:
+> From: Pete Wyckoff <pw at osc.edu>
+> Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+> Date: Mon, 22 Jan 2007 14:02:45 -0500
+> 
+> > Compile fixes.
+[..]
+> 
+> Thanks, merged.
+
+FYI, you also appear to have merged in a change to usr/tgtd.c that
+replaces aio/epoll with pure epoll.  Not necessarily a bad thing,
+but it doesn't really belong with these cleanups.
+
+		-- Pete
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Jan 29 16:22:23 2007
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 30 Jan 2007 00:22:23 +0900
+Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+In-Reply-To: <20070129151418.GA32250@osc.edu>
+References: <20070122190245.GB1477@osc.edu>
+	<20070129182017S.fujita.tomonori@lab.ntt.co.jp>
+	<20070129151418.GA32250@osc.edu>
+Message-ID: <20070130002223S.fujita.tomonori@lab.ntt.co.jp>
+
+From: Pete Wyckoff <pw at osc.edu>
+Subject: Re: [Stgt-devel] [PATCH 1/4] compile fixes
+Date: Mon, 29 Jan 2007 10:14:18 -0500
+
+> fujita.tomonori at lab.ntt.co.jp wrote on Mon, 29 Jan 2007 18:20 +0900:
+> > From: Pete Wyckoff <pw at osc.edu>
+> > Subject: [Stgt-devel] [PATCH 1/4] compile fixes
+> > Date: Mon, 22 Jan 2007 14:02:45 -0500
+> > 
+> > > Compile fixes.
+> [..]
+> > 
+> > Thanks, merged.
+> 
+> FYI, you also appear to have merged in a change to usr/tgtd.c that
+> replaces aio/epoll with pure epoll.  Not necessarily a bad thing,
+> but it doesn't really belong with these cleanups.
+
+Oops, reverted. Thanks.
+
+

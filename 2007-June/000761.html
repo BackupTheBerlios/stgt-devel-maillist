@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] Move device type to LUN
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Move%20device%20type%20to%20LUN&In-Reply-To=%3C20070609171826.GA2582%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000754.html">
+   <LINK REL="Next"  HREF="000762.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] Move device type to LUN</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20Move%20device%20type%20to%20LUN&In-Reply-To=%3C20070609171826.GA2582%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] Move device type to LUN">pw at osc.edu
+       </A><BR>
+    <I>Sat Jun  9 19:18:26 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000754.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+        <LI>Next message: <A HREF="000762.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#761">[ date ]</a>
+              <a href="thread.html#761">[ thread ]</a>
+              <a href="subject.html#761">[ subject ]</a>
+              <a href="author.html#761">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">hare at suse.de</A> wrote on Tue, 05 Jun 2007 15:38 +0200:
+&gt;<i> This patch moves the device type down to the LUN structure.
+</I>&gt;<i> And in doing so we now also have the proper peripheral device
+</I>&gt;<i> type and peripheral device qualifier attributes for the INQUIRY
+</I>&gt;<i> data.
+</I>
+Makes sense to me too.
+
+&gt;<i> One thing puzzles me, though: do we support commands with no
+</I>&gt;<i> LUN attached to it? IE is it valid to have 'cmd-&gt;dev == NULL'?
+</I>&gt;<i> If so: where is the point here? If that's our handling of a
+</I>&gt;<i> non-existing LUN 0 we should rather add a proper LUN 0 and
+</I>&gt;<i> treat cmd-&gt;dev == NULL as an error case ...
+</I>
+In the SCSI model, every device must have at least one LUN for
+handling REPORT LUNS and a couple other commands.  It is addressed
+as LUN 0 or using the &quot;well-known&quot; LUN for the command.  In the stgt
+abstraction, though, there is no magic LUN like this.  Instead
+things like spc_inqury use cmd-&gt;dev == NULL to handle this case.
+
+Perhaps it is reasonable to create a special device for these
+commands.  Up in target.c, you could assign cmd-&gt;dev to target-&gt;dev,
+where that is the special device, paralleling the way that
+target-&gt;cmd_queue is used.  As a side effect, lots of &quot;if (cmd-&gt;dev)
+... else ILLEGAL_REQUEST&quot; clauses can be removed from device code
+too.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000754.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+	<LI>Next message: <A HREF="000762.html">[Stgt-devel] [PATCH] Move device type to LUN
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#761">[ date ]</a>
+              <a href="thread.html#761">[ thread ]</a>
+              <a href="subject.html#761">[ subject ]</a>
+              <a href="author.html#761">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

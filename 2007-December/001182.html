@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] read &lt;&lt; write
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20read%20%3C%3C%20write&In-Reply-To=%3C20071206152033.GC23760%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001180.html">
+   <LINK REL="Next"  HREF="001183.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] read &lt;&lt; write</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20read%20%3C%3C%20write&In-Reply-To=%3C20071206152033.GC23760%40osc.edu%3E"
+       TITLE="[Stgt-devel] read &lt;&lt; write">pw at osc.edu
+       </A><BR>
+    <I>Thu Dec  6 16:20:33 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001180.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+        <LI>Next message: <A HREF="001183.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1182">[ date ]</a>
+              <a href="thread.html#1182">[ thread ]</a>
+              <a href="subject.html#1182">[ subject ]</a>
+              <a href="author.html#1182">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Thu, 06 Dec 2007 03:40 -0500:
+&gt;<i> On Thu, Dec 06, 2007 at 07:54:53AM +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt;On Wed, 5 Dec 2007 08:56:09 -0500 Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+</I>&gt;<i> &gt;&gt; I'm finding that reads are a lot slower than writes when I have a real
+</I>&gt;<i> &gt;&gt; file or device behind tgt instead of a ramdisk. is this expected?
+</I>&gt;<i> &gt;&gt; 
+</I>&gt;<i> &gt;&gt; iSER reads backed by a file on lustre or a md raid0 device seem to be at
+</I>&gt;<i> &gt;&gt; most ~100MB/s which is 4 or 5 times slower than writes:
+</I>&gt;<i> &gt;Can you try a block-level benchmark like disktest to avoid file
+</I>&gt;<i> &gt;systems effects?
+</I>&gt;<i> 
+</I>&gt;<i> I'm afraid I don't have enough experience with disktest to know when
+</I>&gt;<i> it's lying to me and/or when I'm driving it foolishly.
+</I>&gt;<i> 
+</I>&gt;<i> how about just large dd's?
+</I>&gt;<i> 
+</I>&gt;<i>                           write    read (MB/s)
+</I>&gt;<i>  iSER + /dev/md0           333     110
+</I>&gt;<i>  iSER + file on lustre     552     207
+</I>&gt;<i>  iSER + ramdisk            905     410
+</I>&gt;<i> 
+</I>&gt;<i>  local /dev/md0            313     330
+</I>&gt;<i>  local file on lustre      705     473
+</I>&gt;<i>  local ramdisk            1600    2900
+</I>&gt;<i> 
+</I>&gt;<i> which are eg.
+</I>&gt;<i>   dd if=/dev/zero of=/dev/sdc bs=1M count=10000
+</I>&gt;<i> where 10G is &gt;&gt; (512M ram on initiator + 512M ram on target) so
+</I>&gt;<i> buffering should be small.
+</I>
+Interesting, but I can not guess why.  My results to ram disk for
+the default tgt and linux client config show reads at line rate (920
+MB/s) but writes somewhat slower (850 MB/s).  It is important to get
+multiple outstanding commands from the client point of view, and
+perhaps dd is not doing that, nor is bonnie?
+
+You might wander around /sys to make sure that iscsi is keeping
+enough commands in flight (128 is default, plenty).  And try things
+like sg_dd, sgp_dd, and disktest as Tomo suggests.
+
+One of the big effects we noticed with speeds like this is that
+caching effects on the target become significant.  Yes, normal L2
+processor cache compared to memory speeds show up in a big way.
+
+Here's some numbers and details on ramdisk performance from a
+talk I gave at SNAPI, if it helps you with insight:
+
+    <A HREF="http://www.osc.edu/~pw/talks/iser-snapi07/talk.pdf">http://www.osc.edu/~pw/talks/iser-snapi07/talk.pdf</A>
+
+You are lucky/cursed to have such good-performing disks.  Will be
+interested to see if you find much.  Other tools of interest may be
+blktrace and oprofile on the target.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001180.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+	<LI>Next message: <A HREF="001183.html">[Stgt-devel] read &lt;&lt; write
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1182">[ date ]</a>
+              <a href="thread.html#1182">[ thread ]</a>
+              <a href="subject.html#1182">[ subject ]</a>
+              <a href="author.html#1182">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

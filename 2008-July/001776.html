@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Bug report: eject cdrom does not always work
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bug%20report%3A%20eject%20cdrom%20does%20not%20always%20work&In-Reply-To=%3C4879D433.1030101%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001775.html">
+   <LINK REL="Next"  HREF="001777.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Bug report: eject cdrom does not always work</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Bug%20report%3A%20eject%20cdrom%20does%20not%20always%20work&In-Reply-To=%3C4879D433.1030101%40gmail.com%3E"
+       TITLE="[Stgt-devel] Bug report: eject cdrom does not always work">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sun Jul 13 12:08:51 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001775.html">[Stgt-devel] :)
+</A></li>
+        <LI>Next message: <A HREF="001777.html">[Stgt-devel] :)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1776">[ date ]</a>
+              <a href="thread.html#1776">[ thread ]</a>
+              <a href="subject.html#1776">[ subject ]</a>
+              <a href="author.html#1776">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I noticed a difference in eject behaviour in the CD rom target code.
+
+When the backing store is empty (ie no file) you can't eject, which is 
+as it should.
+When the backing store is an empty file (ie empty DVD inserted) you 
+still can't eject.
+When the backing store is a non-empty file eject works fine.
+
+Seems like a little bug somewere.
+
+Albert
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001775.html">[Stgt-devel] :)
+</A></li>
+	<LI>Next message: <A HREF="001777.html">[Stgt-devel] :)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1776">[ date ]</a>
+              <a href="thread.html#1776">[ thread ]</a>
+              <a href="subject.html#1776">[ subject ]</a>
+              <a href="author.html#1776">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

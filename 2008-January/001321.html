@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C4798720E.4020802%40vlnb.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001320.html">
+   <LINK REL="Next"  HREF="001323.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Vladislav Bolkhovitin</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C4798720E.4020802%40vlnb.net%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">vst at vlnb.net
+       </A><BR>
+    <I>Thu Jan 24 12:10:06 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001320.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001323.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1321">[ date ]</a>
+              <a href="thread.html#1321">[ thread ]</a>
+              <a href="subject.html#1321">[ subject ]</a>
+              <a href="author.html#1321">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Bart Van Assche wrote:
+&gt;<i> On Jan 24, 2008 8:06 AM, Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i>On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>.............................................................................................
+</I>&gt;&gt;&gt;<i>.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+</I>&gt;&gt;&gt;<i>.                           .  performance   performance   .   performance    performance   .
+</I>&gt;&gt;&gt;<i>.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB &gt;MB/s)   (1 MB, MB/s)  .
+</I>&gt;&gt;&gt;<i>.............................................................................................
+</I>&gt;&gt;&gt;<i>. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+</I>&gt;&gt;&gt;<i>. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+</I>&gt;&gt;&gt;<i>. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+</I>&gt;&gt;&gt;<i>. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+</I>&gt;&gt;&gt;<i>............................................................................................
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>how are write speeds with SCST SRP?
+</I>&gt;&gt;<i>for some kernels and tests tgt writes at &gt;2x the read speed.
+</I>
+Robin,
+
+There is a fundamental difference between regular dd-like reads and 
+writes: reads are sync, i.e. latency sensitive, but writes are async, 
+i.e. latency insensitive. You should use O_DIRECT dd writes for the fair 
+comparison.
+
+Vlad
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001320.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001323.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1321">[ date ]</a>
+              <a href="thread.html#1321">[ thread ]</a>
+              <a href="subject.html#1321">[ subject ]</a>
+              <a href="author.html#1321">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

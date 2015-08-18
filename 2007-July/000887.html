@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] spt warning fix
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20spt%20warning%20fix&In-Reply-To=%3C20070730172944.GB12789%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000886.html">
+   <LINK REL="Next"  HREF="000888.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] spt warning fix</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20spt%20warning%20fix&In-Reply-To=%3C20070730172944.GB12789%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] spt warning fix">pw at osc.edu
+       </A><BR>
+    <I>Mon Jul 30 19:29:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000886.html">[Stgt-devel] misc fixes
+</A></li>
+        <LI>Next message: <A HREF="000888.html">[Stgt-devel] [PATCH] fix no blkgetsize64
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#887">[ date ]</a>
+              <a href="thread.html#887">[ thread ]</a>
+              <a href="subject.html#887">[ subject ]</a>
+              <a href="author.html#887">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Remove unused variable.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/spt.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/usr/spt.c b/usr/spt.c
+index 6ad36f8..509e06d 100644
+--- a/usr/spt.c
++++ b/usr/spt.c
+@@ -64,7 +64,6 @@ struct backingstore_template sg_bst = {
+ static int spt_cmd_perform(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int ret;
+-	struct device_type_operations *ops;
+ 
+ 	if (!cmd-&gt;dev) {
+ 		cmd-&gt;len = 0;
+-- 
+1.5.2.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000886.html">[Stgt-devel] misc fixes
+</A></li>
+	<LI>Next message: <A HREF="000888.html">[Stgt-devel] [PATCH] fix no blkgetsize64
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#887">[ date ]</a>
+              <a href="thread.html#887">[ thread ]</a>
+              <a href="subject.html#887">[ subject ]</a>
+              <a href="author.html#887">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

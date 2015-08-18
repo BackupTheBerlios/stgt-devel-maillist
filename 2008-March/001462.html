@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C47D91392.4050206%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001461.html">
+   <LINK REL="Next"  HREF="001463.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%20in%0A%20themainstreamLinux%20kernel&In-Reply-To=%3C47D91392.4050206%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel">mangoo at wpkg.org
+       </A><BR>
+    <I>Thu Mar 13 12:44:18 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001461.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+        <LI>Next message: <A HREF="001463.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1462">[ date ]</a>
+              <a href="thread.html#1462">[ thread ]</a>
+              <a href="subject.html#1462">[ subject ]</a>
+              <a href="author.html#1462">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Thu, 13 Mar 2008 12:24:33 +0100
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.a.org</A>&gt; wrote:
+</I>
+(...)
+
+&gt;&gt;<i> If the patch is finally integrated, I guess README files need updating, 
+</I>&gt;&gt;<i> too to reflect the change.
+</I>&gt;<i> 
+</I>&gt;<i> Well, I really don't like to set the default state to 'offline'.
+</I>&gt;<i> 
+</I>&gt;<i> I'm sure that many people say that initiators can connect to tgtd if I
+</I>&gt;<i> do that.
+</I>
+You meant &quot;can't connect&quot; I guess.
+Yes, this changes the default behaviour.
+
+
+&gt;<i> I could make it as the startup (boot) option though I don't like it
+</I>&gt;<i> either but I think that it's less problematic to set the default state
+</I>&gt;<i> to 'offline'.
+</I>
+Either default to offline (bad for existing users) or give a startup 
+option to tgtd (better). There is no other way, I guess (other than 
+making it compile-time option, which is really bad).
+
+
+And what about that little nuisance - this will work:
+
+tgtd
+sleep 2s
+tgtadm --lld iscsi --op new --mode target.....
+
+
+This won't work - tgtd goes background immediately and starts, but 
+doesn't accept any configuration changes for the first second or two:
+
+tgtd
+tgtadm --lld iscsi --op new --mode target.....
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001461.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+	<LI>Next message: <A HREF="001463.html">[Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1462">[ date ]</a>
+              <a href="thread.html#1462">[ thread ]</a>
+              <a href="subject.html#1462">[ subject ]</a>
+              <a href="author.html#1462">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

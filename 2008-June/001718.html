@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Multiple tgtd exporting same device.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Multiple%20tgtd%20exporting%20same%20device.&In-Reply-To=%3C200806291246.m5TCknZ3016372%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001710.html">
+   <LINK REL="Next"  HREF="001719.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Multiple tgtd exporting same device.</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Multiple%20tgtd%20exporting%20same%20device.&In-Reply-To=%3C200806291246.m5TCknZ3016372%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Multiple tgtd exporting same device.">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun Jun 29 14:46:46 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001710.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+        <LI>Next message: <A HREF="001719.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1718">[ date ]</a>
+              <a href="thread.html#1718">[ thread ]</a>
+              <a href="subject.html#1718">[ subject ]</a>
+              <a href="author.html#1718">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Simone Gotti &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">simone.gotti at gmail.com</A>&gt;
+Subject: [Stgt-devel] Multiple tgtd exporting same device.
+Date: Thu, 26 Jun 2008 23:13:27 +0200
+
+&gt;<i> Hi all,
+</I>&gt;<i> 
+</I>&gt;<i> to increase the availability (and also to use in future some features
+</I>&gt;<i> like cluster mirror with RedHat Cluster Suite when it'll be available on
+</I>&gt;<i> RHEL5 or in the upstream kernel) of a iscsi target server I'd like to
+</I>
+I'm not sure how this configuration can increase the availability.
+
+
+&gt;<i> export the same block devices from 2 or more machines (connected to a
+</I>&gt;<i> common storage). Then the iscsi initiators on other client machines will
+</I>&gt;<i> use dm-multipath di balance I/O and to survive the lost of one or more
+</I>&gt;<i> scsi target machines.
+</I>
+You don't need multiple tgt daemons to use dm-multipath on the
+initiator side.
+
+
+&gt;<i> I'm already doing something similar with gnbd and now I'd like to do the
+</I>&gt;<i> same with stgt via iscsi.
+</I>
+You runs multiple tgt daemons on one machine and they export the same
+file to initiators?
+
+If so, you can't do that easily because SCSI protocol is not about
+only READ and WRITE commands. For example, how can tgt daemons handle
+RESERVE command?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001710.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+	<LI>Next message: <A HREF="001719.html">[Stgt-devel] Multiple tgtd exporting same device.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1718">[ date ]</a>
+              <a href="thread.html#1718">[ thread ]</a>
+              <a href="subject.html#1718">[ subject ]</a>
+              <a href="author.html#1718">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

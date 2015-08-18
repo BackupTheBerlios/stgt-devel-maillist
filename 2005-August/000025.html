@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C430B5CF2.8020606%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000023.html">
+   <LINK REL="Next"  HREF="000026.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C430B5CF2.8020606%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Tue Aug 23 19:29:22 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000023.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000026.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#25">[ date ]</a>
+              <a href="thread.html#25">[ thread ]</a>
+              <a href="subject.html#25">[ subject ]</a>
+              <a href="author.html#25">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+</I>&gt;<i> Date: Tue, 23 Aug 2005 11:05:54 -0500
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;&gt;&gt;<i>Do we need to use GFP_ATOMIC instead of GFP_KERNEL in
+</I>&gt;&gt;&gt;<i>stgt_device_create()?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>I do not think so. It does not seem like we will be in
+</I>&gt;&gt;<i>interrupt context and it does not look like we
+</I>&gt;&gt;<i>are under a spin_lock. Was there something else
+</I>&gt;&gt;<i>you were thinking of (probably was :))?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> I thought that possibly we are in interrupt context, though as far as
+</I>&gt;<i> I know, no HBA drivers do it.
+</I>
+yeah from looking at the qlogic code from SCST it looks like SCST is 
+implemented as a SCSI ULD - kinda. It implements a driver model 
+class_interface so its dev_handlers will get their attach() called from 
+the class_interface add() call and that is coming from when scsi_devices 
+are added to scsi-ml (like how sg works I guess).
+
+I was thinking we were going to have userspace call into stg_core to add 
+devices (similar to how iet's ioctl called into it to add volumes). The 
+stgt_device code would eventually replace iet's volume code. I was 
+replacing IET's ioctl and hit the volume and target ioctls so that it is 
+why patches showed up the same time you asked about it :)
+
+But by keeping more in userspace like IET does and not doing a 
+class_interface for scsi_devices like SCST, we do not have to worry 
+about the scsi refcouting and scsi_device state stuff SCST messed up on 
+becuase they dug so deep in there.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000023.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000026.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#25">[ date ]</a>
+              <a href="thread.html#25">[ thread ]</a>
+              <a href="subject.html#25">[ subject ]</a>
+              <a href="author.html#25">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

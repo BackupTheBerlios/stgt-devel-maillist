@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%20Merge%20lu_phy_attr%20struct%20into%20scsi_lu&In-Reply-To=%3Cf29db9a80706151516i17fe61a8o81b705f6e90ef47c%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000789.html">
+   <LINK REL="Next"  HREF="000787.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%20Merge%20lu_phy_attr%20struct%20into%20scsi_lu&In-Reply-To=%3Cf29db9a80706151516i17fe61a8o81b705f6e90ef47c%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu">markh794 at gmail.com
+       </A><BR>
+    <I>Sat Jun 16 00:16:17 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000789.html">[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+</A></li>
+        <LI>Next message: <A HREF="000787.html">[Stgt-devel] [Patch 2/2] Dynamic logical unit configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#790">[ date ]</a>
+              <a href="thread.html#790">[ thread ]</a>
+              <a href="subject.html#790">[ subject ]</a>
+              <a href="author.html#790">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 6/15/07, Bastian Blank &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">waldi at berlios.de</A>&gt; wrote:
+&gt;<i> On Fri, Jun 15, 2007 at 05:55:11PM +1000, Mark Harvey wrote:
+</I>&gt;<i> &gt; +     memcpy(lu-&gt;attrs.product_id, &quot;OSD&quot;, 16);
+</I>&gt;<i>
+</I>&gt;<i> This code leaks 12 bytes of memory. &quot;OSD&quot; is 4 bytes long and
+</I>&gt;<i> nullterminated. The whole thing is undefined behaviour.
+</I>&gt;<i>
+</I>
+Darn.. One of these days I'll get this patch generation concept worked out...
+
+This is fixed in [Patch 2/2].. Along with other 'Dynamic Logical Unit
+configuration' changes.
+
+I'll re-do the two patches yet again. This time I plan on getting the
+right bits in each patch :)
+
+Thanks for pointing this out.
+
+Mark
+
+&gt;<i> Bastian
+</I>&gt;<i>
+</I>&gt;<i> --
+</I>&gt;<i>         &quot;We have the right to survive!&quot;
+</I>&gt;<i>         &quot;Not by killing others.&quot;
+</I>&gt;<i>                 -- Deela and Kirk, &quot;Wink of An Eye&quot;, stardate 5710.5
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000789.html">[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+</A></li>
+	<LI>Next message: <A HREF="000787.html">[Stgt-devel] [Patch 2/2] Dynamic logical unit configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#790">[ date ]</a>
+              <a href="thread.html#790">[ thread ]</a>
+              <a href="subject.html#790">[ subject ]</a>
+              <a href="author.html#790">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

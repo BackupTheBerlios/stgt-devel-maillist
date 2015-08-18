@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 06/20] iser list del init
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2006/20%5D%20iser%20list%20del%20init&In-Reply-To=%3Cbdd74df53ac270f481d5932040e662cf94951660.1192554396.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001119.html">
+   <LINK REL="Next"  HREF="001120.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 06/20] iser list del init</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2006/20%5D%20iser%20list%20del%20init&In-Reply-To=%3Cbdd74df53ac270f481d5932040e662cf94951660.1192554396.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 06/20] iser list del init">pw at osc.edu
+       </A><BR>
+    <I>Tue Oct 16 17:19:07 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001119.html">[Stgt-devel] [PATCH 05/20] iser cpu to be 64
+</A></li>
+        <LI>Next message: <A HREF="001120.html">[Stgt-devel] [PATCH 06/20] iser list del init
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1081">[ date ]</a>
+              <a href="thread.html#1081">[ thread ]</a>
+              <a href="subject.html#1081">[ subject ]</a>
+              <a href="author.html#1081">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Add this handy function for removing an item from a list and
+initializing its list pointers.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/list.h |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/usr/list.h b/usr/list.h
+index 3e85c9b..d2e0019 100644
+--- a/usr/list.h
++++ b/usr/list.h
+@@ -83,4 +83,10 @@ static inline void list_del(struct list_head *entry)
+ 	entry-&gt;next = entry-&gt;prev = NULL;
+ }
+ 
++static inline void list_del_init(struct list_head *entry)
++{
++	__list_del(entry-&gt;prev, entry-&gt;next);
++	INIT_LIST_HEAD(entry);
++}
++
+ #endif
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001119.html">[Stgt-devel] [PATCH 05/20] iser cpu to be 64
+</A></li>
+	<LI>Next message: <A HREF="001120.html">[Stgt-devel] [PATCH 06/20] iser list del init
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1081">[ date ]</a>
+              <a href="thread.html#1081">[ thread ]</a>
+              <a href="subject.html#1081">[ subject ]</a>
+              <a href="author.html#1081">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

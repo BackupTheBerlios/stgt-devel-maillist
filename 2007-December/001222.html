@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Errors in fsck with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Errors%20in%20fsck%20with%20iSER&In-Reply-To=%3C20071218181109.GA15369%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001218.html">
+   <LINK REL="Next"  HREF="001233.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Errors in fsck with iSER</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Errors%20in%20fsck%20with%20iSER&In-Reply-To=%3C20071218181109.GA15369%40osc.edu%3E"
+       TITLE="[Stgt-devel] Errors in fsck with iSER">pw at osc.edu
+       </A><BR>
+    <I>Tue Dec 18 19:11:09 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001218.html">[Stgt-devel] Errors in fsck with iSER
+</A></li>
+        <LI>Next message: <A HREF="001233.html">[Stgt-devel] Errors in fsck with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1222">[ date ]</a>
+              <a href="thread.html#1222">[ thread ]</a>
+              <a href="subject.html#1222">[ subject ]</a>
+              <a href="author.html#1222">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Tue, 18 Dec 2007 14:11 +0200:
+&gt;<i> &gt;&gt;&gt;&gt; We ran some tests on it. Most of them are ok except for fsck. We ran it
+</I>&gt;<i> &gt;&gt;&gt;&gt; in the following way:
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt; seed5:/tmp/regtest # parted -s /dev/sdb mkpart primary 0 8500
+</I>&gt;<i> &gt;&gt;&gt;&gt; seed5:/tmp/regtest # for ((i=1;i&lt;=1000;i++)) do mkfs -t ext2 -q
+</I>&gt;<i> &gt;&gt;&gt;&gt; /dev/sdb1; fsck -y -ft ext2 /dev/sdb1; echo iteration $i is done; done
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt; fsck is ok most of the time, but once in a while it looks like this
+</I>&gt;<i> &gt;&gt;&gt;&gt; (after ~300 iterations):
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt; fsck 1.38 (30-Jun-2005)
+</I>&gt;<i> &gt;&gt;&gt;&gt; e2fsck 1.38 (30-Jun-2005)
+</I>&gt;<i> &gt;&gt;&gt;&gt; Pass 1: Checking inodes, blocks, and sizes
+</I>&gt;<i> &gt;&gt;&gt;&gt; Pass 2: Checking directory structure
+</I>&gt;<i> &gt;&gt;&gt;&gt; Pass 3: Checking directory connectivity
+</I>&gt;<i> &gt;&gt;&gt;&gt; Pass 4: Checking reference counts
+</I>&gt;<i> &gt;&gt;&gt;&gt; Pass 5: Checking group summary information
+</I>&gt;<i> &gt;&gt;&gt;&gt; /dev/sdb1: 11/1038336 files (0.0% non-contiguous), 32599/2075195 blocks
+</I>&gt;<i> &gt;&gt;&gt;&gt; seed5:/tmp/regtest # mkfs -t ext2 -q /dev/sdb1
+</I>&gt;<i> &gt;&gt;&gt;&gt; seed5:/tmp/regtest # fsck -y -ft ext2 /dev/sdb1
+</I>&gt;<i> &gt;&gt;&gt;&gt;     
+</I>&gt;<i> &gt;&gt;&gt;&gt;         
+</I>&gt;<i> &gt;&gt;&gt; Sounds like data corruption. Do you see the same problem with IPoIB?
+</I>&gt;<i> &gt;&gt;&gt;       
+</I>&gt;<i> &gt;&gt; I'm working with Erez and I tried this with tcp session and there 
+</I>&gt;<i> &gt;&gt; weren't any problems.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Thanks for confirming. So it's the iSER problem.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I might break Pete's iSER code so can you revoke the latest three
+</I>&gt;<i> &gt; patches and try the same tests?
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; rouen:~/git/tgt$ git-reset --hard HEAD~3
+</I>&gt;<i> &gt; HEAD is now at 224ca81... iscsi: add iser support
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; rouen:~/git/tgt$ git-log |head -5
+</I>&gt;<i> &gt; commit 224ca81bca8dead8dd355d62422e11fe23f7bdc4
+</I>&gt;<i> &gt; Author: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> &gt; Date:   Mon Dec 10 10:06:27 2007 -0500
+</I>&gt;<i> 
+</I>&gt;<i> Yes, I still see the same bad behavior with iSER. Pete &amp; Robin - can you
+</I>&gt;<i> try to run the same test (see above) with iSER and see if you get the
+</I>&gt;<i> same behavior?
+</I>
+I tried your exact script above with 2100 MB then 8500 MB as you did
+and could not get any corruption for 1000 iterations.  Maybe my disk
+is to slow---internal ATA accessed via file in ext3.  Likely some
+sort of iser issue, though there is an off-chance of a race in bs_sync or
+that neighborhood that only appears at high speeds.
+
+You were able to get lm_dd to break iser in the past.  That was
+something I could repeat and fix.  Any more failures there?  Or if
+you can help figure out the nature of the corrpution:  missing
+blocks or rearrangements, etc., that would definitely help.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001218.html">[Stgt-devel] Errors in fsck with iSER
+</A></li>
+	<LI>Next message: <A HREF="001233.html">[Stgt-devel] Errors in fsck with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1222">[ date ]</a>
+              <a href="thread.html#1222">[ thread ]</a>
+              <a href="subject.html#1222">[ subject ]</a>
+              <a href="author.html#1222">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

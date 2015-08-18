@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Stability problem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Stability%20problem&In-Reply-To=%3Cc9a3e4540805270126g662d1446v5b17d91ae451721e%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001664.html">
+   <LINK REL="Next"  HREF="001667.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Stability problem</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Stability%20problem&In-Reply-To=%3Cc9a3e4540805270126g662d1446v5b17d91ae451721e%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Stability problem">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue May 27 10:26:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001664.html">[Stgt-devel] Stability problem
+</A></li>
+        <LI>Next message: <A HREF="001667.html">[Stgt-devel] Stability problem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1665">[ date ]</a>
+              <a href="thread.html#1665">[ thread ]</a>
+              <a href="subject.html#1665">[ subject ]</a>
+              <a href="author.html#1665">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+Im not Konrad but I tried your
+&gt;<i> <A HREF="http://stgt.berlios.de/releases/tgt-20080526-debug.tar.bz2">http://stgt.berlios.de/releases/tgt-20080526-debug.tar.bz2</A>
+</I>and tgtd does not crash on my system any more when I send a manually
+&quot;probe how big the page actually is&quot;
+mode sense 10 to tgtd any more.
+
+
+I have positively verified with a specially constructed tool that tgtd
+no longer crashes for these mode sense commands.
+
+
+please apply your patch.
+
+
+ronnie sahlberg
+
+
+On Mon, May 26, 2008 at 10:36 PM, FUJITA Tomonori
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> On Thu, 15 May 2008 15:37:02 +0200
+</I>&gt;<i> Konrad Bechler &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">kbechler at bakertillypoland.eu</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;&gt;<i> Hello,
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I've got small, testing environment. I use Fedora 7 with
+</I>&gt;&gt;<i> 2.6.23.15-80.fc7 as a iSCSI target and Windows XP box with &quot;Microsoft
+</I>&gt;&gt;<i> iSCSI Initiator&quot; as a initiator.
+</I>&gt;&gt;<i> I configured stgt with only one target and one LUN:
+</I>&gt;&gt;<i> Target 1: iqn.2008.05.eu.tgc.net:storage.disk1
+</I>&gt;&gt;<i>      System information:
+</I>&gt;&gt;<i>          Driver: iscsi
+</I>&gt;&gt;<i>          State: ready
+</I>&gt;&gt;<i>      I_T nexus information:
+</I>&gt;&gt;<i>      LUN information:
+</I>&gt;&gt;<i>          LUN: 0
+</I>&gt;&gt;<i>              Type: controller
+</I>&gt;&gt;<i>              SCSI ID: deadbeaf1:0
+</I>&gt;&gt;<i>              SCSI SN: beaf10
+</I>&gt;&gt;<i>              Size: 0 MB
+</I>&gt;&gt;<i>              Online: Yes
+</I>&gt;&gt;<i>              Removable media: No
+</I>&gt;&gt;<i>              Backing store: No backing store
+</I>&gt;&gt;<i>          LUN: 1
+</I>&gt;&gt;<i>              Type: disk
+</I>&gt;&gt;<i>              SCSI ID: deadbeaf1:1
+</I>&gt;&gt;<i>              SCSI SN: beaf11
+</I>&gt;&gt;<i>              Size: 10486 MB
+</I>&gt;&gt;<i>              Online: Yes
+</I>&gt;&gt;<i>              Removable media: No
+</I>&gt;&gt;<i>              Backing store: /data/disk1
+</I>&gt;&gt;<i>      Account information:
+</I>&gt;&gt;<i>      ACL information:
+</I>&gt;&gt;<i>          ALL
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> I can connect to this target. But when trying to format such drive, I've
+</I>&gt;&gt;<i> got message, that formatting exited with error. When &quot;quick format&quot; box
+</I>&gt;&gt;<i> is checked, tgtd aborts.
+</I>&gt;<i>
+</I>&gt;<i> Last week, Konrad helped me to figure out what's the problem. Seems
+</I>&gt;<i> that the MODE_SENSE data corruption leads to this, which Ronnie
+</I>&gt;<i> reported in another thread.
+</I>&gt;<i>
+</I>&gt;<i> Konrad, can you try the following version?
+</I>&gt;<i>
+</I>&gt;<i> <A HREF="http://stgt.berlios.de/releases/tgt-20080526-debug.tar.bz2">http://stgt.berlios.de/releases/tgt-20080526-debug.tar.bz2</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> I've also attached a patch against the lasest git head.
+</I>&gt;<i>
+</I>&gt;<i> Thanks,
+</I>&gt;<i>
+</I>&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> index 65a8e62..b3d7162 100644
+</I>&gt;<i> --- a/usr/spc.c
+</I>&gt;<i> +++ b/usr/spc.c
+</I>&gt;<i> @@ -335,21 +335,25 @@ int spc_test_unit(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  *
+</I>&gt;<i>  * Returns number of bytes copied.
+</I>&gt;<i>  */
+</I>&gt;<i> -static int build_mode_page(uint8_t *data, struct mode_pg *pg, int update)
+</I>&gt;<i> +static int build_mode_page(uint8_t *data, struct mode_pg *pg, uint16_t *alloc_len)
+</I>&gt;<i>  {
+</I>&gt;<i>        uint8_t *p;
+</I>&gt;<i>        int len;
+</I>&gt;<i>
+</I>&gt;<i>        len = pg-&gt;pcode_size;
+</I>&gt;<i> -       if (update) {
+</I>&gt;<i> +       if (*alloc_len &gt;= 2) {
+</I>&gt;<i>                data[0] = pg-&gt;pcode;
+</I>&gt;<i>                data[1] = len;
+</I>&gt;<i>        }
+</I>&gt;<i> +       *alloc_len -= min_t(uint16_t, *alloc_len, 2);
+</I>&gt;<i> +
+</I>&gt;<i>        p = &amp;data[2];
+</I>&gt;<i>        len += 2;
+</I>&gt;<i> -       if (update)
+</I>&gt;<i> +       if (*alloc_len &gt;= pg-&gt;pcode_size)
+</I>&gt;<i>                memcpy(p, pg-&gt;mode_data, pg-&gt;pcode_size);
+</I>&gt;<i>
+</I>&gt;<i> +       *alloc_len -= min_t(uint16_t, *alloc_len, pg-&gt;pcode_size);
+</I>&gt;<i> +
+</I>&gt;<i>        return len;
+</I>&gt;<i>  }
+</I>&gt;<i>
+</I>&gt;<i> @@ -362,9 +366,8 @@ static int build_mode_page(uint8_t *data, struct mode_pg *pg, int update)
+</I>&gt;<i>  */
+</I>&gt;<i>  int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i> -       int len = 0;
+</I>&gt;<i>        uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode;
+</I>&gt;<i> -       uint16_t alloc_len;
+</I>&gt;<i> +       uint16_t alloc_len, len = 0;
+</I>&gt;<i>        unsigned char key = ILLEGAL_REQUEST;
+</I>&gt;<i>        uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+</I>&gt;<i>        struct mode_pg *pg;
+</I>&gt;<i> @@ -393,11 +396,14 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                goto sense;
+</I>&gt;<i>        memset(data, 0, alloc_len);
+</I>&gt;<i>
+</I>&gt;<i> +       alloc_len -= min(alloc_len, len);
+</I>&gt;<i> +
+</I>&gt;<i>        if (!dbd) {
+</I>&gt;<i> -               if (alloc_len &gt;= len)
+</I>&gt;<i> +               if (alloc_len &gt;= BLOCK_DESCRIPTOR_LEN)
+</I>&gt;<i>                        memcpy(data + len, cmd-&gt;dev-&gt;mode_block_descriptor,
+</I>&gt;<i>                               BLOCK_DESCRIPTOR_LEN);
+</I>&gt;<i>                len += BLOCK_DESCRIPTOR_LEN;
+</I>&gt;<i> +               alloc_len -= min_t(uint16_t, alloc_len, BLOCK_DESCRIPTOR_LEN);
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i>        if (pcode == 0x3f) {
+</I>&gt;<i> @@ -405,14 +411,13 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>                for (i = 0; i &lt; ARRAY_SIZE(cmd-&gt;dev-&gt;mode_pgs); i++) {
+</I>&gt;<i>                        pg = cmd-&gt;dev-&gt;mode_pgs[i];
+</I>&gt;<i>                        if (pg)
+</I>&gt;<i> -                               len += build_mode_page(data + len, pg,
+</I>&gt;<i> -                                                      alloc_len &gt;= len);
+</I>&gt;<i> +                               len += build_mode_page(data + len, pg, &amp;alloc_len);
+</I>&gt;<i>                }
+</I>&gt;<i>        } else {
+</I>&gt;<i>                pg = cmd-&gt;dev-&gt;mode_pgs[pcode];
+</I>&gt;<i>                if (!pg)
+</I>&gt;<i>                        goto sense;
+</I>&gt;<i> -               len += build_mode_page(data + len, pg, alloc_len &gt;= len);
+</I>&gt;<i> +               len += build_mode_page(data + len, pg, &amp;alloc_len);
+</I>&gt;<i>        }
+</I>&gt;<i>
+</I>&gt;<i>        if (mode6) {
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001664.html">[Stgt-devel] Stability problem
+</A></li>
+	<LI>Next message: <A HREF="001667.html">[Stgt-devel] Stability problem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1665">[ date ]</a>
+              <a href="thread.html#1665">[ thread ]</a>
+              <a href="subject.html#1665">[ subject ]</a>
+              <a href="author.html#1665">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

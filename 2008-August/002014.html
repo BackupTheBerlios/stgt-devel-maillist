@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Adding a new backend for opening a /dev/sg device for
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Adding%20a%20new%20backend%20for%20opening%20a%20/dev/sg%20device%20for&In-Reply-To=%3Cmailman.47.1331738484.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002011.html">
+   <LINK REL="Next"  HREF="002016.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Adding a new backend for opening a /dev/sg device for</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Adding%20a%20new%20backend%20for%20opening%20a%20/dev/sg%20device%20for&In-Reply-To=%3Cmailman.47.1331738484.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Adding a new backend for opening a /dev/sg device for">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Sat Aug  2 05:38:33 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002011.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+        <LI>Next message: <A HREF="002016.html">[PATCH] Add the file for the backend and the file for the device type
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2014">[ date ]</a>
+              <a href="thread.html#2014">[ thread ]</a>
+              <a href="subject.html#2014">[ subject ]</a>
+              <a href="author.html#2014">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>passthrough mode
+
+Adding a nev device type for passthrough operation
+
+To use this mode use something like this :
+tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1
+--device-type=pt
+-b /dev/sg0
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/Makefile |    9 +++++----
+ usr/target.c |    9 ++++-----
+ usr/tgtd.h   |    2 +-
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 4245709..7081642 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -11,7 +11,7 @@ CFLAGS += -DISCSI
+ TGTD_OBJS += $(addprefix iscsi/, conn.o param.o session.o \
+ 		iscsid.o target.o chap.o transport.o iscsi_tcp.o \
+ 		isns.o libcrc32c.o)
+-TGTD_OBJS += bs_rdwr.o bs_aio.o
++TGTD_OBJS += bs_rdwr.o bs_aio.o bs_passthrough.o
+
+ LIBS += -lcrypto
+ ifneq ($(ISCSI_RDMA),)
+@@ -43,21 +43,22 @@ TGTD_OBJS += $(addprefix fcoe/,\
+ 	fcoe_if.o fcoe_dev.o \
+ 	sa_event.o sa_timer.o sa_hash_kern.o sa_state.o\
+ 	crc32_le.o crc32_le_tab.o)
+-TGTD_OBJS += bs_rdwr.o
++TGTD_OBJS += bs_rdwr.o bs_passthrough.o
+ endif
+
+ INCLUDES += -I. -I../include -I$(KERNELSRC)/include
+
+ CFLAGS += -D_GNU_SOURCE
+ CFLAGS += $(INCLUDES)
+-CFLAGS += -g -O2 -Wall -Wstrict-prototypes -fPIC
++CFLAGS += -g -O0 -Wall -Wstrict-prototypes -fPIC
+
+ LIBS += -lpthread
+
+ PROGRAMS += tgtd tgtadm
+ SCRIPTS += ../scripts/tgt-setup-lun
+ TGTD_OBJS += tgtd.o mgmt.o target.o scsi.o log.o driver.o util.o work.o \
+-		parser.o spc.o sbc.o mmc.o osd.o scc.o smc.o ssc.o bs_ssc.o bs.o
++		parser.o spc.o sbc.o mmc.o osd.o passthrough.o scc.o \
++		smc.o ssc.o bs_ssc.o bs.o
+ MANPAGES = ../doc/manpages/tgtadm.8 ../doc/manpages/tgt-setup-lun.8
+
+ TGTD_DEP = $(TGTD_OBJS:.o=.d)
+diff --git a/usr/target.c b/usr/target.c
+index 70bf72a..e200471 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -1524,21 +1524,20 @@ static struct {
+ 	{TYPE_ENCLOSURE, &quot;enclosure&quot;},
+ 	{TYPE_RBC, &quot;rbc&quot;},
+ 	{TYPE_OSD, &quot;osd&quot;},
+-	{TYPE_NO_LUN, &quot;No LUN&quot;}
++	{TYPE_NO_LUN, &quot;No LUN&quot;},
++	{TYPE_SPT, &quot;passthrough&quot;}
+ };
+
+ static char *print_type(int type)
+ {
+ 	int i;
+-	char *name = NULL;
+
+ 	for (i = 0; i &lt; ARRAY_SIZE(disk_type_names); i++) {
+ 		if (disk_type_names[i].value == type) {
+-			name = disk_type_names[i].name;
+-			break;
++			return disk_type_names[i].name;
+ 		}
+ 	}
+-	return name;
++	return &quot;Unknown type&quot;;
+ }
+
+
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 4febcd3..a649129 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -60,7 +60,7 @@ struct lu_phy_attr {
+
+ 	uint16_t version_desc[VERSION_DESCRIPTOR_LEN];
+
+-	char device_type;	/* Peripheral device type */
++	unsigned char device_type;/* Peripheral device type */
+ 	char qualifier;		/* Peripheral Qualifier */
+ 	char removable;		/* Removable media */
+ 	char online;		/* Logical Unit online */
+-- 
+1.5.5
+
+------=_Part_14240_3265295.1217649472661
+Content-Type: application/x-gzip;
+ name=0001-Adding-a-new-backend-for-opening-a-dev-sg-device-fo.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fjdoucv80
+Content-Disposition: attachment;
+ filename=0001-Adding-a-new-backend-for-opening-a-dev-sg-device-fo.patch.gz
+
+H4sIALjYk0gAA5VW63PaRhD/jP6KHU8+QEBC4mnjuBOCiUuLgYJpJ00zmpN0ElcknXIn2fGk/t+7
+dwIHv5KWsU97+9Ltbx+n94InQGi73wta3gnpOD3ihaTb7ZC+3ac9O+z2KDkOW62TdrcLlzyFFc3A
+6YNtD/QftGzbMd6jmwEseZoyCiuyiT0qIngjNEPu9m+jhLDY8nnyk3FOcjpAzbwBLRgWkXJzDE57
+0D4etNtQd2zbNlaF9zf18wF8XAyvRj9/gmEQsDQCAim9AY/4W5oGEHIBPKNpKWkG9LopI8AH86kW
+ZkTKfCN4EW0g4QE1jAM/13vN/DZ7qo5+BckZTw3jikMhUW3DpPaid5InFDnoK2bbnXBg5FFOggRM
+M44DYNKXDGltE/OI+SQuUpYji2c6ENPMWQCO0i9ScAzTLI9kqiOdZblhevuwbMNYsSilgcnD0PRu
+/xfmpmkaeGrRvCRbGrKYwj+AvxOoq595L86JiGhu+Ydi80Ac5YG1QYkWt6CO/DYofxL8DUkjGjTA
+sYGlkgqFnazWa5oT0JiWDLNmGAELQ4w5QihI88GxvAdbg6UB/QKdVqfbt08sq28fO71OCx3avU5H
+RfXI3sDzPvbx9i2YjtPoY2WpFbej99PhxQrqZ2CeT1aj1cSAq4urc3f+7hfNfVUlQZAJNP9S5rDZ
+AB+xtThWiCAJPiWVEsNB6i8DKhWtFeBuByBXcGRqL0gqMy4USyu5uZ99s0ol0jHzfOG3W77Fa4b5
+4CSedEVwI1AJKcK4xY36DxQUcVDHaAEGTCfvynhjX9xmOfJYmNLPUH1V1QC4y/PLYa1R02B12o2W
+A3X1aCm4XsQm9DltNlQoinJZiG/XFFbsLkZJXHpNUxU+kjlLqCjJDZEbd0tFWm5ljlPB4spEY+HG
+VIG4I92ceN8B53uYPIICpwYLFSKT2Wi6Ph+XqEws9W81WerHBfaqOXlV/XW8nI2nq+Wotmcrs8PS
+cS9ma3c1Xy9H40MBQrrzjQc+0I/AnLfA/IPEMa4yF8zPzUzwnKtml2CGi8nIqD+ysH9o8SC9GcZK
+SaCYi+X8Yjm81ALVuFDOJgNWo+VkcaX5GLP0BctyqXrblDQvMjWKHjWE7nsOSZTkhzWu6lnVL49w
+DQS71sktcpw6HG642OoiMCsV7BpZJj7z1eqpNUnUymWgPWm+5kjpl6nbEyrB/8HHg0zvPP6lLF92
+C5fD2WJ4gVWgoQi430xImpGIajwQLev4OcE3oKxjBbUG63y8AJX9e+QGFj+zgtrTaXc/Zb0H2920
+69te2G8Ry6J4MXb6ztNpd2/wbdrds/S067Y6uoVLwlZNrBqM+fgQhZ/DV+yzr1cfFmN3jLU6X62X
+4wYcUaxzLgtBj+4a9wrLdyMUCc8/ZM5X58hE3BXT3DFnc3e6niF/xgGJozsE/wVJ4160Wlwh/yB3
+aAZ3pwrV3ZFxkgp4nQmW5q6q+yoS+squGToOtWWneIpSMSUJxTzM1tOp9lJRF3uVIcs+BQZvYLhc
+Dj+4q8mf42rA5Fb7dJWVrKFCvV7TXisshMfyj+yTdY1XOPo/K0+Aqljeld07n1FXxKnW8bAvt6eq
+HisCq0ekL6vj2xEE/Df3qiW/vt8erdNtym9SfYgjNLhTkT5TaOV97R1s9ldqSD0/aFsW6XVOnNbJ
+M0VWqh+UWMlQBdaz1XWqV11auqbiws02ty7Jc6EQxAAKTI3Tc3PAwaBuS7wXpP/x9/FyNZnPsF/K
+QTRfutPx7JNK1i6H5TeQhua00nwNC4ojaoOfY/GDL7bXTUSkSKX+KoInlt81hPJNnwsSs5BRcVp5
+9KLf9pIDbUETfk28mJbay/0WEhowcqDI05ilO61p+d0Ha/XhVwqUJuJsOFbX6hrGv5rpTZeJCwAA
+
+------=_Part_14240_3265295.1217649472661--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002011.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+	<LI>Next message: <A HREF="002016.html">[PATCH] Add the file for the backend and the file for the device type
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2014">[ date ]</a>
+              <a href="thread.html#2014">[ thread ]</a>
+              <a href="subject.html#2014">[ subject ]</a>
+              <a href="author.html#2014">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20in%20tgt-setup-lun%3A%20fix%20check%20if%20tgtd%20daemon%0A%20is%09running&In-Reply-To=%3C20080407214502W.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001500.html">
+   <LINK REL="Next"  HREF="001494.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20in%20tgt-setup-lun%3A%20fix%20check%20if%20tgtd%20daemon%0A%20is%09running&In-Reply-To=%3C20080407214502W.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Apr  7 14:48:40 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001500.html">[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running
+</A></li>
+        <LI>Next message: <A HREF="001494.html">[Stgt-devel] Relation between device types &amp; backing store
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1501">[ date ]</a>
+              <a href="thread.html#1501">[ thread ]</a>
+              <a href="subject.html#1501">[ subject ]</a>
+              <a href="author.html#1501">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 07 Apr 2008 11:15:36 +0300
+Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt;&gt;&gt; But the old script checks there are two tgtd daemons running. The new
+</I>&gt;<i> &gt;&gt;&gt; one doesn't. Can you improve the new one to do that?
+</I>&gt;<i> &gt;&gt; Why tgtd has two daemons (process)?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; One daemon does only logging and another (the main daemon) does the
+</I>&gt;<i> &gt; rest. Two daemons use shared memory.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; When running tgtd with -f flag it has only one process,
+</I>&gt;<i> &gt;&gt; why is it?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; It's just for debugging.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; So if I'll check for two process the script will exit.
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt; Note that one of the two tgtd daemons could die due to a bug.
+</I>&gt;<i> &gt;&gt; When does it happen?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; It happens when we put a bug to the main daemon.
+</I>&gt;<i> 
+</I>&gt;<i> For conclusion, we can check if there are two process
+</I>&gt;<i> running but then if some one use tgtd with -f flag the
+</I>&gt;<i> script will not work.
+</I>
+The current script doesn't work for the -f flag. I think that it's
+fine since the -f flag is only for debugging. Common users don't use
+it.
+
+If you want, you can improve the script to check whether a tgt daemon
+runs with the -f flag when the script finds only one tgt daemon, I
+think.
+
+
+&gt;<i> On the other hand, we can check if such process exists
+</I>&gt;<i> (without checking the amount of process).
+</I>&gt;<i> This way, the script will work on both cases but
+</I>&gt;<i> won't catch the bug on the main daemon (if exist).
+</I>&gt;<i> 
+</I>&gt;<i> Which solution should we use?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001500.html">[Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is	running
+</A></li>
+	<LI>Next message: <A HREF="001494.html">[Stgt-devel] Relation between device types &amp; backing store
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1501">[ date ]</a>
+              <a href="thread.html#1501">[ thread ]</a>
+              <a href="subject.html#1501">[ subject ]</a>
+              <a href="author.html#1501">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

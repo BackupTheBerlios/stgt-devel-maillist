@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question about tgtdadm output
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20about%20tgtdadm%20output&In-Reply-To=%3C200803100514.m2A5ESxi027958%40ns.oasisfs.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001471.html">
+   <LINK REL="Next"  HREF="001453.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question about tgtdadm output</H1>
+    <B>&#45432;&#49457;&#54980;</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20about%20tgtdadm%20output&In-Reply-To=%3C200803100514.m2A5ESxi027958%40ns.oasisfs.net%3E"
+       TITLE="[Stgt-devel] Question about tgtdadm output">sean at pspace.co.kr
+       </A><BR>
+    <I>Mon Mar 10 06:16:33 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001471.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+</A></li>
+        <LI>Next message: <A HREF="001453.html">[Stgt-devel] how to delete a target which is online?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1444">[ date ]</a>
+              <a href="thread.html#1444">[ thread ]</a>
+              <a href="subject.html#1444">[ subject ]</a>
+              <a href="author.html#1444">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hello,
+
+ 
+
+I was using tgtd and I faced a question form tgtdadm command output.
+
+When I did &#8220;tgtadm -lld iscsi -op show -mode target&#8221; 
+
+I always get &#8220;Connection: 0&#8221;  for Linux OS and &#8220;Connection: 1&#8221;  for
+Windows.
+
+What is the meaning of &#8220;Connection:&#8221; ?
+
+Would you let me know where I can get more details about meaning of those
+&#8220;-op show&#8221; outputs?
+
+ 
+
+Thanks.
+
+Sean Roh
+
+ 
+
+===========================================================================
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at OSS6</A> iscsi]# tgtadm --lld iscsi --op show --mode target 
+
+Target 1: iqn.20080306.com:iscsi-sda5
+
+    System information:
+
+        Driver: iscsi
+
+        Status: running
+
+    I_T nexus information:
+
+        I_T nexus: 7
+
+            Initiator: iqn.1991-05.com.microsoft:spike-m50
+
+            Connection: 1
+
+                IP Address: 192.168.11.182
+
+    LUN information:
+
+&#8230;&#8230;&#8230;&#8230;&#8230;&#8230;&#8230;
+
+    Account information:
+
+    ACL information:
+
+        192.168.11.0/24
+
+Target 2: iqn.20080306.com:iscsi-sdb
+
+    System information:
+
+        Driver: iscsi
+
+        Status: running
+
+    I_T nexus information:
+
+        I_T nexus: 6
+
+            Initiator: iqn.2005-03.com.redhat:192.168.11.42
+
+            Connection: 0
+
+                IP Address: 192.168.11.42
+
+    LUN information:
+
+ &#8230;&#8230;&#8230;&#8230;&#8230;&#8230;&#8230;..
+
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at OSS6</A> iscsi]#
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080310/3edfb5ac/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080310/3edfb5ac/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001471.html">[Stgt-devel] [Scst-devel] Integration of SCST in themainstreamLinux kernel
+</A></li>
+	<LI>Next message: <A HREF="001453.html">[Stgt-devel] how to delete a target which is online?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1444">[ date ]</a>
+              <a href="thread.html#1444">[ thread ]</a>
+              <a href="subject.html#1444">[ subject ]</a>
+              <a href="author.html#1444">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

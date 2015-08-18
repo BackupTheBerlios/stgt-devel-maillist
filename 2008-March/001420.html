@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Unused code in sbc.c ???
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Unused%20code%20in%20sbc.c%20%3F%3F%3F&In-Reply-To=%3C47CBC9F4.2090404%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001435.html">
+   <LINK REL="Next"  HREF="001422.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Unused code in sbc.c ???</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Unused%20code%20in%20sbc.c%20%3F%3F%3F&In-Reply-To=%3C47CBC9F4.2090404%40gmail.com%3E"
+       TITLE="[Stgt-devel] Unused code in sbc.c ???">markh794 at gmail.com
+       </A><BR>
+    <I>Mon Mar  3 10:50:44 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001435.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001422.html">[Stgt-devel] Unused code in sbc.c ???
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1420">[ date ]</a>
+              <a href="thread.html#1420">[ thread ]</a>
+              <a href="subject.html#1420">[ subject ]</a>
+              <a href="author.html#1420">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>While working thru the code I noticed the following empty switch statement in sbc.c
+
+I an unsure if this switch statement is missing one or more statements or was missed in a cleanup.
+
+The patch below removes the switch statement.
+
+diff --git a/usr/sbc.c b/usr/sbc.c
+index fa59966..caa919c 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -53,17 +53,6 @@ static int sbc_rw(int host_no, struct scsi_cmd *cmd)
+ 	if (ret)
+ 		return SAM_STAT_RESERVATION_CONFLICT;
+ 
+-	/* we need to set data dir for kernel drivers */
+-	switch (cmd-&gt;scb[0]) {
+-	case WRITE_6:
+-	case WRITE_10:
+-	case WRITE_16:
+-	case WRITE_VERIFY:
+-		break;
+-	default:
+-		break;
+-	}
+-
+ 	cmd-&gt;scsi_cmd_done = target_cmd_io_done;
+ 
+ 	cmd-&gt;offset = (scsi_rw_offset(cmd-&gt;scb) &lt;&lt; BLK_SHIFT);
+
+
+Cheers
+Mark
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001435.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001422.html">[Stgt-devel] Unused code in sbc.c ???
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1420">[ date ]</a>
+              <a href="thread.html#1420">[ thread ]</a>
+              <a href="subject.html#1420">[ subject ]</a>
+              <a href="author.html#1420">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

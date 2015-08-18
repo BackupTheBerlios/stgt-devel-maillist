@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tgtif.c doesn't compile
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtif.c%20doesn%27t%20compile&In-Reply-To=%3C20070414102144F.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000562.html">
+   <LINK REL="Next"  HREF="000564.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tgtif.c doesn't compile</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtif.c%20doesn%27t%20compile&In-Reply-To=%3C20070414102144F.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] tgtif.c doesn't compile">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Apr 14 03:23:17 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000562.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+        <LI>Next message: <A HREF="000564.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#563">[ date ]</a>
+              <a href="thread.html#563">[ thread ]</a>
+              <a href="subject.html#563">[ subject ]</a>
+              <a href="author.html#563">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Douglas Gilbert &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dougg at torque.net</A>&gt;
+Subject: Re: [Stgt-devel] tgtif.c doesn't compile
+Date: Fri, 13 Apr 2007 11:48:50 -0400
+
+&gt;<i> FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; From: Douglas Gilbert &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dougg at torque.net</A>&gt;
+</I>&gt;<i> &gt; Subject: [Stgt-devel] tgtif.c doesn't compile
+</I>&gt;<i> &gt; Date: Thu, 12 Apr 2007 16:11:28 -0400
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; The sense_len, sense_uaddr fields are not in scsi/scsi_tgt_if.h
+</I>&gt;<i> &gt;&gt; in Linus, linux-2.6-block.git,bsg, or linux-2.6-target kernels.
+</I>&gt;<i> &gt;&gt; Where else should I be looking?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Please use James' scsi-misc master branch or linux-2.6-target tgt
+</I>&gt;<i> &gt; branch.
+</I>&gt;<i> 
+</I>&gt;<i> Tomo,
+</I>&gt;<i> Following a link from stgt.berlios.de I went here:
+</I>&gt;<i> <A HREF="http://git.kernel.org/?p=linux/kernel/git/tomo/linux-2.6-target.git;a=summary">http://git.kernel.org/?p=linux/kernel/git/tomo/linux-2.6-target.git;a=summary</A>
+</I>&gt;<i> 
+</I>&gt;<i> which shows this information:
+</I>&gt;<i> 
+</I>&gt;<i> description	scsi-target tree
+</I>&gt;<i> owner	FUJITA Tomonori
+</I>&gt;<i> last change	Thu, 22 Mar 2007 02:45:50 +0000
+</I>&gt;<i> URL	<A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A>
+</I>&gt;<i> 	<A HREF="http://www.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">http://www.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A>
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> So I cloned that repository and it has only one branch: &quot;main&quot;
+</I>
+Strange. I just tried and it looks fine.
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp$ git-clone <A HREF="git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git">git://git.kernel.org/pub/scm/linux/kernel/git/tomo/linux-2.6-target.git</A>
+remote: Generating pack...
+remote: Done counting 442181 objects.
+remote: Deltifying 442181 objects.
+remote:  100% (442181/442181) done
+remote: Total 442181 (delta 353734), reused 424382 (delta 335945)
+Checking files out...
+ 100% (21617/21617) done
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp$ cd linux-2.6-target/
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp/linux-2.6-target$ git-branch
+* master
+  origin
+  sgv3
+  tgt
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp/linux-2.6-target$ git-checkout tgt
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at iris</A>:/tmp/linux-2.6-target$ grep sense_len include/scsi/scsi_tgt_if.h
+                        uint32_t sense_len;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000562.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+	<LI>Next message: <A HREF="000564.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#563">[ date ]</a>
+              <a href="thread.html#563">[ thread ]</a>
+              <a href="subject.html#563">[ subject ]</a>
+              <a href="author.html#563">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,443 @@
+From fujita.tomonori at lab.ntt.co.jp  Sat Nov  5 02:00:19 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Sat, 05 Nov 2005 10:00:19 +0900
+Subject: [Stgt-devel] Re: [PATCH 0/3] ibmvscsis scsi target
+In-Reply-To: <200510211616.j9LGG7Ac026312@r-dd.iij4u.or.jp>
+References: <20051017143644.GA9992@cs.umn.edu>
+	<20051018231437M.fujita.tomonori@lab.ntt.co.jp>
+	<200510211616.j9LGG7Ac026312@r-dd.iij4u.or.jp>
+Message-ID: <20051105100019B.fujita.tomonori@lab.ntt.co.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: Re: [Stgt-devel] Re: [PATCH 0/3] ibmvscsis scsi target
+Date: Sat, 22 Oct 2005 01:16:06 +0900
+
+> > I started to convert ibmvscsi code to the tgt framework a little while
+> > ago. Its model is pretty different from the iSCSI and FC models so I'm
+> > trying to figure out what changes we need.
+> > 
+> > Hopefully, I will commit the initial code to the repository by the end
+> > of the month.
+> 
+> I managed to make a SCSI client boot by using the new VIO SCSI target
+> driver. I uploaded a patch against r119 of the framework code.
+> 
+> http://zaal.org/tgt/ibmvstgt.diff
+> 
+> It includes verbose debug code and makeshift code so I've not
+> committed it. I'll clean up and commit it next week. I've found some
+> bugs in the framework during rewriting the driver, however, I've not
+> fixed them yet.
+
+This took longer a bit than expected. At last, tgt can handle multiple
+target drivers (and their user-space dynamic libraries), I think.
+
+Currently, tgt supports two SCSI target drivers, iSCSI software target
+(istgt) and IBM virtual SCSI target (ibmvstgt) drivers. Mike has
+started working on a qla2xxx target driver based on the mainline
+qla2xxx driver.
+
+I added a README file including simple instruction. So you can test
+the tgt framework without lots of effort.
+
+The README file does not contain lots of infomation, so feel free to
+ask questions.
+
+You can get the code through anonymous SVN access via SVN (or
+HTTP). See:
+
+http://developer.berlios.de/svn/?group_id=4492
+
+
+> The code has been not tested heavily, still unstable, and not
+> finished. In addition, there's no document about how to use the tgt
+> framework. But it gives a hints how the ibmvscsi driver work with the
+> tgt framework.
+
+Dave, Santiago, I'd appreciate any comments on the code.
+
+
+From henryliuhl at gmail.com  Sun Nov  6 07:24:50 2005
+From: henryliuhl at gmail.com (Henry Liu)
+Date: Sun, 6 Nov 2005 14:24:50 +0800
+Subject: [Stgt-devel] What is kernel version of stgt developed on?
+Message-ID: <768550750511052224v32825b3au7a7307e9576e245c@mail.gmail.com>
+
+    What's kernel version of stgt developed on? I checked out lastest
+version of stgt from svc repository but it  is failed compiled in my
+box RHAS4.0 that kernel is 2.6.9-5.EL.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Sun Nov  6 17:21:48 2005
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 07 Nov 2005 01:21:48 +0900
+Subject: [Stgt-devel] What is kernel version of stgt developed on?
+In-Reply-To: <768550750511052224v32825b3au7a7307e9576e245c@mail.gmail.com>
+References: <768550750511052224v32825b3au7a7307e9576e245c@mail.gmail.com>
+Message-ID: <200511061622.jA6GM7ao004249@r-dd.iij4u.or.jp>
+
+From: Henry Liu <henryliuhl at gmail.com>
+Subject: [Stgt-devel] What is kernel version of stgt developed on?
+Date: Sun, 6 Nov 2005 14:24:50 +0800
+
+>     What's kernel version of stgt developed on? I checked out lastest
+> version of stgt from svc repository but it  is failed compiled in my
+> box RHAS4.0 that kernel is 2.6.9-5.EL.
+
+We always use the latest kernel because we aim for mainline
+inclusion. The current code (rev. 163) works with 2.6.14 and doesn't
+with 2.6.13.
+
+
+From oliver.rehmann at atosorigin.com  Fri Nov 11 13:03:07 2005
+From: oliver.rehmann at atosorigin.com (Rehmann Oliver)
+Date: Fri, 11 Nov 2005 13:03:07 +0100
+Subject: [Stgt-devel] STGT build fails on FC4
+Message-ID: <588EBCAA757D5F4484EC6017EC5126CCC93F44@chzhx001.ch.int.atosorigin.com>
+
+Dear Colleagues
+
+I tried to compile STGT Build 164 under Fedora Core 4 but it fails.
+I know this is still early Beta or even Alpha but I discussed it with Ming
+Zhang
+and he told me that it should compile on Kernel 2.6.14
+
+Kernel Version: Official FC4 Kernel (2.6.14-1.1637_FC4)
+See the output from the make command:
+
+make -C istgt
+make[1]: Entering directory `/user1/software/STGT/trunk/istgt'
+make -C usr
+make[2]: Entering directory `/user1/software/STGT/trunk/istgt/usr'
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o istgt.o istgt.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o conn.o conn.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o param.o param.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o iscsid.o iscsid.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o session.o session.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o target.o target.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o chap.o chap.c
+cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+-I../../include -I../../usr   -c -o ctldev.o ctldev.c
+In file included from ctldev.c:21:
+/usr/include/linux/netlink.h:22: error: syntax error before '__u32'
+/usr/include/linux/netlink.h:28: error: syntax error before '__u32'
+/usr/include/linux/netlink.h:30: error: syntax error before 'nlmsg_flags'
+/usr/include/linux/netlink.h:31: error: syntax error before 'nlmsg_seq'
+/usr/include/linux/netlink.h:32: error: syntax error before 'nlmsg_pid'
+/usr/include/linux/netlink.h:82: error: field 'msg' has incomplete type
+ctldev.c: In function 'ipc_cmnd_execute':
+ctldev.c:40: error: dereferencing pointer to incomplete type
+ctldev.c:44: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:45: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'nlmsg_init':
+ctldev.c:85: error: dereferencing pointer to incomplete type
+ctldev.c:86: error: dereferencing pointer to incomplete type
+ctldev.c:87: error: dereferencing pointer to incomplete type
+ctldev.c:88: error: dereferencing pointer to incomplete type
+ctldev.c:89: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'get_iet_msg':
+ctldev.c:101: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:107: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c: In function 'iscsi_conn_destroy':
+ctldev.c:133: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_param_get':
+ctldev.c:155: error: dereferencing pointer to incomplete type
+ctldev.c:161: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c: In function 'iscsi_param_set':
+ctldev.c:199: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_session_create':
+ctldev.c:294: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_session_destroy':
+ctldev.c:315: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'iscsi_conn_create':
+ctldev.c:344: error: dereferencing pointer to incomplete type
+ctldev.c: In function 'ipc_mgmt':
+ctldev.c:451: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:454: error: dereferencing pointer to incomplete type
+ctldev.c:480: error: dereferencing pointer to incomplete type
+ctldev.c:480: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+ctldev.c:481: error: invalid application of 'sizeof' to incomplete type
+'struct nlmsghdr' 
+make[2]: *** [ctldev.o] Error 1
+make[2]: Leaving directory `/user1/software/STGT/trunk/istgt/usr'
+make[1]: *** [libs] Error 2
+make[1]: Leaving directory `/user1/software/STGT/trunk/istgt'
+make: *** [all] Error 2
+
+
+Any idea why compilation fails ? I mean, I can't think of a syntax error in
+/usr/include/linux/netlink.h
+This would affect building KERNELs.
+
+And as far as I can see the file seems to be OK in syntax. I have attached
+it to the EMail together
+with the MAKE output as well.
+
+Regards
+Oliver
+ 
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: netlink.h
+Type: application/octet-stream
+Size: 2967 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment.obj>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: build_stgt164_2.6.14-1.1637_FC4
+Type: application/octet-stream
+Size: 3853 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/5ac470d9/attachment-0001.obj>
+
+From mingz at ele.uri.edu  Fri Nov 11 14:34:44 2005
+From: mingz at ele.uri.edu (Ming Zhang)
+Date: Fri, 11 Nov 2005 08:34:44 -0500
+Subject: [Stgt-devel] STGT build fails on FC4
+In-Reply-To: <588EBCAA757D5F4484EC6017EC5126CCC93F44@chzhx001.ch.int.atosorigin.com>
+References: 	 <588EBCAA757D5F4484EC6017EC5126CCC93F44@chzhx001.ch.int.atosorigin.com>
+Message-ID: <1131716085.452.219.camel@localhost.localdomain>
+
+i do not know the 2.6.14.x kernel from fc4. i can compile it with
+vanilla 2.6.14 kernel. tried both gcc3.4.x and gcc 4.x
+
+ming
+
+
+On Fri, 2005-11-11 at 13:03 +0100, Rehmann Oliver wrote:
+> Dear Colleagues
+> 
+> I tried to compile STGT Build 164 under Fedora Core 4 but it fails.
+> I know this is still early Beta or even Alpha but I discussed it with
+> Ming Zhang
+> and he told me that it should compile on Kernel 2.6.14
+> 
+> Kernel Version: Official FC4 Kernel (2.6.14-1.1637_FC4)
+> See the output from the make command:
+> 
+> make -C istgt
+> make[1]: Entering directory `/user1/software/STGT/trunk/istgt'
+> make -C usr
+> make[2]: Entering directory `/user1/software/STGT/trunk/istgt/usr'
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o istgt.o istgt.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o conn.o conn.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o param.o param.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o iscsid.o iscsid.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o session.o session.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o target.o target.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o chap.o chap.c
+> cc -O2 -fno-inline -Wall -fPIC -Wstrict-prototypes -I../include
+> -I../../include -I../../usr   -c -o ctldev.o ctldev.c
+> In file included from ctldev.c:21:
+> /usr/include/linux/netlink.h:22: error: syntax error before '__u32'
+> /usr/include/linux/netlink.h:28: error: syntax error before '__u32'
+> /usr/include/linux/netlink.h:30: error: syntax error before
+> 'nlmsg_flags'
+> /usr/include/linux/netlink.h:31: error: syntax error before
+> 'nlmsg_seq'
+> /usr/include/linux/netlink.h:32: error: syntax error before
+> 'nlmsg_pid'
+> /usr/include/linux/netlink.h:82: error: field 'msg' has incomplete
+> type
+> ctldev.c: In function 'ipc_cmnd_execute':
+> ctldev.c:40: error: dereferencing pointer to incomplete type
+> ctldev.c:44: error: invalid application of 'sizeof' to incomplete type
+> 'struct nlmsghdr' 
+> ctldev.c:45: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'nlmsg_init':
+> ctldev.c:85: error: dereferencing pointer to incomplete type
+> ctldev.c:86: error: dereferencing pointer to incomplete type
+> ctldev.c:87: error: dereferencing pointer to incomplete type
+> ctldev.c:88: error: dereferencing pointer to incomplete type
+> ctldev.c:89: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'get_iet_msg':
+> ctldev.c:101: error: invalid application of 'sizeof' to incomplete
+> type 'struct nlmsghdr' 
+> ctldev.c:107: error: invalid application of 'sizeof' to incomplete
+> type 'struct nlmsghdr' 
+> ctldev.c: In function 'iscsi_conn_destroy':
+> ctldev.c:133: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'iscsi_param_get':
+> ctldev.c:155: error: dereferencing pointer to incomplete type
+> ctldev.c:161: error: invalid application of 'sizeof' to incomplete
+> type 'struct nlmsghdr' 
+> ctldev.c: In function 'iscsi_param_set':
+> ctldev.c:199: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'iscsi_session_create':
+> ctldev.c:294: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'iscsi_session_destroy':
+> ctldev.c:315: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'iscsi_conn_create':
+> ctldev.c:344: error: dereferencing pointer to incomplete type
+> ctldev.c: In function 'ipc_mgmt':
+> ctldev.c:451: error: invalid application of 'sizeof' to incomplete
+> type 'struct nlmsghdr' 
+> ctldev.c:454: error: dereferencing pointer to incomplete type
+> ctldev.c:480: error: dereferencing pointer to incomplete type
+> ctldev.c:480: error: invalid application of 'sizeof' to incomplete
+> type 'struct nlmsghdr' 
+> ctldev.c:481: error: invalid application of 'sizeof' to incomplete
+> type 'struct nlmsghdr' 
+> make[2]: *** [ctldev.o] Error 1
+> make[2]: Leaving directory `/user1/software/STGT/trunk/istgt/usr'
+> make[1]: *** [libs] Error 2
+> make[1]: Leaving directory `/user1/software/STGT/trunk/istgt'
+> make: *** [all] Error 2
+> 
+> 
+> Any idea why compilation fails ? I mean, I can't think of a syntax
+> error in /usr/include/linux/netlink.h
+> This would affect building KERNELs.
+> 
+> And as far as I can see the file seems to be OK in syntax. I have
+> attached it to the EMail together
+> with the MAKE output as well.
+> 
+> Regards
+> Oliver
+>  
+>  
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: build.log
+Type: text/x-log
+Size: 5076 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20051111/3059ec25/attachment.bin>
+
+From michaelc at cs.wisc.edu  Mon Nov 14 01:35:37 2005
+From: michaelc at cs.wisc.edu (Mike Christie)
+Date: Sun, 13 Nov 2005 18:35:37 -0600
+Subject: [Stgt-devel] STGT build fails on FC4
+In-Reply-To: <1131716085.452.219.camel@localhost.localdomain>
+References: <588EBCAA757D5F4484EC6017EC5126CCC93F44@chzhx001.ch.int.atosorigin.com> <1131716085.452.219.camel@localhost.localdomain>
+Message-ID: <4377DBD9.2030003@cs.wisc.edu>
+
+Ming Zhang wrote:
+> i do not know the 2.6.14.x kernel from fc4. i can compile it with
+> vanilla 2.6.14 kernel. tried both gcc3.4.x and gcc 4.x
+> 
+
+Actually Ming fixed this in a file a long while ago, but the problem 
+spread to new files. I added Mings fix to include linux/types.h in 
+userspace code when including linux/netlink.h to the other files that 
+needed it.
+
+I thought there was a way to get around this in a nicer way, but I 
+cannot remember. If we figure it out I will back out that include :)
+
+
+From hch at infradead.org  Wed Nov 30 00:21:46 2005
+From: hch at infradead.org (Christoph Hellwig)
+Date: Tue, 29 Nov 2005 23:21:46 +0000
+Subject: [Stgt-devel] MPT fusion target mode driver
+Message-ID: <20051129232146.GA29079@infradead.org>
+
+  ftp://ftp.lsil.com/HostAdapterDrivers/linux/Fusion-MPT/mptstm-1.00.13-src.tar.gz
+
+has target mode bits for fusion spi/sas/fc hbas.  Unless someone beats me
+I'll try to make something useable for stgt out of them early next year.
+
+
+From hch at infradead.org  Wed Nov 30 06:01:18 2005
+From: hch at infradead.org (Christoph Hellwig)
+Date: Wed, 30 Nov 2005 05:01:18 +0000
+Subject: [Stgt-devel] MPT fusion target mode driver
+In-Reply-To: <438CE5DF.6020409@cs.wisc.edu>
+References: <20051129232146.GA29079@infradead.org> <438CE5DF.6020409@cs.wisc.edu>
+Message-ID: <20051130050118.GA4488@infradead.org>
+
+On Tue, Nov 29, 2005 at 05:35:59PM -0600, Mike Christie wrote:
+> Christoph Hellwig wrote:
+> >  ftp://ftp.lsil.com/HostAdapterDrivers/linux/Fusion-MPT/mptstm-1.00.13-src.tar.gz
+> >
+> >has target mode bits for fusion spi/sas/fc hbas.  Unless someone beats me
+> >I'll try to make something useable for stgt out of them early next year.
+> 
+> 
+> Nice, Tomonori mentioned MPT. I just got a MPT FC card the other day too.
+
+I have three SAS and one SPI card, so we could do this for multiple transports.
+
+
+From johan at capvert.se  Wed Nov 30 07:13:57 2005
+From: johan at capvert.se (johan at capvert.se)
+Date: Wed, 30 Nov 2005 07:13:57 +0100
+Subject: Ang: Re: [Stgt-devel] MPT fusion target mode driver
+Message-ID: <OFE8D19439.4C13A5BF-ONC12570C9.00234E27@capvert.ins>
+
+                                               Hi!  
+
+ We have been looking at that driver, and as well trying it. We never got 
+it to work. It needs a lot of work to be usable, but hopefully you can do 
+something with it.
+
+               Best regards from/Med v?nliga h?lsningar fr?n
+
+                                 Johan Kragsterman
+
+                               http://www.capvert.se
+
+
+
+
+Christoph Hellwig <hch at infradead.org>
+S?nt av: stgt-devel-admin at berlios.de
+2005-11-30 06:01
+
+ 
+        Till:   Mike Christie <michaelc at cs.wisc.edu>
+        Kopia:  Christoph Hellwig <hch at infradead.org>, stgt-devel at lists.berlios.de
+        ?rende: Re: [Stgt-devel] MPT fusion target mode driver
+
+
+On Tue, Nov 29, 2005 at 05:35:59PM -0600, Mike Christie wrote:
+> Christoph Hellwig wrote:
+> >  ftp://ftp.lsil.com/HostAdapterDrivers/linux/Fusion-MPT/mptstm-1.00.13-src.tar.gz
+> >
+> >has target mode bits for fusion spi/sas/fc hbas.  Unless someone beats 
+me
+> >I'll try to make something useable for stgt out of them early next 
+year.
+> 
+> 
+> Nice, Tomonori mentioned MPT. I just got a MPT FC card the other day 
+too.
+
+I have three SAS and one SPI card, so we could do this for multiple 
+transports.
+_______________________________________________
+Stgt-devel mailing list
+Stgt-devel at lists.berlios.de
+http://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20051130/05d38100/attachment.html>
+

@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071005130704.GA6681%40lemming.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001077.html">
+   <LINK REL="Next"  HREF="001064.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C20071005130704.GA6681%40lemming.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] iSER">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Fri Oct  5 15:07:04 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001077.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001064.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1063">[ date ]</a>
+              <a href="thread.html#1063">[ thread ]</a>
+              <a href="subject.html#1063">[ subject ]</a>
+              <a href="author.html#1063">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, Oct 04, 2007 at 01:20:35PM -0400, Pete Wyckoff wrote:
+&gt;<i><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A> wrote on Sun, 09 Sep 2007 14:12 -0400:
+</I>&gt;&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Sun, 09 Sep 2007 11:30 -0400:
+</I>&gt;&gt;<i> &gt; with the 2.6.22.6 kernel and iSER I couldn't find any corruption
+</I>&gt;&gt;<i> &gt; issues using dd to /dev/sdc. however (as reported previously) if I put
+</I>&gt;&gt;<i> &gt; an ext3 filesystem on the iSER device and then dd to a file in the ext3
+</I>&gt;&gt;<i> &gt; filsystem then pretty much immediately I get:
+</I>&gt;&gt;<i> &gt;   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196611, length 1
+</I>&gt;&gt;<i> &gt;   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196612, length 1
+</I>&gt;&gt;<i> &gt;   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196613, length 1
+</I>&gt;&gt;<i> &gt;   ...
+</I>&gt;&gt;<i> &gt; I get the same type of errors with 2.6.23-rc5 too.
+</I>
+eventually (with Pete and Erez's offline help) I managed to reproduce
+this without a filesystem by using sufficiently large and preferably
+random lmdd's. eg.
+  lmdd of=internal ipat=1 if=/dev/sdc bs=800000 count=2000 rand=6000m mismatch=10
+however, that's kinda irrelevant 'cos...
+
+&gt;<i>Maybe this is fixed.  I did find one possible case where the Send
+</I>&gt;<i>result may have gone out before the final RDMA write, in the case
+</I>&gt;<i>when the target is starved for RDMA slots.  But I never saw the
+</I>&gt;<i>problem myself, so can't say for sure.
+</I>
+... yes! that has fixed the problem.
+
+now lmdd to the block device, or ext3 with multiple bonnie++'s or
+iozone multithreaded etc. all work as expected.
+
+well done finding the bug! :-)
+
+performance is good. backing store is a 7G file on a ramfs, 2.6.22.6
+kernels with OFED 1.2.5 modules and userland, dual dual core Xeon
+2.66Ghz, CentOS5 x86_64, initiator with mem=512M, DDR IB.
+
+~650MB/s writes and 280MB/s reads with eg.
+  dd if=/dev/zero of=/dev/sdc bs=1M count=6000
+ 
+bonnie++
+ 1.03 ------Sequential Output------ --Sequential Input- --Random-
+      -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+ Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+   4G 79119  99 464995 98 171640 28 70948  81 291538 23 +++++ +++
+   6G 79061  99 459926 93 165442 27 70987  80 291262 23 15929  41
+
+so ~450 MiB/s writes and 280 MiB/s reads.
+or bonnie++ in semaphore mode:
+ 2-way (-s 2g) min aggregate write/read of ~480/380 MiB/s
+ 4-way (-s 1g) min aggregate write/read of ~525/570 MiB/s
+
+and about the same from iozone:
+min throughput * threads from a single client doing iozone 1,2,4-way is:
+ iozone -s 4g -r 256k -i 0 -i 1 -t 1
+        write   =  481869.34 KB/sec
+        read    =  293940.09 KB/sec
+ iozone -s 2g -r 256k -i 0 -i 1 -t 2
+        write   =  252719.98 KB/sec   * 2 = 505440 KB/s
+        read    =  196478.64 KB/sec   * 2 = 392957 KB/s
+ iozone -s 1g -r 256k -i 0 -i 1 -t 4
+        write   =  132325.09 KB/sec   * 4 = 529300 KB/s
+        read    =  136420.22 KB/sec   * 4 = 545681 KB/s
+
+cheers,
+robin
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001077.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001064.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1063">[ date ]</a>
+              <a href="thread.html#1063">[ thread ]</a>
+              <a href="subject.html#1063">[ subject ]</a>
+              <a href="author.html#1063">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

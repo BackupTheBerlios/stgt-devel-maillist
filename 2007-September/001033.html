@@ -1,0 +1,180 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER patches, second release
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C5eb093080709080449u6fdbe443h2d11cbcec227db31%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001031.html">
+   <LINK REL="Next"  HREF="001034.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER patches, second release</H1>
+    <B>Alexander Nezhinsky</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C5eb093080709080449u6fdbe443h2d11cbcec227db31%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] iSER patches, second release">nezhinsky at gmail.com
+       </A><BR>
+    <I>Sat Sep  8 13:49:54 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001031.html">[Stgt-devel] iSER patches, second release
+</A></li>
+        <LI>Next message: <A HREF="001034.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1033">[ date ]</a>
+              <a href="thread.html#1033">[ thread ]</a>
+              <a href="subject.html#1033">[ subject ]</a>
+              <a href="author.html#1033">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> There is some mismatch in how iscsi
+</I>&gt;<i> wants to read bytes when it needs them:  48 first, then look for AHS
+</I>&gt;<i> and possible read those, then maybe some immediate data.  Three
+</I>&gt;<i> separate read(fd, ...) for one control PDU.  On the other hand, RDMA
+</I>&gt;<i> gets all the data in one go.  So we compromise by feeding the bytes
+</I>&gt;<i> into iscsi via memcpy for each of its small do_recv operations.
+</I>&gt;<i>
+</I>&gt;<i> It would be possible to have a separate RX state machine just for
+</I>&gt;<i> RDMA, but we didn't want to diverge the code so much.  I think this
+</I>&gt;<i> way works, although Robin points out that there are bugs somewhere.
+</I>
+I believe that it is more efficient and flexible to separate the flows between
+the transports on a slightly higher level than the basic operations like
+polling, reading bytes from stream, malloc etc.
+
+I suggest doing the separation by encapsulating some coarser grained ops,
+that have application-level meaning. In case of iser/tcp iscsi, these
+should be,
+in principle: allocate/free iscsi and/or transport task; receive PDU; send
+PDU etc.
+
+For example, right now there are .ep_read per-transport function pointers.
+They &quot;know&quot; nothing about PDUs, only about streams and bytes,
+and as such are problematic for iser which is not stream based.
+
+If there were per-transport .rx_pdu method, there would be no need to use
+checks like &quot;if(rdma)&quot;. TCP might use the code it uses today within its own
+implementation, reading PDU by chunks, while iser might push the entire
+pdu and tweak the RX state machine forcing it into a correct final state.
+
+But here we run into another problem.
+iscsi/tcp &quot;pulls&quot; PDUs from stream byte-by-byte, while iscsi/iser &quot;pushes&quot;
+PDUs when they are received. So tcp would prefer a method that reads,
+while iser would ask for a callback that notifies.
+
+A common denominator can be found for these, but you are right,
+encapsulating &quot;the big thing&quot; now will lead to virtually separate
+state machines.
+Thus, to minimize changes in the existing code, i'd suggest doing
+something in the middle:
+defining a per-transport method, which corresponds more or less to
+what the function do_recv() does today.
+
+That is, the RX state machine code still asks to read the PDUs by chunks,
+but these chunks are requested by type, not merely by size.
+This way, tcp will read bytes from the stream, while iser will only
+manipulate pointers, setting them to the correct locations within the
+receive buffer. We retain the RX state-machine code almost as is.
+The only changes necessary there are related to the pointers like
+conn-&gt;rx_buffer, which  probably  should be moved into the tcp
+realization of .do_read. Perhaps, bhs may be also referenced by pointer.
+But this is it, more or less.
+
+Another example of making a coarse-grain separation is allocation &amp; release
+of iscsi tasks. I wanted to write a separate mail about it but this fits the
+current discussion.
+
+Function conn-&gt;tp-&gt;ep_free() gets called only in iscsi_free_task(), separately
+for the data and the descriptor. Because the data buffer has no identification
+attached, it must be looked for through the list of the buffers, for iser.
+
+If we make task_free() a transport-specific pointer, instead, no
+overhead is incurred.
+iscsi will use free(), while iser will return the buffer to the list
+without searching.
+Of course task_alloc() should also be turned into a per-transport method,
+after it is called some basic initializations are done on the common level,
+in iscsid.c. It looks that if done this way, there is no need for
+ep_free/ep_maloc
+anymore.
+
+&gt;<i> This would all break if we went multithreaded in the iscsi
+</I>&gt;<i> core itself.  I'm not sure anyone needs multithreading at that
+</I>&gt;<i> level---we already do support it at the backing store level, which
+</I>&gt;<i> is where it probably makes most sense.
+</I>
+First, one could spread different connections' handling between CPUs,
+which may make some sense if multiple initiators are working with the
+target. And, second, an unsafe code can sometimes break in ways
+quite unexpected at the time it was written, during the system's evolution.
+
+&gt;<i> Yes, up to TRDSL will be fully copied.  That's 8 kB now in linux
+</I>&gt;<i> iser, but you could imagine wanting it bigger for better small
+</I>&gt;<i> transfer performance.  If you enable unsolicited data, up to that
+</I>&gt;<i> amount will be copied.
+</I>
+So it does pay to eliminate the unsolicited data copy.
+
+&gt;<i> &gt; Third, reposting is postponed until iscsi handles the rx event.
+</I>&gt;<i>
+</I>&gt;<i> Not so bothered about that.  We post receives to accommodate max
+</I>&gt;<i> outstanding requests on the client.  It's hardcoded now, but should
+</I>&gt;<i> be fixed (in the initiator) to be negotiated.  The receive slot
+</I>&gt;<i> will not be reused until the initiator sees the response.
+</I>
+Agree.
+This is actually more related to the interplay between the
+mechanism of resource allocation and the mechanism of generation
+of MaxCmdSN sent to the initiator, as this is the real control of max
+outstanding cmds.
+
+&gt;<i> See how iscsi_scsi_cmd_rx_start() allocates the task
+</I>&gt;<i> and ahs and data all in one go.  This can be modified, but I want to
+</I>&gt;<i> avoid lots of &quot;if (rdma)&quot; cases.  And remember that TCP doesn't have
+</I>&gt;<i> message boundaries, so things need to work when you get the 48-byte
+</I>&gt;<i> BHS first then go back and read the rest, perhaps in multiple
+</I>&gt;<i> 1500-byte read statements across separate poll() iterations.
+</I>
+It seems that what i have suggested about turning do_read() into a
+per-transport method solves this problem, doesn't it?
+
+&gt;<i> If you get interested in writing a slim queueing layer between TCP
+</I>&gt;<i> or RDMA receive processing, and iscsi rx processing, I'll certainly
+</I>&gt;<i> help and try to get it integrated.
+</I>
+I do want to contribute, both with the PDU queuing and with implementing
+my suggestion above, if we agree on it or on another alternative.
+
+Alexander
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001031.html">[Stgt-devel] iSER patches, second release
+</A></li>
+	<LI>Next message: <A HREF="001034.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1033">[ date ]</a>
+              <a href="thread.html#1033">[ thread ]</a>
+              <a href="subject.html#1033">[ subject ]</a>
+              <a href="author.html#1033">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 3/3] Re-work of SMC support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/3%5D%20Re-work%20of%20SMC%20support&In-Reply-To=%3Cf29db9a80706271720j71f1aff4t2146cc64574c5280%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000842.html">
+   <LINK REL="Next"  HREF="000846.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 3/3] Re-work of SMC support</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/3%5D%20Re-work%20of%20SMC%20support&In-Reply-To=%3Cf29db9a80706271720j71f1aff4t2146cc64574c5280%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 3/3] Re-work of SMC support">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Jun 28 02:20:16 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000842.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+        <LI>Next message: <A HREF="000846.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#845">[ date ]</a>
+              <a href="thread.html#845">[ thread ]</a>
+              <a href="subject.html#845">[ subject ]</a>
+              <a href="author.html#845">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 6/27/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] [Patch 3/3] Re-work of SMC support
+</I>&gt;<i> Date: Sat, 23 Jun 2007 18:14:04 +1000
+</I>&gt;<i>
+</I>&gt;<i> &gt; diff --git a/usr/media.h b/usr/media.h
+</I>&gt;<i> &gt; new file mode 100644
+</I>&gt;<i> &gt; index 0000000..a04a27c
+</I>&gt;<i> &gt; --- /dev/null
+</I>&gt;<i> &gt; +++ b/usr/media.h
+</I>&gt;<i> &gt; @@ -0,0 +1,30 @@
+</I>&gt;<i> &gt; +/*
+</I>&gt;<i> &gt; + * Copyright (C) 2007 Mark Harvey markh794 at gmail dot com
+</I>&gt;<i> &gt; + *
+</I>&gt;<i> &gt; + * This program is free software; you can redistribute it and/or modify
+</I>&gt;<i> &gt; + * it under the terms of the GNU General Public License as published by
+</I>&gt;<i> &gt; + * the Free Software Foundation; version 2 of the License.
+</I>&gt;<i> &gt; + *
+</I>&gt;<i> &gt; + * This program is distributed in the hope that it will be useful,
+</I>&gt;<i> &gt; + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+</I>&gt;<i> &gt; + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+</I>&gt;<i> &gt; + * GNU General Public License for more details.
+</I>&gt;<i> &gt; + *
+</I>&gt;<i> &gt; + * You should have received a copy of the GNU General Public License
+</I>&gt;<i> &gt; + * along with this program; if not, write to the Free Software
+</I>&gt;<i> &gt; + * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+</I>&gt;<i> &gt; + */
+</I>&gt;<i> &gt; +#ifndef _MEDIA_H_
+</I>&gt;<i> &gt; +#define _MEDIA_H_
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +enum c_type {        /* Cartridge Types - Ref: smc3r06 - Table 20, page 37 */
+</I>&gt;<i> &gt; +     CART_UNSPECIFIED,
+</I>&gt;<i> &gt; +     CART_DATA,
+</I>&gt;<i> &gt; +     CART_CLEAN,
+</I>&gt;<i> &gt; +     CART_DIAGNOSTICS,
+</I>&gt;<i> &gt; +     CART_WORM,
+</I>&gt;<i> &gt; +     CART_MICROCODE,
+</I>&gt;<i> &gt; +};
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +#endif /* _MEDIA_H_ */
+</I>&gt;<i>
+</I>&gt;<i> Why do you put this in smc.c?
+</I>
+Slots within the SMC device can contain different media type..
+
+At the moment, this is not used by the SMC device but I included for
+when this support is added.
+
+Should I remove this until I get around to coding this portion of the code ?
+
+
+&gt;<i> &gt; diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> &gt; index 891cb60..0672877 100644
+</I>&gt;<i> &gt; --- a/usr/mmc.c
+</I>&gt;<i> &gt; +++ b/usr/mmc.c
+</I>&gt;<i> &gt; @@ -38,6 +38,7 @@
+</I>&gt;<i> &gt;  #include &quot;util.h&quot;
+</I>&gt;<i> &gt;  #include &quot;tgtd.h&quot;
+</I>&gt;<i> &gt;  #include &quot;target.h&quot;
+</I>&gt;<i> &gt; +#include &quot;tgtadm_error.h&quot;
+</I>&gt;<i> &gt;  #include &quot;driver.h&quot;
+</I>&gt;<i> &gt;  #include &quot;scsi.h&quot;
+</I>&gt;<i> &gt;  #include &quot;spc.h&quot;
+</I>&gt;<i> &gt; @@ -174,10 +175,26 @@ static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> &gt;       return 0;
+</I>&gt;<i> &gt;  }
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; +static int mmc_lu_config(struct scsi_lu *lu, char * params)
+</I>&gt;<i> &gt; +{
+</I>&gt;<i> &gt; +     char    * mmc_params;
+</I>&gt;<i> &gt; +     int     ret;
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +     mmc_params = malloc(strlen(params) + 1);
+</I>&gt;<i> &gt; +     if (!mmc_params)
+</I>&gt;<i> &gt; +             return -ENOMEM;
+</I>&gt;<i> &gt; +     mmc_params[0] = '\0';
+</I>&gt;<i> &gt; +     ret = spc_lu_config(lu, params, mmc_params);
+</I>&gt;<i> &gt; +     if (strlen(mmc_params)) /* We should not have any params left over */
+</I>&gt;<i> &gt; +             ret = TGTADM_INVALID_REQUEST;
+</I>&gt;<i> &gt; +     free(mmc_params);
+</I>&gt;<i> &gt; +     return ret;
+</I>&gt;<i> &gt; +}
+</I>&gt;<i>
+</I>&gt;<i> strdup?
+</I>
+I'm still trying to come up with a 'better' way of doing this.
+
+In an attempt to move all common parameter parsing within one common
+function and still be able to process any module unique params
+afterwards :
+
+     ret = spc_lu_config(lu, params, mmc_params);
+
+ - Original string of params passed in 'params', 'mmc_params' is a null string.
+ - The spc_lu_config() copies any parameters it can not process in the
+*mmc_params.
+ - It is then up the the xxx_lu_config() calling function to process
+any left over params (in mmc_params in this case) not handled by
+spc_lu_config().
+ - If all params are processed in spc_lu_config(), then the
+*mmc_params will contain an empty string.
+
+I thought it might be a little more obvious to have the malloc() /
+free() within the same function rather then have spc_lu_config do the
+malloc() and then the caller free the space afterwards.
+
+The smc_lu_config() is the only module at the moment that needs the
+extra options.
+
+I expect the ssc_lu_config() to also require extra configuration
+options. Although I have not started coding that yet and have not
+fully thought thru what may be required.
+
+
+
+The other option would be to move the spc_lu_config() into each module
+and not share the common param handling.
+
+Cheers
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000842.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+	<LI>Next message: <A HREF="000846.html">[Stgt-devel] [Patch 3/3] Re-work of SMC support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#845">[ date ]</a>
+              <a href="thread.html#845">[ thread ]</a>
+              <a href="subject.html#845">[ subject ]</a>
+              <a href="author.html#845">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi fix xmit param
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070818155716.GA7849%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000966.html">
+   <LINK REL="Next"  HREF="000967.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi fix xmit param</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%20fix%20xmit%20param&In-Reply-To=%3C20070818155716.GA7849%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi fix xmit param">pw at osc.edu
+       </A><BR>
+    <I>Sat Aug 18 17:57:16 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000966.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+        <LI>Next message: <A HREF="000967.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#968">[ date ]</a>
+              <a href="thread.html#968">[ thread ]</a>
+              <a href="subject.html#968">[ subject ]</a>
+              <a href="author.html#968">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A> wrote on Sun, 19 Aug 2007 00:08 +0900:
+&gt;<i> I still can't understand how the git head is broken (that is, 
+</I>&gt;<i> what does this new &quot;iscsi fix xmit param&quot; patch fix?).
+</I>
+Bit different when looking at HEAD, but still a bit broken.
+
+iscsi/param.c:   mxdsl = 8192
+iscsi/target.c:  mxdsl = 8192
+
+and this code in iscsi/iscsid.c:
+
+	if (p[i].state == KEY_STATE_START &amp;&amp; p[i].val != session_keys[i].def) {
+		if (conn-&gt;state == STATE_LOGIN) {
+			if (i == ISCSI_PARAM_MAX_XMIT_DLENGTH) {
+				if (p[i].val &gt; session_keys[i].def)
+					p[i].val = session_keys[i].def;
+				p[i].state = KEY_STATE_DONE;
+				continue;
+			}
+			memset(buf, 0, sizeof(buf));
+			param_val_to_str(session_keys, i, p[i].val,
+					 buf);
+			text_key_add(conn, session_keys[i].name, buf);
+			p[i].state = KEY_STATE_REQUEST;
+		}
+		cnt++;
+	}
+
+(p[] is conn-&gt;session_param, which is initialized from target params
+then modified by negotiation.)
+
+If target admin does not change target mxdsl, and initiator does not
+send mrdsl, this code will see 8192 == 8192 and use 8192.  Fine,
+that's the default.
+
+If target admin changes target mxdsl to 16384 using tgtadm, and
+initiator does not send mrdsl, this code will see 16384 != 8192.
+Then the &quot;&gt;&quot; will shrink it back to 8192.  Good.
+
+Now what if target admin changes mxdsl to 16384 using tgtadm.  And
+initiator sends mrdsl 16384.  Minimum of these leads to target
+accepting 16384 up in text_scan_login.  Then this code sees 16384 !=
+8192, and that 16384 &gt; 8192, thus shrinks it back to 8192.  So
+although both initiator and target are willing to use bigger mrdsl,
+they cannot.
+
+Patch fixes that.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000966.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+	<LI>Next message: <A HREF="000967.html">[Stgt-devel] [PATCH] iscsi fix xmit param
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#968">[ date ]</a>
+              <a href="thread.html#968">[ thread ]</a>
+              <a href="subject.html#968">[ subject ]</a>
+              <a href="author.html#968">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

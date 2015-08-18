@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tgtif.c doesn't compile
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtif.c%20doesn%27t%20compile&In-Reply-To=%3C461E9270.7050703%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000548.html">
+   <LINK REL="Next"  HREF="000561.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tgtif.c doesn't compile</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgtif.c%20doesn%27t%20compile&In-Reply-To=%3C461E9270.7050703%40torque.net%3E"
+       TITLE="[Stgt-devel] tgtif.c doesn't compile">dougg at torque.net
+       </A><BR>
+    <I>Thu Apr 12 22:11:28 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000548.html">[Stgt-devel] ibmvio - performance
+</A></li>
+        <LI>Next message: <A HREF="000561.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#557">[ date ]</a>
+              <a href="thread.html#557">[ thread ]</a>
+              <a href="subject.html#557">[ subject ]</a>
+              <a href="author.html#557">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>cc -DIBMVIO -DUSE_KERNEL -Wall -g -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE -I../include -I/usr/src/linux/include -I.   -c -o tgtif.o tgtif.c
+tgtif.c: In function &#8216;kspace_send_cmd_res&#8217;:
+tgtif.c:116: error: &#8216;struct &lt;anonymous&gt;&#8217; has no member named &#8216;sense_len&#8217;
+tgtif.c:117: error: &#8216;struct &lt;anonymous&gt;&#8217; has no member named &#8216;sense_uaddr&#8217;
+tgtif.c: In function &#8216;kern_queue_cmd&#8217;:
+tgtif.c:137: warning: pointer targets in assignment differ in signedness
+
+The sense_len, sense_uaddr fields are not in scsi/scsi_tgt_if.h
+in Linus, linux-2.6-block.git,bsg, or linux-2.6-target kernels.
+Where else should I be looking?
+
+Doug Gilbert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000548.html">[Stgt-devel] ibmvio - performance
+</A></li>
+	<LI>Next message: <A HREF="000561.html">[Stgt-devel] tgtif.c doesn't compile
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#557">[ date ]</a>
+              <a href="thread.html#557">[ thread ]</a>
+              <a href="subject.html#557">[ subject ]</a>
+              <a href="author.html#557">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C20050828004944V.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000028.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C20050828004944V.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">tomof at acm.org
+       </A><BR>
+    <I>Sat Aug 27 17:49:44 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000028.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#29">[ date ]</a>
+              <a href="thread.html#29">[ thread ]</a>
+              <a href="subject.html#29">[ subject ]</a>
+              <a href="author.html#29">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Thu, 25 Aug 2005 10:23:43 -0500
+
+&gt;<i> &gt; Do you mean using netlink by adding STGT_UEVENT_TARGET_CREATE, etc?
+</I>&gt;<i> 
+</I>&gt;<i> I am not sure about STGT_UEVENT_TARGET_CREATE, becuase of HW target 
+</I>&gt;<i> drivers though. Will they need it or use it? I thought we were going to 
+</I>&gt;<i> end up in a similar situation as we have for software iscsi vs HW cards. 
+</I>&gt;<i> It is probably best to do what we can with what we have and if HW 
+</I>&gt;<i> targets do not need it then that is fine. What do you think?
+</I>
+Agree. Probabaly, some HW target drivers need to directly access
+stgt_target_create/destroy in kernel space.
+
+Some HW target drivers can use netlink about target configuration, I
+guess. Chelsio cards seem to use the following scheme to configure
+targets.
+
+1. The user-space configuration tool reads the configuration file.
+2. It tells the kernel modules by using ioctl.
+
+So if stgt provides some callback mechanisms (that you mentioned
+below), Chelsio driver may work well with the netlink scheme.
+
+
+&gt;<i> I think there should be a STGT_UEVENT_DEVICE_CREATE though. The target 
+</I>&gt;<i> drivers do not seem to have to hanlde that part.
+</I>
+Yep. Now stgt_device_create/destroy can be accessed only though
+netlink.
+
+
+&gt;<i> &gt; If you have not started to work on this and I understand correctly,
+</I>&gt;<i> &gt; I'll do it if you want.
+</I>&gt;<i> 
+</I>&gt;<i> ok go ahead.
+</I>
+UEVENT_DEVICE stuff is done (though IET cannot still shut down
+cleanly), however, the interface need to be improved later.
+
+How should stgt handle a very log param like 'path'? I put it in
+netlink's payload, however, should I put it in struct stgt_event?
+
+I'll clean up the user-space stgt code because it is really messy.
+
+
+&gt;<i> &gt; Does stgt enable target drivers to call their own functions when
+</I>&gt;<i> &gt; user-space requires such operations?
+</I>&gt;<i> 
+</I>&gt;<i> I think we will need to move the stgt_target_template registration to 
+</I>&gt;<i> the target driver's module_init function. We can add some callbacks onto 
+</I>&gt;<i> it so stgt can call into the target driver. Maybe a create_target(), 
+</I>&gt;<i> set_param(), get_param(), destroy_target(), etc is needed. I think this 
+</I>&gt;<i> is what you are suggesting right?
+</I>
+I think so. I simply thought about mechanisms like
+stgt_device_template, however, I didn't have a clear idea. I'll
+implement that after the cleanup.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000028.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#29">[ date ]</a>
+              <a href="thread.html#29">[ thread ]</a>
+              <a href="subject.html#29">[ subject ]</a>
+              <a href="author.html#29">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

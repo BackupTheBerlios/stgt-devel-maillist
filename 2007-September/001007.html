@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER patches, second release
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070904200548.GD6578%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001040.html">
+   <LINK REL="Next"  HREF="001008.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER patches, second release</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070904200548.GD6578%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER patches, second release">pw at osc.edu
+       </A><BR>
+    <I>Tue Sep  4 22:05:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001040.html">[Stgt-devel] [PATCH] bidi quiet warning
+</A></li>
+        <LI>Next message: <A HREF="001008.html">[Stgt-devel] [PATCH 01/18] iser docs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1007">[ date ]</a>
+              <a href="thread.html#1007">[ thread ]</a>
+              <a href="subject.html#1007">[ subject ]</a>
+              <a href="author.html#1007">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>This is the second major release of support for iSCSI Extensions
+for RDMA (iSER) to the existing STGT user space SCSI target.  It
+uses OpenFabrics libraries and kernel drivers to act as a SCSI
+target over RDMA-capable devices.  The code has been tested
+against the existing Linux iSER initiator over InfiniBand cards,
+but should be specification compliant and work generally.
+
+A bit of documentation is included, and a short technical report is
+available at <A HREF="http://www.osc.edu/~pw/papers/iser-snapi07.pdf">http://www.osc.edu/~pw/papers/iser-snapi07.pdf</A> .
+For performance, a single SCSI client using iSCSI over gigabit
+ethernet does 100 MB/s.  iSCSI over IPoIB gets 200 MB/s, and iSER
+over native IB sees 500 MB/s (to a RAM disk).
+
+More information on STGT is available at <A HREF="http://stgt.berlios.de">http://stgt.berlios.de</A> .
+
+The iSER patches can be downloaded from:
+
+        <A HREF="git://git.osc.edu/tgt">git://git.osc.edu/tgt</A>
+
+or browsed at:
+
+        <A HREF="http://git.osc.edu/?p=tgt.git;a=summary">http://git.osc.edu/?p=tgt.git;a=summary</A>
+
+New and modified files are distributed under a GPLv2 license.
+Following this mail are the individual patches to stgt-devel
+for review and eventual inclusion in STGT.
+
+Changes since previous series are as follows.
+
+Major rewrite and cleanup.  Many error handling issues and corner
+cases were fixed.  Also the patchset was split up even finer for
+easier review:  18 small patches instead of 7 big ones.
+
+Per-connection resource negotiation.  Hooks in iscsid give the
+transport a chance to prepare itself before the transition to
+full-feature mode.  This allows sizing buffers correctly;
+however, there are some issues with the open-iscsi initiator in
+this area still.  It doesn't negotiate all the parameters.  We'll
+get it patched up.
+
+All debug and error messages go through tgt log.c functions rather
+than appearing on stderr through iser-private debugging functions.
+
+Multiple RDMA devices in the target should work now, but have
+never been tested.  The code is at least structured so it could
+function.
+
+IP-based ACLs work.  There is a way to get an IP address out of
+an RDMA connection, and we use that to check the ACLs.
+
+Fixed RDMA data transfer size to be independent of [IT]RDSL as it
+should be.
+
+Tested with valgrind.  Memory does not leak.
+
+Tested with open-iscsi regression script.  All the tests pass, both
+for TCP and RDMA.
+
+Also, various linux kernels have minor iscsi and iser bugs.
+We're running on v2.6.22-rc5, which mostly works, but sometimes
+will oops.  Certainly we'll get these fixed, but be careful on
+production machines.
+
+Thanks to everybody for suggestions and fixes, especially
+Alexander Nezhinsky and Erez Zilber.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001040.html">[Stgt-devel] [PATCH] bidi quiet warning
+</A></li>
+	<LI>Next message: <A HREF="001008.html">[Stgt-devel] [PATCH 01/18] iser docs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1007">[ date ]</a>
+              <a href="thread.html#1007">[ thread ]</a>
+              <a href="subject.html#1007">[ subject ]</a>
+              <a href="author.html#1007">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

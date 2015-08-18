@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Adding Virtial Tape &amp; Changer targets
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20Virtial%20Tape%20%26%20Changer%20targets&In-Reply-To=%3C200703210319.l2L3JLQk015319%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000452.html">
+   <LINK REL="Next"  HREF="000454.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Adding Virtial Tape &amp; Changer targets</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20Virtial%20Tape%20%26%20Changer%20targets&In-Reply-To=%3C200703210319.l2L3JLQk015319%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Adding Virtial Tape &amp; Changer targets">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Wed Mar 21 04:19:20 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000452.html">[Stgt-devel] Adding Virtial Tape &amp; Changer targets
+</A></li>
+        <LI>Next message: <A HREF="000454.html">[Stgt-devel] Adding Virtial Tape &amp; Changer targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#453">[ date ]</a>
+              <a href="thread.html#453">[ thread ]</a>
+              <a href="subject.html#453">[ subject ]</a>
+              <a href="author.html#453">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Subject: [Stgt-devel] Adding Virtial Tape &amp; Changer targets
+Date: Wed, 21 Mar 2007 12:39:04 +1100
+
+&gt;<i> A quick introduction.
+</I>&gt;<i> 
+</I>&gt;<i> I am planning on adding support to the stgt for both SSC and SMC
+</I>&gt;<i> devices with the aim of full Virtual Tape Library support.
+</I>
+Great!
+
+
+&gt;<i> I have a working VTL based around the scsi_debug kernel module +
+</I>&gt;<i> char-device 'back-end' to pass SCSI commands thru to user-space
+</I>&gt;<i> daemons (which poll the char device looking for work to do). These
+</I>&gt;<i> daemons act as the SSC or SMC devices.
+</I>&gt;<i> 
+</I>&gt;<i> This VTL I have had working for over 12mths.
+</I>&gt;<i> 
+</I>&gt;<i> However there are some limitations (like a kernel module required for
+</I>&gt;<i> each OS port).
+</I>&gt;<i> 
+</I>&gt;<i> I want to move this code base across to an iSCSI frame-work and have
+</I>&gt;<i> finally given up on the Intel iSCSI Reference code base.
+</I>&gt;<i> 
+</I>&gt;<i> There are some aspects of the stgt code that I would like to modify to
+</I>&gt;<i> make this 'port' a little easier.
+</I>&gt;<i> 
+</I>&gt;<i> There is a lack of a 'generic' pointer for any data structures used
+</I>&gt;<i> for each target.
+</I>&gt;<i> i.e. I would like to malloc() required storage space to keep MODE/LOG
+</I>&gt;<i> SENSE data per target.
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- tgtd.h      (revision 849)
+</I>&gt;<i> +++ tgtd.h      (working copy)
+</I>&gt;<i> @@ -47,6 +47,9 @@
+</I>&gt;<i> 
+</I>&gt;<i>         /* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i>         uint8_t d_sense;
+</I>&gt;<i> +
+</I>&gt;<i> +       /* For each device's private use */
+</I>&gt;<i> +       void    * priv_p;
+</I>&gt;<i>  };
+</I>&gt;<i> 
+</I>&gt;<i>   struct scsi_cmd {
+</I>&gt;<i> 
+</I>&gt;<i> ===================================================================
+</I>
+Yeah, we need something like that.
+
+
+&gt;<i> I suppose what I am asking is:
+</I>&gt;<i> 1. Is this list interested in the SSC &amp; SMC code base as/when I get it working ?
+</I>
+Surely. I'm happy to merge them.
+
+
+&gt;<i> 2. Should I submit all code in a couple of big chunks - e.g. smc.c,
+</I>&gt;<i> ssc.c etc once I have got something worthy to submit ?
+</I>&gt;<i> Or submit small incremental bits as they are added ? e.g. SCSI command
+</I>&gt;<i> at a time.
+</I>
+You can send smc.c and ssc.c as a single big patch
+respectively. Probabaly you need some small patches to change stgt for
+smc.c and ssc.c.
+
+
+&gt;<i> So far, while testing of this code base, I have modified the Makefile
+</I>&gt;<i> to include the following conditional compile time options. The SBC
+</I>&gt;<i> code is still included.
+</I>&gt;<i> e.g.
+</I>&gt;<i> make KERNELSRC=/usr/src/linux-2.6.20.1 ISCSI=1 SSC=1 SMC=1
+</I>&gt;<i>
+</I>&gt;<i> Would this be the 'right' way to go, or should it just be compiled
+</I>&gt;<i> anyway - like the sbc code?
+</I>
+If SSC and SMC need patched header files like IBMVIO and XEN driver
+and passthrough with bsg, you need compile time options. If not, you
+don't need them.
+
+
+&gt;<i> I would also like to see &quot;int (*device_init)()&quot; return a status code
+</I>&gt;<i> instead of being a &quot;void (*device_init)()&quot;, and a corresponding &quot;int
+</I>&gt;<i> (*device_shutdown)()&quot; defined in the device_type_template.
+</I>
+No problem. device_init() is used only for OSD and a workaround. They
+are expected to be changed to support other device types like SSC and
+SMC.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000452.html">[Stgt-devel] Adding Virtial Tape &amp; Changer targets
+</A></li>
+	<LI>Next message: <A HREF="000454.html">[Stgt-devel] Adding Virtial Tape &amp; Changer targets
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#453">[ date ]</a>
+              <a href="thread.html#453">[ thread ]</a>
+              <a href="subject.html#453">[ subject ]</a>
+              <a href="author.html#453">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

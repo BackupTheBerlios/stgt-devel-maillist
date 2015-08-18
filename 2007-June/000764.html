@@ -1,0 +1,208 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%0A%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3Cf29db9a80706112132u3109d96fmb36c9ecaad44e18f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000757.html">
+   <LINK REL="Next"  HREF="000766.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%0A%09Add-new-module-entry-points-for-configuration%20-%20Try%205&In-Reply-To=%3Cf29db9a80706112132u3109d96fmb36c9ecaad44e18f%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration - Try 5">markh794 at gmail.com
+       </A><BR>
+    <I>Tue Jun 12 06:32:59 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000757.html">[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+        <LI>Next message: <A HREF="000766.html">[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#764">[ date ]</a>
+              <a href="thread.html#764">[ thread ]</a>
+              <a href="subject.html#764">[ subject ]</a>
+              <a href="author.html#764">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 6/9/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: [Stgt-devel] [Patch 1/2]       Add-new-module-entry-points-for-configuration - Try 5
+</I>&gt;<i> Date: Tue, 5 Jun 2007 13:18:04 +1000
+</I>&gt;<i>
+</I>&gt;<i> &gt; OK, just when I thought I'd found all my coding blunders...
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; A quick 'grep &quot;if\(&quot; identified some of my mistakes and a couple of
+</I>&gt;<i> &gt; other that slipped thru.
+</I>&gt;<i>
+</I>&gt;<i> Applied, thanks a lot. No base64 attachment next time, please.
+</I>&gt;<i>
+</I>&gt;<i> Some comments for next time.
+</I>&gt;<i>
+</I>&gt;<i> &gt;  int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt;  {
+</I>&gt;<i> &gt; @@ -40,7 +44,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt;       uint8_t *data;
+</I>&gt;<i> &gt;       uint8_t *scb = cmd-&gt;scb;
+</I>&gt;<i> &gt;       unsigned char device_type = cmd-&gt;c_target-&gt;dev_type_template.type;
+</I>&gt;<i> &gt; -     char *product_id = cmd-&gt;c_target-&gt;dev_type_template.pid;
+</I>&gt;<i> &gt; +     struct lu_phy_attr *attributes = cmd-&gt;dev-&gt;attributes;
+</I>&gt;<i> &gt;       unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;       if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+</I>&gt;<i> &gt; @@ -57,22 +61,21 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt;       dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;       if (!(scb[1] &amp; 0x3)) {
+</I>&gt;<i> &gt; +             int i;
+</I>&gt;<i> &gt;               data[0] = device_type;
+</I>&gt;<i> &gt; -             data[2] = 4;
+</I>&gt;<i> &gt; +             data[1] = (attributes-&gt;is_removable) ? 0x80 : 0;
+</I>&gt;<i> &gt; +             data[2] = 5;    /* SPC-3 */
+</I>&gt;<i> &gt;               data[3] = 0x42;
+</I>&gt;<i> &gt; -             data[4] = 59;
+</I>&gt;<i> &gt;               data[7] = 0x02;
+</I>&gt;<i> &gt;               memset(data + 8, 0x20, 28);
+</I>&gt;<i> &gt; -             strncpy((char *)data + 8, VENDOR_ID, 8);
+</I>&gt;<i> &gt; -             strncpy((char *)data + 16, product_id, 16);
+</I>&gt;<i> &gt; -             strncpy((char *)data + 32, PRODUCT_REV, 4);
+</I>&gt;<i> &gt; -             data[58] = 0x03;
+</I>&gt;<i> &gt; -             data[59] = 0x20;
+</I>&gt;<i> &gt; -             data[60] = 0x09;
+</I>&gt;<i> &gt; -             data[61] = 0x60;
+</I>&gt;<i> &gt; -             data[62] = 0x03;
+</I>&gt;<i> &gt; -             data[63] = 0x00;
+</I>&gt;<i> &gt; -             len = 64;
+</I>&gt;<i> &gt; +             strncpy((char *)data + 8, attributes-&gt;vendor_ident, 8);
+</I>&gt;<i> &gt; +             strncpy((char *)data + 16, attributes-&gt;product_ident, 16);
+</I>&gt;<i> &gt; +             strncpy((char *)data + 32, attributes-&gt;product_rev, 4);
+</I>&gt;<i> &gt; +             for (i=0, len=58; i &lt; VERSION_DESCRIPTOR_LEN; i++, len += 2) {
+</I>&gt;<i> &gt; +                     data[len] = (attributes-&gt;version_desc[i] &gt;&gt; 8) &amp; 0xff;
+</I>&gt;<i> &gt; +                     data[len+1] = attributes-&gt;version_desc[i] &amp; 0xff;
+</I>&gt;<i> &gt; +             }
+</I>&gt;<i>
+</I>&gt;<i> Should be:
+</I>&gt;<i>
+</I>&gt;<i> &gt; +             for (i = 0, len = 58; i &lt; VERSION_DESCRIPTOR_LEN; i++, len += 2) {
+</I>&gt;<i>
+</I>&gt;<i> Anyway, this part looks odd to me. I rewrote this part.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt; +struct lu_phy_attr {
+</I>&gt;<i> &gt; +     char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> &gt; +     char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +     /* SCSI Inquiry Params */
+</I>&gt;<i> &gt; +     char vendor_ident[9];
+</I>&gt;<i> &gt; +     char product_ident[17];
+</I>&gt;<i>
+</I>&gt;<i> Renamed vendor_id and product_id.
+</I>&gt;<i>
+</I>&gt;<i> &gt; +     char product_rev[5];
+</I>&gt;<i> &gt; +     uint16_t version_desc[VERSION_DESCRIPTOR_LEN];
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +     char is_removable;      /* Removable media */
+</I>&gt;<i> &gt; +     char online;            /* Logical Unit online ? */
+</I>&gt;<i> &gt; +     char reset;             /* Power-on or reset has occured */
+</I>&gt;<i> &gt; +     char sense_format;      /* Descrptor format sense data supported */
+</I>&gt;<i> &gt; +};
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt;  struct scsi_lu {
+</I>&gt;<i> &gt;       int fd;
+</I>&gt;<i> &gt;       uint64_t addr; /* persistent mapped address */
+</I>&gt;<i> &gt;       uint64_t size;
+</I>&gt;<i> &gt;       uint64_t lun;
+</I>&gt;<i> &gt; -     char scsi_id[SCSI_ID_LEN];
+</I>&gt;<i> &gt; -     char scsi_sn[SCSI_SN_LEN];
+</I>&gt;<i> &gt;       char *path;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;       /* the list of devices belonging to a target */
+</I>&gt;<i> &gt; @@ -48,7 +63,7 @@ struct scsi_lu {
+</I>&gt;<i> &gt;       uint64_t reserve_id;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;       /* TODO: needs a structure for lots of device parameters */
+</I>&gt;<i> &gt; -     uint8_t d_sense;
+</I>&gt;<i> &gt; +     struct lu_phy_attr *attributes;
+</I>&gt;<i>
+</I>&gt;<i> Why do we use a struct lu_phy_attr pointer? Why just can't we do:
+</I>&gt;<i>
+</I>&gt;<i> struct scsi_lu {
+</I>&gt;<i> ...
+</I>&gt;<i>         struct lu_phy_attr attrs;
+</I>&gt;<i> };
+</I>&gt;<i>
+</I>&gt;<i> 'attributes' is too long for me. renamed 'attrs'.
+</I>&gt;<i>
+</I>
+I used a pointer and malloc(sizeof(struct lu_phy_attrs)) thinking this
+will limit the size of the scsi_lu structure.
+
+I can in-line it with scsi_lu if you like..
+
+
+BTW: I am having problem accessing the git repositry via http..
+(<A HREF="git://">git://</A> blocked from work's firewall)
+
+$ git-pull <A HREF="http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git">http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git</A> master
+Fetching refs/heads/master from
+<A HREF="http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git">http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git</A> using http
+Getting alternates list for
+<A HREF="http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git">http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git</A>
+Getting pack list for
+<A HREF="http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git">http://www.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git</A>
+Getting index for pack 347d7aca3fccc4218e6acf919119f6bdabc921a6
+Getting index for pack acebc448c87d220eb76e7fa8a8caa8fd04fd1506
+Getting pack acebc448c87d220eb76e7fa8a8caa8fd04fd1506
+ which contains 468fbf386c3f7df6217353eaba33630cf293f180
+walk 468fbf386c3f7df6217353eaba33630cf293f180
+[snip]
+
+
+$ git log
+commit 468fbf386c3f7df6217353eaba33630cf293f180
+Author: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Date:   Sat Apr 14 10:03:55 2007 +0900
+
+    fix pread/pwrite large offset bugs
+
+    Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+
+[snip]
+
+
+Cheers
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000757.html">[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+	<LI>Next message: <A HREF="000766.html">[Stgt-devel] [Patch	1/2]	Add-new-module-entry-points-for-configuration - Try 5
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#764">[ date ]</a>
+              <a href="thread.html#764">[ thread ]</a>
+              <a href="subject.html#764">[ subject ]</a>
+              <a href="author.html#764">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

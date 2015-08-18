@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Linux Kernel Version
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Linux%20Kernel%20Version&In-Reply-To=%3C200607130159.k6D1xOM1003127%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000255.html">
+   <LINK REL="Next"  HREF="000259.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Linux Kernel Version</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Linux%20Kernel%20Version&In-Reply-To=%3C200607130159.k6D1xOM1003127%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] Linux Kernel Version">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jul 13 03:59:24 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000255.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+        <LI>Next message: <A HREF="000259.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#257">[ date ]</a>
+              <a href="thread.html#257">[ thread ]</a>
+              <a href="subject.html#257">[ subject ]</a>
+              <a href="author.html#257">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+Subject: [Stgt-devel] Linux Kernel Version
+Date: Wed, 12 Jul 2006 09:44:03 -0500
+
+&gt;<i> What is the plan regarding following kernel.org? By that I mean what
+</I>&gt;<i> dependencies are not upstream that the current stgt project relies on
+</I>&gt;<i> and what is the schedule to get those dependencies pushed upstream?
+</I>
+Now we have three parts related with tgt in -mm kernels (through
+scsi-target git tree).
+
+o tgt core : we have only one not-merged patch in the svn tree
+o ibmvscsi target driver
+o libsrp : provides SRP library functions, ibmvscsi target driver
+depends on this
+
+So almost everything that ibmvscsi target driver needs is in -mm
+kernels.
+
+About iSCSI (and iSER), we need three following parts in addition to
+the above parts.
+
+o libiscsi : we add to target support to the current code.
+o scsi_transport_iscsi : ditto
+o iscsi_tcp : we takes initiator specific stuff out of this and move
+it to iscsi_tcp_initiator.
+o iscsi_tcp_initiator : see above 
+o iscsi_tcp_target : provies target specific stuff
+
+You can see them at:
+
+<A HREF="http://svn.berlios.de/svnroot/repos/stgt/trunk/istgt">http://svn.berlios.de/svnroot/repos/stgt/trunk/istgt</A>
+
+They got a bit out of data. They are based on open-iscsi r596 code.
+
+Mike has been reviewing them and we will post them to scsi-ml. We need
+to get permission to put them into mainline.
+
+
+iSER needs modifications to libiscsi and iscsi_iser. Possibly, we have
+something like iscsi_target.
+
+About schedule, please ask James. :) I think that tgt core and
+ibmvscsi driver is not so far. Andrew said last month, &quot;SCSI target
+patches are being worked on - perhaps a 2.6.18/2.6.19 feature&quot; (though
+we already missed 2.6.18).
+
+<A HREF="http://www.osdl.jp/docs/Seminar0613/AndrewMorton_Status_and_Direction_of_Kernel_Development.pdf">http://www.osdl.jp/docs/Seminar0613/AndrewMorton_Status_and_Direction_of_Kernel_Development.pdf</A>
+
+
+&gt;<i> The OpenFabrics stack and iWARP branch are pre-requisites for iSER
+</I>&gt;<i> support and these branches are way upstream from James's git tree. 
+</I>&gt;<i> 
+</I>&gt;<i> Would it be possible to get James to post a patch patch for the required
+</I>&gt;<i> kernel changes so that we could apply this patch to the kernel we need?
+</I>
+I made the tgt patch for 2.6.17. Would it help?
+
+<A HREF="http://svn.berlios.de/svnroot/repos/stgt/trunk/patchset/tgt-2.6.17.patch">http://svn.berlios.de/svnroot/repos/stgt/trunk/patchset/tgt-2.6.17.patch</A>
+
+Sorry. There is no instruction about it yet. I will write something
+later on.
+
+As you said, it's complicated to run tgt right now. I've been working
+on it because some people might be interested in tgt after OLS. I want
+to make sure that everyone can run tgt without effort. I'm in the
+middle of large user-space rewrite (I've commited some last night).
+
+Sorry for delay about iSER tgt stuff. I will work on it after OLS. If
+you guys teach me how to setup Chelsio T3 at OLS, I can work on it
+right after OLS. :)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000255.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+	<LI>Next message: <A HREF="000259.html">[Stgt-devel] Linux Kernel Version
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#257">[ date ]</a>
+              <a href="thread.html#257">[ thread ]</a>
+              <a href="subject.html#257">[ subject ]</a>
+              <a href="author.html#257">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

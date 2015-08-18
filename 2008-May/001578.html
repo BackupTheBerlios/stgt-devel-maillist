@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH 1/7] modesense10 length too small by one byte
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%201/7%5D%20modesense10%20length%20too%20small%20by%20one%20byte&In-Reply-To=%3Cmailman.19.1331738481.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001576.html">
+   <LINK REL="Next"  HREF="001580.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH 1/7] modesense10 length too small by one byte</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%201/7%5D%20modesense10%20length%20too%20small%20by%20one%20byte&In-Reply-To=%3Cmailman.19.1331738481.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH 1/7] modesense10 length too small by one byte">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Fri May  2 14:31:07 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001576.html">[Stgt-devel] Patches for MMC and fix for serious crash bug	in	spc_mode_sense()
+</A></li>
+        <LI>Next message: <A HREF="001580.html">[PATCH 2/7] dont set modepages in the example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1578">[ date ]</a>
+              <a href="thread.html#1578">[ thread ]</a>
+              <a href="subject.html#1578">[ subject ]</a>
+              <a href="author.html#1578">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>fix a bug in the mode sense 10 data  where the length is one byte too small
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/spc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usr/spc.c b/usr/spc.c
+index cf2e504..e3e4d98 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -419,7 +419,7 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 		data[0] = len - 1;
+ 		data[3] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
+ 	} else {
+-		*(uint16_t *)(data) = __cpu_to_be16(len - 3);
++		*(uint16_t *)(data) = __cpu_to_be16(len - 2);
+ 		data[7] = dbd ? 0 : BLOCK_DESCRIPTOR_LEN;
+ 	}
+
+-- 
+1.5.5
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001576.html">[Stgt-devel] Patches for MMC and fix for serious crash bug	in	spc_mode_sense()
+</A></li>
+	<LI>Next message: <A HREF="001580.html">[PATCH 2/7] dont set modepages in the example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1578">[ date ]</a>
+              <a href="thread.html#1578">[ thread ]</a>
+              <a href="subject.html#1578">[ subject ]</a>
+              <a href="author.html#1578">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] dd fails with iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C20070809202234.GA26911%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000931.html">
+   <LINK REL="Next"  HREF="000935.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] dd fails with iSER</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20dd%20fails%20with%20iSER&In-Reply-To=%3C20070809202234.GA26911%40osc.edu%3E"
+       TITLE="[Stgt-devel] dd fails with iSER">pw at osc.edu
+       </A><BR>
+    <I>Thu Aug  9 22:22:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000931.html">[Stgt-devel] dd fails with iSER
+</A></li>
+        <LI>Next message: <A HREF="000935.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#932">[ date ]</a>
+              <a href="thread.html#932">[ thread ]</a>
+              <a href="subject.html#932">[ subject ]</a>
+              <a href="author.html#932">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Wed, 08 Aug 2007 12:11 +0300:
+&gt;<i> sgp_dd if=/dev/sg3 of=/dev/null count=10
+</I>[..]
+
+My usual tree is 2.6.22-rc5 with bidi patches from Tomo and Boaz
+mixed in, plus local fixes for iser bidirectional and AHS.  I tried
+a stock 2.6.23-rc2, no bidi, and did indeed find one problem, which
+is worked around with the below (also in git).  It was not an issue
+of missing kernel patches on the initiator (whew).
+
+But there is a larger problem which we must address soon related to
+flow control of outstanding RDMA operations.  The reason we hadn't
+run into the problem here is that we always adjust the transfer
+settings for better performance:
+
+        ./tgtadm --lld iscsi --mode target --op update --tid 1 \
+                 --name MaxRecvDataSegmentLength --value 262144
+        ./tgtadm --lld iscsi --mode target --op update --tid 1 \
+                 --name FirstBurstLength --value 262144
+
+The default values are 8k and 64k respectively.  It is the very
+small 8k that gets us into trouble by requiring lots of small RDMA
+operations to satisfy a transfer.
+
+There is also a spot in /etc/iscsi/iscsid.conf where you can adjust
+the default value for the initiator:
+
+	node.conn[0].iscsi.MaxRecvDataSegmentLength = 262144
+
+Its default is a more reasonable 128k.
+
+I'll look into this matter further, but this hopefully will let you
+do some basic testing.
+
+&gt;<i> When I run with &quot;tgtd -d 9&quot;, I don't see any logs. I only see:
+</I>&gt;<i> 
+</I>&gt;<i> Aug  8 12:01:27 noni tgtd: Target daemon logger with pid=6353 started!
+</I>
+It seems to produce logs at level &lt;31&gt;, which syslog ignores.  You
+can do this though:
+
+./tgtd -d 9 -f &amp;
+
+Then run the tgtadm commands and you should see output on stderr.
+
+		-- Pete
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000931.html">[Stgt-devel] dd fails with iSER
+</A></li>
+	<LI>Next message: <A HREF="000935.html">[Stgt-devel] dd fails with iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#932">[ date ]</a>
+              <a href="thread.html#932">[ thread ]</a>
+              <a href="subject.html#932">[ subject ]</a>
+              <a href="author.html#932">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

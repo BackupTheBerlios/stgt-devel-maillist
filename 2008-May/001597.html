@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/7] spc/mmc: dont set modepages in the example	text
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20spc/mmc%3A%20dont%20set%20modepages%20in%20the%0A%20example%09text&In-Reply-To=%3C20080506134135K.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001579.html">
+   <LINK REL="Next"  HREF="001581.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/7] spc/mmc: dont set modepages in the example	text</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/7%5D%20spc/mmc%3A%20dont%20set%20modepages%20in%20the%0A%20example%09text&In-Reply-To=%3C20080506134135K.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [PATCH 2/7] spc/mmc: dont set modepages in the example	text">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue May  6 06:59:53 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001579.html">[Stgt-devel] [PATCH 2/7] spc/mmc: dont set modepages in the example	text
+</A></li>
+        <LI>Next message: <A HREF="001581.html">[Stgt-devel] [PATCH 3/7] spc/mmc: add modepage for MM capabilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1597">[ date ]</a>
+              <a href="thread.html#1597">[ thread ]</a>
+              <a href="subject.html#1597">[ subject ]</a>
+              <a href="author.html#1597">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, 3 May 2008 12:43:46 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> &gt;From ddc93dcca2e5310e5f469814dab060cffbd58097 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> Date: Fri, 2 May 2008 22:32:13 +1000
+</I>&gt;<i> Subject: [PATCH 2/7] dont set modepages in the example
+</I>&gt;<i> 
+</I>&gt;<i> Done tset the modepages in the example, these pages are added by
+</I>&gt;<i> default for the device anyway during initialization
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  doc/README.mmc |    7 -------
+</I>&gt;<i>  1 files changed, 0 insertions(+), 7 deletions(-)
+</I>
+Seems that the patch is corrupted:
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at arbre</A>:~/git/tgt$ git-am ~/Mail/iscsi/stgt/2593 
+Applying dont set modepages in the example
+fatal: corrupt patch at line 29
+Patch failed at 0001.
+When you have resolved this problem run &quot;git-am --resolved&quot;.
+If you would prefer to skip this patch, instead run &quot;git-am --skip&quot;.
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita at arbre</A>:~/git/tgt$ patch -p1 &lt; ~/Mail/iscsi/stgt/2593 
+patching file doc/README.mmc
+patch: **** malformed patch at line 93: --params mode_page=0x1c:0:10:8:0:0:0:0:0:0:0:0:0
+
+
+#2-7 patches seems to be corrupted too.
+
+Can you send a patch to youself and make sure that you can apply it
+cleanly, then resend #2-7 patches?
+
+
+Thanks,
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001579.html">[Stgt-devel] [PATCH 2/7] spc/mmc: dont set modepages in the example	text
+</A></li>
+	<LI>Next message: <A HREF="001581.html">[Stgt-devel] [PATCH 3/7] spc/mmc: add modepage for MM capabilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1597">[ date ]</a>
+              <a href="thread.html#1597">[ thread ]</a>
+              <a href="subject.html#1597">[ subject ]</a>
+              <a href="author.html#1597">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

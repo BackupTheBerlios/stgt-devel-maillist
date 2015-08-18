@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154462180.2829.59.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000267.html">
+   <LINK REL="Next"  HREF="000269.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154462180.2829.59.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] User-mode iSER">mingz at ele.uri.edu
+       </A><BR>
+    <I>Tue Aug  1 21:56:20 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000267.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000269.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#268">[ date ]</a>
+              <a href="thread.html#268">[ thread ]</a>
+              <a href="subject.html#268">[ subject ]</a>
+              <a href="author.html#268">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 2006-08-01 at 14:00 -0500, Tom Tucker wrote:
+&gt;<i> On Tue, 2006-08-01 at 14:49 -0400, Ming Zhang wrote:
+</I>&gt;<i> &gt; my 2c. u figure ignores other device types like VT/VTL or bridge. your
+</I>&gt;<i> &gt; target device type are only TYPE_DISK here.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, I should put in ellipses... These types are not precluded.
+</I>&gt;<i> 
+</I>&gt;<i> &gt;  also scsi/block/file just
+</I>&gt;<i> &gt; physical media used by TYPE_DISK.
+</I>&gt;<i> 
+</I>&gt;<i> Yes, but there seemed to be some interest in exporting a file as a SCSI
+</I>&gt;<i> Target, or even anonymously mapped memory...
+</I>&gt;<i> 
+</I>&gt;<i> What else should we be thinking about?
+</I>
+what about the AoE? maybe people want AoE target as well. or AoE will
+not be considered because of its non-SCSI nature?
+
+
+
+
+&gt;<i> 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Ming
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; On Tue, 2006-08-01 at 13:42 -0500, Tom Tucker wrote:
+</I>&gt;<i> &gt; &gt; What do people think about something like this...
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The target architecture is implemented to the extent possible entirely
+</I>&gt;<i> &gt; &gt; in user-mode. The architecture intends to support multiple Target Device
+</I>&gt;<i> &gt; &gt; Types, SCSI Transport Types and Network Transport Types. The enclosed
+</I>&gt;<i> &gt; &gt; figure below illustrates the components of the architecture.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; At the top of the figure are the different Target Device Type Drivers.
+</I>&gt;<i> &gt; &gt; These &quot;drivers&quot; are implemented in user-mode as libraries and plug into
+</I>&gt;<i> &gt; &gt; the Target Interface Layer. The Target Device Type drivers each support
+</I>&gt;<i> &gt; &gt; a particular class of device. For example, the SCSI Disk Driver supports
+</I>&gt;<i> &gt; &gt; SCSI disks, the Block Device driver supports generic block devices
+</I>&gt;<i> &gt; &gt; (e.g. /dev/md0, etc..) and the File Device Driver supports files as
+</I>&gt;<i> &gt; &gt; target devices. In most cases, the Target Device Type Drivers call
+</I>&gt;<i> &gt; &gt; existing system call interfaces to communicate with the actual target
+</I>&gt;<i> &gt; &gt; device, e.g. open, close, read, write, ioctl, etc... High performance
+</I>&gt;<i> &gt; &gt; implementations may use private kernel interfaces to improve
+</I>&gt;<i> &gt; &gt; performance. 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The Target Interface Layer implements a generic target device
+</I>&gt;<i> &gt; &gt; independent API called the Target Device API, and a SCSI transport
+</I>&gt;<i> &gt; &gt; independent API called the SCSI Transport API. This Target Interface
+</I>&gt;<i> &gt; &gt; Layer implements a target/SCSI transport switch that allows any Target
+</I>&gt;<i> &gt; &gt; Device Type to be associated with any SCSI Transport Type. 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The SCSI Transport Class Drivers implement support for the various SCSI
+</I>&gt;<i> &gt; &gt; transport types: SRP Transport implements the SCSI RDMA Protocol
+</I>&gt;<i> &gt; &gt; transport, FCP Transport implements the Fiber Channel transport type,
+</I>&gt;<i> &gt; &gt; and the iSCSI Transport implements the iSCSI transport type. These
+</I>&gt;<i> &gt; &gt; drivers sit between the Target Interface Layer and the Network Interface
+</I>&gt;<i> &gt; &gt; Layer. 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The Network Interface Layer implements a SCSI transport independent API
+</I>&gt;<i> &gt; &gt; called the Transport Class API and a network transport independent API
+</I>&gt;<i> &gt; &gt; called the Transport API. The Network Interface Layer allows a SCSI
+</I>&gt;<i> &gt; &gt; Transport Class driver to support multiple network transports. For
+</I>&gt;<i> &gt; &gt; example, the iSCSI Transport driver will support TCP, IB, and iWARP as
+</I>&gt;<i> &gt; &gt; network transports. The details of a particular SCSI Transport Class's
+</I>&gt;<i> &gt; &gt; device enumeration, login and management are implemented in the SCSI
+</I>&gt;<i> &gt; &gt; Transport Class driver (e.g. iSCSI Transport). The details of a
+</I>&gt;<i> &gt; &gt; particular network transport's connection management paradigm are
+</I>&gt;<i> &gt; &gt; implemented in the Transport Provider driver (e.g. RDMA driver).
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The Transport Provider Drivers implement the Transport Provider API and
+</I>&gt;<i> &gt; &gt; provide core network I/O services to the Network Interface Layer. The
+</I>&gt;<i> &gt; &gt; Transport API is a transport independent interface for creating
+</I>&gt;<i> &gt; &gt; endpoints, service points, accepting incoming connection requests and
+</I>&gt;<i> &gt; &gt; performing I/O on an endpoint.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The Management Agent interfaces with the Target Interface Layer and
+</I>&gt;<i> &gt; &gt; performs management functions such as creating targets, devices, loading
+</I>&gt;<i> &gt; &gt; and storing persistent configurations and other management related
+</I>&gt;<i> &gt; &gt; functions.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; The various API referred to above are basically simplified versions of
+</I>&gt;<i> &gt; &gt; the existing scsi_transport_template, scsi_host, scsi_host_template
+</I>&gt;<i> &gt; &gt; interfaces, etc... from the current kernel implementation. The
+</I>&gt;<i> &gt; &gt; interfaces between the various components, however, can be reduced to
+</I>&gt;<i> &gt; &gt; function calls since everything resides user mode. 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I think the only tough issue here is with copy avoidance for the network
+</I>&gt;<i> &gt; &gt; user/kernel interface and target device user/kernel interfaces.
+</I>&gt;<i> &gt; &gt; Initially, these could be prototyped without regard to this issue and
+</I>&gt;<i> &gt; &gt; see what kind of performance we could get. The RDMA network transports
+</I>&gt;<i> &gt; &gt; already provide copy avoidance, however, TCP/FC would require some
+</I>&gt;<i> &gt; &gt; cleverness.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Thoughts?
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; _______________________________________________
+</I>&gt;<i> &gt; &gt; Stgt-devel mailing list
+</I>&gt;<i> &gt; &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; &gt; <A HREF="http://bat.berlios.de/mailman/listinfo/stgt-devel">http://bat.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; _______________________________________________
+</I>&gt;<i> &gt; Stgt-devel mailing list
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; <A HREF="http://bat.berlios.de/mailman/listinfo/stgt-devel">http://bat.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="http://bat.berlios.de/mailman/listinfo/stgt-devel">http://bat.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000267.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000269.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#268">[ date ]</a>
+              <a href="thread.html#268">[ thread ]</a>
+              <a href="subject.html#268">[ subject ]</a>
+              <a href="author.html#268">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

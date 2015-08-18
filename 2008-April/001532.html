@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Scst-devel] Integration of SCST	in	themainstreamLinux kernel
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%0A%09in%09themainstreamLinux%20kernel&In-Reply-To=%3C200804260809.m3Q89gW9003018%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001530.html">
+   <LINK REL="Next"  HREF="001533.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Scst-devel] Integration of SCST	in	themainstreamLinux kernel</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BScst-devel%5D%20Integration%20of%20SCST%0A%09in%09themainstreamLinux%20kernel&In-Reply-To=%3C200804260809.m3Q89gW9003018%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [Scst-devel] Integration of SCST	in	themainstreamLinux kernel">tomof at acm.org
+       </A><BR>
+    <I>Sat Apr 26 10:09:40 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001530.html">[Stgt-devel] Does STGT support Qlogic 24xx devices?
+</A></li>
+        <LI>Next message: <A HREF="001533.html">[Stgt-devel] [PATCH 0/2] IB/iSER: Calculating the VA in iSER header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1532">[ date ]</a>
+              <a href="thread.html#1532">[ thread ]</a>
+              <a href="subject.html#1532">[ subject ]</a>
+              <a href="author.html#1532">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+Subject: Re: [Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+Date: Thu, 13 Mar 2008 21:40:24 +0900
+
+&gt;<i> On Thu, 13 Mar 2008 12:44:18 +0100
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; &gt; On Thu, 13 Mar 2008 12:24:33 +0100
+</I>&gt;<i> &gt; &gt; Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.a.org</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; (...)
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; &gt;&gt; If the patch is finally integrated, I guess README files need updating, 
+</I>&gt;<i> &gt; &gt;&gt; too to reflect the change.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Well, I really don't like to set the default state to 'offline'.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I'm sure that many people say that initiators can connect to tgtd if I
+</I>&gt;<i> &gt; &gt; do that.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; You meant &quot;can't connect&quot; I guess.
+</I>&gt;<i> &gt; Yes, this changes the default behaviour.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; &gt; I could make it as the startup (boot) option though I don't like it
+</I>&gt;<i> &gt; &gt; either but I think that it's less problematic to set the default state
+</I>&gt;<i> &gt; &gt; to 'offline'.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Either default to offline (bad for existing users) or give a startup 
+</I>&gt;<i> 
+</I>&gt;<i> Not only for existing users. People dislike extra operations.
+</I>&gt;<i> 
+</I>&gt;<i> I've used several commercial iSCSI target systems. All I need to do are
+</I>&gt;<i> setting up security (which initiators can connect) and luns with them.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt; option to tgtd (better). There is no other way, I guess (other than 
+</I>&gt;<i> &gt; making it compile-time option, which is really bad).
+</I>&gt;<i> 
+</I>&gt;<i> There is another option. If tgtd has no targets, then tgtd closes a
+</I>&gt;<i> connection instead of sending a response. So you can change the state
+</I>&gt;<i> to offline, configure targets and then change the state to running.
+</I>&gt;<i> 
+</I>&gt;<i> Try this patch (against the current git head).
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> index 09ed0e5..ed7879a 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> @@ -104,6 +104,12 @@ static void accept_connection(int afd, int events, void *data)
+</I>&gt;<i>  		return;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	if (!is_system_available())
+</I>&gt;<i> +		goto out;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (list_empty(&amp;iscsi_targets_list))
+</I>&gt;<i> +		goto out;
+</I>&gt;<i> +
+</I>&gt;<i>  	ret = set_keepalive(fd);
+</I>&gt;<i>  	if (ret)
+</I>
+I've merged this patch with minor modifications. Play with something
+like this:
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --lld iscsi --op show --mode system
+System:
+    State: ready
+iSNS:
+    iSNS=Off
+    iSNSServerIP=
+    iSNSServerPort=3205
+    iSNSAccessControl=Off
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --op update --mode system -n State -v offline
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at iris</A>:~/git# ./tgt/usr/tgtadm --lld iscsi --op show --mode system
+System:
+    State: offline
+iSNS:
+    iSNS=Off
+    iSNSServerIP=
+    iSNSServerPort=3205
+    iSNSAccessControl=Off
+
+
+Yeah, I know that tgt's user interface is pretty inconsistent so I'll
+clean up it.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001530.html">[Stgt-devel] Does STGT support Qlogic 24xx devices?
+</A></li>
+	<LI>Next message: <A HREF="001533.html">[Stgt-devel] [PATCH 0/2] IB/iSER: Calculating the VA in iSER header
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1532">[ date ]</a>
+              <a href="thread.html#1532">[ thread ]</a>
+              <a href="subject.html#1532">[ subject ]</a>
+              <a href="author.html#1532">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

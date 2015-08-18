@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C20080117174542.GC29650%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001291.html">
+   <LINK REL="Next"  HREF="001293.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C20080117174542.GC29650%40osc.edu%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">pw at osc.edu
+       </A><BR>
+    <I>Thu Jan 17 18:45:42 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001291.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001293.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1292">[ date ]</a>
+              <a href="thread.html#1292">[ thread ]</a>
+              <a href="subject.html#1292">[ subject ]</a>
+              <a href="author.html#1292">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Thu, 17 Jan 2008 19:05 +0900:
+&gt;<i> On Thu, 17 Jan 2008 12:48:28 +0300
+</I>&gt;<i> Vladislav Bolkhovitin &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; &gt; On Thu, 17 Jan 2008 10:27:08 +0100
+</I>&gt;<i> &gt; &gt; &quot;Bart Van Assche&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bart.vanassche at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt;&gt;Hello,
+</I>&gt;<i> &gt; &gt;&gt;
+</I>&gt;<i> &gt; &gt;&gt;I have performed a test to compare the performance of SCST and STGT.
+</I>&gt;<i> &gt; &gt;&gt;Apparently the SCST target implementation performed far better than
+</I>&gt;<i> &gt; &gt;&gt;the STGT target implementation. This makes me wonder whether this is
+</I>&gt;<i> &gt; &gt;&gt;due to the design of SCST or whether STGT's performance can be
+</I>&gt;<i> &gt; &gt;&gt;improved to the level of SCST ?
+</I>&gt;<i> &gt; &gt;&gt;
+</I>&gt;<i> &gt; &gt;&gt;Test performed: read 2 GB of data in blocks of 1 MB from a target (hot
+</I>&gt;<i> &gt; &gt;&gt;cache -- no disk reads were performed, all reads were from the cache).
+</I>&gt;<i> &gt; &gt;&gt;Test command: time dd if=/dev/sde of=/dev/null bs=1M count=2000
+</I>&gt;<i> &gt; &gt;&gt;
+</I>&gt;<i> &gt; &gt;&gt;                              STGT read             SCST read
+</I>&gt;<i> &gt; &gt;&gt;                           performance (MB/s)   performance (MB/s)
+</I>&gt;<i> &gt; &gt;&gt;Ethernet (1 Gb/s network)        77                    89
+</I>&gt;<i> &gt; &gt;&gt;IPoIB (8 Gb/s network)           82                   229
+</I>&gt;<i> &gt; &gt;&gt;SRP (8 Gb/s network)            N/A                   600
+</I>&gt;<i> &gt; &gt;&gt;iSER (8 Gb/s network)            80                   N/A
+</I>&gt;<i> &gt; &gt;&gt;
+</I>&gt;<i> &gt; &gt;&gt;These results show that SCST uses the InfiniBand network very well
+</I>&gt;<i> &gt; &gt;&gt;(effectivity of about 88% via SRP), but that the current STGT version
+</I>&gt;<i> &gt; &gt;&gt;is unable to transfer data faster than 82 MB/s. Does this mean that
+</I>&gt;<i> &gt; &gt;&gt;there is a severe bottleneck  present in the current STGT
+</I>&gt;<i> &gt; &gt;&gt;implementation ?
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; I don't know about the details but Pete said that he can achieve more
+</I>&gt;<i> &gt; &gt; than 900MB/s read performance with tgt iSER target using ramdisk.
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; <A HREF="http://www.mail-archive.com/stgt-devel@lists.berlios.de/msg00004.html">http://www.mail-archive.com/stgt-devel@lists.berlios.de/msg00004.html</A>
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Please don't confuse multithreaded latency insensitive workload with 
+</I>&gt;<i> &gt; single threaded, hence latency sensitive one.
+</I>&gt;<i> 
+</I>&gt;<i> Seems that he can get good performance with single threaded workload:
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf">http://www.osc.edu/~pw/papers/wyckoff-iser-snapi07-talk.pdf</A>
+</I>&gt;<i> 
+</I>&gt;<i> But I don't know about the details so let's wait for Pete to comment
+</I>&gt;<i> on this.
+</I>
+Page 16 is pretty straight forward.  One command outstanding from
+the client.  It is an OSD read command.  Data on tmpfs.  500 MB/s is
+pretty easy to get on IB.
+
+The other graph on page 23 is for block commands.  600 MB/s ish.
+Still single command; so essentially a &quot;latency&quot; test.  Dominated by
+the memcpy time from tmpfs to pinned IB buffer, as per page 24.
+
+Erez said:
+
+&gt;<i> We didn't run any real performance test with tgt, so I don't have
+</I>&gt;<i> numbers yet. I know that Pete got ~900 MB/sec by hacking sgp_dd, so all
+</I>&gt;<i> data was read/written to the same block (so it was all done in the
+</I>&gt;<i> cache). Pete - am I right?
+</I>
+Yes (actually just 1 thread in sg_dd).  This is obviously cheating.
+Take the pread time to zero in SCSI Read analysis on page 24 to show
+max theoretical.  It's IB theoretical minus some initiator and stgt
+overheads.
+
+The other way to get more read throughput is to throw multiple
+simultaneous commands at the server.
+
+There's nothing particularly stunning here.  Suspect Bart has
+configuration issues if not even IPoIB will do &gt; 100 MB/s.
+
+		-- Pete
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001291.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001293.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1292">[ date ]</a>
+              <a href="thread.html#1292">[ thread ]</a>
+              <a href="subject.html#1292">[ subject ]</a>
+              <a href="author.html#1292">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

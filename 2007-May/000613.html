@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Question for pass-through target design
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C463F7BB5.4060603%40torque.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000609.html">
+   <LINK REL="Next"  HREF="000614.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Question for pass-through target design</H1>
+    <B>Douglas Gilbert</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Question%20for%20pass-through%20target%20design&In-Reply-To=%3C463F7BB5.4060603%40torque.net%3E"
+       TITLE="[Stgt-devel] Question for pass-through target design">dougg at torque.net
+       </A><BR>
+    <I>Mon May  7 21:19:17 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000609.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+        <LI>Next message: <A HREF="000614.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#613">[ date ]</a>
+              <a href="thread.html#613">[ thread ]</a>
+              <a href="subject.html#613">[ subject ]</a>
+              <a href="author.html#613">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> From: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] Question for pass-through target design
+</I>&gt;<i> Date: Tue, 08 May 2007 00:14:37 +0900
+</I>&gt;<i> 
+</I>&gt;&gt;<i> From: Vladislav Bolkhovitin &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>&gt;
+</I>&gt;&gt;<i> Subject: Re: [Stgt-devel] Question for pass-through target design
+</I>&gt;&gt;<i> Date: Mon, 07 May 2007 18:26:47 +0400
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Robert,
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> I'm not familiar at all with SRP and VSCSI (never tried them or seen the
+</I>&gt;&gt;&gt;<i> hardware), so I could easily confuse them, but I think I should point
+</I>&gt;&gt;&gt;<i> you at
+</I>&gt;&gt;&gt;<i> <A HREF="http://lists.openfabrics.org/pipermail/iwg/2007-March/000378.html.">http://lists.openfabrics.org/pipermail/iwg/2007-March/000378.html.</A> This
+</I>&gt;&gt;&gt;<i> is SCSI RDMA Protocol (SRP) Target driver for Linux. It works over SCST,
+</I>&gt;&gt;&gt;<i> so it should support pass-through.
+</I>&gt;&gt;<i> VSCSI stuff (ibm pSeries virtual SCSI) is related with Infiniband.
+</I>&gt;<i> 
+</I>&gt;<i> Oops,
+</I>&gt;<i> 
+</I>&gt;<i> VSCSI stuff (ibm pSeries virtual SCSI) is not related with Infiniband.
+</I>
+Tomo,
+Looking at drivers/scsi/Kconfig there does seem to be
+some connection:
+
+config SCSI_IBMVSCSI
+        tristate &quot;IBM Virtual SCSI support&quot;
+        depends on PPC_PSERIES || PPC_ISERIES
+        help
+          This is the IBM POWER Virtual SCSI Client
+...
+config SCSI_IBMVSCSIS
+        tristate &quot;IBM Virtual SCSI Server support&quot;
+        depends on PPC_PSERIES &amp;&amp; SCSI_TGT &amp;&amp; SCSI_SRP
+        help
+          This is the SRP target driver for IBM pSeries virtual environments.
+...
+
+
+When I see SRP than I presume infiniband is involved.
+
+Perhaps you might elaborate.
+
+Doug Gilbert
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000609.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+	<LI>Next message: <A HREF="000614.html">[Stgt-devel] Question for pass-through target design
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#613">[ date ]</a>
+              <a href="thread.html#613">[ thread ]</a>
+              <a href="subject.html#613">[ subject ]</a>
+              <a href="author.html#613">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

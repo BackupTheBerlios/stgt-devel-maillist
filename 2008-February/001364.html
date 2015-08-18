@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Strange throughput results with tgtd and iSCSI
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Strange%20throughput%20results%20with%20tgtd%20and%20iSCSI&In-Reply-To=%3C20080207182016.GA8115%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001362.html">
+   <LINK REL="Next"  HREF="001369.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Strange throughput results with tgtd and iSCSI</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Strange%20throughput%20results%20with%20tgtd%20and%20iSCSI&In-Reply-To=%3C20080207182016.GA8115%40osc.edu%3E"
+       TITLE="[Stgt-devel] Strange throughput results with tgtd and iSCSI">pw at osc.edu
+       </A><BR>
+    <I>Thu Feb  7 19:20:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001362.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+        <LI>Next message: <A HREF="001369.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1364">[ date ]</a>
+              <a href="thread.html#1364">[ thread ]</a>
+              <a href="subject.html#1364">[ subject ]</a>
+              <a href="author.html#1364">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A> wrote on Thu, 07 Feb 2008 11:57 -0500:
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bart.vanassche at gmail.com</A> wrote on Thu, 07 Feb 2008 17:04 +0100:
+</I>&gt;<i> &gt; Results on Ethernet:
+</I>&gt;<i> &gt; For a block size of 512 KB: write throughput of 43 MB/s.
+</I>&gt;<i> &gt; For a block size of 1 MB: write throughput of 15 MB/s.
+</I>&gt;<i> 
+</I>&gt;<i> Redoing the tests at 1G keeps it all in RAM for me.  Then I get 95
+</I>&gt;<i> MB/s at 512 kB and 88 MB/s at 1MB, so confirming your performance
+</I>&gt;<i> disparity, but not finding numbers nearly so bad.
+</I>
+I looked at logs on tgtd.  These are writes.  With my kernel, the 1M
+case just sends two 512k requests back-to-back due to initiator
+block limits.  So there are an identical series of requests in both
+cases.
+
+The time between reception of a new command request and sending the
+status response is constant for both 512k and 1M cases.  The time
+when the target is idle varies, though.  Initially the idle time
+between commands is identical in both 512k and 1M, until about
+request number 2000 out of 2048.  Then a delay of 40 ms shows up
+between commands.  What is the initiator doing here?
+
+Turns out it is a TCP artifact.  I've been carrying around a patch
+to tgtd to turn on O_NDELAY.  The numbers I reported above are for
+stock tgtd.  With the O_NDELAY patch, these change to 95 MB/s at 512
+kB (same) and 102 MB/s at 1M (better).  Presumably Bart runs for
+longer (2 GB total), and sees more of these 40 ms delays.  I did not
+analyze why the Nagle algorithm decides to hold packets when it
+does, just was happy to turn it off.
+
+I'll submit the patch to Tomo now.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001362.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+	<LI>Next message: <A HREF="001369.html">[Stgt-devel] Strange throughput results with tgtd and iSCSI
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1364">[ date ]</a>
+              <a href="thread.html#1364">[ thread ]</a>
+              <a href="subject.html#1364">[ subject ]</a>
+              <a href="author.html#1364">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

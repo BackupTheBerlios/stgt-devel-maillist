@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Thoughts on vtl filemarks
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20filemarks&In-Reply-To=%3C4880EEA7.3030408%40inter.nl.net%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001798.html">
+   <LINK REL="Next"  HREF="001793.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Thoughts on vtl filemarks</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Thoughts%20on%20vtl%20filemarks&In-Reply-To=%3C4880EEA7.3030408%40inter.nl.net%3E"
+       TITLE="[Stgt-devel] Thoughts on vtl filemarks">apauw at inter.nl.net
+       </A><BR>
+    <I>Fri Jul 18 21:27:35 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001798.html">[Stgt-devel] Fwd:  [RFC] target configuration tool
+</A></li>
+        <LI>Next message: <A HREF="001793.html">[Stgt-devel] &gt;:-(
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1790">[ date ]</a>
+              <a href="thread.html#1790">[ thread ]</a>
+              <a href="subject.html#1790">[ subject ]</a>
+              <a href="author.html#1790">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Richard Sharpe wrote:
+&gt;<i>
+</I>&gt;<i> Please don't create any such header. Doing so limits the number of
+</I>&gt;<i> file marks or the amount of MAM (Media Auxiliary Memory) data you can
+</I>&gt;<i> keep.
+</I>&gt;<i>
+</I>&gt;<i> Please consider using separate files for each virtual tape for this purpose.
+</I>&gt;<i>   
+</I>I see your point, but moving the virtual tape around is more cumbersome,
+as you need to keep the files together, otherwise it will be useless 
+without the filemarks.
+At least that was my thought behind it.
+&gt;<i> In your ssc_lu_init function, zalloc an area to contain per-LU private
+</I>&gt;<i> data that you squirrel away in the xxc_p pointer of the struct scsi_lu
+</I>&gt;<i> * struct that you are passed.
+</I>&gt;<i>
+</I>&gt;<i> You can base the name of these extra metadata files off of the name of
+</I>&gt;<i> the file already provided in path field of the struct scsi_lu * passed
+</I>&gt;<i> in (at least it seems so) or make up a name.
+</I>&gt;<i>
+</I>&gt;<i> I would suggest one for MAM info so that you can support the differing
+</I>&gt;<i> sizes in LTO3 and LTO4, and one for the other metadata (filemarks
+</I>&gt;<i> setmarks etc).
+</I>&gt;<i>
+</I>&gt;<i> Thus the metadata file would be a series of records or fields like:
+</I>&gt;<i>
+</I>&gt;<i> struct
+</I>&gt;<i> {
+</I>&gt;<i>    uint8_t type; /* 0 = file mark, 1 = setmark, 2 = record boundary
+</I>&gt;<i> for variable length records */
+</I>&gt;<i>    uint24_t offsethi;  /* upper 24 bits of the offset allowing for
+</I>&gt;<i> 56-bit offsets if you want them  */
+</I>&gt;<i>    uint32_t offsetlo;  /* lower 32 bits of the offset */
+</I>&gt;<i> }
+</I>&gt;<i>
+</I>&gt;<i> Some care would probably be needed because the same offset could point
+</I>&gt;<i> to a filemark and a setmark and a record boundary (although I am not
+</I>&gt;<i> sure if this is the correct way to handle this).
+</I>&gt;<i>
+</I>&gt;<i> I would think that writing a new filemark should invalidate all after
+</I>&gt;<i> it because I suspect that in reality anything that was beyond a new
+</I>&gt;<i> filemark is actually damaged.
+</I>&gt;<i>   
+</I>Yes, good point.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001798.html">[Stgt-devel] Fwd:  [RFC] target configuration tool
+</A></li>
+	<LI>Next message: <A HREF="001793.html">[Stgt-devel] &gt;:-(
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1790">[ date ]</a>
+              <a href="thread.html#1790">[ thread ]</a>
+              <a href="subject.html#1790">[ subject ]</a>
+              <a href="author.html#1790">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

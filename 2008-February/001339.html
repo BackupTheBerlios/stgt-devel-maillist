@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20data%20corruption%20problems%20with%20stgt%20%28aborted%0A%20journal%2C%20remounting%20ro%29%3F&In-Reply-To=%3C47A4439F.2040409%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001338.html">
+   <LINK REL="Next"  HREF="001351.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20data%20corruption%20problems%20with%20stgt%20%28aborted%0A%20journal%2C%20remounting%20ro%29%3F&In-Reply-To=%3C47A4439F.2040409%40wpkg.org%3E"
+       TITLE="[Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?">mangoo at wpkg.org
+       </A><BR>
+    <I>Sat Feb  2 11:19:11 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001338.html">[Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?
+</A></li>
+        <LI>Next message: <A HREF="001351.html">[Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1339">[ date ]</a>
+              <a href="thread.html#1339">[ thread ]</a>
+              <a href="subject.html#1339">[ subject ]</a>
+              <a href="author.html#1339">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori schrieb:
+&gt;<i> On Sat, 02 Feb 2008 10:39:02 +0100
+</I>&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;&gt;&gt;<i> On Fri, 01 Feb 2008 13:05:41 +0100
+</I>&gt;&gt;&gt;<i> Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Tomasz Chmielewski schrieb:
+</I>&gt;&gt;&gt;&gt;&gt;<i> Doesn't look my posts get to this list... or is it just lagged a lot? 
+</I>&gt;&gt;&gt;&gt;&gt;<i> Resending.
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;<i> Perhaps I'm doing something wrong - but with stgt I'm facing problems I 
+</I>&gt;&gt;&gt;&gt;&gt;<i> didn't have with IET or SCST.
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;<i> Whenever I kill tgtd daemon and start it again (i.e., target server 
+</I>&gt;&gt;&gt;&gt;&gt;<i> restart), the initiator detects an aborted journal and remount the 
+</I>&gt;&gt;&gt;&gt;&gt;<i> device ro.
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;<i> Why is it so?
+</I>&gt;&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;&gt;<i> What is the recommended way to kill the tgtd daemon? It doesn't seem to 
+</I>&gt;&gt;&gt;&gt;&gt;<i> react on TERM signal.
+</I>&gt;&gt;&gt;&gt;<i> Hello, anyone there?
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Is there a way to restart tgtd daemon or a machine running tgtd, so that 
+</I>&gt;&gt;&gt;&gt;<i> iSCSI connections don't break?
+</I>&gt;&gt;&gt;<i> What does your 'restart tgtd daemon' mean? For me, 'restart' involves
+</I>&gt;&gt;&gt;<i> stopping tgtd daemon and it closes all the iSCSI connections.
+</I>&gt;&gt;<i> Stop it, and start again?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Imagine you want to upgrade your tgtd daemon, a kernel running on that 
+</I>&gt;&gt;<i> machine, or you have to restart the target machine for some other reason 
+</I>&gt;&gt;<i> (i.e. your target machine died).
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> With IET or SCST there is no problem with that - stop the target, and 
+</I>&gt;&gt;<i> iSCSI initiator will try to reconnect.
+</I>&gt;<i> 
+</I>&gt;<i> How did you restart IET?
+</I>&gt;<i> 
+</I>&gt;<i> /etc/init.d/iscsi-target restart
+</I>
+Yes. Or restarting the whole machine if I changed the kernel (which 
+would use the same iscsi-target script).
+
+IET has some problems that it breaks when a number of initiators is 
+bigger than 50 or so - which needs two workarounds (iptables, and 
+increasing INCOMING_MAX in ietadm.h).
+
+I described it a bit here:
+
+<A HREF="http://blog.wpkg.org/2007/09/09/solving-reliability-and-scalability-problems-with-iscsi/">http://blog.wpkg.org/2007/09/09/solving-reliability-and-scalability-problems-with-iscsi/</A>
+
+
+Restarting SCST works well, and doesn't need any workarounds.
+
+
+But I also had one machine which was just hanging/freezing with IET 
+every couple of weeks - just start the machine again, everything goes 
+back to normal.
+
+
+-- 
+Tomasz Chmielewski
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001338.html">[Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?
+</A></li>
+	<LI>Next message: <A HREF="001351.html">[Stgt-devel] data corruption problems with stgt (aborted journal, remounting ro)?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1339">[ date ]</a>
+              <a href="thread.html#1339">[ thread ]</a>
+              <a href="subject.html#1339">[ subject ]</a>
+              <a href="author.html#1339">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,553 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Add the file for the backend and the file for the device type
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20the%20file%20for%20the%20backend%20and%20the%20file%20for%20the%20device%20type&In-Reply-To=%3Cmailman.48.1331738484.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002014.html">
+   <LINK REL="Next"  HREF="002012.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Add the file for the backend and the file for the device type</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20the%20file%20for%20the%20backend%20and%20the%20file%20for%20the%20device%20type&In-Reply-To=%3Cmailman.48.1331738484.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Add the file for the backend and the file for the device type">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Sat Aug  2 05:44:12 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002014.html">[PATCH] Adding a new backend for opening a /dev/sg device for
+</A></li>
+        <LI>Next message: <A HREF="002012.html">[Stgt-devel] [Patch : 0/2] Passthrough devices.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2016">[ date ]</a>
+              <a href="thread.html#2016">[ thread ]</a>
+              <a href="subject.html#2016">[ subject ]</a>
+              <a href="author.html#2016">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+---
+ usr/bs_passthrough.c |  200 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/passthrough.c    |  199 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 399 insertions(+), 0 deletions(-)
+ create mode 100644 usr/bs_passthrough.c
+ create mode 100644 usr/passthrough.c
+
+diff --git a/usr/bs_passthrough.c b/usr/bs_passthrough.c
+new file mode 100644
+index 0000000..9b7487a
+--- /dev/null
++++ b/usr/bs_passthrough.c
+@@ -0,0 +1,200 @@
++/*
++ * Backing store for passthrough devices
++ *
++ * Copyright (C) 2008 Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#define _XOPEN_SOURCE 500
++
++#include &lt;errno.h&gt;
++#include &lt;fcntl.h&gt;
++#include &lt;inttypes.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
++
++#include &lt;linux/fs.h&gt;
++#include &lt;sys/epoll.h&gt;
++#include &lt;sys/ioctl.h&gt;
++#include &lt;scsi/sg.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;scsi.h&quot;
++#include &quot;bs_thread.h&quot;
++
++static void set_medium_error(int *result, uint8_t *key, uint16_t *asc)
++{
++	*result = SAM_STAT_CHECK_CONDITION;
++	*key = MEDIUM_ERROR;
++	*asc = ASC_READ_ERROR;
++}
++
++static void bs_sync_sync_range(struct scsi_cmd *cmd, uint32_t length,
++			       int *result, uint8_t *key, uint16_t *asc)
++{
++	int ret;
++	unsigned int flags = SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE;
++
++	ret = __sync_file_range(cmd-&gt;dev-&gt;fd, cmd-&gt;offset, length, flags);
++	if (ret)
++		set_medium_error(result, key, asc);
++}
++
++static void bs_rdwr_request(struct scsi_cmd *cmd)
++{
++	int ret, fd = cmd-&gt;dev-&gt;fd;
++	uint32_t length;
++	int result = SAM_STAT_GOOD;
++	uint8_t key;
++	uint16_t asc;
++
++	ret = 0;
++	length = 0;
++	key = 0;
++	asc = 0;
++
++	switch (cmd-&gt;scb[0]) {
++	case SYNCHRONIZE_CACHE:
++	case SYNCHRONIZE_CACHE_16:
++		/* TODO */
++		length = (cmd-&gt;scb[0] == SYNCHRONIZE_CACHE) ? 0 : 0;
++
++		if (cmd-&gt;scb[1] &amp; 0x2) {
++			result = SAM_STAT_CHECK_CONDITION;
++			key = ILLEGAL_REQUEST;
++			asc = ASC_INVALID_FIELD_IN_CDB;
++		} else
++			bs_sync_sync_range(cmd, length, &amp;result, &amp;key, &amp;asc);
++		break;
++	case WRITE_6:
++	case WRITE_10:
++	case WRITE_12:
++	case WRITE_16:
++		length = scsi_get_out_length(cmd);
++		ret = pwrite64(fd, scsi_get_out_buffer(cmd), length,
++			       cmd-&gt;offset);
++		if (ret == length) {
++			/*
++			 * it would be better not to access to pg
++			 * directy.
++			 */
++			struct mode_pg *pg = cmd-&gt;dev-&gt;mode_pgs[0x8];
++
++			if (((cmd-&gt;scb[0] != WRITE_6) &amp;&amp; (cmd-&gt;scb[1] &amp; 0x8)) ||
++			    !(pg-&gt;mode_data[0] &amp; 0x04))
++				bs_sync_sync_range(cmd, length, &amp;result, &amp;key,
++						   &amp;asc);
++		} else
++			set_medium_error(&amp;result, &amp;key, &amp;asc);
++
++		break;
++	case READ_6:
++	case READ_10:
++	case READ_12:
++	case READ_16:
++		length = scsi_get_in_length(cmd);
++		ret = pread64(fd, scsi_get_in_buffer(cmd), length,
++			      cmd-&gt;offset);
++
++		if (ret != length)
++			set_medium_error(&amp;result, &amp;key, &amp;asc);
++		break;
++	default:
++		break;
++	}
++
++	dprintf(&quot;io done %p %x %d %u\n&quot;, cmd, cmd-&gt;scb[0], ret, length);
++
++	scsi_set_result(cmd, result);
++
++	if (result != SAM_STAT_GOOD) {
++		eprintf(&quot;io error %p %x %d %d %&quot; PRIu64 &quot;, %m\n&quot;,
++			cmd, cmd-&gt;scb[0], ret, length, cmd-&gt;offset);
++		sense_data_build(cmd, key, asc);
++	}
++}
++
++static int open_scsi_device(const char *dev)
++{
++	int fd, vers;
++
++	fd = open(dev, O_RDWR);
++	if (fd &lt; 0) {
++		dprintf(&quot;ERROR could not open device %s\n&quot;, dev);
++		return -1;
++	}
++	if ((ioctl(fd, SG_GET_VERSION_NUM, &amp;vers) &lt; 0) || (vers &lt; 30000)) {
++		dprintf(&quot;/dev is not an sg device, or old sg driver\n&quot;);
++		close(fd);
++		return -1;
++	}
++
++	return fd;
++}
++
++
++static int bs_passthrough_open(struct scsi_lu *lu, char *path, int *fd,
++	uint64_t *size)
++{
++	int ret;
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++
++	*fd = open_scsi_device(path);
++	if (*fd &lt; 0)
++		return *fd;
++
++	ret = bs_thread_open(info, bs_rdwr_request);
++	if (ret) {
++		close(*fd);
++		return -1;
++	}
++	if (size)
++		*size = 0;
++
++	return 0;
++}
++
++static void bs_passthrough_close(struct scsi_lu *lu)
++{
++	struct bs_thread_info *info = BS_THREAD_I(lu);
++
++	bs_thread_close(info);
++
++	close(lu-&gt;fd);
++}
++
++static int bs_passthrough_cmd_done(struct scsi_cmd *cmd)
++{
++	return 0;
++}
++
++static struct backingstore_template passthrough_bst = {
++	.bs_name		= &quot;passthrough&quot;,
++	.bs_datasize		= sizeof(struct bs_thread_info),
++	.bs_open		= bs_passthrough_open,
++	.bs_close		= bs_passthrough_close,
++	.bs_cmd_submit		= bs_thread_cmd_submit,
++	.bs_cmd_done		= bs_passthrough_cmd_done,
++};
++
++__attribute__((constructor)) static void bs_passthrough_constructor(void)
++{
++	register_backingstore_template(&amp;passthrough_bst);
++}
+diff --git a/usr/passthrough.c b/usr/passthrough.c
+new file mode 100644
+index 0000000..3f9350f
+--- /dev/null
++++ b/usr/passthrough.c
+@@ -0,0 +1,199 @@
++/*
++ * SCSI passthrough module
++ *
++ * Copyright (C) 2008 Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#include &lt;errno.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;linux/fs.h&gt;
++#include &lt;sys/stat.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &lt;fcntl.h&gt;
++#include &quot;target.h&quot;
++#include &quot;tgtadm_error.h&quot;
++#include &quot;driver.h&quot;
++#include &quot;scsi.h&quot;
++#include &quot;spc.h&quot;
++#include &quot;tgtadm_error.h&quot;
++#include &lt;sys/ioctl.h&gt;
++#include &lt;scsi/sg.h&gt;
++
++
++static unsigned char scsi_command_size[8] = {6, 10, 10, 12, 16, 12, 10, 10};
++
++#define COMMAND_SIZE(opcode) scsi_command_size[((opcode) &gt;&gt; 5) &amp; 7]
++#define CDB_SIZE(cmd) (((((cmd)-&gt;scb[0] &gt;&gt; 5) &amp; 7) &lt; 6) ? \
++				COMMAND_SIZE((cmd)-&gt;scb[0]) : (cmd)-&gt;scb_len)
++
++#define SCSI_TIMEOUT 5000 /* ms */
++
++
++int scsi_io(int fd, unsigned char *cdb, unsigned char cdb_size,
++	    int xfer_dir, unsigned char *data, int *data_size,
++	    unsigned char *sense, unsigned int *sense_len)
++{
++	sg_io_hdr_t io_hdr;
++
++	memset(&amp;io_hdr, 0, sizeof(sg_io_hdr_t));
++	io_hdr.interface_id = 'S';
++
++	/* CDB */
++	io_hdr.cmdp = cdb;
++	io_hdr.cmd_len = cdb_size;
++
++	/* Where to store the sense_data, if there was an error */
++	io_hdr.sbp = sense;
++	io_hdr.mx_sb_len = *sense_len;
++	*sense_len = 0;
++
++	/* Transfer direction, either in or out. Linux does not yet
++	   support bidirectional SCSI transfers ?
++	 */
++	io_hdr.dxfer_direction = xfer_dir;
++
++	/* Where to store the DATA IN/OUT from the device and how big the
++	   buffer is
++	 */
++	io_hdr.dxferp = data;
++	io_hdr.dxfer_len = *data_size;
++
++	/* SCSI timeout in ms */
++	io_hdr.timeout = SCSI_TIMEOUT;
++
++
++	if (ioctl(fd, SG_IO, &amp;io_hdr) &lt; 0)
++		return -1;
++
++	/* now for the error processing */
++	if ((io_hdr.info &amp; SG_INFO_OK_MASK) != SG_INFO_OK) {
++		if (io_hdr.sb_len_wr &gt; 0) {
++			*sense_len = io_hdr.sb_len_wr;
++			return 0;
++		}
++	}
++	if (io_hdr.masked_status)
++		return -2;
++
++	if (io_hdr.host_status)
++		return -3;
++
++	if (io_hdr.driver_status)
++		return -4;
++
++	return 0;
++}
++
++
++
++
++static int scsi_passthrough(int host_no, struct scsi_cmd *cmd)
++{
++	unsigned int sense_len = 32;
++	unsigned char sense[sense_len];
++	int alloc_len;
++	uint8_t *data;
++	int direction;
++
++	alloc_len = scsi_get_in_length(cmd);
++	if (alloc_len &gt; 0) {
++		direction = SG_DXFER_FROM_DEV;
++		data = scsi_get_in_buffer(cmd);
++	} else {
++		alloc_len = scsi_get_out_length(cmd);
++		if (alloc_len &gt; 0) {
++			direction = SG_DXFER_TO_DEV;
++			data = scsi_get_out_buffer(cmd);
++		} else {
++			direction = SG_DXFER_NONE;
++			data = NULL;
++		}
++	}
++
++	scsi_io(cmd-&gt;dev-&gt;fd,
++		cmd-&gt;scb,
++		COMMAND_SIZE(cmd-&gt;scb[0]),
++		direction,
++		data, &amp;alloc_len, sense, &amp;sense_len);
++	if (sense_len) {
++		scsi_set_in_resid_by_actual(cmd, 0);
++		sense_data_build(cmd, sense[2], sense[12]&lt;&lt;8);
++		return SAM_STAT_CHECK_CONDITION;
++	}
++
++	if (direction == SG_DXFER_FROM_DEV)
++		scsi_set_in_resid_by_actual(cmd, alloc_len);
++
++	return SAM_STAT_GOOD;
++}
++
++static int passthrough_lu_init(struct scsi_lu *lu)
++{
++	struct backingstore_template *bst;
++
++	/* passthrough devices always use passthrough backingstore */
++	bst = get_backingstore_template(&quot;passthrough&quot;);
++	if (!bst) {
++		eprintf(&quot;failed to find bstype, passthrough\n&quot;);
++		return TGTADM_INVALID_REQUEST;
++	}
++	lu-&gt;bst = bst;
++
++	lu-&gt;attrs.device_type = TYPE_SPT;
++
++	return 0;
++}
++
++static int passthrough_lu_online(struct scsi_lu *lu)
++{
++	lu-&gt;attrs.online = 1;
++
++	return 0;
++}
++
++static int passthrough_lu_offline(struct scsi_lu *lu)
++{
++	lu-&gt;attrs.online = 0;
++	return 0;
++}
++
++static struct device_type_template passthrough_template = {
++	.type		= TYPE_SPT,
++	.lu_init	= passthrough_lu_init,
++	.lu_config	= spc_lu_config,
++	.lu_online	= passthrough_lu_online,
++	.lu_offline	= passthrough_lu_offline,
++	.lu_exit	= spc_lu_exit,
++	.ops		= {
++		[0x00 ... 0x9F] = {scsi_passthrough,},
++		/* 0xA0 */
++		{spc_report_luns,},
++		[0xA1 ... 0xFF] = {scsi_passthrough,},
++	}
++};
++
++__attribute__((constructor)) static void passthrough_init(void)
++{
++	device_type_register(&amp;passthrough_template);
++}
+-- 
+1.5.5
+
+------=_Part_14243_33234650.1217649510936
+Content-Type: application/x-gzip;
+ name=0002-Add-the-file-for-the-backend-and-the-file-for-the-de.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fjdovylq0
+Content-Disposition: attachment;
+ filename=0002-Add-the-file-for-the-backend-and-the-file-for-the-de.patch.gz
+
+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
+cvnfo4A6wuQoAAA=
+------=_Part_14243_33234650.1217649510936--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002014.html">[PATCH] Adding a new backend for opening a /dev/sg device for
+</A></li>
+	<LI>Next message: <A HREF="002012.html">[Stgt-devel] [Patch : 0/2] Passthrough devices.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2016">[ date ]</a>
+              <a href="thread.html#2016">[ thread ]</a>
+              <a href="subject.html#2016">[ subject ]</a>
+              <a href="author.html#2016">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

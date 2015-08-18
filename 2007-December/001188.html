@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 15/20] iser rounding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2015/20%5D%20iser%20rounding&In-Reply-To=%3C20071207170927.GA26300%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001185.html">
+   <LINK REL="Next"  HREF="001189.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 15/20] iser rounding</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2015/20%5D%20iser%20rounding&In-Reply-To=%3C20071207170927.GA26300%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 15/20] iser rounding">pw at osc.edu
+       </A><BR>
+    <I>Fri Dec  7 18:09:27 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001185.html">[Stgt-devel] [PATCH] bidi rounding bug
+</A></li>
+        <LI>Next message: <A HREF="001189.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1188">[ date ]</a>
+              <a href="thread.html#1188">[ thread ]</a>
+              <a href="subject.html#1188">[ subject ]</a>
+              <a href="author.html#1188">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Thu, 15 Nov 2007 11:20 +0900:
+&gt;<i> On Tue, 16 Oct 2007 11:21:23 -0400
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; RDMA data packets are not padded up to 4 byte boundaries, unlike TCP.
+</I>&gt;<i> &gt; Reasons for this can be found in doc/README.iser.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> &gt; ---
+</I>&gt;<i> &gt;  usr/iscsi/iscsid.c |   24 +++++++++++++++++-------
+</I>&gt;<i> &gt;  1 files changed, 17 insertions(+), 7 deletions(-)
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; index 8b7b48e..6d5471e 100644
+</I>&gt;<i> &gt; --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> &gt; @@ -1157,7 +1157,9 @@ static int iscsi_target_cmd_queue(struct iscsi_task *task)
+</I>&gt;<i> &gt;  			uint32_t len;
+</I>&gt;<i> &gt;  			void *buf;
+</I>&gt;<i> &gt;  
+</I>&gt;<i> &gt; -			len = roundup(task-&gt;read_len, 4);
+</I>&gt;<i> &gt; +			len = task-&gt;read_len;
+</I>&gt;<i> &gt; +			if (!conn-&gt;tp-&gt;rdma)
+</I>&gt;<i> &gt; +				len = roundup(len, 4);
+</I>&gt;<i> 
+</I>&gt;<i> I want to avoid doing something like this:
+</I>&gt;<i> 
+</I>&gt;<i> if (conn-&gt;tp-&gt;rdma)
+</I>&gt;<i> 	do iser
+</I>&gt;<i> else
+</I>&gt;<i> 	do tcp
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Can you add 'pad_len' to iscsi_transport struct and do something like:
+</I>&gt;<i> 
+</I>&gt;<i> len = roundup(task-&gt;read_len, conn-&gt;tp-&gt;pad_len);
+</I>&gt;<i> 
+</I>&gt;<i> tcp sets it to PAD_WORD_LEN and iser sets it to 1.
+</I>
+Good suggestion.  I called it &quot;data_padding&quot; though as other
+segments are rounded even for RDMA (e.g. AHS).
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001185.html">[Stgt-devel] [PATCH] bidi rounding bug
+</A></li>
+	<LI>Next message: <A HREF="001189.html">[Stgt-devel] [PATCH 08/20] iser virtualize malloc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1188">[ date ]</a>
+              <a href="thread.html#1188">[ thread ]</a>
+              <a href="subject.html#1188">[ subject ]</a>
+              <a href="author.html#1188">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

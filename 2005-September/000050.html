@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] add stgt_device_template example
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200509091158.j89BwY40016782%40r-dd.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000045.html">
+   <LINK REL="Next"  HREF="000058.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] add stgt_device_template example</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20add%20stgt_device_template%20example&In-Reply-To=%3C200509091158.j89BwY40016782%40r-dd.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] add stgt_device_template example">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Sep  9 13:58:33 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000045.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+        <LI>Next message: <A HREF="000058.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#50">[ date ]</a>
+              <a href="thread.html#50">[ thread ]</a>
+              <a href="subject.html#50">[ subject ]</a>
+              <a href="author.html#50">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] add stgt_device_template example
+Date: Wed, 07 Sep 2005 20:32:05 -0500
+
+&gt;<i> &gt; more generic message and callback(like STGT_UEVENT_SEND_MESSAGE) for
+</I>&gt;<i> &gt; target driver specific tasks better?
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, maybe a generic event like that. Where if stgt doe not know how to 
+</I>&gt;<i> handle the event it passes it to the protocol or target driver or 
+</I>&gt;<i> transport. Or maybe it can flow downwards. For what we have now:
+</I>&gt;<i> 
+</I>&gt;<i> STGT_UEVENT_SEND_MESSAGE-&gt;stgt (if not mine pass down) -&gt;protocol (pass 
+</I>&gt;<i> down if not mine) -&gt;target_driver (fail if not my message)
+</I>&gt;<i> 
+</I>&gt;<i> I guess either way we need to add something on the event so we can 
+</I>&gt;<i> figure out who the event is supposed to be for. I ran into similar 
+</I>&gt;<i> troubles with passing things upwards (see the TODO I added to the 
+</I>&gt;<i> usr/netlink.c this morning).
+</I>
+How should we do this?
+
+I think that user-space daemon need to know 'tid -&gt; target driver' and
+'target driver -&gt; protocol'. Are we adding something about them to
+sysfs?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000045.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+	<LI>Next message: <A HREF="000058.html">[Stgt-devel] [PATCH] add stgt_device_template example
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#50">[ date ]</a>
+              <a href="thread.html#50">[ thread ]</a>
+              <a href="subject.html#50">[ subject ]</a>
+              <a href="author.html#50">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

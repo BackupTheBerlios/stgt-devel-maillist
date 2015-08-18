@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSCSI target driver works without kernel patches
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSCSI%20target%20driver%20works%20without%20kernel%20patches&In-Reply-To=%3C20070224011948N.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000414.html">
+   <LINK REL="Next"  HREF="000408.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSCSI target driver works without kernel patches</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSCSI%20target%20driver%20works%20without%20kernel%20patches&In-Reply-To=%3C20070224011948N.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] iSCSI target driver works without kernel patches">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Feb 23 17:48:31 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000414.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000408.html">[Stgt-devel] [PATCH] track target type
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#406">[ date ]</a>
+              <a href="thread.html#406">[ thread ]</a>
+              <a href="subject.html#406">[ subject ]</a>
+              <a href="author.html#406">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Some target drivers (like iSCSI) need an interface to wait for both
+synchronous and asynchronous file descriptors. But upstream kernels
+don't support something like BSD's kqueue yet though some candidates
+are under development (e.g. kevent).
+
+We've used EPOLL_WAIT patch to add the feature. It's supposed to be
+merged to upstream, however, seems that it takes long time. And it's
+not very fast and it even crashes ppc64 kernels now.
+
+We don't like to use any kernel patches.
+
+I modified the aio code to use a I/O helper thread to avoid this issue
+(stolen from RedHat Xen blktap code). So we don't need any kernel
+patches anymore. Just use 2.6.20.
+
+This workaround will be removed when we have a interface to support
+both async and sync file descriptors in upstream. And it should
+provide better performance.
+
+
+I've just tried the current code and IET with the default iSCSI
+parameters. The performances are comparable. I guess that IET could
+provide better performances with optimized parameters. However, don't
+forget that tgt's performance will improve in the future with a better
+event notification interface.
+
+
+- tgt
+
+disktest -PT -T1200 -h1 -K8 -B8192 -pL -ID /dev/sdc
+
+|<i> 2007/02/24-09:59:10 | STAT  | 28339 | v1.2.8 | /dev/sdc | Total read throughput: 34458842.5B/s (32.86MB/s), IOPS 4206.4/s.
+</I>
+sg_turs -t -n=10000 /dev/sdc
+time to perform commands was 1.210659 secs; 8259.96 operations/sec
+Completed 10000 Test Unit Ready commands with 0 errors
+
+- IET
+
+|<i> 2007/02/24-10:40:40 | STAT  | 28501 | v1.2.8 | /dev/sdc | Total read throughput: 33759505.1B/s (32.20MB/s), IOPS 4121.0/s.
+</I>
+time to perform commands was 1.193761 secs; 8376.89 operations/sec
+Completed 10000 Test Unit Ready commands with 0 errors
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000414.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000408.html">[Stgt-devel] [PATCH] track target type
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#406">[ date ]</a>
+              <a href="thread.html#406">[ thread ]</a>
+              <a href="subject.html#406">[ subject ]</a>
+              <a href="author.html#406">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

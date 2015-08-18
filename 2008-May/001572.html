@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Patches%20for%20MMC%20and%20fix%20for%20serious%20crash%20bug%20in%0A%09spc_mode_sense%28%29&In-Reply-To=%3Cc9a3e4540805012347n63c33e4avc704353c64d29009%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001571.html">
+   <LINK REL="Next"  HREF="001573.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Patches%20for%20MMC%20and%20fix%20for%20serious%20crash%20bug%20in%0A%09spc_mode_sense%28%29&In-Reply-To=%3Cc9a3e4540805012347n63c33e4avc704353c64d29009%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Fri May  2 08:47:16 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001571.html">[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()
+</A></li>
+        <LI>Next message: <A HREF="001573.html">[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1572">[ date ]</a>
+              <a href="thread.html#1572">[ thread ]</a>
+              <a href="subject.html#1572">[ subject ]</a>
+              <a href="author.html#1572">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Please note that patch 0004 is completely bogus and broken.
+The patch only serves to illustrate where the crash bug in TGTD is for
+spc_mode_sense()   and should not be applied.
+(the bug still needs to be addressed though)
+
+Please apply patches 0001 - 0003 though.
+
+
+On Fri, May 2, 2008 at 2:06 PM, ronnie sahlberg
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+&gt;<i> Please find attached a few smallish patches,
+</I>&gt;<i>
+</I>&gt;<i> 0001: Fix a &quot;length too small by one&quot; bug in mode sense 10.
+</I>&gt;<i>
+</I>&gt;<i> 0002 : we dont need to specify these mode pages in the mmc example
+</I>&gt;<i> since they are set by default when the lun is initialized
+</I>&gt;<i>
+</I>&gt;<i> 0003 : add the modepage for MM capabilities (this mode page was what
+</I>&gt;<i> discovered the bug below)
+</I>&gt;<i>
+</I>&gt;<i> 0004: this fixes a serious crash bug in spc_mode_sense. the bug is
+</I>&gt;<i> triggered when an initiator is specifying a small alloc_len but the
+</I>&gt;<i> modepage is big.
+</I>&gt;<i> This causes the memcpy() in build_mode_page() overwrite other vital
+</I>&gt;<i> memory and tgtd crashes.
+</I>&gt;<i> I tried to address it for modesense10 only.   The same bug still
+</I>&gt;<i> exists for the modesense6 path.
+</I>&gt;<i> Please   if someone more comfortable than I can look at the issue and
+</I>&gt;<i> do a better/more correct patch for this.
+</I>&gt;<i> This is a pretty important bug to fix.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> regards
+</I>&gt;<i> ronnie sahlberg
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001571.html">[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()
+</A></li>
+	<LI>Next message: <A HREF="001573.html">[Stgt-devel] Patches for MMC and fix for serious crash bug in	spc_mode_sense()
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1572">[ date ]</a>
+              <a href="thread.html#1572">[ thread ]</a>
+              <a href="subject.html#1572">[ subject ]</a>
+              <a href="author.html#1572">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

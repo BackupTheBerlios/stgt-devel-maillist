@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] bstype before lu alloc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20bstype%20before%20lu%20alloc&In-Reply-To=%3Cc123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001307.html">
+   <LINK REL="Next"  HREF="001330.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] bstype before lu alloc</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20bstype%20before%20lu%20alloc&In-Reply-To=%3Cc123eff2347577160ad82c3cafbaf933155647ed.1201467656.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] bstype before lu alloc">pw at osc.edu
+       </A><BR>
+    <I>Sun Jan 27 21:46:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001307.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+        <LI>Next message: <A HREF="001330.html">[Stgt-devel] [PATCH 2/2] tgt device create error cleanup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1329">[ date ]</a>
+              <a href="thread.html#1329">[ thread ]</a>
+              <a href="subject.html#1329">[ subject ]</a>
+              <a href="author.html#1329">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Set the specified bstype before allocating space for the lu, because
+the allocation must include space required by the particular bstype.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/target.c |   26 ++++++++++++--------------
+ 1 files changed, 12 insertions(+), 14 deletions(-)
+
+diff --git a/usr/target.c b/usr/target.c
+index 8c870ff..b8e25a4 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -242,6 +242,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	struct target *target;
+ 	struct scsi_lu *lu, *pos;
+ 	struct device_type_template *t;
++	struct backingstore_template *bst;
+ 
+ 	dprintf(&quot;%d %&quot; PRIu64 &quot;\n&quot;, tid, lun);
+ 
+@@ -273,14 +274,23 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 		return TGTADM_LUN_EXIST;
+ 	}
+ 
+-	lu = zalloc(sizeof(*lu) + target-&gt;bst-&gt;bs_datasize);
++	bst = target-&gt;bst;
++	if (backing &amp;&amp; bstype) {
++		bst = get_backingstore_template(bstype);
++		if (!bst) {
++			eprintf(&quot;failed to find bstype, %s\n&quot;, bstype);
++			goto out;
++		}
++	}
++
++	lu = zalloc(sizeof(*lu) + bst-&gt;bs_datasize);
+ 	if (!lu)
+ 		return TGTADM_NOMEM;
+ 
+ 	t = device_type_lookup(dev_type);
+ 	if (t) {
+ 		lu-&gt;dev_type_template = *t;
+-		lu-&gt;bst = target-&gt;bst;
++		lu-&gt;bst = bst;
+ 	} else {
+ 		eprintf(&quot;Unknown device type %d\n&quot;, dev_type);
+ 		ret = TGTADM_INVALID_REQUEST;
+@@ -300,21 +310,9 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *params,
+ 	}
+ 
+ 	if (backing) {
+-		struct backingstore_template *bst;
+-
+ 		if (!path)
+ 			return TGTADM_INVALID_REQUEST;
+ 
+-		if (bstype) {
+-			bst = get_backingstore_template(bstype);
+-			if (bst)
+-				lu-&gt;bst = bst;
+-			else {
+-				eprintf(&quot;failed to find bstype, %s\n&quot;, bstype);
+-				goto free_lu;
+-			}
+-		}
+-
+ 		ret = tgt_device_path_update(target, lu, path);
+ 		if (ret)
+ 			goto free_lu;
+-- 
+1.5.3.7
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001307.html">[Stgt-devel] [PATCH 0/4] iscsi: fixes for tgt-setup-lun
+</A></li>
+	<LI>Next message: <A HREF="001330.html">[Stgt-devel] [PATCH 2/2] tgt device create error cleanup
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1329">[ date ]</a>
+              <a href="thread.html#1329">[ thread ]</a>
+              <a href="subject.html#1329">[ subject ]</a>
+              <a href="author.html#1329">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

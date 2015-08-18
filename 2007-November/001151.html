@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 11/20] iser connection init
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2011/20%5D%20iser%20connection%20init&In-Reply-To=%3C20071115112059V.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001150.html">
+   <LINK REL="Next"  HREF="001152.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 11/20] iser connection init</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%2011/20%5D%20iser%20connection%20init&In-Reply-To=%3C20071115112059V.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH 11/20] iser connection init">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Nov 15 03:20:59 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001150.html">[Stgt-devel] [PATCH 13/20] iser close free
+</A></li>
+        <LI>Next message: <A HREF="001152.html">[Stgt-devel] [PATCH 16/20] iser params
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1151">[ date ]</a>
+              <a href="thread.html#1151">[ thread ]</a>
+              <a href="subject.html#1151">[ subject ]</a>
+              <a href="author.html#1151">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 16 Oct 2007 11:21:20 -0400
+Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+
+&gt;<i> After successful negotiation, call into the transport to allocate resources
+</I>&gt;<i> or otherwise ready the switch to full feature mode.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  usr/iscsi/iscsi_tcp.c |    6 ++++++
+</I>&gt;<i>  usr/iscsi/iscsid.c    |   19 ++++++++++++++++++-
+</I>&gt;<i>  usr/iscsi/transport.h |    1 +
+</I>&gt;<i>  3 files changed, 25 insertions(+), 1 deletions(-)
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> index 33cd6f8..566dd9e 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsi_tcp.c
+</I>&gt;<i> @@ -210,6 +210,11 @@ static int iscsi_tcp_init(void)
+</I>&gt;<i>  	return !nr_sock;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int iscsi_tcp_conn_init(struct iscsi_connection *conn)
+</I>&gt;<i> +{
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  static size_t iscsi_tcp_read(struct iscsi_connection *conn, void *buf,
+</I>&gt;<i>  			     size_t nbytes)
+</I>&gt;<i>  {
+</I>&gt;<i> @@ -312,6 +317,7 @@ struct iscsi_transport iscsi_tcp = {
+</I>&gt;<i>  	.name			= &quot;iscsi&quot;,
+</I>&gt;<i>  	.rdma			= 0,
+</I>&gt;<i>  	.ep_init		= iscsi_tcp_init,
+</I>&gt;<i> +	.ep_conn_init		= iscsi_tcp_conn_init,
+</I>&gt;<i>  	.ep_read		= iscsi_tcp_read,
+</I>&gt;<i>  	.ep_write_begin		= iscsi_tcp_write_begin,
+</I>&gt;<i>  	.ep_write_end		= iscsi_tcp_write_end,
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> index 51d9bd9..27b17f4 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> @@ -469,8 +469,22 @@ static void login_start(struct iscsi_connection *conn)
+</I>&gt;<i>  
+</I>&gt;<i>  static void login_finish(struct iscsi_connection *conn)
+</I>&gt;<i>  {
+</I>&gt;<i> +	struct iscsi_login_rsp *rsp = (struct iscsi_login_rsp *) &amp;conn-&gt;rsp.bhs;
+</I>&gt;<i> +	int ret;
+</I>&gt;<i> +
+</I>&gt;<i>  	switch (conn-&gt;session_type) {
+</I>&gt;<i>  	case SESSION_NORMAL:
+</I>&gt;<i> +		/*
+</I>&gt;<i> +		 * Allocate transport resources for this connection.
+</I>&gt;<i> +		 */
+</I>&gt;<i> +		ret = conn-&gt;tp-&gt;ep_conn_init(conn);
+</I>&gt;<i> +		if (ret) {
+</I>&gt;<i> +			rsp-&gt;flags = 0;
+</I>&gt;<i> +			rsp-&gt;status_class = ISCSI_STATUS_CLS_TARGET_ERR;
+</I>&gt;<i> +			rsp-&gt;status_detail = ISCSI_LOGIN_STATUS_NO_RESOURCES;
+</I>&gt;<i> +			conn-&gt;state = STATE_EXIT;
+</I>&gt;<i> +			break;
+</I>&gt;<i> +		}
+</I>&gt;<i>  		if (!conn-&gt;session)
+</I>&gt;<i>  			session_create(conn);
+</I>&gt;<i>  		memcpy(conn-&gt;isid, conn-&gt;session-&gt;isid, sizeof(conn-&gt;isid));
+</I>&gt;<i> @@ -637,8 +651,11 @@ static void cmnd_exec_login(struct iscsi_connection *conn)
+</I>&gt;<i>  			default:
+</I>&gt;<i>  				goto init_err;
+</I>&gt;<i>  			}
+</I>&gt;<i> -			if (!stay &amp;&amp; !nsg_disagree)
+</I>&gt;<i> +			if (!stay &amp;&amp; !nsg_disagree) {
+</I>&gt;<i>  				login_finish(conn);
+</I>&gt;<i> +				if (rsp-&gt;status_class)
+</I>&gt;<i> +					return;
+</I>&gt;<i> +			}
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		default:
+</I>&gt;<i>  			goto init_err;
+</I>
+I renamed ep_conn_init ep_login_complete and merged this though I like
+to have error handling in cmnd_exec_login instead of login_finish but
+cmnd_exec_login needs some cleanups before that.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001150.html">[Stgt-devel] [PATCH 13/20] iser close free
+</A></li>
+	<LI>Next message: <A HREF="001152.html">[Stgt-devel] [PATCH 16/20] iser params
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1151">[ date ]</a>
+              <a href="thread.html#1151">[ thread ]</a>
+              <a href="subject.html#1151">[ subject ]</a>
+              <a href="author.html#1151">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

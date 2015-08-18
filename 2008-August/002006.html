@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Small inconsistency in ssc.c
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Small%20inconsistency%20in%20ssc.c&In-Reply-To=%3C20080801080234X.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="002007.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Small inconsistency in ssc.c</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Small%20inconsistency%20in%20ssc.c&In-Reply-To=%3C20080801080234X.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Small inconsistency in ssc.c">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Aug  1 01:02:38 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="002007.html">[Stgt-devel] :o)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2006">[ date ]</a>
+              <a href="thread.html#2006">[ thread ]</a>
+              <a href="subject.html#2006">[ subject ]</a>
+              <a href="author.html#2006">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 1 Aug 2008 07:42:37 +1000
+&quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Fri, Aug 1, 2008 at 2:30 AM, Richard Sharpe
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+</I>&gt;<i> &gt; Hi,
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I just noticed this ...
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;        ssc = zalloc(sizeof(struct ssc_info));
+</I>&gt;<i> &gt;        if (ssc)
+</I>&gt;<i> &gt;                dtype_priv(lu) = ssc;
+</I>&gt;<i> &gt;        else
+</I>&gt;<i> &gt;                return -ENOMEM;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;        if (spc_lu_init(lu))
+</I>&gt;<i> &gt;                return TGTADM_NOMEM;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; What should be returned during the creation of an LU?
+</I>&gt;<i> 
+</I>&gt;<i> Good spotting..
+</I>&gt;<i> 
+</I>&gt;<i> Attached is a patch to fix this.
+</I>&gt;<i> (Sorry for the attachment but I don't have pop/imap access)
+</I>&gt;<i> 
+</I>&gt;<i> It's a one liner..
+</I>&gt;<i> Included in-line - you never know maybe cut/paste between vim &amp;
+</I>&gt;<i> firefox 3 on Windows won't destroy the tabs..
+</I>&gt;<i> 
+</I>&gt;<i> From 105df4ed0ff479e93a15261397d638575b11b840 Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Date: Fri, 1 Aug 2008 06:21:39 +1000
+</I>&gt;<i> Subject: Return correct error code on malloc() failure
+</I>&gt;<i> 
+</I>&gt;<i> Reported-by: Richard Sharpe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>
+Applied, thanks.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="002007.html">[Stgt-devel] :o)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2006">[ date ]</a>
+              <a href="thread.html#2006">[ thread ]</a>
+              <a href="subject.html#2006">[ subject ]</a>
+              <a href="author.html#2006">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

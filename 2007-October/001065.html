@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C470A4E70.0%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001062.html">
+   <LINK REL="Next"  HREF="001071.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER&In-Reply-To=%3C470A4E70.0%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] iSER">erezz at Voltaire.COM
+       </A><BR>
+    <I>Mon Oct  8 17:36:16 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001062.html">[Stgt-devel] iSER
+</A></li>
+        <LI>Next message: <A HREF="001071.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1065">[ date ]</a>
+              <a href="thread.html#1065">[ thread ]</a>
+              <a href="subject.html#1065">[ subject ]</a>
+              <a href="author.html#1065">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>FUJITA Tomonori wrote:
+&gt;<i> On Thu, 4 Oct 2007 13:20:35 -0400
+</I>&gt;<i> Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>&gt;&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A> wrote on Sun, 09 Sep 2007 14:12 -0400:
+</I>&gt;&gt;<i>     
+</I>&gt;&gt;&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Sun, 09 Sep 2007 11:30 -0400:
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;&gt;&gt;<i> Summary:
+</I>&gt;&gt;&gt;&gt;<i>  - 2.6.21 seems to be a good kernel. 2.6.22 or newer, or RedHat's OFED 1.2
+</I>&gt;&gt;&gt;&gt;<i>    patched kernels all seem to have iSER bugs that make them unusable.
+</I>&gt;&gt;&gt;&gt;<i>  - as everything works in 2.6.21 presumably this means there's nothing
+</I>&gt;&gt;&gt;&gt;<i>    wrong with the iSER implementation in tgtd. well done! :)
+</I>&gt;&gt;&gt;&gt;<i>         
+</I>&gt;&gt;&gt;<i> Well, that's good and bad news.  Nice to know that things do work at times,
+</I>&gt;&gt;&gt;<i> but we have to figure out what happened in the initiator now.  Or maybe tgt
+</I>&gt;&gt;&gt;<i> is making some bad assumptions.
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;<i> This all turned out to be a known bug in the mthca IB driver in
+</I>&gt;&gt;<i> kernels older than 2.6.21.  Including the rhel5 kernel.  The
+</I>&gt;&gt;<i> initiator uses FMR for memory registrations, and a certain popular
+</I>&gt;&gt;<i> chipset was prone to random scribbling on old registrations,
+</I>&gt;&gt;<i> yielding wrong data in the application or unexplainable kernel
+</I>&gt;&gt;<i> crashes.  Nothing wrong in the target.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>     
+</I>&gt;&gt;&gt;&gt;<i> with the 2.6.22.6 kernel and iSER I couldn't find any corruption
+</I>&gt;&gt;&gt;&gt;<i> issues using dd to /dev/sdc. however (as reported previously) if I put
+</I>&gt;&gt;&gt;&gt;<i> an ext3 filesystem on the iSER device and then dd to a file in the ext3
+</I>&gt;&gt;&gt;&gt;<i> filsystem then pretty much immediately I get:
+</I>&gt;&gt;&gt;&gt;<i>   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196611, length 1
+</I>&gt;&gt;&gt;&gt;<i>   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196612, length 1
+</I>&gt;&gt;&gt;&gt;<i>   Sep  9 21:46:22 x11 kernel: EXT3-fs error (device sdc): ext3_new_block: Allocating block in system zone - blocks from 196613, length 1
+</I>&gt;&gt;&gt;&gt;<i>   ...
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> I get the same type of errors with 2.6.23-rc5 too.
+</I>&gt;&gt;&gt;&gt;<i>         
+</I>&gt;&gt;&gt;<i> I'm still not been able to reproduce this, at least on my
+</I>&gt;&gt;&gt;<i> 2.6.22-rc5.  One of these days we'll move to some newer kernels
+</I>&gt;&gt;&gt;<i> here, but have been sort of waiting for the bidi approaches to
+</I>&gt;&gt;&gt;<i> stabilize somewhat.
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;<i> Maybe this is fixed.  I did find one possible case where the Send
+</I>&gt;&gt;<i> result may have gone out before the final RDMA write, in the case
+</I>&gt;&gt;<i> when the target is starved for RDMA slots.  But I never saw the
+</I>&gt;&gt;<i> problem myself, so can't say for sure.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> In fact, I hacked up the bs-sync code to calculate the result
+</I>&gt;&gt;<i> expected by the test application lmdd, rather than read it off disk,
+</I>&gt;&gt;<i> and could achieve your high throughputs but never any corruptions.
+</I>&gt;&gt;<i> It ran all night last night.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Anyway, there's a new git out there with this one new patch and some
+</I>&gt;&gt;<i> kernel initiator warnings in the README.iser doc.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Sounds promising. voltaire guys, any chance to try Pete's latest tree?
+</I>
+We ran some tests on it and it looks ok now (still trying to make it 
+crash :-) ). We will run more nasty tests soon, and if anything goes 
+wrong, we will report. We will also try to get some performance numbers 
+(BW, iops) from our storage.
+
+Thanks to Pete for donating the iSER code and fixing bugs.
+
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001062.html">[Stgt-devel] iSER
+</A></li>
+	<LI>Next message: <A HREF="001071.html">[Stgt-devel] iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1065">[ date ]</a>
+              <a href="thread.html#1065">[ thread ]</a>
+              <a href="subject.html#1065">[ subject ]</a>
+              <a href="author.html#1065">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

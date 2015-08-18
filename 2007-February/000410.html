@@ -1,0 +1,275 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] iscsi: parse AHS header for extended CDB
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20parse%20AHS%20header%20for%20extended%20CDB&In-Reply-To=%3C20070225002341.GD9204%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000412.html">
+   <LINK REL="Next"  HREF="000411.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] iscsi: parse AHS header for extended CDB</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20iscsi%3A%20parse%20AHS%20header%20for%20extended%20CDB&In-Reply-To=%3C20070225002341.GD9204%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] iscsi: parse AHS header for extended CDB">pw at osc.edu
+       </A><BR>
+    <I>Sun Feb 25 01:23:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000412.html">[Stgt-devel] [PATCH v2] pass cdb length
+</A></li>
+        <LI>Next message: <A HREF="000411.html">[Stgt-devel] [PATCH] return sense data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#410">[ date ]</a>
+              <a href="thread.html#410">[ thread ]</a>
+              <a href="subject.html#410">[ subject ]</a>
+              <a href="author.html#410">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Modify iscsi target code to understand AHS header when it contains
+an extended CDB, and pass this into target for processing.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+
+ usr/iscsi/iscsid.c |  125 +++++++++++++++++++++++++++++++++-------------------
+ usr/iscsi/iscsid.h |    2 +
+ 2 files changed, 81 insertions(+), 46 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 6726c7d..eefa8b1 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -868,7 +868,9 @@ static void iscsi_free_cmd_task(struct iscsi_task *task)
+ 	target_cmd_done(conn-&gt;session-&gt;iscsi_nexus_id, task-&gt;tag);
+ 	list_del(&amp;task-&gt;c_hlist);
+ 	if (task-&gt;c_buffer) {
+-		if ((unsigned long) task-&gt;c_buffer != task-&gt;addr)
++		/* task-&gt;data was set on the input, if not changed, no
++		 * buffer was allocated by scsi layer */
++		if ((unsigned long) task-&gt;data != task-&gt;addr)
+ 			free((void *) (unsigned long) task-&gt;addr);
+ 	}
+ 	iscsi_free_task(task);
+@@ -942,29 +944,44 @@ static int iscsi_scsi_cmd_execute(struct iscsi_task *task)
+ {
+ 	struct iscsi_connection *conn = task-&gt;conn;
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &amp;task-&gt;req;
+-	unsigned long uaddr = (unsigned long) task-&gt;c_buffer;
++	unsigned long uaddr = (unsigned long) task-&gt;data;
++	uint8_t rw = req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE;
++	uint8_t *cdb, cdbbuf[260];
++	int cdblen;
+ 	int err = 0;
+ 
+-	if (req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE) {
+-		if (task-&gt;r2t_count) {
+-			if (task-&gt;unsol_count)
+-				;
+-			else
+-				list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
+-		} else
+-			err = target_cmd_queue(conn-&gt;session-&gt;iscsi_nexus_id,
+-					       req-&gt;cdb, 16,
+-					       req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE,
+-					       uaddr, req-&gt;lun,
+-					       ntohl(req-&gt;data_length),
+-					       cmd_attr(task), req-&gt;itt);
+-	} else
+-		err = target_cmd_queue(conn-&gt;session-&gt;iscsi_nexus_id,
+-				       req-&gt;cdb, 16,
+-				       req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE,
+-				       uaddr, req-&gt;lun, ntohl(req-&gt;data_length),
+-				       cmd_attr(task), req-&gt;itt);
++	if (rw &amp;&amp; task-&gt;r2t_count) {
++		if (!task-&gt;unsol_count)
++			list_add_tail(&amp;task-&gt;c_list, &amp;task-&gt;conn-&gt;tx_clist);
++		goto noqueue;
++	}
++
++	cdb = req-&gt;cdb;
++	cdblen = 16;
++	if (req-&gt;hlength) {
++		/* concatenate extended cdb */
++		struct iscsi_ahs_extcdb *ahs_extcdb = task-&gt;ahs;
++		if (ahs_extcdb-&gt;ahstype == ISCSI_AHSTYPE_CDB) {
++			int extlen = ntohs(ahs_extcdb-&gt;ahslength) - 1;
++			dprintf(&quot;extcdb len %d from addr %p\n&quot;, extlen,
++			        ahs_extcdb-&gt;extcdb);
++			if (extlen + 16 &gt; sizeof(cdbbuf)) {
++				err = -ENOMEM;
++				goto noqueue;
++			}
++			memcpy(cdbbuf, cdb, 16);
++			memcpy(cdbbuf + 16, ahs_extcdb-&gt;extcdb, extlen);
++			cdb = cdbbuf;
++			cdblen = 16 + extlen;
++		}
++	}
++
++	err = target_cmd_queue(conn-&gt;session-&gt;iscsi_nexus_id,
++			       cdb, cdblen, rw, uaddr, req-&gt;lun,
++			       ntohl(req-&gt;data_length),
++			       cmd_attr(task), req-&gt;itt);
+ 
++noqueue:
+ 	tgt_event_modify(conn-&gt;fd, EPOLLIN|EPOLLOUT);
+ 
+ 	return err;
+@@ -1188,6 +1205,7 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ {
+ 	struct iscsi_cmd *req = (struct iscsi_cmd *) &amp;conn-&gt;req.bhs;
+ 	struct iscsi_task *task;
++	int ahslen, ahslen_round, dlen, dlen_round, tot_data_length;
+ 	int len;
+ 
+ 	task = __iscsi_task_rx_start(conn);
+@@ -1195,26 +1213,45 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 		return -ENOMEM;
+ 	task-&gt;tag = req-&gt;itt;
+ 
+-	dprintf(&quot;%u %x %d %d %x\n&quot;, conn-&gt;session-&gt;tsih,
++	ahslen = req-&gt;hlength * 4;
++	dlen = ntoh24(req-&gt;dlength);  /* just part in this PDU */
++	tot_data_length = ntohl(req-&gt;data_length);  /* all data */
++
++	dprintf(&quot;%u %x %d %d %x task %p lens %d %d %d\n&quot;, conn-&gt;session-&gt;tsih,
+ 		req-&gt;cdb[0], ntohl(req-&gt;data_length),
+-		req-&gt;flags &amp; ISCSI_FLAG_CMD_ATTR_MASK, req-&gt;itt);
++		req-&gt;flags &amp; ISCSI_FLAG_CMD_ATTR_MASK, req-&gt;itt,
++		task, ahslen, dlen, tot_data_length);
+ 
+-	len = ntohl(req-&gt;data_length);
+-	if (len) {
+-		task-&gt;c_buffer = valloc(len);
++	/*
++	 * Allocate both AHS space from this PDU, and data from this
++	 * and all subsequent PDUs, at once.  Since the AHS and initial
++	 * data segments are padded to 4-byte boundaries, space things
++	 * so that a single read() does the right thing.
++	 */
++	if (ahslen || tot_data_length) {
++		/* round up each separately */
++		ahslen_round = (ahslen + 3) &amp; ~3;
++		dlen_round = (dlen + 3) &amp; ~3;
++		len = tot_data_length;  /* make sure to alloc padding */
++		if (len &lt; dlen_round)
++			len = dlen_round;
++		task-&gt;c_buffer = valloc(ahslen_round + len);
+ 		if (!task-&gt;c_buffer) {
+ 			iscsi_free_task(task);
+ 			return -ENOMEM;
+ 		}
+-		dprintf(&quot;%p\n&quot;, task-&gt;c_buffer);
++		task-&gt;ahs = task-&gt;c_buffer;
++		task-&gt;data = task-&gt;c_buffer + ahslen_round;
++
++		/* next amount to read from this PDU, and where to put it */
++		conn-&gt;rx_size = ahslen_round + dlen_round;
++		conn-&gt;rx_buffer = task-&gt;c_buffer;
+ 	}
+ 
+ 	if (req-&gt;flags &amp; ISCSI_FLAG_CMD_WRITE) {
+-		conn-&gt;rx_size = ntoh24(req-&gt;dlength);
+-		conn-&gt;rx_buffer = task-&gt;c_buffer;
+-		task-&gt;r2t_count = ntohl(req-&gt;data_length) - conn-&gt;rx_size;
++		task-&gt;r2t_count = tot_data_length - dlen;  /* bytes left */
+ 		task-&gt;unsol_count = !(req-&gt;flags &amp; ISCSI_FLAG_CMD_FINAL);
+-		task-&gt;offset = conn-&gt;rx_size;
++		task-&gt;offset = dlen;
+ 
+ 		dprintf(&quot;%d %d %d %d\n&quot;, conn-&gt;rx_size, task-&gt;r2t_count,
+ 			task-&gt;unsol_count, task-&gt;offset);
+@@ -1541,35 +1578,31 @@ static void iscsi_rx_handler(int fd, struct iscsi_connection *conn)
+ 
+ 		switch (conn-&gt;rx_iostate) {
+ 		case IOSTATE_READ_BHS:
+-			conn-&gt;rx_iostate = IOSTATE_READ_AHS_DATA;
+ 			conn-&gt;req.ahssize = conn-&gt;req.bhs.hlength * 4;
+ 			conn-&gt;req.datasize = ntoh24(conn-&gt;req.bhs.dlength);
+-			conn-&gt;rx_size = (conn-&gt;req.ahssize + conn-&gt;req.datasize + 3) &amp; -4;
+-
+-			if (conn-&gt;req.ahssize) {
+-				eprintf(&quot;FIXME: we cannot handle ahs\n&quot;);
+-				conn-&gt;state = STATE_CLOSE;
+-				break;
+-			}
+ 
+ 			if (conn-&gt;state == STATE_SCSI) {
++				/* sets up rx_buffer and rx_size */
+ 				res = iscsi_task_rx_start(conn);
+ 				if (res) {
+ 					conn-&gt;state = STATE_CLOSE;
+ 					break;
+ 				}
++			} else {
++				/* use req_buffer to store the bits */
++				conn-&gt;rx_buffer = conn-&gt;req_buffer;
++				conn-&gt;req.ahs = conn-&gt;rx_buffer;
++				conn-&gt;rx_size = (conn-&gt;req.ahssize + 3) &amp; ~3;
++				conn-&gt;req.data = conn-&gt;rx_buffer + conn-&gt;rx_size;
++				conn-&gt;rx_size += (conn-&gt;req.datasize + 3) &amp; ~3;
+ 			}
+-
+ 			if (conn-&gt;rx_size) {
+-				if (conn-&gt;state != STATE_SCSI) {
+-					conn-&gt;rx_buffer = conn-&gt;req_buffer;
+-					conn-&gt;req.ahs = conn-&gt;rx_buffer;
+-				}
+-				conn-&gt;req.data =
+-					conn-&gt;rx_buffer + conn-&gt;req.ahssize;
++				conn-&gt;rx_iostate = IOSTATE_READ_AHS_DATA;
+ 				goto read_again;
+ 			}
+ 
++			/* fall through */
++
+ 		case IOSTATE_READ_AHS_DATA:
+ 			if (conn-&gt;state == STATE_SCSI) {
+ 				res = iscsi_task_rx_done(conn);
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 9646538..c4b23d9 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -112,6 +112,8 @@ struct iscsi_task {
+ 	int exp_r2tsn;
+ 
+ 	void *c_buffer;
++	void *ahs;  /* these point into c_buffer, parts after bhs */
++	void *data;
+ };
+ 
+ struct iscsi_connection {
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000412.html">[Stgt-devel] [PATCH v2] pass cdb length
+</A></li>
+	<LI>Next message: <A HREF="000411.html">[Stgt-devel] [PATCH] return sense data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#410">[ date ]</a>
+              <a href="thread.html#410">[ thread ]</a>
+              <a href="subject.html#410">[ subject ]</a>
+              <a href="author.html#410">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

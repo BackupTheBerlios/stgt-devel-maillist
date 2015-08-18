@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disabling write cache?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disabling%20write%20cache%3F&In-Reply-To=%3C200806290802.m5T82wdV031719%40mbox.iij4u.or.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001706.html">
+   <LINK REL="Next"  HREF="001695.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disabling write cache?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disabling%20write%20cache%3F&In-Reply-To=%3C200806290802.m5T82wdV031719%40mbox.iij4u.or.jp%3E"
+       TITLE="[Stgt-devel] disabling write cache?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun Jun 29 10:02:56 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001706.html">[Stgt-devel] disabling write cache?
+</A></li>
+        <LI>Next message: <A HREF="001695.html">[Stgt-devel] bely congenitally
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1716">[ date ]</a>
+              <a href="thread.html#1716">[ thread ]</a>
+              <a href="subject.html#1716">[ subject ]</a>
+              <a href="author.html#1716">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt;
+Subject: Re: [Stgt-devel] disabling write cache?
+Date: Wed, 25 Jun 2008 15:39:21 +0200
+
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> 
+</I>&gt;<i> (...)
+</I>&gt;<i> 
+</I>&gt;<i> &gt; I've uploaded two patches:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; <A HREF="http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch">http://stgt.berlios.de/patches/0001-iscsi-fix-sense-handling.patch</A>
+</I>&gt;<i> &gt; <A HREF="http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch">http://stgt.berlios.de/patches/0002-sbc-add-WCE-support-to-bs_rdwr.patch</A>
+</I>&gt;<i> 
+</I>&gt;<i> &gt; With the patches, you can disable write caching in the following way:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; tgtadm --lld iscsi --op update --mode logicalunit --tid 1 --lun 1 --params mode_page=8:0:18:0x10:0:0xff:0xff:0:0:0xff:0xff:0xff:0xff:0x80:0x14:0:0:0:0:0:0
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Note that you need to modify tid and lun in your environment.
+</I>&gt;<i> 
+</I>&gt;<i> Any chance of having it more human-readable? I.e. something similar to 
+</I>&gt;<i> &quot;--params write_cache=disable&quot; instead of 8:0:18:0x10:0:0xff:0xff:0:...?
+</I>
+I don't think it's a good idea. If we create aliases like that, we
+have tons of options.
+
+sdparm is a proper interface.
+
+We provide target administrators another interfaces (tgtadm), which
+enables them to do whatever they want. They can write their own shell
+scripts (or whatever) that make their work simpler.
+
+
+&gt;<i> &gt; Shortly, I'll let you control write caching via sdparm too.
+</I>&gt;<i> 
+</I>&gt;<i> Great!
+</I>&gt;<i> Could you notify the list when controlling via sdparm hits the git tree?
+</I>
+Done, cay you try the latest git tree or snapshot:
+
+<A HREF="http://stgt.berlios.de/releases/tgt-20080629.tar.bz2">http://stgt.berlios.de/releases/tgt-20080629.tar.bz2</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001706.html">[Stgt-devel] disabling write cache?
+</A></li>
+	<LI>Next message: <A HREF="001695.html">[Stgt-devel] bely congenitally
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1716">[ date ]</a>
+              <a href="thread.html#1716">[ thread ]</a>
+              <a href="subject.html#1716">[ subject ]</a>
+              <a href="author.html#1716">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

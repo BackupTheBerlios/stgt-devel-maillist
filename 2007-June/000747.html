@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 4
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/2%5D%20Re-format%20/%20resubmit%20patch%20-%20try%204&In-Reply-To=%3C4663E0BB.7000004%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000746.html">
+   <LINK REL="Next"  HREF="000734.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 4</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%200/2%5D%20Re-format%20/%20resubmit%20patch%20-%20try%204&In-Reply-To=%3C4663E0BB.7000004%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 4">markh794 at gmail.com
+       </A><BR>
+    <I>Mon Jun  4 11:51:55 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000746.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.
+</A></li>
+        <LI>Next message: <A HREF="000734.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#747">[ date ]</a>
+              <a href="thread.html#747">[ thread ]</a>
+              <a href="subject.html#747">[ subject ]</a>
+              <a href="author.html#747">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i> [PATCH 1/2] Add new module entry points for configuration
+</I>&gt;<i> 
+</I>&gt;<i> Add new module entry points.
+</I>&gt;<i>   &lt;module&gt;_lu_init(struct scsi_lu *lu) - called at setup time.
+</I>&gt;<i>   &lt;module&gt;_lu_exit(struct scsi_lu *lu) - called at shutdown time.
+</I>&gt;<i>   &lt;module&gt;_lu_config(struct scsi_lu *lu) - Any module unique configuration.
+</I>&gt;<i> 
+</I>&gt;<i> Moved logical unit configuration from target -&gt; &lt;module&gt;
+</I>&gt;<i>   Along with above entry point &lt;module&gt;_lu_config(), will allow module
+</I>&gt;<i>   specific configuration.
+</I>&gt;<i>   No new functionality added yet.
+</I>&gt;<i> 
+</I>&gt;<i> Add a dump_cdb(struct scsi_cmd *cmd) - Called from spc_illegal_op()
+</I>&gt;<i> 
+</I>&gt;<i> Update - All modules use common INQUIRY routine.
+</I>
+
+
+&gt;<i> [PATCH] Add ability to dynamically set SCSI Inquiry params
+</I>&gt;<i> 
+</I>&gt;<i> Added support to configure:
+</I>&gt;<i>   Vendor Identification
+</I>&gt;<i>   Product Identification
+</I>&gt;<i>   Product Revision
+</I>&gt;<i>   Format of returned 'sense data'
+</I>&gt;<i>   Define if the lu is capable of supporting removable media
+</I>&gt;<i>   Define/set if the lu is online / offline.
+</I>&gt;<i> 
+</I>&gt;<i> All params are passed using the 'tgtadm' utility:
+</I>&gt;<i> 
+</I>&gt;<i>   VendorIdent=&quot;string&quot;
+</I>&gt;<i>   ProductIdent=&quot;string&quot;
+</I>&gt;<i>   ProductRev=&quot;string&quot;
+</I>&gt;<i>   Removable=&lt;0|1&gt; - 0 == non-removable, 1 == removable media
+</I>&gt;<i>   SenseFormat=&lt;0|1&gt; - 0 == Clasic sense format, 1 == Support descriptor format
+</I>&gt;<i>   Online=&lt;0|1&gt; - 0 == Unit offline, 1 == Unit Online
+</I>&gt;<i> 
+</I>&gt;<i> e.g.
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid &lt;TID&gt; --lun &lt;LUN&gt; \
+</I>&gt;<i>         --params VendorIdent=QUANTUM,ProductIdent=HD100,ProductRev=0010
+</I>&gt;<i> tgtadm --lld iscsi --mode logicalunit --op update --tid &lt;TID&gt; --lun &lt;LUN&gt; \
+</I>&gt;<i>         --params Removable=1,SenseFormat=1,Online=1
+</I>&gt;<i> 
+</I>&gt;<i> Example script (scripts/tgt-core-test) to set up HDD &amp; CD device.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000746.html">[Stgt-devel] [Patch 0/2] Re-format / resubmit patch - try 3.
+</A></li>
+	<LI>Next message: <A HREF="000734.html">[Stgt-devel] [Patch 1/2]	Add-new-module-entry-points-for-configuration
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#747">[ date ]</a>
+              <a href="thread.html#747">[ thread ]</a>
+              <a href="subject.html#747">[ subject ]</a>
+              <a href="author.html#747">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

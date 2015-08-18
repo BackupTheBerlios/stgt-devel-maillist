@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] More threads for device server
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20More%20threads%20for%20device%20server&In-Reply-To=%3C20050905153219W.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000037.html">
+   <LINK REL="Next"  HREF="000042.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] More threads for device server</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20More%20threads%20for%20device%20server&In-Reply-To=%3C20050905153219W.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] More threads for device server">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Sep  5 08:32:19 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000037.html">[Stgt-devel] More threads for device server
+</A></li>
+        <LI>Next message: <A HREF="000042.html">[Stgt-devel] More threads for device server
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#41">[ date ]</a>
+              <a href="thread.html#41">[ thread ]</a>
+              <a href="subject.html#41">[ subject ]</a>
+              <a href="author.html#41">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+Subject: Re: [Stgt-devel] More threads for device server
+Date: Sun, 04 Sep 2005 22:45:41 -0500
+
+&gt;<i> &gt;&gt;&gt;The current code uses work queue for performing SCSI commands (or
+</I>&gt;<i> &gt;&gt;&gt;block target's tasks). Work queue is simple and good enough for
+</I>&gt;<i> &gt;&gt;&gt;debugging, however, a single thread per CPU is not good enough (from
+</I>&gt;<i> &gt;&gt;&gt;the performance perspective).
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;I thought about creating multiple kernel threads by hand. Are there
+</I>&gt;<i> &gt;&gt;&gt;handy APIs?
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt;you can create a single threaded workqueue per target or session?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; The vfs APIs work synchronously. So we need multiple threads per
+</I>&gt;<i> &gt; target (or session) to perform several SCSI commands simultaneously.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; If we always use asynchronous block I/O APIs (like AIO vfs,
+</I>&gt;<i> &gt; submit_bio, etc), a single threaded workqueue would be fine.
+</I>&gt;<i> 
+</I>&gt;<i> I think async is going to be better in the long run since a thread per 
+</I>&gt;<i> device sounds like a lot. I am not familar with the AIO vfs code so I am 
+</I>&gt;<i> not much help and my opinion is really more of guess then. I am just 
+</I>&gt;<i> thinking if we can send more than one command down to the real device at 
+</I>&gt;<i> once then we could take advatage of the block layers io scheduling or 
+</I>&gt;<i> something.
+</I>
+Sorry, I should have stated this issue more precisely.
+
+We need three delayed works: performing SCSI commands; notification
+the completion of session creation and buffer allocation to target
+drivers.
+
+Now we use the system default work queue (keventd). This is
+insufficient if a user creates lots of targets, so I need a new work
+queue (per target, session, or device).
+
+I think a work queue per target is sufficient for notification
+the completion. They are not high-performance stuff.
+
+Targets need to perform multiple SCSI commands at the same time. If we
+use synchronous APIs, the work queue framework is not sufficient
+because it cannot perform lots of SCSI commands simultaneously. 
+
+There are two options: we need to create lots of kernel threads
+calling kthread_create several times (like IET) or we need to use
+asynchronous APIs with the work queue framework. I don't think that
+having lots of kernel threads is so bad, though it makes the stgt code
+complicated and dirty a bit. So I'll try AIO later with work queue per
+target. Work queue per device is not necessary, though it fit for
+SAM-3 theoretically.
+
+
+The last topic is that how to prevent a device from being removed (by
+an user) while it has active I/O operations. There are many ways to do
+that. I was just thought about things like the following.
+
+stgt_device_destory() sets DEVICE_DEL bit (device-&gt;state). It prevents
+queuecommand from putting new commands to the device. Then,
+stgt_device_destory() calls flush_workqueue() to wait all commands to
+finish and then frees the resources.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000037.html">[Stgt-devel] More threads for device server
+</A></li>
+	<LI>Next message: <A HREF="000042.html">[Stgt-devel] More threads for device server
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#41">[ date ]</a>
+              <a href="thread.html#41">[ thread ]</a>
+              <a href="subject.html#41">[ subject ]</a>
+              <a href="author.html#41">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 3/4] block/primary separation
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%5D%20block/primary%20separation&In-Reply-To=%3C1169493985.2784.49.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000390.html">
+   <LINK REL="Next"  HREF="000391.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 3/4] block/primary separation</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%203/4%5D%20block/primary%20separation&In-Reply-To=%3C1169493985.2784.49.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] [PATCH 3/4] block/primary separation">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Mon Jan 22 20:26:25 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000390.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+        <LI>Next message: <A HREF="000391.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#393">[ date ]</a>
+              <a href="thread.html#393">[ thread ]</a>
+              <a href="subject.html#393">[ subject ]</a>
+              <a href="author.html#393">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 2007-01-22 at 14:04 -0500, Pete Wyckoff wrote:
+
+&lt;snip&gt;
+
+&gt;<i>  
+</I>&gt;<i> +	/*
+</I>&gt;<i> +	 * Generic SPC commands
+</I>&gt;<i> +	 */
+</I>&gt;<i>  	switch (scb[0]) {
+</I>&gt;<i>  	case INQUIRY:
+</I>&gt;<i> +		data = get_zeroed_page();
+</I>&gt;<i>  		result = inquiry(lid, dev, host_no, lun_buf, scb, data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> +		goto out;
+</I>&gt;<i>  	case REPORT_LUNS:
+</I>&gt;<i>  		*len = datalen;
+</I>&gt;<i> +		data = get_zeroed_page();
+</I>&gt;<i>  		result = report_luns(lid, dev_list, lun_buf, scb, data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	case READ_CAPACITY:
+</I>&gt;<i> -		result = read_capacity(dev, scb, data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	case MODE_SENSE:
+</I>&gt;<i> -		result = mode_sense(dev, scb, data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> +		goto out;
+</I>&gt;<i>  	case REQUEST_SENSE:
+</I>&gt;<i> +		data = get_zeroed_page();
+</I>&gt;<i>  		result = request_sense(data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	case SERVICE_ACTION_IN:
+</I>&gt;<i> -		result = sevice_action(dev, scb, data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	case SYNCHRONIZE_CACHE:
+</I>&gt;<i> -		result = sync_cache(dev, data, len);
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	case START_STOP:
+</I>&gt;<i> +		goto out;
+</I>&gt;<i>  	case TEST_UNIT_READY:
+</I>&gt;<i> -	case VERIFY:
+</I>&gt;<i>  		*len = 0;
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	case READ_6:
+</I>&gt;<i> -	case READ_10:
+</I>&gt;<i> -	case READ_16:
+</I>&gt;<i> -	case WRITE_6:
+</I>&gt;<i> -	case WRITE_10:
+</I>&gt;<i> -	case WRITE_16:
+</I>&gt;<i> -	case WRITE_VERIFY:
+</I>&gt;<i> -		*offset = scsi_cmd_data_offset(scb);
+</I>&gt;<i> -		result = submit(dev, scb, *rw, datalen, uaddr, *offset, async, key);
+</I>&gt;<i> -		if (result == SAM_STAT_GOOD) {
+</I>&gt;<i> -			*len = datalen;
+</I>&gt;<i> -			*try_map = 1;
+</I>&gt;<i> -		} else {
+</I>&gt;<i> -			*rw = READ;
+</I>&gt;<i> -			*offset = 0;
+</I>&gt;<i> -			if (!data)
+</I>&gt;<i> -				data = valloc(PAGE_SIZE);
+</I>&gt;<i> -			*len = sense_data_build(data, 0x70, ILLEGAL_REQUEST,
+</I>&gt;<i> -						0x25, 0);
+</I>&gt;<i> -		}
+</I>&gt;<i> -		break;
+</I>&gt;<i> +		goto out;
+</I>&gt;<i>  	case RESERVE:
+</I>&gt;<i>  	case RESERVE_10:
+</I>&gt;<i>  		result = device_reserve(nid, dev-&gt;lun, nid);
+</I>&gt;<i>  		if (result)
+</I>&gt;<i>  			result = SAM_STAT_RESERVATION_CONFLICT;
+</I>&gt;<i>  		*len = 0;
+</I>&gt;<i> -		break;
+</I>&gt;<i> +		goto out;
+</I>&gt;<i>  	case RELEASE:
+</I>&gt;<i>  	case RELEASE_10:
+</I>&gt;<i>  		result = device_release(nid, dev-&gt;lun, host_no, 0);
+</I>&gt;<i>  		if (result)
+</I>&gt;<i>  			result = SAM_STAT_RESERVATION_CONFLICT;
+</I>&gt;<i>  		*len = 0;
+</I>&gt;<i> -		break;
+</I>&gt;<i> -	default:
+</I>&gt;<i> -		eprintf(&quot;unknown command %x %u\n&quot;, scb[0], datalen);
+</I>&gt;<i> -		*len = 0;
+</I>&gt;<i> -		break;
+</I>&gt;<i> +		goto out;
+</I>
+from switch will goto out and then return? when this target specific
+command processing will be called?
+
+&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	/*
+</I>&gt;<i> +	 * Specific device command set
+</I>&gt;<i> +	 */
+</I>&gt;<i> +	if (target_type == SCSI_TARGET_SBC)
+</I>&gt;<i> +		result = block_cmd_perform(scb, len, datalen, uaddr, rw,
+</I>&gt;<i> +		                           try_map, offset, dev, async, key,
+</I>&gt;<i> +					   submit);
+</I>&gt;<i> +	else
+</I>&gt;<i> +		eprintf(&quot;unknown target type %d\n&quot;, target_type);
+</I>&gt;<i> +
+</I>&gt;<i>  out:
+</I>&gt;<i>  	if (data)
+</I>&gt;<i>  		*uaddr = (unsigned long) data;
+</I>&gt;<i>  
+</I>&gt;<i>  	return result;
+</I>&gt;<i>  }
+</I>
+	
+
+
+&gt;<i> +
+</I>-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000390.html">[Stgt-devel] [PATCH 3/4] block/primary separation
+</A></li>
+	<LI>Next message: <A HREF="000391.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#393">[ date ]</a>
+              <a href="thread.html#393">[ thread ]</a>
+              <a href="subject.html#393">[ subject ]</a>
+              <a href="author.html#393">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

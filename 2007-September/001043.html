@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER patches, second release
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070914215007.GB15545%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001037.html">
+   <LINK REL="Next"  HREF="001041.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER patches, second release</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20patches%2C%20second%20release&In-Reply-To=%3C20070914215007.GB15545%40osc.edu%3E"
+       TITLE="[Stgt-devel] iSER patches, second release">pw at osc.edu
+       </A><BR>
+    <I>Fri Sep 14 23:50:07 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001037.html">[Stgt-devel] iSER patches, second release
+</A></li>
+        <LI>Next message: <A HREF="001041.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1043">[ date ]</a>
+              <a href="thread.html#1043">[ thread ]</a>
+              <a href="subject.html#1043">[ subject ]</a>
+              <a href="author.html#1043">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">nezhinsky at gmail.com</A> wrote on Sun, 09 Sep 2007 22:39 +0300:
+&gt;<i> Another question, though. As far as i understand, when rdma read due
+</I>&gt;<i> to an r2t request is done, iser_rdma_read_completion() is called and
+</I>&gt;<i> it calls iscsi_scsi_cmd_execute() which may issue more R2Ts if
+</I>&gt;<i> necessary.
+</I>&gt;<i> So we send R2T --&gt; RDMA-Read, then wait for completion, then send
+</I>&gt;<i> another one.
+</I>&gt;<i> This imposes delays between consecutive rdma-reads.
+</I>&gt;<i> If we issue all r2t requests at once (in the correct order, though), we
+</I>&gt;<i> guarantee that there are no gaps (or they are as small as possible)
+</I>&gt;<i> between the data chunks sent from the initiator.
+</I>&gt;<i> 
+</I>&gt;<i> Generally, the number of R2T simultaneously outstanding is governed by
+</I>&gt;<i> MaxOutstandingR2Ts, but it is irrelevant in iSER, just as MaxBurstSize is
+</I>&gt;<i> irrelevant. The only limitation on issuing R2Ts is the limitation of
+</I>&gt;<i> the hardware
+</I>&gt;<i> upon the max outstanding RDMA-Read requests.
+</I>
+You are right.  Neither TCP nor RDMA will issue more than one
+outstanding R2T, although TCP could do so if MaxOutstandingR2Ts
+allows.  We have the flexibility to do more RDMA reads, and perhaps
+can get better performance with the pipelining that would bring.  I
+think it would be a minor modification to iscsid.c, but suggest you
+hold off until we get your no-copy-PDU work in.  And even this work
+we should sit on for a bit until Tomo has a chance to think about
+the current set of patches.
+
+I fixed one bug today (&quot;iscsi: do not lose tx state&quot;) and pushed up
+a new git.  Hopefully Robin and others will help us shake out more
+bugs.  We'll be running tests next week and taking a close look at
+performance.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001037.html">[Stgt-devel] iSER patches, second release
+</A></li>
+	<LI>Next message: <A HREF="001041.html">[Stgt-devel] iSER patches, second release
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1043">[ date ]</a>
+              <a href="thread.html#1043">[ thread ]</a>
+              <a href="subject.html#1043">[ subject ]</a>
+              <a href="author.html#1043">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

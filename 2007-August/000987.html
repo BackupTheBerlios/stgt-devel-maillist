@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] close completes before synchronize cache response
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20close%20completes%20before%20synchronize%20cache%20response&In-Reply-To=%3C20070831170633.GA5667%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000986.html">
+   <LINK REL="Next"  HREF="000988.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] close completes before synchronize cache response</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20close%20completes%20before%20synchronize%20cache%20response&In-Reply-To=%3C20070831170633.GA5667%40osc.edu%3E"
+       TITLE="[Stgt-devel] close completes before synchronize cache response">pw at osc.edu
+       </A><BR>
+    <I>Fri Aug 31 19:06:33 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000986.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+        <LI>Next message: <A HREF="000988.html">[Stgt-devel] close completes before synchronize cache response
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#987">[ date ]</a>
+              <a href="thread.html#987">[ thread ]</a>
+              <a href="subject.html#987">[ subject ]</a>
+              <a href="author.html#987">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Commit ae2f80cbc432fe8cc4da94bdf289a7d856f11ac2:
+
+    Date:   Sun Aug 12 08:18:45 2007 +0900
+
+    close a connection after sending a logout response
+    
+    For now we need to just close a connection after sending a logout
+    response.
+    
+causes some initiator complaints with 2.6.22 on logout:
+
+sd 15:0:0:1: [sdb] Synchronizing SCSI cache
+iscsi: cmd 0x35 is not queued (6)
+iscsi: cmd 0x35 is not queued (6)
+iscsi: cmd 0x35 is not queued (6)
+sd 15:0:0:1: [sdb] Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK,SUGGEST_OK
+
+What happens on the target is:
+
+tgtd: [12:00:25.295827] iscsi_scsi_cmd_rx_start(1387) 1 35 0 0 0 1 5b
+tgtd: [12:00:25.295836] iscsi_task_queue(1332) 4752 4752 1
+tgtd: [12:00:25.295842] target_cmd_queue(532) 0x630240 35 1
+tgtd: [12:00:25.295848] target_cmd_queue(549) 0x630240 35 1 1
+tgtd: [12:00:25.295853] bs_sync_cmd_submit(296) 6 0 0 0 0 0x630240
+tgtd: [12:00:25.295861] target_cmd_queue(558) 5b 35 0 0 0 0 1
+tgtd: [12:00:25.295877] bs_sync_worker_fn(140) got 0x630240
+tgtd: [12:00:25.307434] iscsi_task_queue(1332) 4753 4753 46
+tgtd: [12:00:25.307471] iscsi_task_tx_start(1680) found a task 0 0 0 0
+tgtd: [12:00:25.307524] conn_close(97) connection closed
+tgtd: [12:00:25.307532] iscsi_event_handler(2045) connection closed
+tgtd: [12:00:25.608082] bs_sync_worker_fn(156) io done 0x630240 35 0 0
+tgtd: [12:00:25.608136] bs_sync_ack_fn(94) found 0x630240
+tgtd: [12:00:25.608167] bs_sync_handler(193) back to tgtd, 0x630240
+tgtd: [12:00:25.608200] __cmd_done(618) 0 0 0 0
+tgtd: [12:00:25.608210] conn_free(79) freeing connection
+tgtd: [12:00:25.608217] it_nexus_destroy(124) 1 1
+
+(Mostly unmodified git, just timestamps and little stuff.)
+
+The SYNCHRONIZE_CACHE command (0x35) gets started in bs_sync by a
+separate thread.  Then the immediate LOGOUT command (0x46) is
+received and sets conn-&gt;state = STATE_CLOSE, as added in this patch.
+After 300 ms, bs_sync completes, and returns its result, but iscsi
+does not send it because the connection is closed.  Linux
+complains.
+
+If I remove bs_sync and instead use a non-threaded BS that processes
+commands synchronously, close processing waits until after the cache
+has been synchronized, and the initiator does not complain.
+
+Things do work, but are a bit messy.  I don't have a good idea
+for a workaround just now.  What was the problem that this patch
+fixed?  Can we delay the close until all command responses have been
+sent somehow?
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000986.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+	<LI>Next message: <A HREF="000988.html">[Stgt-devel] close completes before synchronize cache response
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#987">[ date ]</a>
+              <a href="thread.html#987">[ thread ]</a>
+              <a href="subject.html#987">[ subject ]</a>
+              <a href="author.html#987">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

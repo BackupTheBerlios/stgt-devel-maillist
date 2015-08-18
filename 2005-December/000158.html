@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C4398ABF9.2030404%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000156.html">
+   <LINK REL="Next"  HREF="000178.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%20new%09version%0A%20of%20iscsi%20target%3F&In-Reply-To=%3C4398ABF9.2030404%40cs.wisc.edu%3E"
+       TITLE="Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Thu Dec  8 22:56:09 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000156.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+        <LI>Next message: <A HREF="000178.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#158">[ date ]</a>
+              <a href="thread.html#158">[ thread ]</a>
+              <a href="subject.html#158">[ subject ]</a>
+              <a href="author.html#158">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Dave C Boutcher wrote:
+&gt;<i> On Thu, Dec 08, 2005 at 02:09:32PM -0600, Mike Christie wrote:
+</I>&gt;<i> 
+</I>&gt;&gt;<i>James Bottomley wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>On Thu, 2005-12-08 at 13:10 -0600, Mike Christie wrote:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i>cleanup. In the end some of the scsi people liked the idea of throwing 
+</I>&gt;&gt;&gt;&gt;<i>the non-read/write command to userspace and to do this we just decided 
+</I>&gt;&gt;&gt;&gt;<i>to start over but I have been cutting and pasting your code and cleaning 
+</I>&gt;&gt;&gt;&gt;<i>it up as I add more stuff.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>To be honest, I'd like to see all command processing at user level
+</I>&gt;&gt;&gt;<i>(including read/write ... for block devices, it shouldn't be that
+</I>&gt;&gt;&gt;<i>inefficient, since you're merely going to say remap an area from one
+</I>&gt;&gt;&gt;<i>device to another; as long as no data transformation ever occurs, the
+</I>&gt;&gt;&gt;<i>user never touches the data and it all remains in the kernel page
+</I>&gt;&gt;&gt;<i>cache).
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>Ok, Tomo and I briefly talked about this when we saw Jeff's post about 
+</I>&gt;&gt;<i>doing block layer drivers in userspace on lkml. I think we were somewhat 
+</I>&gt;&gt;<i>prepared for this given some of your other replies.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>So Vlad and other target guys what do you think? Vlad are you going to 
+</I>&gt;&gt;<i>continue to maintain scst as kernel only, or is there some place we can 
+</I>&gt;&gt;<i>work together on this on - if your feelings are not hurt too much that 
+</I>&gt;&gt;<i>is :) ?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Oofff....Architecturally I agree with James...do all command processing
+</I>&gt;<i> in one place.  On the other hand, the processing involved with a read or
+</I>&gt;<i> write in the normal case (no aborts/resets/ordering/timeouts/etc) is
+</I>&gt;<i> almost zero.  Figure out the LBA and length and pass on the I/O.  The
+</I>
+There is still memory and scatterlist allocations. If we are not going 
+to allocate all the memory for a command buffer and request with 
+GFP_ATOMIC (and can then run from the the HW interrupt or soft irq) we 
+have to pass that on to a thread. I guess there is disagreement whether 
+that part is a feature or bad use of GFP_ATOMIC though so... But I just 
+mean to say there could be a little more to do.
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click">http://ads.osdn.com/?ad_id=7637&amp;alloc_id=16865&amp;op=click</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000156.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+	<LI>Next message: <A HREF="000178.html">Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new	version of iscsi target?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#158">[ date ]</a>
+              <a href="thread.html#158">[ thread ]</a>
+              <a href="subject.html#158">[ subject ]</a>
+              <a href="author.html#158">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

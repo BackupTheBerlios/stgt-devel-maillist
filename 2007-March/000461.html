@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Adding Virtual Tape &amp; Changer targets
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20Virtual%20Tape%20%26%20Changer%20targets&In-Reply-To=%3Cf29db9a80703211613o2bc16f11x639e1685b75858ae%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000460.html">
+   <LINK REL="Next"  HREF="000458.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Adding Virtual Tape &amp; Changer targets</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Adding%20Virtual%20Tape%20%26%20Changer%20targets&In-Reply-To=%3Cf29db9a80703211613o2bc16f11x639e1685b75858ae%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Adding Virtual Tape &amp; Changer targets">markh794 at gmail.com
+       </A><BR>
+    <I>Thu Mar 22 00:13:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000460.html">[Stgt-devel] Adding Virtual Tape &amp; Changer targets
+</A></li>
+        <LI>Next message: <A HREF="000458.html">[Stgt-devel] [PATCH] iscsi: handle dataout padding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#461">[ date ]</a>
+              <a href="thread.html#461">[ thread ]</a>
+              <a href="subject.html#461">[ subject ]</a>
+              <a href="author.html#461">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 3/22/07, Ming Zhang &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A>&gt; wrote:
+&gt;<i> On Wed, 2007-03-21 at 13:32 -0700, Mark Harvey wrote:
+</I>&gt;<i> &gt; The aim is to support the SSC-3 and SMC-3 standards - eventually. No
+</I>&gt;<i> &gt; actual code that says &quot;emulate robot xyz&quot;.
+</I>&gt;<i>
+</I>&gt;<i> different robots will have different capability and even the code
+</I>&gt;<i> support every feature defined in SSC and SMC, it still need to present
+</I>&gt;<i> it to host as a specific model.
+</I>&gt;<i>
+</I>&gt;<i> but of course having more features implemented and allowing each model
+</I>&gt;<i> to assemble them is nice.
+</I>&gt;<i>
+</I>&gt;<i> &gt; The vtl code I'm using reports as a STK L700 with no ill side effects.
+</I>&gt;<i> &gt;
+</I>&gt;<i>
+</I>&gt;<i> which VT model u report?
+</I>&gt;<i>
+</I>&gt;<i> &gt; The actual VENDOR Ident, Product Ident etc for the SCSI Inquiry string
+</I>&gt;<i> &gt; are to be retrieved from a configuration file - and hence code
+</I>&gt;<i> &gt; independent.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I hope nobody shoots me for hijacking the '-b &lt;backing file&gt;' option for
+</I>&gt;<i> &gt; use as the configuration file for SSC and SMC devices..
+</I>&gt;<i>
+</I>&gt;<i> it will be wonderful if a VTL can be configurable purely from a file.
+</I>&gt;<i> and virtual device in tgt is in user space so open a file is really
+</I>&gt;<i> ok. ;)
+</I>&gt;<i>
+</I>&gt;<i> aha, u work for the company who make VBE, so can u run a VBE
+</I>&gt;<i> interoperability test on your code?!
+</I>This is the reason for creating the VTL code.
+i.e.
+Lack of available hardware to support NetBackup.
+Real tape libraries cost lots of $$$ and trying to get one per support
+tech is just unrealistic.
+There is also lots of different flavors of operating systems in the
+support lab, so interoperability testing with different iSCSI
+initiators will be possible.
+
+The BackupExec support guys are also co-located on the same floor so
+I'll be able to get interoperability tests with BackupExec as well
+using the Microsoft iSCSI initiator.
+
+In a previous life, I also installed and configured NetWorker (Its
+been 5+ years since I touched this, but I should be able to figure out
+how to run it again).
+
+I'm also interested in Persistent SCSI reserve/release - latest
+version of NetBackup (in beta at the moment) will be using this so
+this will be another area of code I'll most likely be looking at. Once
+the tape drive &amp; library side of things are working..
+
+&gt;<i>
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Once I clean up some comments in the code, I shall post a diff.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Cheers
+</I>&gt;<i> &gt; Mark Harvey
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; -----Original Message-----
+</I>&gt;<i> &gt; From: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>
+</I>&gt;<i> &gt; [mailto:<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel-bounces at lists.berlios.de</A>] On Behalf Of Ming Zhang
+</I>&gt;<i> &gt; Sent: Thursday, 22 March 2007 12:44 AM
+</I>&gt;<i> &gt; To: Mark Harvey
+</I>&gt;<i> &gt; Cc: <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; Subject: Re: [Stgt-devel] Adding Virtial Tape &amp; Changer targets
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; On Wed, 2007-03-21 at 12:39 +1100, Mark Harvey wrote:
+</I>&gt;<i> &gt; &gt; A quick introduction.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; I am planning on adding support to the stgt for both SSC and SMC
+</I>&gt;<i> &gt; &gt; devices with the aim of full Virtual Tape Library support.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; I have a working VTL based around the scsi_debug kernel module +
+</I>&gt;<i> &gt; &gt; char-device 'back-end' to pass SCSI commands thru to user-space
+</I>&gt;<i> &gt; &gt; daemons (which poll the char device looking for work to do). These
+</I>&gt;<i> &gt; &gt; daemons act as the SSC or SMC devices.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; This VTL I have had working for over 12mths.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; side question, your SSC/SMC code support to emulate one particular
+</I>&gt;<i> &gt; VT/VTL or you will provide a framework to allow the emulation of
+</I>&gt;<i> &gt; multiple different types of VTLs and VTs?
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; suggest you to release the code early so people can give you more
+</I>&gt;<i> &gt; feedback.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; thanks for the great work.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Ming
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; _______________________________________________
+</I>&gt;<i> &gt; Stgt-devel mailing list
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> &gt; <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000460.html">[Stgt-devel] Adding Virtual Tape &amp; Changer targets
+</A></li>
+	<LI>Next message: <A HREF="000458.html">[Stgt-devel] [PATCH] iscsi: handle dataout padding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#461">[ date ]</a>
+              <a href="thread.html#461">[ thread ]</a>
+              <a href="subject.html#461">[ subject ]</a>
+              <a href="author.html#461">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

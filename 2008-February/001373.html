@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 1/2] iSER throttling
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20iSER%20throttling&In-Reply-To=%3C20080208192448.GB14485%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001365.html">
+   <LINK REL="Next"  HREF="001366.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 1/2] iSER throttling</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%201/2%5D%20iSER%20throttling&In-Reply-To=%3C20080208192448.GB14485%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 1/2] iSER throttling">pw at osc.edu
+       </A><BR>
+    <I>Fri Feb  8 20:24:48 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001365.html">[Stgt-devel] [PATCH 1/2] iSER throttling
+</A></li>
+        <LI>Next message: <A HREF="001366.html">[Stgt-devel] [PATCH 2/2] iSER throttling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1373">[ date ]</a>
+              <a href="thread.html#1373">[ thread ]</a>
+              <a href="subject.html#1373">[ subject ]</a>
+              <a href="author.html#1373">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A> wrote on Thu, 07 Feb 2008 21:36 -0500:
+&gt;<i> with a few iSER writers it's easy to run out of RDMA areas in the tgtd
+</I>&gt;<i> mempool. currently tgtd gives up in this case, leading to a mess.
+</I>&gt;<i> these 2 patches throttle iSER requests so that there are always enough
+</I>&gt;<i> RDMA areas left in the mempool left to do i/o.
+</I>&gt;<i> 
+</I>&gt;<i> it's been tested with 1 to 16 initiators and it seems to work.
+</I>&gt;<i> 
+</I>&gt;<i> funtionality of the iSER code is unchanged when there's 1 initiator and
+</I>&gt;<i> 1 target.
+</I>&gt;<i> functionality of the tcp transport code is unchanged, although these
+</I>&gt;<i> patches add enough framework that the tcp code could have throttling
+</I>&gt;<i> enabled sometime in the future.
+</I>&gt;<i> 
+</I>&gt;<i> possible extensions to this work are
+</I>&gt;<i>  - to tell the user when they are frequently running low on RDMA areas
+</I>&gt;<i>    and suggest that they recompile with a higher number
+</I>&gt;<i>  - to make the RDMA mempool size a runtime configurable so that it can
+</I>&gt;<i>    be increased without a recompile
+</I>&gt;<i>  - to add tcp accounting and throttling
+</I>
+Brilliant stuff.  This is definitely a worthwhile improvement.  Some
+comments.
+
+&gt;<i> diff -ruN ../tgt/usr/iscsi/iscsi_rdma.c ./usr/iscsi/iscsi_rdma.c
+</I>&gt;<i> --- ../tgt/usr/iscsi/iscsi_rdma.c	2008-01-23 12:50:27.000000000 +1100
+</I>&gt;<i> +++ ./usr/iscsi/iscsi_rdma.c	2008-01-24 18:22:32.000000000 +1100
+</I>&gt;<i> @@ -196,6 +196,9 @@
+</I>&gt;<i>  
+</I>&gt;<i>  	/* free and allocated mempool entries */
+</I>&gt;<i>  	struct list_head mempool_free, mempool_alloc;
+</I>&gt;<i> +
+</I>&gt;<i> +        /* rdma mempool accounting */
+</I>&gt;<i> +        int mempool_used;
+</I>&gt;<i>  };
+</I>
+Tomo will yell at you for not running checkpatch.  Those spaces
+should be tabs.
+
+&gt;<i> @@ -213,6 +216,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>  /* all iser connections */
+</I>&gt;<i>  static struct list_head iser_conn_list;
+</I>&gt;<i> +static int iser_conn_cnt;
+</I>&gt;<i>  
+</I>&gt;<i>  /* if any task needs an rdma read or write slot to proceed */
+</I>&gt;<i>  static int waiting_rdma_slot;
+</I>&gt;<i> @@ -555,6 +559,7 @@
+</I>&gt;<i>  	dev-&gt;mempool_listbuf = listbuf;
+</I>&gt;<i>  	INIT_LIST_HEAD(&amp;dev-&gt;mempool_free);
+</I>&gt;<i>  	INIT_LIST_HEAD(&amp;dev-&gt;mempool_alloc);
+</I>&gt;<i> +	dev-&gt;mempool_used = 0;
+</I>&gt;<i>  
+</I>&gt;<i>  	for (i = 0; i &lt; mempool_num; i++) {
+</I>&gt;<i>  		mp = (void *) listbuf;
+</I>&gt;<i> @@ -793,6 +798,7 @@
+</I>&gt;<i>  	dprintf(&quot;established conn %p\n&quot;, ci);
+</I>&gt;<i>  	list_del(&amp;ci-&gt;iser_conn_list);
+</I>&gt;<i>  	list_add(&amp;ci-&gt;iser_conn_list, &amp;iser_conn_list);
+</I>&gt;<i> +	iser_conn_cnt++;
+</I>&gt;<i>  }
+</I>
+I think iser_conn_cnt should be a property on the dev, not global.
+Since we allocate mempools per device.
+
+Also might as well fold these two patches into one, since it is hard
+to understand the role of iser_conn_cnt without the uses of it in
+patch 2.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001365.html">[Stgt-devel] [PATCH 1/2] iSER throttling
+</A></li>
+	<LI>Next message: <A HREF="001366.html">[Stgt-devel] [PATCH 2/2] iSER throttling
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1373">[ date ]</a>
+              <a href="thread.html#1373">[ thread ]</a>
+              <a href="subject.html#1373">[ subject ]</a>
+              <a href="author.html#1373">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

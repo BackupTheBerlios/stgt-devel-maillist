@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] uSpace Transport Patch
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C4A1CC24C-CDE0-489E-B0BA-4BFB5AC1284F%40opengridcomputing.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000335.html">
+   <LINK REL="Next"  HREF="000337.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] uSpace Transport Patch</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20uSpace%20Transport%20Patch&In-Reply-To=%3C4A1CC24C-CDE0-489E-B0BA-4BFB5AC1284F%40opengridcomputing.com%3E"
+       TITLE="[Stgt-devel] uSpace Transport Patch">tom at opengridcomputing.com
+       </A><BR>
+    <I>Wed Aug 30 03:42:29 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000335.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+        <LI>Next message: <A HREF="000337.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+On Aug 29, 2006, at 7:36 PM, FUJITA Tomonori wrote:
+
+&gt;<i> From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] uSpace Transport Patch
+</I>&gt;<i> Date: Tue, 29 Aug 2006 19:17:09 -0500
+</I>&gt;<i>
+</I>&gt;&gt;<i> On Aug 29, 2006, at 5:23 PM, FUJITA Tomonori wrote:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+</I>&gt;&gt;&gt;<i> Subject: Re: [Stgt-devel] uSpace Transport Patch
+</I>&gt;&gt;&gt;<i> Date: Tue, 29 Aug 2006 09:47:59 -0500
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> Tomo:
+</I>&gt;&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> At this point, I'm in thee middle of writing the kernel side of the
+</I>&gt;&gt;&gt;&gt;<i> iSER transport. It would be no big deal to switch to user mode.
+</I>&gt;&gt;&gt;&gt;<i> Should I do it?
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> I like to go with the user-space approach if it provides reasonable
+</I>&gt;&gt;&gt;<i> performance. I cannot risk getting a refusal after a serious effort.
+</I>&gt;&gt;&gt;<i> I don't like to duplicate open-iscsi kernel-space code in user- 
+</I>&gt;&gt;&gt;<i> space,
+</I>&gt;&gt;&gt;<i> however, it's much better than the future refusal.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> The perfromance should be fine for iSER. For tcp, we would see small
+</I>&gt;&gt;&gt;<i> drop, however, it should be fine. I've been working on the user- 
+</I>&gt;&gt;&gt;<i> space
+</I>&gt;&gt;&gt;<i> approach to see the performance. I replaced poll with epoll and  
+</I>&gt;&gt;&gt;<i> added
+</I>&gt;&gt;&gt;<i> AIO support. I'm making the out-of-date user-space code work with  
+</I>&gt;&gt;&gt;<i> the
+</I>&gt;&gt;&gt;<i> latest code. That sould be finished shortly.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> I guess that I can merge the basic transport part of your latest
+</I>&gt;&gt;&gt;<i> patch.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> That would be great.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;&gt;<i> We might want to look at the OpenFabric's stack to see how they
+</I>&gt;&gt;&gt;&gt;<i> implement kernel bypass. This code has been accepted by kernel.org
+</I>&gt;&gt;&gt;&gt;<i> and might provide a workable model or at least a starting point for
+</I>&gt;&gt;&gt;&gt;<i> the user-mode iSER target implementation. It supports a very high
+</I>&gt;&gt;&gt;&gt;<i> bandwidth, zero copy mechanism for exchanging data and events with
+</I>&gt;&gt;&gt;&gt;<i> the kernel.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Sounds nice. I guess that you mean that user-space processes can
+</I>&gt;&gt;&gt;<i> access to hardware without kernel intervention. Are documents about
+</I>&gt;&gt;&gt;<i> the APIs available? I have some questions about event notifications,
+</I>&gt;&gt;&gt;<i> etc.
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Sorry, the bulk of the documentation is all written in C.
+</I>&gt;<i>
+</I>&gt;<i> No problem.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;&gt;<i> There is some some documentation in a WiKi at
+</I>&gt;&gt;<i> <A HREF="http://openfabrics.org.">http://openfabrics.org.</A> The source can be obtained via svn from
+</I>&gt;&gt;<i> <A HREF="svn://openfabrics.org/svn/gen2/">svn://openfabrics.org/svn/gen2/</A> trunk. It's big though. The user
+</I>&gt;&gt;<i> space stuff is in ./src/userspace.  See the files in librdmacm and
+</I>&gt;&gt;<i> libibverbs for how fd's are used for events.
+</I>&gt;<i>
+</I>&gt;<i> OK. I will. I guess that event handling (how to know the readable data
+</I>&gt;<i> is ready and the completion of transmit, etc) is only tricky stuff.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Seems that you dropped the mailing list address (I don't know it's
+</I>&gt;<i> intentional or not),
+</I>
+Oops...no it wasn't.
+
+&gt;<i> so I like to ask one more question, RNIC support
+</I>&gt;<i> in mainline. After the big discussion last month, what's the current
+</I>&gt;<i> state?
+</I>
+The iWARP stuff has been submitted to Roland for review and  
+subsequent inclusion in 2.6.19. At this point, things look very  
+positive since the bulk of the code has already been seen and the  
+core changes are relatively minor and there is only a single device  
+driver (AMSO1100).
+
+The one other change we needed (netevents) has already been submitted  
+to netdev and has been accepted by Dave Miller. So things are looking  
+good there too.
+
+In the meantime, I have a set of git patches to 2.6.17.y that I  
+maintain. We also maintain this code as the iWARP branch in the  
+OpenFabric's SVN repository.  I would recommend that we use stacked  
+git on a git tree hosted by kernel.org for the kernel components. I  
+can provide and maintain iWARP patches against this tree until iWARP  
+support is mainline in 2.6.19. I guess we could continue to use svn  
+for the user-mode components, but I don't have a strong opinion there.
+
+Thoughts?
+
+Tom
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000335.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+	<LI>Next message: <A HREF="000337.html">[Stgt-devel] uSpace Transport Patch
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

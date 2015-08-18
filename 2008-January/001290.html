@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801170643o532888eajdbc13030af5814ef%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001286.html">
+   <LINK REL="Next"  HREF="001288.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3Ce2e108260801170643o532888eajdbc13030af5814ef%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Thu Jan 17 15:43:32 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001286.html">[Stgt-devel] [Scst-devel]  Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001288.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1290">[ date ]</a>
+              <a href="thread.html#1290">[ thread ]</a>
+              <a href="subject.html#1290">[ subject ]</a>
+              <a href="author.html#1290">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Jan 17, 2008 1:29 PM, Robin Humble &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">robin.humble+stgt at anu.edu.au</A>&gt; wrote:
+
+&gt;<i> was iscsiadm was pointed at the IP of the IPoIB interface on the target? I think tgtd requires that.
+</I>&gt;<i>
+</I>&gt;<i> how about setting the transport to be iser with eg.
+</I>&gt;<i>   iscsiadm --mode node --targetname &lt;something&gt; --portal &lt;ipoib&gt;:3260 --op update -n node.transport_name -v iser
+</I>&gt;<i>   iscsiadm --mode node --targetname &lt;something&gt; --portal &lt;ipoib&gt;:3260 --op update -n &quot;node.conn[0].iscsi.HeaderDigest&quot; -v None
+</I>
+Ah, thanks. After issuing these commands I get better performance with
+STGT and iSER. The updated table is as follows:
+
+                             STGT read             SCST read
+                          performance (MB/s)   performance (MB/s)
+Ethernet (1 Gb/s network)        77                    89
+IPoIB (8 Gb/s network)           82                   229
+SRP (8 Gb/s network)            N/A                   600
+iSER (8 Gb/s network)           324                   N/A
+
+Can we conclude that with the tested software versions SCST performs
+significantly better than STGT on an InfiniBand network ?
+
+Bart.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001286.html">[Stgt-devel] [Scst-devel]  Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001288.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1290">[ date ]</a>
+              <a href="thread.html#1290">[ thread ]</a>
+              <a href="subject.html#1290">[ subject ]</a>
+              <a href="author.html#1290">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

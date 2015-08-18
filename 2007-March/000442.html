@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Not updating Serial Number in SCSI Inquiry page	correctly.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Not%20updating%20Serial%20Number%20in%20SCSI%20Inquiry%20page%0A%09correctly.&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21CE5CA78%40TUS1XCHCLUPIN05.enterprise.veritas.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000441.html">
+   <LINK REL="Next"  HREF="000443.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Not updating Serial Number in SCSI Inquiry page	correctly.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Not%20updating%20Serial%20Number%20in%20SCSI%20Inquiry%20page%0A%09correctly.&In-Reply-To=%3CB3E98EAC5926D5498DDD341AE4B7D21CE5CA78%40TUS1XCHCLUPIN05.enterprise.veritas.com%3E"
+       TITLE="[Stgt-devel] Not updating Serial Number in SCSI Inquiry page	correctly.">mark_harvey at symantec.com
+       </A><BR>
+    <I>Sat Mar 17 01:29:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000441.html">[Stgt-devel] [PATCH] one more iscsi ahs bug fix
+</A></li>
+        <LI>Next message: <A HREF="000443.html">[Stgt-devel] Not updating Serial Number in SCSI Inquiry	page	correctly.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#442">[ date ]</a>
+              <a href="thread.html#442">[ thread ]</a>
+              <a href="subject.html#442">[ subject ]</a>
+              <a href="author.html#442">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+In page 0x80 of SCSI Inquiry, forgot to decrement the destination
+pointer.
+
+===================================================================
+--- spc.c       (revision 835)
++++ spc.c       (working copy)
+@@ -108,7 +108,7 @@
+                                p = data + 4 + tmp - 1;
+                                q = cmd-&gt;dev-&gt;scsi_sn + SCSI_SN_LEN - 1;
+ 
+-                               for (; tmp &gt; 0; tmp--, q)
++                               for (; tmp &gt; 0; tmp--, q--)
+                                        *(p--) = *q;
+                        }
+                } else if (scb[2] == 0x83) {
+
+ 
+
+________________________________
+
+Cheer
+Mark Harvey
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000441.html">[Stgt-devel] [PATCH] one more iscsi ahs bug fix
+</A></li>
+	<LI>Next message: <A HREF="000443.html">[Stgt-devel] Not updating Serial Number in SCSI Inquiry	page	correctly.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#442">[ date ]</a>
+              <a href="thread.html#442">[ thread ]</a>
+              <a href="subject.html#442">[ subject ]</a>
+              <a href="author.html#442">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

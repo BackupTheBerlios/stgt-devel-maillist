@@ -1,0 +1,314 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] PATCH 4 of 6 -
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%204%20of%206%20-&In-Reply-To=%3C1178893202.3857.16.camel%40dhcp-136.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000620.html">
+   <LINK REL="Next"  HREF="000621.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] PATCH 4 of 6 -</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20PATCH%204%20of%206%20-&In-Reply-To=%3C1178893202.3857.16.camel%40dhcp-136.ibrix.com%3E"
+       TITLE="[Stgt-devel] PATCH 4 of 6 -">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Fri May 11 16:20:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000620.html">[Stgt-devel] PATCH 4 of 6 -
+</A></li>
+        <LI>Next message: <A HREF="000621.html">[Stgt-devel] PATCH 5 of 6 - Add MODE PAGE &amp; LOG PAGE support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#623">[ date ]</a>
+              <a href="thread.html#623">[ thread ]</a>
+              <a href="subject.html#623">[ subject ]</a>
+              <a href="author.html#623">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 2007-05-11 at 13:19 +1000, Mark Harvey wrote:
+
+&lt;snip&gt;
+
+&gt;<i> + */
+</I>&gt;<i> +#include &lt;errno.h&gt;
+</I>&gt;<i> +#include &lt;stdio.h&gt;
+</I>&gt;<i> +#include &lt;stdlib.h&gt;
+</I>&gt;<i> +#include &lt;string.h&gt;
+</I>&gt;<i> +#include &lt;stdint.h&gt;
+</I>&gt;<i> +#include &lt;unistd.h&gt;
+</I>&gt;<i> +#include &lt;linux/fs.h&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +#include &quot;list.h&quot;
+</I>&gt;<i> +#include &quot;util.h&quot;
+</I>&gt;<i> +#include &quot;tgtd.h&quot;
+</I>&gt;<i> +#include &quot;target.h&quot;
+</I>&gt;<i> +#include &quot;driver.h&quot;
+</I>&gt;<i> +#include &quot;tgtadm.h&quot;
+</I>&gt;<i> +#include &quot;scsi.h&quot;
+</I>&gt;<i> +#include &quot;spc.h&quot;
+</I>&gt;<i> +#include &quot;ssc3.h&quot;
+</I>&gt;<i> +#include &quot;sense_codes.h&quot;
+</I>&gt;<i> +#include &quot;media.h&quot;
+</I>&gt;<i> +
+</I>
+pls double check if all header files are needed here.
+
+&gt;<i> +/* *********************************************
+</I>&gt;<i> + * Useful routines for SCSI OP Code processing
+</I>&gt;<i> + * *********************************************/
+</I>&gt;<i> +static struct physicalAttributes *
+</I>&gt;<i> +getPhyAttr(struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +       struct ssc_info * ssc = cmd-&gt;dev-&gt;priv_p;
+</I>&gt;<i> +       return ssc-&gt;phy;
+</I>&gt;<i> +}
+</I>
+make this inline?
+
+&gt;<i> +
+</I>&gt;<i> +static int
+</I>&gt;<i> +check_reset(struct physicalAttributes * phy)
+</I>&gt;<i> +{
+</I>&gt;<i> +       return phy-&gt;reset;
+</I>&gt;<i> +}
+</I>
+inline again?
+
+&gt;<i> +
+</I>&gt;<i> +/* *********************************************
+</I>&gt;<i> + * SCSI OP Code processing
+</I>&gt;<i> + * *********************************************/
+</I>
+comment like this can be omitted.
+
+
+&gt;<i> +static int
+</I>&gt;<i> +ssc_TUR(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +       int ret = SAM_STAT_GOOD;
+</I>&gt;<i> +       struct physicalAttributes * phy = getPhyAttr(cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +       cmd-&gt;len = 0;
+</I>&gt;<i> +       if (cmd-&gt;dev) {
+</I>&gt;<i> +               ret = device_reserved(cmd);
+</I>&gt;<i> +               if (ret) {
+</I>&gt;<i> +                       dprintf(&quot;Reservation Conflict&quot;);
+</I>&gt;<i> +                       return SAM_STAT_RESERVATION_CONFLICT;
+</I>&gt;<i> +               }
+</I>&gt;<i> +               if(check_reset(phy)) {
+</I>&gt;<i> +                       dprintf(&quot;Power-on or reset&quot;);
+</I>&gt;<i> +                       mk_sense_data(cmd, NOT_READY,
+</I>&gt;<i> E_POWERON_RESET);
+</I>&gt;<i> +                       ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +                       phy-&gt;reset = 0;
+</I>&gt;<i> +               } else if (! phy-&gt;onLine) {
+</I>&gt;<i> +                       dprintf(&quot;No media in drive&quot;);
+</I>&gt;<i> +                       mk_sense_data(cmd, NOT_READY,
+</I>&gt;<i> E_MEDIUM_NOT_PRESENT);
+</I>&gt;<i> +                       ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +               }
+</I>&gt;<i> +       } else {
+</I>&gt;<i> +               dprintf(&quot;Invalid field in cdb&quot;);
+</I>&gt;<i> +               mk_sense_data(cmd, ILLEGAL_REQUEST,
+</I>&gt;<i> E_INVALID_FIELD_IN_CDB);
+</I>&gt;<i> +               ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +       }
+</I>&gt;<i> +       return ret;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static int
+</I>&gt;<i> +ssc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> +{
+</I>&gt;<i> +       int len, ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> +       uint8_t         *data;
+</I>&gt;<i> +       uint8_t         *scb = cmd-&gt;scb;
+</I>&gt;<i> +       unsigned char   device_type =
+</I>&gt;<i> cmd-&gt;c_target-&gt;dev_type_template.type;
+</I>&gt;<i> +       unsigned char   key = ILLEGAL_REQUEST;
+</I>&gt;<i> +       uint16_t        asc_ascq = E_INVALID_FIELD_IN_CDB;
+</I>&gt;<i> +       struct physicalAttributes * phy = getPhyAttr(cmd);
+</I>&gt;<i> +
+</I>&gt;<i> +       if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+</I>&gt;<i> +               goto sense;
+</I>&gt;<i> +
+</I>&gt;<i> +       data = valloc(pagesize);
+</I>&gt;<i> +       if (!data) {
+</I>&gt;<i> +               key = HARDWARE_ERROR;
+</I>&gt;<i> +               asc_ascq = E_INTERNAL_TARGET_FAILURE;
+</I>&gt;<i> +               goto sense;
+</I>&gt;<i> +       }
+</I>&gt;<i> +       memset(data, 0, pagesize);
+</I>&gt;<i> +
+</I>&gt;<i> +       dprintf(&quot;%x %x, device_type: %d\n&quot;, scb[1], scb[2],
+</I>&gt;<i> device_type);
+</I>&gt;<i> +
+</I>&gt;<i> +       if (!(scb[1] &amp; 0x3)) {
+</I>&gt;<i> +               int tmp = 62;
+</I>
+tmp set to hex or decimal in different places, could u use only one
+format? ;)
+
+
+&gt;<i> +               data[0] = device_type;
+</I>&gt;<i> +               data[1] = 0x80;         // Removable
+</I>&gt;<i> +               data[2] = 4;            // Conform to SCSI-3
+</I>&gt;<i> +               data[3] = tmp;
+</I>&gt;<i> +               data[4] = 59;
+</I>&gt;<i> +               data[7] = 0x02;
+</I>&gt;<i> +               memset(data + 8, 0x20, 28);
+</I>&gt;<i> +               memcpy((char *)data + 8, phy-&gt;VendorIdent, 8);
+</I>&gt;<i> +               memcpy((char *)data + 16, phy-&gt;ProductIdent, 16);
+</I>&gt;<i> +               memcpy((char *)data + 32, phy-&gt;ProductRev, 4);
+</I>&gt;<i> +               data[58] = 0x03;        // 0300 == No SPC-3 version
+</I>&gt;<i> claimed
+</I>&gt;<i> +               data[59] = 0x00;
+</I>&gt;<i> +               data[60] = 0x09;        // 0960 == iSCSI
+</I>&gt;<i> +               data[61] = 0x60;
+</I>&gt;<i> +               data[62] = 0x02;        // 0200 == No SCC version
+</I>&gt;<i> claimed
+</I>&gt;<i> +               data[63] = 0x00;
+</I>&gt;<i> +               data[64] = 0x04;        // 0400 == No SCC-3 version
+</I>&gt;<i> claimed
+</I>&gt;<i> +               data[65] = 0x00;
+</I>&gt;<i> +               len = tmp + 4;
+</I>&gt;<i> +               ret = SAM_STAT_GOOD;
+</I>&gt;<i> +       } else if (scb[1] &amp; 0x2) {
+</I>&gt;<i> +               /* CmdDt bit is set */
+</I>&gt;<i> +               /* We do not support it now. */
+</I>&gt;<i> +               data[1] = 0x1;
+</I>&gt;<i> +               data[5] = 0;
+</I>&gt;<i> +               len = 6;
+</I>&gt;<i> +               ret = SAM_STAT_GOOD;
+</I>&gt;<i> +       } else if (scb[1] &amp; 0x1) {
+</I>&gt;<i> +               /* EVPD bit set */
+</I>&gt;<i> +               if (scb[2] == 0x0) {
+</I>&gt;<i> +                       data[0] = device_type;
+</I>&gt;<i> +                       data[1] = 0x0;
+</I>&gt;<i> +                       data[3] = 6;
+</I>&gt;<i> +                       data[4] = 0x0;  // Return supported pages
+</I>&gt;<i> +                       data[5] = 0x80; // Serial Number
+</I>&gt;<i> +                       data[6] = 0x83; // Device Identification
+</I>&gt;<i> +                       data[7] = 0xb0; // SSC VPD
+</I>&gt;<i> +                       data[8] = 0xc0; // Firmware build
+</I>&gt;<i> +                       data[9] = 0xc1; // Subsystem Revision
+</I>&gt;<i> +                       len = 10;
+</I>&gt;<i> +                       ret = SAM_STAT_GOOD;
+</I>&gt;<i> +               } else if (scb[2] == 0x80) {
+</I>&gt;<i> +                       int tmp = SCSI_SN_LEN;
+</I>&gt;<i> +
+</I>&gt;<i> +                       data[1] = 0x80;
+</I>&gt;<i> +                       data[3] = SCSI_SN_LEN;
+</I>&gt;<i> +                       memset(data + 4, 0x20, 4);
+</I>&gt;<i> +                       len = 4 + SCSI_SN_LEN;
+</I>&gt;<i> +                       ret = SAM_STAT_GOOD;
+</I>&gt;<i> +
+</I>&gt;<i> +                       if (cmd-&gt;dev &amp;&amp; strlen(phy-&gt;SerialNumber)) {
+</I>&gt;<i> +                               uint8_t *p;
+</I>&gt;<i> +                               char *q;
+</I>&gt;<i> +
+</I>&gt;<i> +                               p = data + 4 + tmp - 1;
+</I>&gt;<i> +                               q = phy-&gt;SerialNumber + SCSI_SN_LEN -
+</I>&gt;<i> 1;
+</I>&gt;<i> +
+</I>&gt;<i> +                               for (; tmp &gt; 0; tmp--, q)
+</I>&gt;<i> +                                       *(p--) = *(q--);
+</I>&gt;<i> +                       }
+</I>&gt;<i> +               } else if (scb[2] == 0x83) {
+</I>&gt;<i> +                       int tmp = 40 + SCSI_SN_LEN;
+</I>&gt;<i> +
+</I>&gt;<i> +                       data[1] = 0x83;
+</I>&gt;<i> +                       data[3] = tmp + 4;
+</I>&gt;<i> +                       data[4] = 0x1;
+</I>&gt;<i> +                       data[5] = 0x1;
+</I>&gt;<i> +                       data[7] = tmp;
+</I>&gt;<i> +                       if (cmd-&gt;dev) {
+</I>&gt;<i> +                               strncpy((char *) data + 8,
+</I>&gt;<i> +                                               cmd-&gt;dev-&gt;scsi_id,
+</I>&gt;<i> +                                               SCSI_ID_LEN);
+</I>&gt;<i> +                               data[36] = 2;   // ASCII
+</I>&gt;<i> +                               data[37] = 1;
+</I>&gt;<i> +                               data[39] = SCSI_SN_LEN;
+</I>&gt;<i> +                               strncpy((char *) data + 40,
+</I>&gt;<i> +                                               phy-&gt;SerialNumber,
+</I>&gt;<i> +                                               SCSI_SN_LEN);
+</I>&gt;<i> +                       }
+</I>&gt;<i> +                       len = tmp + 8;
+</I>&gt;<i> +                       ret = SAM_STAT_GOOD;
+</I>&gt;<i> +               } else if (scb[2] == 0xb0) {    // SSC VPD
+</I>&gt;<i> +                       int tmp = 3;
+</I>&gt;<i> +                       data[1] = 0xb0;
+</I>&gt;<i> +                       data[2] = 0;    // Length - MSB
+</I>&gt;<i> +                       data[3] = tmp;  // Length - LSB
+</I>&gt;<i> +                       data[4] = 1;    // WORM support
+</I>&gt;<i> +                       len = tmp + 4;
+</I>&gt;<i> +                       ret = SAM_STAT_GOOD;
+</I>&gt;<i> +               } else if (scb[2] == 0xc0) {    // Firmware Build
+</I>&gt;<i> +                       int tmp = 0x20;
+</I>&gt;<i> +                       data[1] = 0xc0;
+</I>&gt;<i> +                       data[2] = 0;    // Length - MSB
+</I>&gt;<i> +                       data[3] = tmp;  // Length - LSB
+</I>&gt;<i> +                       strncpy((char *) data + 20, &quot;2007-03-10
+</I>&gt;<i> 05:30&quot;, 20);
+</I>&gt;<i> +                       len = tmp + 4;
+</I>&gt;<i> +                       ret = SAM_STAT_GOOD;
+</I>&gt;<i> +               } else if (scb[2] == 0xc1) {    // Subsystem Revision
+</I>&gt;<i> +                       int tmp = 4;
+</I>&gt;<i> +                       data[1] = 0xc1;
+</I>&gt;<i> +                       data[2] = 0;    // Length - MSB
+</I>&gt;<i> +                       data[3] = tmp;  // Length - LSB
+</I>&gt;<i> +                       strncpy((char *) data + 4, &quot;blah&quot;, 4);
+</I>&gt;<i> +                       len = tmp + 4;
+</I>&gt;<i> +                       ret = SAM_STAT_GOOD;
+</I>&gt;<i> +               }
+</I>&gt;<i> +       }
+</I>&gt;<i> +
+</I>&gt;<i> +       if (ret != SAM_STAT_GOOD)
+</I>&gt;<i> +               goto sense;
+</I>
+by goto sense u will have a memory leak here. data is not freed. seems
+other places have this problem as well.
+
+&lt;snip&gt;
+
+others looks ok to me.
+
+&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000620.html">[Stgt-devel] PATCH 4 of 6 -
+</A></li>
+	<LI>Next message: <A HREF="000621.html">[Stgt-devel] PATCH 5 of 6 - Add MODE PAGE &amp; LOG PAGE support
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#623">[ date ]</a>
+              <a href="thread.html#623">[ thread ]</a>
+              <a href="subject.html#623">[ subject ]</a>
+              <a href="author.html#623">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH 2/2] when we start up fcoe on an interface, check that
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%202/2%5D%20when%20we%20start%20up%20fcoe%20on%20an%20interface%2C%20check%20that&In-Reply-To=%3Cmailman.38.1331738482.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001723.html">
+   <LINK REL="Next"  HREF="001702.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH 2/2] when we start up fcoe on an interface, check that</H1>
+    <B>Ronnie Sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%202/2%5D%20when%20we%20start%20up%20fcoe%20on%20an%20interface%2C%20check%20that&In-Reply-To=%3Cmailman.38.1331738482.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH 2/2] when we start up fcoe on an interface, check that">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Tue Jun 24 05:35:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001723.html">[PATCH 1/2] size_t is 64 bit on some architectures.
+</A></li>
+        <LI>Next message: <A HREF="001702.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1725">[ date ]</a>
+              <a href="thread.html#1725">[ thread ]</a>
+              <a href="subject.html#1725">[ subject ]</a>
+              <a href="author.html#1725">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>we actually have an
+ interface name passed to us and print an error and return -ENODEV
+ othervise.
+
+Othervise we will SEGV trying to memcpy() from a null pointer 1 line
+further down.
+
+When we initialize fcoe from the fcoe module, return proper success/failure
+back to tgtd so that it can abort/fail if the low level driver failed
+to initialize.
+
+Signed-off-by: Ronnie Sahlberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt;
+Signed-off-by: root &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ubuntu-server-1.sahlberg.net</A>&gt;
+---
+ usr/fcoe/fcoe_if.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/usr/fcoe/fcoe_if.c b/usr/fcoe/fcoe_if.c
+index 906c30b..cc61408 100644
+--- a/usr/fcoe/fcoe_if.c
++++ b/usr/fcoe/fcoe_if.c
+@@ -164,6 +164,11 @@ int fcoe_create_interface(char *ifname)
+ 	/* todo */
+ 	fdev-&gt;fd_link_status = TRANS_LINK_UP;
+
++	if (!ifname) {
++		eprintf(&quot;no interface specified.\n&quot;);
++		return -ENODEV;
++	}
++
+ 	memcpy(fdev-&gt;ifname, ifname, IFNAMSIZ);
+
+ 	ret = fcoe_sock_open(fdev);
+@@ -204,9 +209,7 @@ int fcoe_create_interface(char *ifname)
+ static int fcoe_init(int index, char *args)
+ {
+ 	eprintf(&quot;%s\n&quot;, args);
+-	fcoe_create_interface(args);
+-
+-	return 0;
++	return fcoe_create_interface(args);
+ }
+
+ static struct tgt_driver fcoe = {
+-- 
+1.5.4.3
+
+------=_Part_14803_1832293.1214781974773
+Content-Type: application/x-gzip;
+ name=0002-when-we-start-up-fcoe-on-an-interface-check-that-we.patch.gz
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fi29n8uh0
+Content-Disposition: attachment;
+ filename=0002-when-we-start-up-fcoe-on-an-interface-check-that-we.patch.gz
+
+RnJvbSBiNjlkOTdhOTg4OGZlMzZjM2E1NTJmZjY0YWZlMjQyMjRiZGI4ZjI3IE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJnQGdtYWls
+LmNvbT4KRGF0ZTogVHVlLCAyNCBKdW4gMjAwOCAxMzozNTowNSArMTAwMApTdWJqZWN0OiBbUEFU
+Q0ggMi8yXSB3aGVuIHdlIHN0YXJ0IHVwIGZjb2Ugb24gYW4gaW50ZXJmYWNlLCBjaGVjayB0aGF0
+IHdlIGFjdHVhbGx5IGhhdmUgYW4KIGludGVyZmFjZSBuYW1lIHBhc3NlZCB0byB1cyBhbmQgcHJp
+bnQgYW4gZXJyb3IgYW5kIHJldHVybiAtRU5PREVWCiBvdGhlcnZpc2UuCgpPdGhlcnZpc2Ugd2Ug
+d2lsbCBTRUdWIHRyeWluZyB0byBtZW1jcHkoKSBmcm9tIGEgbnVsbCBwb2ludGVyIDEgbGluZSBm
+dXJ0aGVyIGRvd24uCgpXaGVuIHdlIGluaXRpYWxpemUgZmNvZSBmcm9tIHRoZSBmY29lIG1vZHVs
+ZSwgcmV0dXJuIHByb3BlciBzdWNjZXNzL2ZhaWx1cmUKYmFjayB0byB0Z3RkIHNvIHRoYXQgaXQg
+Y2FuIGFib3J0L2ZhaWwgaWYgdGhlIGxvdyBsZXZlbCBkcml2ZXIgZmFpbGVkIHRvIGluaXRpYWxp
+emUuCgpTaWduZWQtb2ZmLWJ5OiBSb25uaWUgU2FobGJlcmcgPHJvbm5pZXNhaGxiZXJnQGdtYWls
+LmNvbT4KU2lnbmVkLW9mZi1ieTogcm9vdCA8cm9vdEB1YnVudHUtc2VydmVyLTEuc2FobGJlcmcu
+bmV0PgotLS0KIHVzci9mY29lL2Zjb2VfaWYuYyB8ICAgIDkgKysrKysrLS0tCiAxIGZpbGVzIGNo
+YW5nZWQsIDYgaW5zZXJ0aW9ucygrKSwgMyBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS91c3Iv
+ZmNvZS9mY29lX2lmLmMgYi91c3IvZmNvZS9mY29lX2lmLmMKaW5kZXggOTA2YzMwYi4uY2M2MTQw
+OCAxMDA2NDQKLS0tIGEvdXNyL2Zjb2UvZmNvZV9pZi5jCisrKyBiL3Vzci9mY29lL2Zjb2VfaWYu
+YwpAQCAtMTY0LDYgKzE2NCwxMSBAQCBpbnQgZmNvZV9jcmVhdGVfaW50ZXJmYWNlKGNoYXIgKmlm
+bmFtZSkKIAkvKiB0b2RvICovCiAJZmRldi0+ZmRfbGlua19zdGF0dXMgPSBUUkFOU19MSU5LX1VQ
+OwogCisJaWYgKCFpZm5hbWUpIHsKKwkJZXByaW50Zigibm8gaW50ZXJmYWNlIHNwZWNpZmllZC5c
+biIpOworCQlyZXR1cm4gLUVOT0RFVjsKKwl9CisKIAltZW1jcHkoZmRldi0+aWZuYW1lLCBpZm5h
+bWUsIElGTkFNU0laKTsKIAogCXJldCA9IGZjb2Vfc29ja19vcGVuKGZkZXYpOwpAQCAtMjA0LDkg
+KzIwOSw3IEBAIGludCBmY29lX2NyZWF0ZV9pbnRlcmZhY2UoY2hhciAqaWZuYW1lKQogc3RhdGlj
+IGludCBmY29lX2luaXQoaW50IGluZGV4LCBjaGFyICphcmdzKQogewogCWVwcmludGYoIiVzXG4i
+LCBhcmdzKTsKLQlmY29lX2NyZWF0ZV9pbnRlcmZhY2UoYXJncyk7Ci0KLQlyZXR1cm4gMDsKKwly
+ZXR1cm4gZmNvZV9jcmVhdGVfaW50ZXJmYWNlKGFyZ3MpOwogfQogCiBzdGF0aWMgc3RydWN0IHRn
+dF9kcml2ZXIgZmNvZSA9IHsKLS0gCjEuNS40LjMKCg==
+------=_Part_14803_1832293.1214781974773--
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001723.html">[PATCH 1/2] size_t is 64 bit on some architectures.
+</A></li>
+	<LI>Next message: <A HREF="001702.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1725">[ date ]</a>
+              <a href="thread.html#1725">[ thread ]</a>
+              <a href="subject.html#1725">[ subject ]</a>
+              <a href="author.html#1725">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

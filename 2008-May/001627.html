@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Calling iser_rx_progress
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Calling%20iser_rx_progress&In-Reply-To=%3C20080507234049.GA7407%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001612.html">
+   <LINK REL="Next"  HREF="001635.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Calling iser_rx_progress</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Calling%20iser_rx_progress&In-Reply-To=%3C20080507234049.GA7407%40osc.edu%3E"
+       TITLE="[Stgt-devel] Calling iser_rx_progress">pw at osc.edu
+       </A><BR>
+    <I>Thu May  8 01:40:49 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001612.html">[Stgt-devel] Calling iser_rx_progress
+</A></li>
+        <LI>Next message: <A HREF="001635.html">[Stgt-devel] Calling iser_rx_progress
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1627">[ date ]</a>
+              <a href="thread.html#1627">[ thread ]</a>
+              <a href="subject.html#1627">[ subject ]</a>
+              <a href="author.html#1627">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A> wrote on Tue, 06 May 2008 16:51 +0300:
+&gt;<i> I'm going over some of the iSER code and I have a question: I saw that
+</I>&gt;<i> iser_rx_progress is called from iser_cqe_handler and from the event loop
+</I>&gt;<i> (added by tgt_counter_event_add). I understand the purpose of calling it
+</I>&gt;<i> from iser_cqe_handler - it is called to handle new completions. Can you
+</I>&gt;<i> explain the usage in tgt_counter_event_add?
+</I>
+Unlike with transmit, rx progress can only occur when events
+happen on the network:  a new request coming in, or completing
+RDMA reads.  So why would we ever bother calling the rx progress
+function from a generic event handler?
+
+Initially we used to pull as many events off the completion queue as
+possible, but it turns out that was starving the transmits.  The
+machine was so busy handling new incoming requests, and queueing
+them up, that transmits were not promptly going out.  So now there's
+a limit of 8 rx CQ events, somewhat arbitrarily, to make sure the
+tx engine gets a chance to run every so often.
+
+But if you don't read all the completion queue events, there's no
+way to have the device signal again that there are still some left.
+Unlike with sockets and poll, where this is a very natural to do
+things.  Thus we increase the &quot;counter event&quot; for the rx side if
+there are more than 8 completion queue events, and later, after the
+transmit side has run, the main event loop will see num_rx_ready and
+go deal with another batch of 8.
+
+Event notification is very weak aspect of unix/posix, even
+considering some of the interesting linux-specific innovations.
+Tossing yet another event mechanism into the mix (IB verbs CQEs)
+doesn't make writing event-driven applications any easier.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001612.html">[Stgt-devel] Calling iser_rx_progress
+</A></li>
+	<LI>Next message: <A HREF="001635.html">[Stgt-devel] Calling iser_rx_progress
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1627">[ date ]</a>
+              <a href="thread.html#1627">[ thread ]</a>
+              <a href="subject.html#1627">[ subject ]</a>
+              <a href="author.html#1627">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 3/6] Update sample script to new lu layout.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/6%5D%20Update%20sample%20script%20to%20new%20lu%20layout.&In-Reply-To=%3C4678DEDA.2080401%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000805.html">
+   <LINK REL="Next"  HREF="000811.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 3/6] Update sample script to new lu layout.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%203/6%5D%20Update%20sample%20script%20to%20new%20lu%20layout.&In-Reply-To=%3C4678DEDA.2080401%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 3/6] Update sample script to new lu layout.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed Jun 20 10:01:30 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000805.html">[Stgt-devel] [Patch 2/6] Remove test condition with only one outcome
+</A></li>
+        <LI>Next message: <A HREF="000811.html">[Stgt-devel] [Patch 3/6] Update sample script to new lu layout.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#806">[ date ]</a>
+              <a href="thread.html#806">[ thread ]</a>
+              <a href="subject.html#806">[ subject ]</a>
+              <a href="author.html#806">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From 42b2eaf57103613b67cefe2d0a47b281ee3ceccd Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Wed, 20 Jun 2007 17:34:26 +1000
+Subject: Updated sample script to suit new Logical Unit creation
+
+As LU are no longer tied to the target type, the sample script
+required a rework to suit new layout.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ scripts/tgt-core-test |   56 ++++++++++++++++++++++++------------------------
+ 1 files changed, 28 insertions(+), 28 deletions(-)
+
+diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+index 1bbb404..a90fc9d 100755
+--- a/scripts/tgt-core-test
++++ b/scripts/tgt-core-test
+@@ -28,49 +28,49 @@ fi
+ 
+ set -x
+ 
+-###################################################################################
++###############################################################################
+ # Set up SBC HDD device
+-###################################################################################
++###############################################################################
+ TID=1
+ 
++# Create Target ID 1..
+ tgtadm --lld iscsi --mode target --op new --tid $TID \
+-		-T iqn.2007-03:marks-vtl_sbc:`hostname` --target-type disk
+-
++		-T iqn.2007-03:marks-vtl_sbc:`hostname`
+ sleep 1
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 0 -b $HOME/hd_block
+-
+-tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 --params scsi_sn=FRED00,scsi_id=Fred
+-
+-tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
+-	--params vendor_id=QUANTUM,product_id=HD100,product_rev=0010,removable=1,sense_format=0
+-
+-
+-tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+ 
++# Create first LUN - Disk
++LUN=1
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/hd_block --device-type=disk
+ 
+-###################################################################################
+-# Set up MMC CD/DVD device
+-###################################################################################
+-TID=2
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params scsi_sn=FRED00,scsi_id=Fred
+ 
+-tgtadm --lld iscsi --mode target --op new --tid $TID \
+-		-T iqn.2007-03:marks-vtl_mmc:`hostname` --target-type cd
+-
+-sleep 1
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 0 -b $HOME/cd_block0
+-tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
+-	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY10,removable=1
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params vendor_id=QUANTUM,product_id=HD100,product_rev=0010,removable=1,sense_format=0
+ 
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 1 -b $HOME/cd_block1
+-tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 1 \
++# Create 2nd LUN - CD/ROM
++LUN=2
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block0 --device-type=cd
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+ 	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY11,removable=1
+ 
+-tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 2 -b $HOME/cd_block2
+-tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 2 \
++# Create 3rd LUN - CD/ROM
++LUN=3
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block1 --device-type=cd
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+ 	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY12,removable=1
+ 
++# Create 4th LUN - CD/ROM
++LUN=4
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/cd_block1 --device-type=cd
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
++	--params vendor_id=VirtualCD,product_id=CD101,product_rev=0010,scsi_sn=XYZZY13,removable=1
++
++# Allow ALL initiators to connect to this target
+ tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+ 
++
++# Show all our good work.
+ tgtadm --lld iscsi --mode target --op show
+ 
+ 
+-- 
+1.5.2.1
+
+
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000805.html">[Stgt-devel] [Patch 2/6] Remove test condition with only one outcome
+</A></li>
+	<LI>Next message: <A HREF="000811.html">[Stgt-devel] [Patch 3/6] Update sample script to new lu layout.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#806">[ date ]</a>
+              <a href="thread.html#806">[ thread ]</a>
+              <a href="subject.html#806">[ subject ]</a>
+              <a href="author.html#806">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

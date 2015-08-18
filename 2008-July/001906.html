@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] segfault in the ssc code ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20segfault%20in%20the%20ssc%20code%20...&In-Reply-To=%3C20080728014859Z.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001896.html">
+   <LINK REL="Next"  HREF="001897.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] segfault in the ssc code ...</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20segfault%20in%20the%20ssc%20code%20...&In-Reply-To=%3C20080728014859Z.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] segfault in the ssc code ...">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sun Jul 27 18:49:01 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001896.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+        <LI>Next message: <A HREF="001897.html">[Stgt-devel] I seem to have the SSC and SMC code working together	well now ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1906">[ date ]</a>
+              <a href="thread.html#1906">[ thread ]</a>
+              <a href="subject.html#1906">[ subject ]</a>
+              <a href="author.html#1906">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, 26 Jul 2008 17:14:25 -0700
+&quot;Richard Sharpe&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Sat, Jul 26, 2008 at 4:56 PM, FUJITA Tomonori
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; From: &quot;Richard Sharpe&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt;
+</I>&gt;<i> &gt; Subject: Re: [Stgt-devel] segfault in the ssc code ...
+</I>&gt;<i> &gt; Date: Sat, 26 Jul 2008 16:40:59 -0700
+</I>&gt;<i> 
+</I>&gt;<i> [trim, trim, trim ...]
+</I>&gt;<i> 
+</I>&gt;<i> &gt;&gt; &gt;&gt; I was wondering if this change would do the trick:
+</I>&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;<i> &gt;&gt; &gt;&gt; In usr/smc.c, change set_slot_full to take a target structure as well
+</I>&gt;<i> &gt;&gt; &gt;&gt; as the other args, and from that call tgt_set_device_path_update,
+</I>&gt;<i> &gt;&gt; &gt;&gt; which will also call the correct things ...
+</I>&gt;<i> &gt;&gt; &gt;&gt;
+</I>&gt;<i> &gt;&gt; &gt;&gt; and in set_slot_empty, also call tdt_set_device_path_update ...
+</I>&gt;<i> &gt;&gt; &gt;
+</I>&gt;<i> &gt;&gt; &gt; When I put this bit into the code, I was thinking something like &quot;exec
+</I>&gt;<i> &gt;&gt; &gt; tgtadm .... &lt;with options to update backing store&gt;&quot;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Agreed, I like that.
+</I>&gt;<i> 
+</I>&gt;<i> Why do you want to exec tgtadm again when this code is running in the
+</I>&gt;<i> context of tgtd and is simply executing an SMC request to load a tape
+</I>&gt;<i> into the drive.
+</I>&gt;<i> 
+</I>&gt;<i> Why not expose the correct method in target.c and have the code call it ...
+</I>
+In general, I like an explicit initialization rather than an automatic
+initialization. The latter option makes me nervous if it might break
+my data wrongly.
+
+But I have no strong preference about this. Anything is fine by me as
+long as the majority of people on the list are happy.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001896.html">[Stgt-devel] segfault in the ssc code ...
+</A></li>
+	<LI>Next message: <A HREF="001897.html">[Stgt-devel] I seem to have the SSC and SMC code working together	well now ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1906">[ date ]</a>
+              <a href="thread.html#1906">[ thread ]</a>
+              <a href="subject.html#1906">[ subject ]</a>
+              <a href="author.html#1906">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

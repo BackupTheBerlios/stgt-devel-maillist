@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [patch 1/2] passthrough target notification	function
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%201/2%5D%20passthrough%20target%20notification%0A%09function&In-Reply-To=%3C20070531090304.GE10833%40austin.ibm.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000730.html">
+   <LINK REL="Next"  HREF="000732.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [patch 1/2] passthrough target notification	function</H1>
+    <B>Robert Jennings</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5Bpatch%201/2%5D%20passthrough%20target%20notification%0A%09function&In-Reply-To=%3C20070531090304.GE10833%40austin.ibm.com%3E"
+       TITLE="[Stgt-devel] [patch 1/2] passthrough target notification	function">rcj at linux.vnet.ibm.com
+       </A><BR>
+    <I>Thu May 31 11:03:04 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000730.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+        <LI>Next message: <A HREF="000732.html">[Stgt-devel] [patch 1/2] passthrough target	notification	function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#731">[ date ]</a>
+              <a href="thread.html#731">[ thread ]</a>
+              <a href="subject.html#731">[ subject ]</a>
+              <a href="author.html#731">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>* FUJITA Tomonori (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>) wrote:
+&gt;<i> From: Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] [patch 1/2] passthrough target notification function
+</I>&gt;<i> Date: Wed, 30 May 2007 21:33:49 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; * FUJITA Tomonori (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>) wrote:
+</I>&gt;<i> &gt; &gt; From: Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt;
+</I>&gt;<i> &gt; &gt; Subject: Re: [Stgt-devel] [patch 1/2] passthrough target notification function
+</I>&gt;<i> &gt; &gt; Date: Wed, 30 May 2007 20:26:29 -0500
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; * FUJITA Tomonori (<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>) wrote:
+</I>&gt;<i> &gt; &gt; &gt; &gt; From: Robert Jennings &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">rcj at linux.vnet.ibm.com</A>&gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; Subject: [Stgt-devel] [patch 1/2] passthrough target notification function
+</I>&gt;<i> &gt; &gt; &gt; &gt; Date: Fri, 18 May 2007 13:17:45 -0500
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; We spoke about this last week on the mailing list in relation to 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; pass-through for kernel lld's.  This would notify scsi_tgt of any
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; target logical units that should be handled in the kernel.  Here is a
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; first pass, this is the user-space portion.
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; &gt; Send target state updates to the kernel (in-kernel pass-through enablement)
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; Thanks a lot.
+</I>&gt;<i> &gt; &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; &gt; From a quick look, you try to bind an lld to a scsi_host? If so, we
+</I>&gt;<i> &gt; &gt; &gt; &gt; can't (yeah, user-space code does something like that, but it's
+</I>&gt;<i> &gt; &gt; &gt; &gt; wrong. it needs be fixed). We need to bind a scsi_host to a tgt
+</I>&gt;<i> &gt; &gt; &gt; &gt; scsi_host (please read the previous pass-through discussion).
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; If I'm understanding you correctly, the target software assigns one
+</I>&gt;<i> &gt; &gt; &gt; scsi_host to only one remote initiator.  This would mean that you want to
+</I>&gt;<i> &gt; &gt; &gt; assign an entire physical adapter on the target side to a tgt scsi_host
+</I>&gt;<i> &gt; &gt; &gt; that an initiator will see?  And then this would be a 1:1 relationship
+</I>&gt;<i> &gt; &gt; &gt; of initiator to target.  Is this all correct?
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; Yeah, that's all correct though an entire physical adapter would be an
+</I>&gt;<i> &gt; &gt; entire virtual adapter with NPIV.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; For ibmvstgt, NPIV wouldn't be involved so I would have to dedicate
+</I>&gt;<i> &gt; an entire scsi adapter and all storage attached to it for each
+</I>&gt;<i> &gt; initiator?
+</I>&gt;<i> 
+</I>&gt;<i> Yeah. Another option would be sending SCSI commands to user space
+</I>&gt;<i> once. But I don't know it's worth implementing such feature.
+</I>
+I want to pursue a more fine-grained approach.  With the hardware that
+supports the ibmvstgt driver the end-user can already assign an I/O
+slot to a paritition; providing functionality that maps tgt scsi_host
+to scsi_host would be unproductive.  I would like to find a way to
+map scsi_device to tgt scsi_lu in a 1:1 relationship for pass-through,
+along with the other target types, I think this would provide the most
+value to the end-user.
+
+I'm trying to understand the decision because I've missed something.
+Were you wanting to bind the scsi_host to a tgt scsi_host and map
+more than one initiator to a target?  If not, if we maintained a 1:1
+relationship, then I haven't followed why we can't bind a scsi_device
+to a tgt scsi_lu.  Wouldn't scsi reservations and event notification
+work with that binding, with the caveat that there be no local access
+because that breaks the 1:1 relationship?
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000730.html">[Stgt-devel] [patch 1/2] passthrough target notification function
+</A></li>
+	<LI>Next message: <A HREF="000732.html">[Stgt-devel] [patch 1/2] passthrough target	notification	function
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#731">[ date ]</a>
+              <a href="thread.html#731">[ thread ]</a>
+              <a href="subject.html#731">[ subject ]</a>
+              <a href="author.html#731">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

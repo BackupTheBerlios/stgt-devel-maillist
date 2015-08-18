@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] add scc device type support
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20add%20scc%20device%20type%20support&In-Reply-To=%3Cmailman.14.1331738472.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000783.html">
+   <LINK REL="Next"  HREF="000786.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] add scc device type support</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20add%20scc%20device%20type%20support&In-Reply-To=%3Cmailman.14.1331738472.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] add scc device type support">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Jun 15 06:24:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000783.html">[PATCH] bind device type to LUN
+</A></li>
+        <LI>Next message: <A HREF="000786.html">[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#785">[ date ]</a>
+              <a href="thread.html#785">[ thread ]</a>
+              <a href="subject.html#785">[ subject ]</a>
+              <a href="author.html#785">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>A scsi controler device is automatically created as lun0 with a new
+target.
+
+Signed-off-by: FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt;
+---
+ usr/Makefile        |    2 +-
+ usr/driver.h        |    2 +
+ usr/ibmvio/ibmvio.c |   16 +++---
+ usr/mgmt.c          |    2 +-
+ usr/scc.c           |  164 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ usr/target.c        |   45 +++++++++-----
+ usr/tgtd.h          |    2 +-
+ 7 files changed, 206 insertions(+), 27 deletions(-)
+
+diff --git a/usr/Makefile b/usr/Makefile
+index 7ff74cb..208967d 100644
+--- a/usr/Makefile
++++ b/usr/Makefile
+@@ -43,7 +43,7 @@ INCLUDES += -I.
+ CFLAGS += -Wall -g -O2 -Wstrict-prototypes -fPIC -D_LARGEFILE64_SOURCE $(INCLUDES)
+ 
+ PROGRAMS += tgtd tgtadm
+-TGTD_OBJS += tgtd.o mgmt.o target.o spc.o sbc.o mmc.o osd.o spt.o scsi.o log.o \
++TGTD_OBJS += tgtd.o mgmt.o target.o spc.o sbc.o mmc.o osd.o spt.o scc.o scsi.o log.o \
+ 	driver.o util.o work.o parser.o
+ 
+ all: $(PROGRAMS)
+diff --git a/usr/driver.h b/usr/driver.h
+index 598c1da..0a4648a 100644
+--- a/usr/driver.h
++++ b/usr/driver.h
+@@ -9,6 +9,8 @@ struct tgt_driver {
+ 	int (*target_create)(struct target *);
+ 	int (*target_destroy)(int);
+ 
++	int (*lu_create)(struct scsi_lu *);
++
+ 	int (*update)(int, int, char *);
+ 	int (*show)(int, int, uint64_t, uint32_t, uint64_t, char *, int);
+ 
+diff --git a/usr/ibmvio/ibmvio.c b/usr/ibmvio/ibmvio.c
+index ff91f14..d1d8820 100644
+--- a/usr/ibmvio/ibmvio.c
++++ b/usr/ibmvio/ibmvio.c
+@@ -76,9 +76,12 @@ static int __ibmvio_inquiry(int host_no,
+ 	char system_id[256], path[256], buf[32];
+ 	int fd, err, partition_number;
+ 	unsigned int unit_address;
+-	unsigned char device_type = cmd-&gt;c_target-&gt;dev_type_template.type;
++	unsigned char device_type;
+ 	uint64_t lun = *((uint64_t *) cmd-&gt;lun);
+ 
++	device_type = (cmd-&gt;dev-&gt;attrs-&gt;qualifier &amp; 0x7 ) &lt;&lt; 5;
++	device_type |= (cmd-&gt;dev-&gt;attrs-&gt;device_type &amp; 0x1f);
++
+ 	snprintf(path, sizeof(path), IBMVSTGT_HOSTDIR &quot;%d/system_id&quot;, host_no);
+ 	fd = open(path, O_RDONLY);
+ 	memset(system_id, 0, sizeof(system_id));
+@@ -257,14 +260,11 @@ static uint64_t scsi_lun_to_int(uint8_t
+ 		return GETTARGET(lun);
+ }
+ 
+-static int ibmvio_target_create(struct target *target)
++static int ibmvio_lu_create(struct scsi_lu *lu)
+ {
+-	unsigned char device_type = target-&gt;dev_type_template.type;
+-	struct device_type_operations *ops = target-&gt;dev_type_template.ops;
+-
+-	if (device_type == TYPE_DISK || device_type == TYPE_ROM)
+-		ops[INQUIRY].cmd_perform = ibmvio_inquiry;
++	struct device_type_operations *ops =  lu-&gt;dev_type_template.ops;
+ 
++	ops[INQUIRY].cmd_perform = ibmvio_inquiry;
+ 	ops[REPORT_LUNS].cmd_perform = ibmvio_report_luns;
+ 
+ 	return 0;
+@@ -274,7 +274,7 @@ struct tgt_driver ibmvio = {
+ 	.name			= &quot;ibmvio&quot;,
+ 	.use_kernel		= 1,
+ 	.scsi_get_lun		= scsi_lun_to_int,
+-	.target_create		= ibmvio_target_create,
++	.lu_create		= ibmvio_lu_create,
+ 	.cmd_end_notify		= kspace_send_cmd_res,
+ 	.mgmt_end_notify	= kspace_send_tsk_mgmt_res,
+ 	.default_bst		= &amp;mmap_bst,
+diff --git a/usr/mgmt.c b/usr/mgmt.c
+index 19ab738..fc9fa46 100644
+--- a/usr/mgmt.c
++++ b/usr/mgmt.c
+@@ -167,7 +167,7 @@ static int device_mgmt(int lld_no, struc
+ 
+ 	switch (req-&gt;op) {
+ 	case OP_NEW:
+-		err = tgt_device_create(req-&gt;tid, req-&gt;lun, params, req-&gt;target_type);
++		err = tgt_device_create(req-&gt;tid, req-&gt;lun, params, req-&gt;target_type, 1);
+ 		break;
+ 	case OP_DELETE:
+ 		err = tgt_device_destroy(req-&gt;tid, req-&gt;lun);
+diff --git a/usr/scc.c b/usr/scc.c
+new file mode 100644
+index 0000000..7ab6323
+--- /dev/null
++++ b/usr/scc.c
+@@ -0,0 +1,164 @@
++/*
++ * SCSI Controller command processing
++ *
++ * Copyright (C) 2007 FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
++ * Copyright (C) 2007 Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation, version 2 of the
++ * License.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++#include &lt;errno.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;stdint.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;linux/fs.h&gt;
++
++#include &quot;list.h&quot;
++#include &quot;util.h&quot;
++#include &quot;tgtd.h&quot;
++#include &quot;target.h&quot;
++#include &quot;driver.h&quot;
++#include &quot;scsi.h&quot;
++#include &quot;spc.h&quot;
++
++static int scc_lu_init(struct scsi_lu *lu)
++{
++	if (spc_lu_init(lu))
++		return -ENOMEM;
++
++	strncpy(lu-&gt;attrs-&gt;product_id, &quot;Controler&quot;,
++		sizeof(lu-&gt;attrs-&gt;product_id));
++	lu-&gt;attrs-&gt;version_desc[0] = 0x04C0; /* SBC-3 no version claimed */
++	lu-&gt;attrs-&gt;version_desc[1] = 0x0960; /* iSCSI */
++	lu-&gt;attrs-&gt;version_desc[2] = 0x01fb; /* SCC-2 */
++
++	return 0;
++}
++
++static int scc_lu_exit(struct scsi_lu *lu)
++{
++	return 0;
++}
++
++struct device_type_template scc_template = {
++	.type		= TYPE_RAID,
++	.name		= &quot;controler&quot;,
++	.lu_init	= scc_lu_init,
++	.lu_exit	= scc_lu_exit,
++	.lu_config	= spc_lu_config,
++	.ops		= {
++		{spc_test_unit,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_request_sense,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x10 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_inquiry,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		/* 0x20 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_test_unit},
++
++		[0x30 ... 0x7f] = {spc_illegal_op,},
++
++		/* 0x80 */
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_test_unit},
++
++		[0x90 ... 0x9f] = {spc_illegal_op,},
++
++		/* 0xA0 */
++		{spc_report_luns,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_illegal_op,},
++		{spc_test_unit,},
++
++		[0xb0 ... 0xff] = {spc_illegal_op},
++	}
++};
+diff --git a/usr/target.c b/usr/target.c
+index 6f8feb0..750ee31 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -37,7 +37,7 @@ #include &quot;scsi.h&quot;
+ #include &quot;tgtadm.h&quot;
+ 
+ extern struct device_type_template sbc_template, mmc_template, osd_template,
+-	spt_template;
++	spt_template, scc_template;
+ 
+ static LIST_HEAD(target_list);
+ 
+@@ -206,10 +206,10 @@ __device_lookup(int tid, uint64_t lun, s
+ 	return lu;
+ }
+ 
+-int tgt_device_create(int tid, uint64_t lun, char *args, int l_type)
++int tgt_device_create(int tid, uint64_t lun, char *args, int l_type, int backing)
+ {
+-	char *p;
+-	int err;
++	char *p = NULL;
++	int err = 0;
+ 	struct target *target;
+ 	struct scsi_lu *lu, *pos;
+ 
+@@ -225,13 +225,15 @@ int tgt_device_create(int tid, uint64_t
+ 		return TGTADM_LUN_EXIST;
+ 	}
+ 
+-	if (!*args)
+-		return TGTADM_INVALID_REQUEST;
++	if (backing) {
++		if (!*args)
++			return TGTADM_INVALID_REQUEST;
+ 
+-	p = strchr(args, '=');
+-	if (!p)
+-		return TGTADM_INVALID_REQUEST;
+-	p++;
++		p = strchr(args, '=');
++		if (!p)
++			return TGTADM_INVALID_REQUEST;
++		p++;
++	}
+ 
+ 	if (l_type == TYPE_SPT)
+ 		lu = zalloc(sizeof(*lu) + sg_bst.bs_datasize);
+@@ -242,6 +244,10 @@ int tgt_device_create(int tid, uint64_t
+ 		return TGTADM_NOMEM;
+ 
+ 	switch (l_type) {
++	case TYPE_RAID:
++		lu-&gt;dev_type_template = scc_template;
++		lu-&gt;bst = target-&gt;bst;
++		break;
+ 	case TYPE_DISK:
+ 		lu-&gt;dev_type_template = sbc_template;
+ 		lu-&gt;bst = target-&gt;bst;
+@@ -264,10 +270,12 @@ int tgt_device_create(int tid, uint64_t
+ 		return TGTADM_INVALID_REQUEST;
+ 	}
+ 
+-	err = tgt_device_path_update(target, lu, p);
+-	if (err) {
+-		free(lu);
+-		return err;
++	if (backing) {
++		err = tgt_device_path_update(target, lu, p);
++		if (err) {
++			free(lu);
++			return err;
++		}
+ 	}
+ 
+ 	lu-&gt;lun = lun;
+@@ -288,6 +296,9 @@ int tgt_device_create(int tid, uint64_t
+  		lu-&gt;attrs-&gt;qualifier = 0x0;
+ 	}
+ 
++	if (tgt_drivers[target-&gt;lid]-&gt;lu_create)
++		tgt_drivers[target-&gt;lid]-&gt;lu_create(lu);
++
+ 	list_for_each_entry(pos, &amp;target-&gt;device_list, device_siblings) {
+ 		if (lu-&gt;lun &lt; pos-&gt;lun)
+ 			break;
+@@ -1194,7 +1205,7 @@ int tgt_target_show_all(char *buf, int r
+ 				 lu-&gt;attrs-&gt;scsi_id,
+ 				 lu-&gt;attrs-&gt;scsi_sn,
+ 				 print_disksize(lu-&gt;size),
+-				 lu-&gt;path);
++				 lu-&gt;path ? : &quot;No backing store&quot;);
+ 
+ 		if (!strcmp(tgt_drivers[target-&gt;lid]-&gt;name, &quot;iscsi&quot;)) {
+ 			int i, aid;
+@@ -1303,11 +1314,13 @@ int tgt_target_create(int lld, int tid,
+ 	INIT_LIST_HEAD(&amp;target-&gt;acl_list);
+ 	INIT_LIST_HEAD(&amp;target-&gt;it_nexus_list);
+ 
+-	dprintf(&quot;Succeed to create a new target %d\n&quot;, tid);
++	tgt_device_create(tid, 0, NULL, TYPE_RAID, 0);
+ 
+ 	if (tgt_drivers[lld]-&gt;target_create)
+ 		tgt_drivers[lld]-&gt;target_create(target);
+ 
++	dprintf(&quot;Succeed to create a new target %d\n&quot;, tid);
++
+ 	return 0;
+ }
+ 
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 9412da1..927cd70 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -157,7 +157,7 @@ extern int kspace_send_tsk_mgmt_res(stru
+ extern int kspace_send_cmd_res(uint64_t nid, int result, struct scsi_cmd *);
+ 
+ extern int ipc_init(void);
+-extern int tgt_device_create(int tid, uint64_t lun, char *args, int l_type);
++extern int tgt_device_create(int tid, uint64_t lun, char *args, int l_type, int backing);
+ extern int tgt_device_destroy(int tid, uint64_t lun);
+ extern int tgt_device_update(int tid, uint64_t dev_id, char *name);
+ extern int device_reserve(struct scsi_cmd *cmd);
+-- 
+1.4.3.2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000783.html">[PATCH] bind device type to LUN
+</A></li>
+	<LI>Next message: <A HREF="000786.html">[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#785">[ date ]</a>
+              <a href="thread.html#785">[ thread ]</a>
+              <a href="subject.html#785">[ subject ]</a>
+              <a href="author.html#785">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

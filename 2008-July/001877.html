@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tgt-admin tool development ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgt-admin%20tool%20development%20...&In-Reply-To=%3C20080725201738T.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001876.html">
+   <LINK REL="Next"  HREF="001855.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tgt-admin tool development ...</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tgt-admin%20tool%20development%20...&In-Reply-To=%3C20080725201738T.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] tgt-admin tool development ...">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Fri Jul 25 13:16:51 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001876.html">[Stgt-devel] tgt-admin tool development ...
+</A></li>
+        <LI>Next message: <A HREF="001855.html">[Stgt-devel] segmentation fault trying to update LUN 0 ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1877">[ date ]</a>
+              <a href="thread.html#1877">[ thread ]</a>
+              <a href="subject.html#1877">[ subject ]</a>
+              <a href="author.html#1877">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 25 Jul 2008 12:59:19 +0200
+Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; On Thu, 24 Jul 2008 23:44:21 +0200
+</I>&gt;<i> &gt; Tomasz Chmielewski wrote:
+</I>&gt;<i> 
+</I>&gt;<i> (...)
+</I>&gt;<i> 
+</I>&gt;<i> &gt;&gt; Obviously, it wouldn't show passwords, as tgtadm doesn't show them.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Well, if many people think that tgtadm should show the passowrds, I
+</I>&gt;<i> &gt; have no problem about it.
+</I>&gt;<i> 
+</I>&gt;<i> Yeah, it's debatable if it should show passwords or not. Would it be a 
+</I>&gt;<i> security risk?
+</I>&gt;<i> On the other hand, tgtadm requires root privileges, and the passwords 
+</I>&gt;<i> are perhaps in clear text written somewhere (i.e., config file)?
+</I>
+We can change tgtadm not to require root privileges.
+
+I have no preference about showing or not showing passwords.
+
+
+&gt;<i> In either case, *if* tgtadm supported showing passwords, it should only 
+</I>&gt;<i> do so with an additional switch (--mode target --op show-all?).
+</I>
+I prefer to add another option like '--show--password' rather than
+adding another operation like show-all.
+
+Well, I think that just showing passwords is not a bad idea. If anyone
+is not against it, I'll change the code some time next week.
+
+
+&gt;<i> &gt;&gt; Do you think such feature would be useful?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Converting the current configuration to a configuration file sounds
+</I>&gt;<i> &gt; useful.
+</I>&gt;<i> 
+</I>&gt;<i> OK, in that case, I should have it ready by Monday.
+</I>
+Cool, thanks in advance!
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001876.html">[Stgt-devel] tgt-admin tool development ...
+</A></li>
+	<LI>Next message: <A HREF="001855.html">[Stgt-devel] segmentation fault trying to update LUN 0 ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1877">[ date ]</a>
+              <a href="thread.html#1877">[ thread ]</a>
+              <a href="subject.html#1877">[ subject ]</a>
+              <a href="author.html#1877">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

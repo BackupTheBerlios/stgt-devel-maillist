@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C20080124070616.GA31633%40porcupine.cita.utoronto.ca%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001317.html">
+   <LINK REL="Next"  HREF="001320.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>Robin Humble</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C20080124070616.GA31633%40porcupine.cita.utoronto.ca%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">robin.humble+stgt at anu.edu.au
+       </A><BR>
+    <I>Thu Jan 24 08:06:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001317.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001320.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1319">[ date ]</a>
+              <a href="thread.html#1319">[ thread ]</a>
+              <a href="subject.html#1319">[ subject ]</a>
+              <a href="author.html#1319">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, Jan 22, 2008 at 01:32:08PM +0100, Bart Van Assche wrote:
+&gt;<i>On Jan 22, 2008 12:33 PM, Vladislav Bolkhovitin &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>&gt; wrote:
+</I>&gt;&gt;<i> What are the new SRPT/iSER numbers?
+</I>&gt;<i>You can find the new performance numbers below. These are all numbers for
+</I>&gt;<i>reading from the remote buffer cache, no actual disk reads were performed.
+</I>&gt;<i>The read tests have been performed with dd, both for a block size of 512
+</I>&gt;<i>bytes and of 1 MB. The tests with small block size learn more about latency,
+</I>&gt;<i>while the tests with large block size learn more about the maximal possible
+</I>&gt;<i>throughput.
+</I>&gt;<i>
+</I>&gt;<i>.............................................................................................
+</I>&gt;<i>.                           .   STGT read     SCST read    .    STGT read      SCST read    .
+</I>&gt;<i>.                           .  performance   performance   .   performance    performance   .
+</I>&gt;<i>.                           .  (0.5K, MB/s)  (0.5K, MB/s)  .   (1 MB &gt;MB/s)   (1 MB, MB/s)  .
+</I>&gt;<i>.............................................................................................
+</I>&gt;<i>. Ethernet (1 Gb/s network) .      77             78       .         77            89       .
+</I>&gt;<i>. IPoIB    (8 Gb/s network) .     163            185       .        201           239       .
+</I>&gt;<i>. iSER     (8 Gb/s network) .     250            N/A       .        360           N/A       .
+</I>&gt;<i>. SRP      (8 Gb/s network) .     N/A            421       .        N/A           683       .
+</I>&gt;<i>............................................................................................
+</I>
+how are write speeds with SCST SRP?
+for some kernels and tests tgt writes at &gt;2x the read speed.
+
+also I see much higher speeds that what you report in my DDR 4x IB tgt
+testing... which could be taken as inferring that tgt is scaling quite
+nicely on the faster fabric?
+  ib_write_bw of 1473 MB/s
+  ib_read_bw  of 1378 MB/s
+
+iSER to 7G ramfs, x86_64, centos4.6, 2.6.22 kernels, git tgtd,
+initiator end booted with mem=512M, target with 8G ram
+
+ direct i/o dd
+  write/read  800/751 MB/s
+    dd if=/dev/zero of=/dev/sdc bs=1M count=5000 oflag=direct
+    dd of=/dev/null if=/dev/sdc bs=1M count=5000 iflag=direct
+
+ buffered i/o dd
+  write/read 1109/350 MB/s
+    dd if=/dev/zero of=/dev/sdc bs=1M count=5000
+    dd of=/dev/null if=/dev/sdc bs=1M count=5000
+
+ buffered i/o lmdd
+  write/read  682/438 MB/s
+    lmdd if=internal of=/dev/sdc bs=1M count=5000
+    lmdd of=internal if=/dev/sdc bs=1M count=5000
+
+which goes to show that a) buffered i/o makes reads suck and writes fly
+b) most benchmarks are unreliable c) at these high speeds you get all
+sorts of weird effects which can easily vary with kernel, OS, ... and
+d) that IMHO really we shouldn't get too caught up in these very
+artificial tests to ramdisks/ram because it's the speed of real
+applications to actual spinning rust that matters.
+
+having said that, if you know of a way to clock my IB cards down to your
+SDR rates then let me know and I'll be happy to re-run the tests.
+
+cheers,
+robin
+
+&gt;<i>My conclusion from the above numbers: the performance difference between
+</I>&gt;<i>STGT and SCST is small for a Gigabit Ethernet network. The faster the
+</I>&gt;<i>network technology, the larger the difference between SCST and STGT.
+</I>&gt;<i>
+</I>&gt;<i>Bart.
+</I>
+&gt;<i>_______________________________________________
+</I>&gt;<i>Stgt-devel mailing list
+</I>&gt;<i><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001317.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001320.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1319">[ date ]</a>
+              <a href="thread.html#1319">[ thread ]</a>
+              <a href="subject.html#1319">[ subject ]</a>
+              <a href="author.html#1319">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

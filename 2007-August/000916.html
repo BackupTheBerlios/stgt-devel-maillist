@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] stgt backing store &amp; SSC
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20backing%20store%20%26%20SSC&In-Reply-To=%3C1186082293.3819.23.camel%40dhcp-141.ibrix.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000915.html">
+   <LINK REL="Next"  HREF="000918.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] stgt backing store &amp; SSC</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20stgt%20backing%20store%20%26%20SSC&In-Reply-To=%3C1186082293.3819.23.camel%40dhcp-141.ibrix.com%3E"
+       TITLE="[Stgt-devel] stgt backing store &amp; SSC">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Thu Aug  2 21:18:13 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000915.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+        <LI>Next message: <A HREF="000918.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#916">[ date ]</a>
+              <a href="thread.html#916">[ thread ]</a>
+              <a href="subject.html#916">[ subject ]</a>
+              <a href="author.html#916">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2007-08-02 at 14:58 -0400, Pete Wyckoff wrote:
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A> wrote on Tue, 31 Jul 2007 19:57 +1000:
+</I>&gt;<i> &gt; For Variable block SSC device, the block size written needs to be 
+</I>&gt;<i> &gt; tracked.
+</I>&gt;<i> [..]
+</I>&gt;<i> &gt; My current thoughts of a solution:
+</I>&gt;<i> &gt; ========================
+</I>&gt;<i> &gt; A block header describes each block written -&gt; Analogy to the 'tar' 
+</I>&gt;<i> &gt; format where a header is written, followed by the 'data' followed by 
+</I>&gt;<i> &gt; another header, followed by more data...repeat...until blank header...
+</I>&gt;<i> [..]
+</I>&gt;<i> &gt; However the current implementation for iSCSI -&gt; bs_sync uses a 
+</I>&gt;<i> &gt; pread64()/pwrite64() and writes data based on information stored in 
+</I>&gt;<i> &gt; scsi_cmd -
+</I>&gt;<i> &gt;  pwrite64(fd, cmd-&gt;uaddr, cmd-&gt;len, cmd-&gt;offset)
+</I>&gt;<i> &gt;  pread64(fd, cmd-&gt;uaddr, cmd-&gt;len, cmd-&gt;offset)
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Would it be OK to add a 'blk_header' structure to struct scsi_cmd and if 
+</I>&gt;<i> &gt; blk_header is set, write this blk header as well ?
+</I>&gt;<i> &gt; I will attempt to put the above idea into code and submit for comment...
+</I>&gt;<i> 
+</I>&gt;<i> I think rather than trying to add stuff to existing backing stores
+</I>&gt;<i> that you should consider writing your own.  You need to store both
+</I>&gt;<i> &quot;metadata&quot; (block descriptors) and data, and none of the BSes are
+</I>&gt;<i> set up for that.
+</I>&gt;<i> 
+</I>&gt;<i> The complexity of trying to glue in the blk_header so that all BSes
+</I>&gt;<i> know how to tack that on top seems big.  Then you have to tell them
+</I>&gt;<i> to read the header, and consider fields in that when determining how
+</I>&gt;<i> much further data to read.  It gets messy fast.
+</I>
+also considering tape can have compression and encryption, then each
+block is variable size even in fixed size mode. so support variable size
+is a must eventually.
+
+
+&gt;<i> 
+</I>&gt;<i> In the lu_init for the ssc device, you can change the BS.  Then in
+</I>&gt;<i> your READ/WRITE command handler, you can make calls into your own
+</I>&gt;<i> BS that knows how to store this information.  (Look out for the
+</I>&gt;<i> allocation size hack in target.c for TYPE_SPT; you may need
+</I>&gt;<i> something similar.)
+</I>&gt;<i> 
+</I>&gt;<i> In general, the current separation of backing store from device only
+</I>&gt;<i> really works for block storage.  We need an OSD-only backing store
+</I>&gt;<i> for OSD too (not in tree).  May be cleaner just to rid the concept
+</I>&gt;<i> of backing store from everything except the device code.
+</I>&gt;<i> 
+</I>&gt;<i> 		-- Pete
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>-- 
+Ming Zhang
+
+
+@#$%^ purging memory... (*!%
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+<A HREF="http://www.linkedin.com/in/blackmagic02881">http://www.linkedin.com/in/blackmagic02881</A>
+--------------------------------------------
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000915.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+	<LI>Next message: <A HREF="000918.html">[Stgt-devel] stgt backing store &amp; SSC
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#916">[ date ]</a>
+              <a href="thread.html#916">[ thread ]</a>
+              <a href="subject.html#916">[ subject ]</a>
+              <a href="author.html#916">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

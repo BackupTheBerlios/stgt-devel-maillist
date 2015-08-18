@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070221183058.GC10825%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000403.html">
+   <LINK REL="Next"  HREF="000405.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C20070221183058.GC10825%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">pw at osc.edu
+       </A><BR>
+    <I>Wed Feb 21 19:30:58 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000403.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000405.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#404">[ date ]</a>
+              <a href="thread.html#404">[ thread ]</a>
+              <a href="subject.html#404">[ subject ]</a>
+              <a href="author.html#404">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE><A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A> wrote on Mon, 19 Feb 2007 23:32 +0900:
+&gt;<i> I put a patch to support various device types:
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="http://zaal.org/tgt/device-types.diff">http://zaal.org/tgt/device-types.diff</A>
+</I>&gt;<i> 
+</I>&gt;<i> I don't merge it because:
+</I>&gt;<i> 
+</I>&gt;<i> - only iscsi + AIO works (sg and ibmvio are broken).
+</I>&gt;<i> 
+</I>&gt;<i> - there are still lots of things to implement
+</I>&gt;<i> 
+</I>&gt;<i> - huge cleanup is necessary
+</I>&gt;<i> 
+</I>&gt;<i> I took an approach discussed a long time ago in IET mailing list. Each
+</I>&gt;<i> device type has its own function array (like sbc_mode_sense). spc code
+</I>&gt;<i> exports some common functions. A LLD can cleanly replace functions in
+</I>&gt;<i> arrays (so we can kill dirty hack in tgt_driver struct). A transport
+</I>&gt;<i> class also needs that (though we don't implement yet).
+</I>
+That would be a reasonable approach, although the tables will be
+very sparse.  I shouldn't have too much trouble factoring out my
+current osd_cmd_perform into separate functions with shared
+routines.  If you check your patch in, I'll do this and try to help
+fix up the bugs and missing pieces.
+
+We'll still have to do something with bkio_submit_t to support
+bidirectional and to support returning both data and sense.  I have
+such a thing for OSD but have not tried to make all the other
+devices fit it pending your perusal.
+
+The other largish piece I'm carrying around is AHS support for
+iscsi.
+
+		-- Pete
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000403.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000405.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#404">[ date ]</a>
+              <a href="thread.html#404">[ thread ]</a>
+              <a href="subject.html#404">[ subject ]</a>
+              <a href="author.html#404">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

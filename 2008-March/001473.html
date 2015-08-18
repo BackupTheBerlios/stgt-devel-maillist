@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [RFC] target configuration tool?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BRFC%5D%20target%20configuration%20tool%3F&In-Reply-To=%3C47DE4A94.7070206%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001458.html">
+   <LINK REL="Next"  HREF="001475.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [RFC] target configuration tool?</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BRFC%5D%20target%20configuration%20tool%3F&In-Reply-To=%3C47DE4A94.7070206%40wpkg.org%3E"
+       TITLE="[Stgt-devel] [RFC] target configuration tool?">mangoo at wpkg.org
+       </A><BR>
+    <I>Mon Mar 17 11:40:20 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001458.html">[Stgt-devel] [RFC] target configuration tool?
+</A></li>
+        <LI>Next message: <A HREF="001475.html">[Stgt-devel] [RFC] target configuration tool?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1473">[ date ]</a>
+              <a href="thread.html#1473">[ thread ]</a>
+              <a href="subject.html#1473">[ subject ]</a>
+              <a href="author.html#1473">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Tomasz Chmielewski schrieb:
+
+&gt;<i> Comments (other than &quot;there is such a tool already&quot;, which would be just 
+</I>&gt;<i> great)?
+</I>
+I made an initial version of such a tool. It is available, with 
+additional info, examples and configuration instructions on 
+<A HREF="http://wpkg.org/TGT-admin.">http://wpkg.org/TGT-admin.</A>
+
+
+Summary:
+
+
+Right now, TGT does not have any config file nor a configuration tool.
+
+Below is an attempt to create one.
+
+
+Configuration instructions
+
+First, create a /etc/stgt/targets.conf file similar to the one below:
+
+
+include /etc/stgt/xen/*.conf
+include /etc/stgt/vmware/*.conf
+include /etc/stgt/temp/*.conf
+ 
+
+&lt;target iqn.2007-04.com.example:san.monitoring&gt;
+backing-store /dev/san/monitoring
+&lt;/target&gt;
+
+&lt;target iqn.2007-02.com.example:san.xen1&gt;
+backing-store /dev/san/xen1
+&lt;/target&gt;
+
+&lt;target iqn.2007-02.com.example:san.xen2&gt;
+backing-store /dev/san/xen2
+&lt;/target&gt;
+
+&lt;target iqn.2007-06.com.example:san.vmware1&gt;
+backing-store /dev/san/vmware1
+&lt;/target&gt;
+
+
+You can include other config files with i.e. &quot;include /etc/stgt/xen/*.conf&quot;.
+
+
+Currently, only one LUN per target is supported.
+
+Right now, it doesn't make any changes in your tgtd configuration - note 
+that all tgtadm invocations are prefixed with print. This means, the 
+tool will only print what changes would be done - at this stage, I want 
+some discussion on how a config tool for TGT should look like.
+
+
+Adding targets
+
+
+For each target which is:
+
+* found in /etc/stgt/targets.conf (or any other included config file),
+* not configured already
+
+it will print &quot;Adding target&quot; with this target's name, and three tgtadm 
+commands which setup the target. For example:
+
+Adding target: iqn.2007-11.com.example:san.rescue-live
+tgtadm --lld iscsi --op new --mode target --tid 46 -T 
+iqn.2007-11.com.example:san.rescue-live
+tgtadm --lld iscsi --op new --mode logicalunit --tid 46 --lun 1 -b 
+backing-store /dev/san/rescue-live
+tgtadm --lld iscsi --op bind --mode target --tid 46 -I ALL
+
+
+Removing targets
+
+It will also try to remove the targets which don't exist in the config 
+file (which are in &quot;tgtadm --lld iscsi --op show --mode target&quot; output, 
+but not in the config file), for example:
+
+Removing target: iqn.2007-04.com.example:san.monitoring
+tgtadm --op update --mode target --tid=9 -n state -v offline
+tgtadm --mode target --op delete --tid=9
+
+Note that it will not forcibly remove the target if any initiators are 
+still connected to it, as tgtadm does not support this feature yet.
+
+
+And what happens if a target already exists?
+
+If the target is already configured and the tool is started, it will output:
+
+Target iqn.2006-12.com.example:san.backup1 already exists!
+Target iqn.2006-12.com.example:san.kolab1 already exists!
+Target iqn.2006-12.com.example:san.mysql2 already exists!
+Target iqn.2007-01.com.example:san.file1 already exists!
+Target iqn.2007-02.com.example:san.xen1 already exists!
+Target iqn.2007-02.com.example:san.xen2 already exists!
+
+This means you can safely add or remove any targets in your config file, 
+it will be automatically recognized and a proper action will be taken.
+
+
+Source code
+
+Available on <A HREF="http://wpkg.org/TGT-admin#Source_code">http://wpkg.org/TGT-admin#Source_code</A>
+
+
+TO DO
+
+If there is any discussion about this tool, more features could be 
+implemented:
+
+* more LUNs per target
+* allow other configuration options which are possible with tgtadm
+* change target configuration if the target is already online, and its 
+config changed
+* add a proper /etc/init.d/tgt script
+
+
+-- 
+Tomasz Chmielewski
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001458.html">[Stgt-devel] [RFC] target configuration tool?
+</A></li>
+	<LI>Next message: <A HREF="001475.html">[Stgt-devel] [RFC] target configuration tool?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1473">[ date ]</a>
+              <a href="thread.html#1473">[ thread ]</a>
+              <a href="subject.html#1473">[ subject ]</a>
+              <a href="author.html#1473">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

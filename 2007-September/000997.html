@@ -1,0 +1,709 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20support%20for%20extra%20VPD%20pages%0A%20within%09INQUIRY%20op%20code&In-Reply-To=%3C20070901144153E.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000995.html">
+   <LINK REL="Next"  HREF="000998.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/1%5D%20Add%20support%20for%20extra%20VPD%20pages%0A%20within%09INQUIRY%20op%20code&In-Reply-To=%3C20070901144153E.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code">tomof at acm.org
+       </A><BR>
+    <I>Sat Sep  1 21:53:39 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000995.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+        <LI>Next message: <A HREF="000998.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#997">[ date ]</a>
+              <a href="thread.html#997">[ thread ]</a>
+              <a href="subject.html#997">[ subject ]</a>
+              <a href="author.html#997">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Fri, 24 Aug 2007 18:15:52 +1000
+Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt; wrote:
+
+Sorry about the delay.
+
+&gt;<i> 
+</I>&gt;<i> As always, feedback welcome.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Unfortunately I had to change the lu_init() interface so I could more 
+</I>&gt;<i> easily include the TID in the SCSI VPD page 80h and 83h
+</I>&gt;<i> 
+</I>&gt;<i> Hence the number of files touched with this patch.
+</I>&gt;<i> 
+</I>&gt;<i> As indicated in the patch, I am unsure from the osd2r01.pdf 
+</I>&gt;<i> documentation of what data should be included within VPD pages B0h and 
+</I>&gt;<i> B1h for the OSD module.
+</I>&gt;<i> 
+</I>&gt;<i> Regards
+</I>&gt;<i> Mark
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> &gt;From e752630bf3c33b9f4a0c22d4cc7af28b141c926b Mon Sep 17 00:00:00 2001
+</I>&gt;<i> From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Date: Fri, 24 Aug 2007 18:04:24 +1000
+</I>&gt;<i> Subject: Add support for VPD pages 0x80 - 0xff
+</I>&gt;<i> 
+</I>&gt;<i> Ability to add VPD pages between 80h and FFh per SCSI device type.
+</I>&gt;<i> 
+</I>&gt;<i> An array of 128 vpd structures added to ly_phy_attr struct.
+</I>&gt;<i> 
+</I>&gt;<i> Use alloc_vpd(data size) to pre-alloc data for custom VPD page.
+</I>&gt;<i> - This data is appended to the 4 byte VPD header at runtime
+</I>&gt;<i>   i.e. When an INQUIRY for the VPD page is received.
+</I>&gt;<i> 
+</I>&gt;<i> - A custom vpd_update(struct scsi_lu *lu, void *) is used to
+</I>&gt;<i>   set/change data pre-allocated by alloc_vpd()
+</I>&gt;<i> 
+</I>&gt;<i> - All modules except use default page 80h &amp; 83h defined in spc.c
+</I>&gt;<i>   The osd module has two extra for VPD pages B0h and B1h
+</I>&gt;<i>   - Note: garbage values are set and should be reviewed/updated
+</I>&gt;<i>           by somebody who knows what should be set here.
+</I>&gt;<i> 
+</I>&gt;<i> Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> ---
+</I>&gt;<i>  scripts/tgt-core-test |   11 +++
+</I>&gt;<i>  usr/mmc.c             |    4 +-
+</I>&gt;<i>  usr/osd.c             |   42 +++++++++-
+</I>&gt;<i>  usr/sbc.c             |    4 +-
+</I>&gt;<i>  usr/scc.c             |    4 +-
+</I>&gt;<i>  usr/smc.c             |    4 +-
+</I>&gt;<i>  usr/spc.c             |  220 ++++++++++++++++++++++++++++++++++++++-----------
+</I>&gt;<i>  usr/spc.h             |    3 +-
+</I>&gt;<i>  usr/target.c          |    9 +--
+</I>&gt;<i>  usr/tgtd.h            |   16 +++-
+</I>&gt;<i>  10 files changed, 245 insertions(+), 72 deletions(-)
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+</I>&gt;<i> index 8c58972..cf92303 100755
+</I>&gt;<i> --- a/scripts/tgt-core-test
+</I>&gt;<i> +++ b/scripts/tgt-core-test
+</I>&gt;<i> @@ -184,6 +184,17 @@ tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+</I>&gt;<i>  	--params dump=1
+</I>&gt;<i>  
+</I>&gt;<i>  
+</I>&gt;<i> +# Create OSD LUN
+</I>&gt;<i> +LUN=6
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun $LUN -b $HOME/hd_block --device-type=osd
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+</I>&gt;<i> +	--params scsi_sn=FRED06,scsi_id=FredOSD
+</I>&gt;<i> +
+</I>&gt;<i> +tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+</I>&gt;<i> +	--params vendor_id=OSD,product_id=OSD00,product_rev=0010,removable=1,sense_format=1
+</I>&gt;<i> +
+</I>&gt;<i> +
+</I>
+OSD doesn't work now so you don't need to add an example.
+
+
+&gt;<i>  # Allow ALL initiators to connect to this target
+</I>&gt;<i>  tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> index 7f70943..fffb2b7 100644
+</I>&gt;<i> --- a/usr/mmc.c
+</I>&gt;<i> +++ b/usr/mmc.c
+</I>&gt;<i> @@ -132,9 +132,9 @@ static int mmc_mode_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return spc_mode_sense(host_no, cmd);
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -static int mmc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +static int mmc_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i> -	if (spc_lu_init(lu))
+</I>&gt;<i> +	if (spc_lu_init(lu, tid))
+</I>&gt;<i>  		return TGTADM_NOMEM;
+</I>
+Let's add a pointer to struct target to struct scsi_lu.
+
+
+&gt;<i>  	strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CDROM&quot;, sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i> diff --git a/usr/osd.c b/usr/osd.c
+</I>&gt;<i> index 189fba4..80ae9c5 100644
+</I>&gt;<i> --- a/usr/osd.c
+</I>&gt;<i> +++ b/usr/osd.c
+</I>&gt;<i> @@ -51,13 +51,35 @@ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return cmd-&gt;dev-&gt;bst-&gt;bs_cmd_submit(cmd);
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static void update_vpd_b0(struct scsi_lu *lu, void *p)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int pg = 0xb0 &amp; 0x7f;
+</I>&gt;<i> +	struct vpd *vpd_pg = lu-&gt;attrs.vpd[pg];
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(vpd_pg-&gt;data, p, vpd_pg-&gt;size);
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static void update_vpd_b1(struct scsi_lu *lu, void *p)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int pg = 0xb1 &amp; 0x7f;
+</I>&gt;<i> +	struct vpd *vpd_pg = lu-&gt;attrs.vpd[pg];
+</I>&gt;<i> +
+</I>&gt;<i> +	memcpy(vpd_pg-&gt;data, p, vpd_pg-&gt;size);
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  /*
+</I>&gt;<i> - * XXX: missing support for b0 and b1, in page 0 and in inquiry code.
+</I>&gt;<i> - * Figure out how to make spc_inquiry handle extra mode pages.
+</I>&gt;<i> + * FIXME: I've made up the value for these params. Somebody who knows what
+</I>&gt;<i> + * should be in these + size of pages need to put sane vaues for pg B0 &amp; B1
+</I>&gt;<i> + * <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>
+</I>&gt;<i>   */
+</I>&gt;<i> -static int osd_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +#define OSD_INFORMATION_LEN 12
+</I>&gt;<i> +#define OSD_SECURITY_TOKEN_LEN 12
+</I>
+Let's leave OSD to Pete. And as I said, we don't support OSD now. So
+no need to add 'FIXME' stuff.
+
+
+&gt;<i> +static int osd_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i> -	if (spc_lu_init(lu))
+</I>&gt;<i> +	int pg;
+</I>&gt;<i> +	struct vpd **lu_vpd = lu-&gt;attrs.vpd;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (spc_lu_init(lu, tid))
+</I>&gt;<i>  		return TGTADM_NOMEM;
+</I>&gt;<i>  
+</I>&gt;<i>  	strncpy(lu-&gt;attrs.product_id, &quot;OSD&quot;, sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i> @@ -66,6 +88,18 @@ static int osd_lu_init(struct scsi_lu *lu)
+</I>&gt;<i>  	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
+</I>&gt;<i>  	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+</I>&gt;<i>  
+</I>&gt;<i> +	/* VPD page 0xB0 */
+</I>&gt;<i> +	pg = 0xb0 &amp; 0x7f;
+</I>&gt;<i> +	lu_vpd[pg] = alloc_vpd(OSD_INFORMATION_LEN);
+</I>&gt;<i> +	lu_vpd[pg]-&gt;vpd_update = update_vpd_b0;
+</I>&gt;<i> +	lu_vpd[pg]-&gt;vpd_update(lu, &quot;Information&quot;);
+</I>&gt;<i> +
+</I>&gt;<i> +	/* VPD page 0xB1 */
+</I>&gt;<i> +	pg = 0xb1 &amp; 0x7f;
+</I>&gt;<i> +	lu_vpd[pg] = alloc_vpd(OSD_SECURITY_TOKEN_LEN);
+</I>&gt;<i> +	lu_vpd[pg]-&gt;vpd_update = update_vpd_b1;
+</I>&gt;<i> +	lu_vpd[pg]-&gt;vpd_update(lu, &quot;Security&quot;);
+</I>&gt;<i> +
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/sbc.c b/usr/sbc.c
+</I>&gt;<i> index 33485e6..7d488fb 100644
+</I>&gt;<i> --- a/usr/sbc.c
+</I>&gt;<i> +++ b/usr/sbc.c
+</I>&gt;<i> @@ -170,12 +170,12 @@ sense:
+</I>&gt;<i>  	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -static int sbc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +static int sbc_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i>  	uint64_t size;
+</I>&gt;<i>  	uint8_t *data;
+</I>&gt;<i>  
+</I>&gt;<i> -	if (spc_lu_init(lu))
+</I>&gt;<i> +	if (spc_lu_init(lu, tid))
+</I>&gt;<i>  		return TGTADM_NOMEM;
+</I>&gt;<i>  
+</I>&gt;<i>  	strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-DISK&quot;, sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i> diff --git a/usr/scc.c b/usr/scc.c
+</I>&gt;<i> index 0a154a5..c52d4f1 100644
+</I>&gt;<i> --- a/usr/scc.c
+</I>&gt;<i> +++ b/usr/scc.c
+</I>&gt;<i> @@ -36,9 +36,9 @@
+</I>&gt;<i>  #include &quot;tgtadm_error.h&quot;
+</I>&gt;<i>  #include &quot;spc.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i> -static int scc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +static int scc_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i> -	if (spc_lu_init(lu))
+</I>&gt;<i> +	if (spc_lu_init(lu, tid))
+</I>&gt;<i>  		return TGTADM_NOMEM;
+</I>&gt;<i>  
+</I>&gt;<i>  	strncpy(lu-&gt;attrs.product_id, &quot;Controller&quot;,
+</I>&gt;<i> diff --git a/usr/smc.c b/usr/smc.c
+</I>&gt;<i> index 4f0ee4b..318cb4f 100644
+</I>&gt;<i> --- a/usr/smc.c
+</I>&gt;<i> +++ b/usr/smc.c
+</I>&gt;<i> @@ -435,7 +435,7 @@ sense:
+</I>&gt;<i>  	return SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -static int smc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +static int smc_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i>  	struct smc_info *smc;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -445,7 +445,7 @@ static int smc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i>  	else
+</I>&gt;<i>  		return -ENOMEM;
+</I>&gt;<i>  
+</I>&gt;<i> -	spc_lu_init(lu);
+</I>&gt;<i> +	spc_lu_init(lu, tid);
+</I>&gt;<i>  
+</I>&gt;<i>  	strncpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CHANGER&quot;,
+</I>&gt;<i>  						sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i> diff --git a/usr/spc.c b/usr/spc.c
+</I>&gt;<i> index b56c0b3..08a4bc5 100644
+</I>&gt;<i> --- a/usr/spc.c
+</I>&gt;<i> +++ b/usr/spc.c
+</I>&gt;<i> @@ -20,6 +20,7 @@
+</I>&gt;<i>   * 02110-1301 USA
+</I>&gt;<i>   */
+</I>&gt;<i>  #include &lt;errno.h&gt;
+</I>&gt;<i> +#include &lt;inttypes.h&gt;
+</I>&gt;<i>  #include &lt;stdio.h&gt;
+</I>&gt;<i>  #include &lt;stdlib.h&gt;
+</I>&gt;<i>  #include &lt;string.h&gt;
+</I>&gt;<i> @@ -38,6 +39,96 @@
+</I>&gt;<i>  #define PRODUCT_REV	&quot;0&quot;
+</I>&gt;<i>  #define BLK_SHIFT	9
+</I>&gt;<i>  
+</I>&gt;<i> +/** Protocol Identifier Values
+</I>&gt;<i> + * 0 Fibre Channel (FCP-2)
+</I>&gt;<i> + * 1 Parallel SCSI (SPI-5)
+</I>&gt;<i> + * 2 SSA (SSA-S3P)
+</I>&gt;<i> + * 3 IEEE 1394 (SBP-3)
+</I>&gt;<i> + * 4 SCSI Remote Direct Memory Access (SRP)
+</I>&gt;<i> + * 5 iSCSI
+</I>&gt;<i> + * 6 SAS Serial SCSI Protocol (SAS)
+</I>&gt;<i> + * 7 Automation/Drive Interface (ADT)
+</I>&gt;<i> + * 8 AT Attachment Interface (ATA/ATAPI-7)
+</I>&gt;<i> + */
+</I>&gt;<i> +#define PIV_FCP 0
+</I>&gt;<i> +#define PIV_SPI 1
+</I>&gt;<i> +#define PIV_S3P 2
+</I>&gt;<i> +#define PIV_SBP 3
+</I>&gt;<i> +#define PIV_SRP 4
+</I>&gt;<i> +#define PIV_ISCSI 5
+</I>&gt;<i> +#define PIV_SAS 6
+</I>&gt;<i> +#define PIV_ADT 7
+</I>&gt;<i> +#define PIV_ATA 8
+</I>&gt;<i> +
+</I>&gt;<i> +#define PIV_VALID 0x80
+</I>
+Would be better to use lengthy names for SCSI specification defines
+and move them to scsi.h?
+
+
+&gt;<i> +/** Code Set
+</I>&gt;<i> + *  1 - Designator fild contains binary values
+</I>&gt;<i> + *  2 - Designator field contains ASCII printable chars
+</I>&gt;<i> + *  3 - Designaotor field contains UTF-8
+</I>&gt;<i> + */
+</I>&gt;<i> +#define INQ_CODE_BIN 1
+</I>&gt;<i> +#define INQ_CODE_ASCII 2
+</I>&gt;<i> +#define INQ_CODE_UTF8 3
+</I>&gt;<i> +
+</I>&gt;<i> +/** Association field
+</I>&gt;<i> + * 00b - Associated with Logical Unit
+</I>&gt;<i> + * 01b - Associated with target port
+</I>&gt;<i> + * 10b - Associated with SCSI Target device
+</I>&gt;<i> + * 11b - Reserved
+</I>&gt;<i> + */
+</I>&gt;<i> +#define ASS_LU	0
+</I>&gt;<i> +#define ASS_TGT_PORT 0x10
+</I>&gt;<i> +#define ASS_TGT_DEV 0x20
+</I>&gt;<i> +
+</I>&gt;<i> +/** Designator type - SPC-4 Reference
+</I>&gt;<i> + * 0 - Vendor specific - 7.6.3.3
+</I>&gt;<i> + * 1 - T10 vendor ID - 7.6.3.4
+</I>&gt;<i> + * 2 - EUI-64 - 7.6.3.5
+</I>&gt;<i> + * 3 - NAA - 7.6.3.6
+</I>&gt;<i> + * 4 - Relative Target port identifier - 7.6.3.7
+</I>&gt;<i> + * 5 - Target Port group - 7.6.3.8
+</I>&gt;<i> + * 6 - Logical Unit group - 7.6.3.9
+</I>&gt;<i> + * 7 - MD5 logical unit identifier - 7.6.3.10
+</I>&gt;<i> + * 8 - SCSI name string - 7.6.3.11
+</I>&gt;<i> + */
+</I>&gt;<i> +#define DESG_VENDOR 0
+</I>&gt;<i> +#define DESG_T10 1
+</I>&gt;<i> +#define DESG_EUI64 2
+</I>&gt;<i> +#define DESG_NAA 3
+</I>&gt;<i> +#define DESG_REL_TGT_PORT 4
+</I>&gt;<i> +#define DESG_TGT_PORT_GRP 5
+</I>&gt;<i> +#define DESG_LU_GRP 6
+</I>&gt;<i> +#define DESG_MD5 7
+</I>&gt;<i> +#define DESG_SCSI 8
+</I>&gt;<i> +
+</I>&gt;<i> +static int valid_vpd(struct vpd **vpd, uint8_t page)
+</I>&gt;<i> +{
+</I>&gt;<i> +	if (vpd[page &amp; 0x7f])
+</I>&gt;<i> +		return 1;
+</I>&gt;<i> +	return 0;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +void update_vpd_80(struct scsi_lu *lu, void *sn)
+</I>&gt;<i> +{
+</I>&gt;<i> +	struct vpd *vpd_pg = lu-&gt;attrs.vpd[0];
+</I>&gt;<i> +	char *data = (char *)vpd_pg-&gt;data;
+</I>&gt;<i> +
+</I>&gt;<i> +	snprintf(data, SCSI_SN_LEN, &quot;%-8s&quot;, (char *)sn);
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +void update_vpd_83(struct scsi_lu *lu, void *id)
+</I>&gt;<i> +{
+</I>&gt;<i> +	struct vpd *vpd_pg = lu-&gt;attrs.vpd[3];
+</I>&gt;<i> +	uint8_t	*data = vpd_pg-&gt;data;
+</I>&gt;<i> +
+</I>&gt;<i> +	data[0] = (PIV_ISCSI &lt;&lt; 4) | INQ_CODE_ASCII;
+</I>&gt;<i> +	data[1] = PIV_VALID | ASS_TGT_PORT | DESG_VENDOR;
+</I>&gt;<i> +	data[3] = SCSI_ID_LEN;
+</I>&gt;<i> +
+</I>&gt;<i> +	strncpy((char *)data + 4, id, SCSI_ID_LEN);
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  {
+</I>&gt;<i>  	int len = 0, ret = SAM_STAT_CHECK_CONDITION;
+</I>&gt;<i> @@ -47,6 +138,8 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+</I>&gt;<i>  	uint8_t devtype = 0;
+</I>&gt;<i>  	struct lu_phy_attr *attrs;
+</I>&gt;<i> +	struct vpd **vpd;
+</I>&gt;<i> +	struct vpd *vpd_pg;
+</I>&gt;<i>  
+</I>&gt;<i>  	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+</I>&gt;<i>  		goto sense;
+</I>&gt;<i> @@ -97,44 +190,37 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  		ret = SAM_STAT_GOOD;
+</I>&gt;<i>  	} else if (scb[1] &amp; 0x1) {
+</I>&gt;<i>  		/* EVPD bit set */
+</I>&gt;<i> +		vpd = attrs-&gt;vpd;
+</I>&gt;<i>  		if (scb[2] == 0x0) {
+</I>&gt;<i> +			int i, j, tmp;
+</I>&gt;<i> +
+</I>&gt;<i> +			i = 5;
+</I>&gt;<i> +			tmp = 1;
+</I>&gt;<i>  			data[0] = devtype;
+</I>&gt;<i> -			data[1] = 0x0;
+</I>&gt;<i> -			data[3] = 3;
+</I>&gt;<i> +			data[1] = 0;
+</I>&gt;<i> +			data[2] = 0;
+</I>&gt;<i> +			for (j = 0; j &lt; 0x80; j++) {
+</I>&gt;<i> +				if (vpd[j]) {
+</I>&gt;<i> +					data[i] = j | 0x80;
+</I>&gt;<i> +					tmp++;
+</I>&gt;<i> +					i++;
+</I>&gt;<i> +				}
+</I>&gt;<i> +			}
+</I>&gt;<i> +			data[3] = tmp;
+</I>&gt;<i>  			data[4] = 0x0;
+</I>&gt;<i> -			data[5] = 0x80;
+</I>&gt;<i> -			data[6] = 0x83;
+</I>&gt;<i> -			len = 7;
+</I>&gt;<i> -			ret = SAM_STAT_GOOD;
+</I>&gt;<i> -		} else if (scb[2] == 0x80) {
+</I>&gt;<i> -			int tmp = SCSI_SN_LEN;
+</I>&gt;<i> -
+</I>&gt;<i> -			data[1] = 0x80;
+</I>&gt;<i> -			data[3] = SCSI_SN_LEN;
+</I>&gt;<i> -			memset(data + 4, 0x20, 4);
+</I>&gt;<i> -			len = 4 + SCSI_SN_LEN;
+</I>&gt;<i> +			len = tmp + 4;
+</I>&gt;<i>  			ret = SAM_STAT_GOOD;
+</I>&gt;<i> +		} else if (valid_vpd(vpd, scb[2])) {
+</I>&gt;<i> +			int tmp;
+</I>&gt;<i> +			vpd_pg = vpd[scb[2] &amp; 0x7f];
+</I>&gt;<i> +			tmp = vpd_pg-&gt;size;
+</I>&gt;<i>  
+</I>&gt;<i> -			if (strlen(attrs-&gt;scsi_sn)) {
+</I>&gt;<i> -				uint8_t *p;
+</I>&gt;<i> -				char *q;
+</I>&gt;<i> -
+</I>&gt;<i> -				p = data + 4 + tmp - 1;
+</I>&gt;<i> -				q = attrs-&gt;scsi_sn + SCSI_SN_LEN - 1;
+</I>&gt;<i> -				for (; tmp &gt; 0; tmp--, q)
+</I>&gt;<i> -					*(p--) = *(q--);
+</I>&gt;<i> -			}
+</I>&gt;<i> -		} else if (scb[2] == 0x83) {
+</I>&gt;<i> -			int tmp = SCSI_ID_LEN;
+</I>&gt;<i> -
+</I>&gt;<i> -			data[1] = 0x83;
+</I>&gt;<i> -			data[3] = tmp + 4;
+</I>&gt;<i> -			data[4] = 0x1;
+</I>&gt;<i> -			data[5] = 0x1;
+</I>&gt;<i> -			data[7] = tmp;
+</I>&gt;<i> -			strncpy((char *) data + 8, attrs-&gt;scsi_id, SCSI_ID_LEN);
+</I>&gt;<i> -
+</I>&gt;<i> -			len = tmp + 8;
+</I>&gt;<i> +			data[0] = devtype;
+</I>&gt;<i> +			data[1] = scb[2];
+</I>&gt;<i> +			data[2] = (tmp &gt;&gt; 8);
+</I>&gt;<i> +			data[3] = tmp &amp; 0xff;
+</I>&gt;<i> +			memcpy(&amp;data[4], vpd_pg-&gt;data, tmp);
+</I>&gt;<i> +			len = tmp + 4;
+</I>&gt;<i>  			ret = SAM_STAT_GOOD;
+</I>&gt;<i>  		}
+</I>&gt;<i>  	}
+</I>&gt;<i> @@ -358,6 +444,19 @@ int spc_request_sense(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i>  	return SAM_STAT_GOOD;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +struct vpd *alloc_vpd(uint16_t size)
+</I>&gt;<i> +{
+</I>&gt;<i> +	struct vpd *vpd;
+</I>&gt;<i> +
+</I>&gt;<i> +	vpd = zalloc(sizeof(struct vpd) + size);
+</I>&gt;<i> +	if (!vpd)
+</I>&gt;<i> +		return NULL;
+</I>&gt;<i> +
+</I>&gt;<i> +	vpd-&gt;size = size;
+</I>&gt;<i> +
+</I>&gt;<i> +	return vpd;
+</I>&gt;<i> +}
+</I>
+Where do you free vpd?
+
+
+&gt;<i>  static struct mode_pg *alloc_mode_pg(uint8_t pcode, uint8_t subpcode,
+</I>&gt;<i>  				     uint16_t size)
+</I>&gt;<i>  {
+</I>&gt;<i> @@ -500,6 +599,11 @@ int lu_config(struct scsi_lu *lu, char *params, match_fn_t *fn)
+</I>&gt;<i>  	int err = TGTADM_SUCCESS;
+</I>&gt;<i>  	char *p;
+</I>&gt;<i>  	char buf[256];
+</I>&gt;<i> +	struct lu_phy_attr *attrs;
+</I>&gt;<i> +	struct vpd **vpd;
+</I>&gt;<i> +
+</I>&gt;<i> +	attrs = &amp;lu-&gt;attrs;
+</I>&gt;<i> +	vpd = attrs-&gt;vpd;
+</I>&gt;<i>  
+</I>&gt;<i>  	if (!strncmp(&quot;targetOps&quot;, params, 9))
+</I>&gt;<i>  		params = params + 10;
+</I>&gt;<i> @@ -512,36 +616,38 @@ int lu_config(struct scsi_lu *lu, char *params, match_fn_t *fn)
+</I>&gt;<i>  		token = match_token(p, tokens, args);
+</I>&gt;<i>  		switch (token) {
+</I>&gt;<i>  		case Opt_scsi_id:
+</I>&gt;<i> -			match_strncpy(lu-&gt;attrs.scsi_id, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;attrs.scsi_id));
+</I>&gt;<i> +			match_strncpy(attrs-&gt;scsi_id, &amp;args[0],
+</I>&gt;<i> +				      sizeof(attrs-&gt;scsi_id));
+</I>&gt;<i> +			vpd[3]-&gt;vpd_update(lu, attrs-&gt;scsi_id);
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_scsi_sn:
+</I>&gt;<i> -			match_strncpy(lu-&gt;attrs.scsi_sn, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;attrs.scsi_sn));
+</I>&gt;<i> +			match_strncpy(attrs-&gt;scsi_sn, &amp;args[0],
+</I>&gt;<i> +				      sizeof(attrs-&gt;scsi_sn));
+</I>&gt;<i> +			vpd[0]-&gt;vpd_update(lu, attrs-&gt;scsi_sn);
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_vendor_id:
+</I>&gt;<i> -			match_strncpy(lu-&gt;attrs.vendor_id, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;attrs.vendor_id));
+</I>&gt;<i> +			match_strncpy(attrs-&gt;vendor_id, &amp;args[0],
+</I>&gt;<i> +				      sizeof(attrs-&gt;vendor_id));
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_product_id:
+</I>&gt;<i> -			match_strncpy(lu-&gt;attrs.product_id, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;attrs.product_id));
+</I>&gt;<i> +			match_strncpy(attrs-&gt;product_id, &amp;args[0],
+</I>&gt;<i> +				      sizeof(attrs-&gt;product_id));
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_product_rev:
+</I>&gt;<i> -			match_strncpy(lu-&gt;attrs.product_rev, &amp;args[0],
+</I>&gt;<i> -				      sizeof(lu-&gt;attrs.product_rev));
+</I>&gt;<i> +			match_strncpy(attrs-&gt;product_rev, &amp;args[0],
+</I>&gt;<i> +				      sizeof(attrs-&gt;product_rev));
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_sense_format:
+</I>&gt;<i>  			match_strncpy(buf, &amp;args[0], sizeof(buf));
+</I>&gt;<i> -			lu-&gt;attrs.sense_format = atoi(buf);
+</I>&gt;<i> +			attrs-&gt;sense_format = atoi(buf);
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_removable:
+</I>&gt;<i>  			match_strncpy(buf, &amp;args[0], sizeof(buf));
+</I>&gt;<i> -			lu-&gt;attrs.removable = atoi(buf);
+</I>&gt;<i> +			attrs-&gt;removable = atoi(buf);
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_online:
+</I>&gt;<i>  			match_strncpy(buf, &amp;args[0], sizeof(buf));
+</I>&gt;<i> -			lu-&gt;attrs.online = atoi(buf);
+</I>&gt;<i> +			attrs-&gt;online = atoi(buf);
+</I>&gt;<i>  			break;
+</I>&gt;<i>  		case Opt_mode_page:
+</I>&gt;<i>  			match_strncpy(buf, &amp;args[0], sizeof(buf));
+</I>&gt;<i> @@ -559,12 +665,32 @@ int spc_lu_config(struct scsi_lu *lu, char *params)
+</I>&gt;<i>  	return lu_config(lu, params, NULL);
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> -int spc_lu_init(struct scsi_lu *lu)
+</I>&gt;<i> +int spc_lu_init(struct scsi_lu *lu, int tid)
+</I>&gt;<i>  {
+</I>&gt;<i> +	struct vpd **lu_vpd = lu-&gt;attrs.vpd;
+</I>&gt;<i> +
+</I>&gt;<i> +	lu-&gt;attrs.device_type = lu-&gt;dev_type_template.type;
+</I>&gt;<i> +	lu-&gt;attrs.qualifier = 0x0;
+</I>&gt;<i> +
+</I>&gt;<i>  	snprintf(lu-&gt;attrs.vendor_id, sizeof(lu-&gt;attrs.vendor_id),
+</I>&gt;<i>  		 &quot;%-16s&quot;, VENDOR_ID);
+</I>&gt;<i>  	snprintf(lu-&gt;attrs.product_rev, sizeof(lu-&gt;attrs.product_rev),
+</I>&gt;<i>  		 &quot;%s&quot;, &quot;0001&quot;);
+</I>&gt;<i> +	snprintf(lu-&gt;attrs.scsi_id, sizeof(lu-&gt;attrs.scsi_id),
+</I>&gt;<i> +		 &quot;deadbeaf%d:%&quot; PRIu64, tid, lu-&gt;lun);
+</I>&gt;<i> +	snprintf(lu-&gt;attrs.scsi_sn, sizeof(lu-&gt;attrs.scsi_sn),
+</I>&gt;<i> +		 &quot;beaf%d%&quot; PRIu64, tid, lu-&gt;lun);
+</I>&gt;<i> +
+</I>&gt;<i> +	/* VPD page 0x80 */
+</I>&gt;<i> +	lu_vpd[0] = alloc_vpd(SCSI_SN_LEN);
+</I>&gt;<i> +	lu_vpd[0]-&gt;vpd_update = update_vpd_80;
+</I>&gt;<i> +	update_vpd_80(lu, lu-&gt;attrs.scsi_sn);
+</I>&gt;<i> +
+</I>&gt;<i> +	/* VPD page 0x83 */
+</I>&gt;<i> +	lu_vpd[3] = alloc_vpd(SCSI_ID_LEN + 4); /* + Designator descriptor len*/
+</I>&gt;<i> +	lu_vpd[3]-&gt;vpd_update = update_vpd_83;
+</I>&gt;<i> +	update_vpd_83(lu, lu-&gt;attrs.scsi_id);
+</I>&gt;<i> +
+</I>&gt;<i>  	lu-&gt;attrs.removable = 0;
+</I>&gt;<i>  	lu-&gt;attrs.sense_format = 0;
+</I>&gt;<i>  	lu-&gt;attrs.online = 0;
+</I>&gt;<i> diff --git a/usr/spc.h b/usr/spc.h
+</I>&gt;<i> index 1cc8623..315b49e 100644
+</I>&gt;<i> --- a/usr/spc.h
+</I>&gt;<i> +++ b/usr/spc.h
+</I>&gt;<i> @@ -7,7 +7,7 @@ extern int spc_start_stop(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_test_unit(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_request_sense(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_illegal_op(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> -extern int spc_lu_init(struct scsi_lu *lu);
+</I>&gt;<i> +extern int spc_lu_init(struct scsi_lu *lu, int tid);
+</I>&gt;<i>  
+</I>&gt;<i>  typedef int (match_fn_t)(struct scsi_lu *lu, char *params);
+</I>&gt;<i>  extern int lu_config(struct scsi_lu *lu, char *params, match_fn_t *);
+</I>&gt;<i> @@ -15,5 +15,6 @@ extern int spc_lu_config(struct scsi_lu *lu, char *params);
+</I>&gt;<i>  extern void dump_cdb(struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int spc_mode_sense(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i>  extern int add_mode_page(struct scsi_lu *lu, char *params);
+</I>&gt;<i> +extern struct vpd *alloc_vpd(uint16_t size);
+</I>&gt;<i>  
+</I>&gt;<i>  #endif
+</I>&gt;<i> diff --git a/usr/target.c b/usr/target.c
+</I>&gt;<i> index 2474d05..b966579 100644
+</I>&gt;<i> --- a/usr/target.c
+</I>&gt;<i> +++ b/usr/target.c
+</I>&gt;<i> @@ -266,7 +266,7 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *args, int backi
+</I>&gt;<i>  	tgt_cmd_queue_init(&amp;lu-&gt;cmd_queue);
+</I>&gt;<i>  
+</I>&gt;<i>   	if (lu-&gt;dev_type_template.lu_init) {
+</I>&gt;<i> - 		ret = lu-&gt;dev_type_template.lu_init(lu);
+</I>&gt;<i> +		ret = lu-&gt;dev_type_template.lu_init(lu, tid);
+</I>&gt;<i>  		if (ret)
+</I>&gt;<i>  			goto free_lu;
+</I>&gt;<i>  	}
+</I>&gt;<i> @@ -285,13 +285,6 @@ int tgt_device_create(int tid, int dev_type, uint64_t lun, char *args, int backi
+</I>&gt;<i>  			goto free_lu;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> -	lu-&gt;attrs.device_type = lu-&gt;dev_type_template.type;
+</I>&gt;<i> -	lu-&gt;attrs.qualifier = 0x0;
+</I>&gt;<i> -	snprintf(lu-&gt;attrs.scsi_id, sizeof(lu-&gt;attrs.scsi_id),
+</I>&gt;<i> -		 &quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
+</I>&gt;<i> -	snprintf(lu-&gt;attrs.scsi_sn, sizeof(lu-&gt;attrs.scsi_sn),
+</I>&gt;<i> -		 &quot;beaf%d%&quot; PRIu64, tid, lun);
+</I>&gt;<i> -
+</I>&gt;<i>  	if (tgt_drivers[target-&gt;lid]-&gt;lu_create)
+</I>&gt;<i>  		tgt_drivers[target-&gt;lid]-&gt;lu_create(lu);
+</I>&gt;<i>  
+</I>&gt;<i> diff --git a/usr/tgtd.h b/usr/tgtd.h
+</I>&gt;<i> index c39b9c2..6fc38c4 100644
+</I>&gt;<i> --- a/usr/tgtd.h
+</I>&gt;<i> +++ b/usr/tgtd.h
+</I>&gt;<i> @@ -36,6 +36,15 @@ struct tgt_cmd_queue {
+</I>&gt;<i>  	struct list_head queue;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> +struct scsi_lu;
+</I>&gt;<i> +struct scsi_cmd;
+</I>&gt;<i> +
+</I>&gt;<i> +struct vpd {
+</I>&gt;<i> +	uint16_t size;
+</I>&gt;<i> +	void (*vpd_update)(struct scsi_lu *lu, void *data);
+</I>&gt;<i> +	uint8_t data[0];
+</I>&gt;<i> +};
+</I>
+I prefer to avoid doing something like:
+
+struct vpd *vpd;
+
+Can we have a bit longer structure name like struct vp_data? Any
+suggestions are welcome.
+
+
+&gt;<i>  struct lu_phy_attr {
+</I>&gt;<i>  	char scsi_id[SCSI_ID_LEN + 1];
+</I>&gt;<i>  	char scsi_sn[SCSI_SN_LEN + 1];
+</I>&gt;<i> @@ -52,10 +61,9 @@ struct lu_phy_attr {
+</I>&gt;<i>  	char online;		/* Logical Unit online */
+</I>&gt;<i>  	char reset;		/* Power-on or reset has occured */
+</I>&gt;<i>  	char sense_format;	/* Descrptor format sense data supported */
+</I>&gt;<i> -};
+</I>&gt;<i>  
+</I>&gt;<i> -struct scsi_lu;
+</I>&gt;<i> -struct scsi_cmd;
+</I>&gt;<i> +	struct vpd *vpd[0x80];	/* VPD pages 0x80 -&gt; 0xff masked with 0x80*/
+</I>&gt;<i> +};
+</I>&gt;<i>  
+</I>&gt;<i>  struct device_type_operations {
+</I>&gt;<i>  	int (*cmd_perform)(int host_no, struct scsi_cmd *cmd);
+</I>&gt;<i> @@ -64,7 +72,7 @@ struct device_type_operations {
+</I>&gt;<i>  struct device_type_template {
+</I>&gt;<i>  	unsigned char type;
+</I>&gt;<i>  
+</I>&gt;<i> -	int (*lu_init)(struct scsi_lu *lu);
+</I>&gt;<i> +	int (*lu_init)(struct scsi_lu *lu, int tid);
+</I>&gt;<i>  	void (*lu_exit)(struct scsi_lu *lu);
+</I>&gt;<i>  	int (*lu_config)(struct scsi_lu *lu, char *args);
+</I>&gt;<i>  
+</I>&gt;<i> -- 
+</I>&gt;<i> 1.5.2.3
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000995.html">[Stgt-devel] [PATCH] Makefile auto dependencies
+</A></li>
+	<LI>Next message: <A HREF="000998.html">[Stgt-devel] [Patch 1/1] Add support for extra VPD pages within	INQUIRY op code
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#997">[ date ]</a>
+              <a href="thread.html#997">[ thread ]</a>
+              <a href="subject.html#997">[ subject ]</a>
+              <a href="author.html#997">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

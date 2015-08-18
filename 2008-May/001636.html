@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Proposed update to STGT web page
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Proposed%20update%20to%20STGT%20web%20page&In-Reply-To=%3C20080513202515Y.tomof%40acm.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001634.html">
+   <LINK REL="Next"  HREF="001641.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Proposed update to STGT web page</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Proposed%20update%20to%20STGT%20web%20page&In-Reply-To=%3C20080513202515Y.tomof%40acm.org%3E"
+       TITLE="[Stgt-devel] Proposed update to STGT web page">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue May 13 13:25:19 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001634.html">[Stgt-devel] Proposed update to STGT web page
+</A></li>
+        <LI>Next message: <A HREF="001641.html">[Stgt-devel] Proposed update to STGT web page
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1636">[ date ]</a>
+              <a href="thread.html#1636">[ thread ]</a>
+              <a href="subject.html#1636">[ subject ]</a>
+              <a href="author.html#1636">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 12 May 2008 09:55:31 +1000
+&quot;ronnie sahlberg&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">ronniesahlberg at gmail.com</A>&gt; wrote:
+
+&gt;<i> Hi,
+</I>&gt;<i> 
+</I>&gt;<i> I propose some updates to the main STGT web page, diff based on &quot;page
+</I>&gt;<i> source&quot; below in text as well as a gzip attachment
+</I>
+Thanks a lot!
+
+
+&gt;<i> 
+</I>&gt;<i> --- stgt.berlios.de.htm.orig	2008-05-12 09:34:47.000000000 +1000
+</I>&gt;<i> +++ stgt.berlios.de.htm	2008-05-12 09:47:26.000000000 +1000
+</I>&gt;<i> @@ -67,6 +67,12 @@
+</I>&gt;<i> 
+</I>&gt;<i>  &lt;li&gt;
+</I>&gt;<i>  &lt;p&gt;
+</I>&gt;<i> +FCOE software target driver for standard NICs
+</I>
+I put 'in progress' here.
+
+
+&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +&lt;/li&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +&lt;li&gt;
+</I>&gt;<i> +&lt;p&gt;
+</I>&gt;<i>  Virtual SCSI target driver for &lt;a
+</I>&gt;<i> href=&quot;<A HREF="http://www.ibm.com/systems/p/">http://www.ibm.com/systems/p/</A>&quot;&gt;IBM pSeries&lt;/a&gt;
+</I>&gt;<i>  &lt;/p&gt;
+</I>&gt;<i>  &lt;/li&gt;
+</I>&gt;<i> @@ -100,6 +106,47 @@
+</I>&gt;<i> 
+</I>&gt;<i>  &lt;div&gt;
+</I>&gt;<i>  &lt;p&gt;
+</I>&gt;<i> +&lt;strong&gt;Device Emulation&lt;/strong&gt;
+</I>&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +&lt;ul&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +&lt;li&gt;
+</I>&gt;<i> +&lt;p&gt;
+</I>&gt;<i> +SBC : Block Device : Virtual SCSI Harddisk using a file to store the content
+</I>&gt;<i> +of the virtual drive. Fully functional.
+</I>&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +&lt;/li&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +&lt;li&gt;
+</I>&gt;<i> +&lt;p&gt;
+</I>&gt;<i> +SMC : Media Changer : A virtual media jukebox that can be controlled
+</I>&gt;<i> by the &quot;mtx&quot; tool. Partially functional.
+</I>&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +&lt;/li&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +&lt;li&gt;
+</I>&gt;<i> +&lt;p&gt;
+</I>&gt;<i> +MMC : CD/DVD : Implements DVD-ROM and burnable DVD+R. Can be combined
+</I>&gt;<i> with SMC to provide a fully operational DVD jukebox. Fully functional.
+</I>&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +&lt;/li&gt;
+</I>&gt;<i> +
+</I>&gt;<i> +&lt;li&gt;
+</I>&gt;<i> +&lt;p&gt;
+</I>&gt;<i> +SCC : Controller : Work in progress.
+</I>&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +&lt;/li&gt;
+</I>
+We use it just as lun 0. Do we need to improve this? If not, I think
+that we can just drop it here.
+
+
+&gt;<i> +&lt;li&gt;
+</I>&gt;<i> +&lt;p&gt;
+</I>&gt;<i> +OSD :  Object Based Storage : Work in progress.
+</I>&gt;<i> +&lt;/p&gt;
+</I>&gt;<i> +&lt;/li&gt;
+</I>
+It would be better to mention SSC if we add OSD here.
+
+I try to explain all the device emulation in a similar way and use
+more t10 words.
+
+Here are an updated patch. Comments?
+
+
+Index: index.html
+===================================================================
+--- index.html	(revision 209)
++++ index.html	(working copy)
+@@ -73,6 +73,12 @@
+ 
+ &lt;li&gt;
+ &lt;p&gt;
++FCoE software target driver for Ethernet NICs (in progress)
++&lt;/p&gt;
++&lt;/li&gt;
++
++&lt;li&gt;
++&lt;p&gt;
+ &lt;a href=&quot;<A HREF="http://www.qlogic.com/products/fc_san_hostadapers.asp">http://www.qlogic.com/products/fc_san_hostadapers.asp</A>&quot;&gt;Qlogic qla2xxx&lt;/a&gt; FC target driver (in progress)
+ &lt;/p&gt;
+ &lt;/li&gt;
+@@ -100,6 +106,46 @@
+ 
+ &lt;div&gt;
+ &lt;p&gt;
++&lt;strong&gt;Device Emulation&lt;/strong&gt;
++&lt;/p&gt;
++
++&lt;ul&gt;
++
++&lt;li&gt;
++&lt;p&gt;
++SBC: a virtual disk drive that can use a file to store the content.
++&lt;/p&gt;
++&lt;/li&gt;
++
++&lt;li&gt;
++&lt;p&gt;
++SMC: a virtual media jukebox that can be controlled by the &quot;mtx&quot; tool (partially functional).
++&lt;/p&gt;
++&lt;/li&gt;
++
++&lt;li&gt;
++&lt;p&gt;
++MMC: a virtual DVD drive that can read DVD-ROM iso files and create burnable DVD+R. It can be combined with SMC to provide a fully operational DVD jukebox.
++&lt;/p&gt;
++&lt;/li&gt;
++
++&lt;li&gt;
++&lt;p&gt;
++SSC: a virtual tape device (aka VTL) that can use a file to store the content (in progress).
++&lt;/p&gt;
++&lt;/li&gt;
++
++&lt;li&gt;
++&lt;p&gt;
++OSD: a virtual object-based storage device that can use a file to store the content (in progress).
++&lt;/p&gt;
++&lt;/li&gt;
++
++&lt;/ul&gt;
++&lt;/div&gt;
++
++&lt;div&gt;
++&lt;p&gt;
+ &lt;strong&gt;Document&lt;/strong&gt;
+ &lt;/p&gt;
+ 
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001634.html">[Stgt-devel] Proposed update to STGT web page
+</A></li>
+	<LI>Next message: <A HREF="001641.html">[Stgt-devel] Proposed update to STGT web page
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1636">[ date ]</a>
+              <a href="thread.html#1636">[ thread ]</a>
+              <a href="subject.html#1636">[ subject ]</a>
+              <a href="author.html#1636">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

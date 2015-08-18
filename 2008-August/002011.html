@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SSC%2C%20Variable%20Block%20Sizes%20and%20file%20marks%20etc%20...&In-Reply-To=%3Cf29db9a80808011944t53a1a96fq40387479eae063bf%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="002010.html">
+   <LINK REL="Next"  HREF="002014.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20SSC%2C%20Variable%20Block%20Sizes%20and%20file%20marks%20etc%20...&In-Reply-To=%3Cf29db9a80808011944t53a1a96fq40387479eae063bf%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...">markh794 at gmail.com
+       </A><BR>
+    <I>Sat Aug  2 04:44:01 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="002010.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+        <LI>Next message: <A HREF="002014.html">[PATCH] Adding a new backend for opening a /dev/sg device for
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2011">[ date ]</a>
+              <a href="thread.html#2011">[ thread ]</a>
+              <a href="subject.html#2011">[ subject ]</a>
+              <a href="author.html#2011">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sat, Aug 2, 2008 at 2:39 AM, Richard Sharpe
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">realrichardsharpe at gmail.com</A>&gt; wrote:
+&gt;<i> Hi,
+</I>&gt;<i>
+</I>&gt;<i> I discovered Bacula's btape command and started using that to verify
+</I>&gt;<i> my SSC implementation, and then discovered that I would have to
+</I>&gt;<i> implement variable block size records in any case, so I switched.
+</I>&gt;<i>
+</I>&gt;<i> I can now pass all the important Bacula btest tests, and many of the
+</I>&gt;<i> unimportant ones like back space file, back space record, but there is
+</I>&gt;<i> still at least one unimportant test that my code fails (space to just
+</I>&gt;<i> past the very last record on the tape, but fixing that required a
+</I>&gt;<i> careful reading of the spec ... :-). The code I have at the moment is
+</I>&gt;<i> pretty crappy, and I might post it in a couple of weeks when I get
+</I>&gt;<i> back from a cruise we are taking next week.
+</I>&gt;<i>
+</I>&gt;<i> However, I thought I would describe the approach I have taken.
+</I>&gt;<i>
+</I>&gt;<i> I keep all the metadata separate from the data. I have a separate
+</I>&gt;<i> array of filemarks/setmarks (actually, I only implement filemarks at
+</I>&gt;<i> the moment, but setmarks are not hard). This array can be small since
+</I>&gt;<i> we don't expect many of them, and the cost of realloc to double its
+</I>&gt;<i> size from 20 to 40 entries is not expensive and is only needed with
+</I>&gt;<i> the WITE FILEMARKS(6) command.
+</I>&gt;<i>
+</I>&gt;<i> I also have a separate array of record lengths. I size it for 1M
+</I>&gt;<i> records at the moment, but the sizing of this array will depend on the
+</I>&gt;<i> size of tape you are emulating and the record sizes you expect to
+</I>&gt;<i> support. It seems that the default in programs like NetBackup is 64kB,
+</I>&gt;<i> but they routinely recommend that you use 512kB or larger. 1M records
+</I>&gt;<i> with 1MB record sizes means we can support 1TB backup tapes. Since
+</I>&gt;<i> uncompressed LTO4s are 800GB (I am being a little loose here with MB
+</I>&gt;<i> and MiB etc), and since compression can be done below the tape level,
+</I>&gt;<i> 1M records seems fine and requires 4MB per tape emulated. I would
+</I>&gt;<i> probably return 64kB or more as the min Block Size (although I wonder
+</I>&gt;<i> how many apps would support a granularity larger than 9 (16, for
+</I>&gt;<i> example ...).
+</I>
+NetBackup uses a 1k block for media header and image header information.
+
+On a tape load, the 'bptm' process requests a '64k read'. If it
+receives anything other then 1k of data, it rejects the tape as not
+being in NetBackups format.
+
+&gt;<i>
+</I>&gt;<i> Every write writes its length to the next available record slot.
+</I>&gt;<i>
+</I>&gt;<i> When reading, we keep track of the current record (starting at 0) and
+</I>&gt;<i> read only the bytes of data the current record slot tells us
+</I>&gt;<i> (actually, we should read the min of current record and the requested
+</I>&gt;<i> size) and then deal with under-length or over-length reads as the spec
+</I>&gt;<i> requests.
+</I>&gt;<i>
+</I>&gt;<i> The filemarks array is used in this way. Marks occur before records.
+</I>&gt;<i> If a mark is at the same offset as a record, the mark is first, and I
+</I>&gt;<i> keep two variables, next_mark and next_record to tell me what I am up
+</I>&gt;<i> to.
+</I>&gt;<i>
+</I>&gt;<i> So, during a read, if there is a mark at the current offset, then a
+</I>&gt;<i> CHECK_CONDITION should be returned with NO_SENSE and ASC_MARK.
+</I>&gt;<i> However, if the request was an over-length read and there is a MARK
+</I>&gt;<i> immediately after the read, a CHECK_CONDITION with NO_SENSE and NO_ASC
+</I>&gt;<i> should be returned (at least by my reading of the spec).
+</I>&gt;<i> Unfortunately, there are no programs that I am aware of that test for
+</I>&gt;<i> these things (perhaps a useful additional tool for STGT would be a
+</I>&gt;<i> program that does these sorts of tests). I am not sure that my code
+</I>&gt;<i> handles this condition correctly, yet, as there is no test for it.
+</I>&gt;<i>
+</I>&gt;<i> Spacing forward is a simple matter of lseeking using the block lengths
+</I>&gt;<i> that I keep in my array of record sizes, and spacing backward is much
+</I>&gt;<i> the same ...
+</I>&gt;<i>
+</I>&gt;<i> My code currently does not handle writing over a MARK yet, but that is
+</I>&gt;<i> only a matter of time, and I will probably write a stress test tool
+</I>&gt;<i> first.
+</I>I've yet to find any program that uses setmarks..
+
+&gt;<i>
+</I>&gt;<i> Also, I am not currently saving the metadata to files/xattrs nor
+</I>&gt;<i> reading them in when a tape if mounted, but that is the easy part.
+</I>&gt;<i>
+</I>&gt;<i> I have chosen this representation because performance in the data path
+</I>&gt;<i> is important to me, especially during writing, but it is clear that
+</I>&gt;<i> other representations can be used.
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="002010.html">[Stgt-devel] SSC, Variable Block Sizes and file marks etc ...
+</A></li>
+	<LI>Next message: <A HREF="002014.html">[PATCH] Adding a new backend for opening a /dev/sg device for
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2011">[ date ]</a>
+              <a href="thread.html#2011">[ thread ]</a>
+              <a href="subject.html#2011">[ subject ]</a>
+              <a href="author.html#2011">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

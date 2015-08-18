@@ -1,0 +1,303 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C4861FAAD.7050008%40wpkg.org%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001725.html">
+   <LINK REL="Next"  HREF="001703.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>Tomasz Chmielewski</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3C4861FAAD.7050008%40wpkg.org%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">mangoo at wpkg.org
+       </A><BR>
+    <I>Wed Jun 25 09:58:37 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001725.html">[PATCH 2/2] when we start up fcoe on an interface, check that
+</A></li>
+        <LI>Next message: <A HREF="001703.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1702">[ date ]</a>
+              <a href="thread.html#1702">[ thread ]</a>
+              <a href="subject.html#1702">[ subject ]</a>
+              <a href="author.html#1702">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Today I noticed initiators can't connect to the target anymore.
+
+The target runs only one tgtd process:
+
+# ps -C tgtd
+   PID TTY          TIME CMD
+  1455 ?        00:00:01 tgtd
+#
+
+Initiator logs indicated that the connection was broken at about 2.oo am 
+this night; the target had a disk failure in a RAID-5 array at the same 
+time. The configured target pointed to a LVM volume created on top of 
+that software RAID-5; that LVM volume is still accessible correctly. Why 
+did one instance of tgtd segfault?
+The machine was running tgt-20080527.
+
+Below, full logs:
+
+Jun 25 02:12:58 superthecus kernel: ata5.00: exception Emask 0x0 SAct 
+0x77 SErr 0x0 action 0x2 frozen
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/e0:00:3f:b9:a8/00:00:20:00:00/40 tag 0 ncq 114688 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:01:00:4f:c2/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/98:08:27:ba:a8/00:00:20:00:00/40 tag 1 ncq 77824 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/88:10:ff:ba:a8/00:00:20:00:00/40 tag 2 ncq 69632 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/a8:20:9f:bb:a8/00:00:20:00:00/40 tag 4 ncq 86016 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/00:28:bf:bd:a8/01:00:20:00:00/40 tag 5 ncq 131072 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5.00: cmd 
+61/08:30:bf:be:a8/00:00:20:00:00/40 tag 6 ncq 4096 out
+Jun 25 02:12:58 superthecus kernel:          res 
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Jun 25 02:12:58 superthecus kernel: ata5.00: status: { DRDY }
+Jun 25 02:12:58 superthecus kernel: ata5: soft resetting link
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found a02 0
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found a03 0
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found a04 0
+Jun 25 02:12:58 superthecus tgtd: abort_task_set(938) found 0 0
+Jun 25 02:12:58 superthecus tgtd: abort_cmd(914) found 44 e
+Jun 25 02:12:58 superthecus tgtd: abort_cmd(914) found 6d e
+Jun 25 02:12:58 superthecus tgtd: abort_cmd(914) found 4f e
+Jun 25 02:13:03 superthecus kernel: ata5: port is slow to respond, 
+please be patient (Status 0xc0)
+Jun 25 02:13:08 superthecus kernel: ata5: SRST failed (errno=-16)
+Jun 25 02:13:08 superthecus kernel: ata5: hard resetting link
+Jun 25 02:13:18 superthecus kernel: ata5: SATA link up 1.5 Gbps (SStatus 
+113 SControl 300)
+Jun 25 02:13:48 superthecus kernel: ata5.00: qc timeout (cmd 0xec)
+Jun 25 02:13:48 superthecus kernel: ata5.00: failed to IDENTIFY (I/O 
+error, err_mask=0x4)
+Jun 25 02:13:48 superthecus kernel: ata5.00: revalidation failed (errno=-5)
+Jun 25 02:13:48 superthecus kernel: ata5: failed to recover some 
+devices, retrying in 5 secs
+Jun 25 02:13:53 superthecus kernel: ata5: hard resetting link
+Jun 25 02:14:03 superthecus kernel: ata5: SATA link up 1.5 Gbps (SStatus 
+113 SControl 300)
+Jun 25 02:14:33 superthecus kernel: ata5.00: qc timeout (cmd 0xec)
+Jun 25 02:14:33 superthecus kernel: ata5.00: failed to IDENTIFY (I/O 
+error, err_mask=0x4)
+Jun 25 02:14:33 superthecus kernel: ata5.00: revalidation failed (errno=-5)
+Jun 25 02:14:33 superthecus kernel: ata5: failed to recover some 
+devices, retrying in 5 secs
+Jun 25 02:14:38 superthecus kernel: ata5: hard resetting link
+Jun 25 02:14:49 superthecus kernel: ata5: SATA link up 1.5 Gbps (SStatus 
+113 SControl 300)
+Jun 25 02:15:19 superthecus kernel: ata5.00: qc timeout (cmd 0xec)
+Jun 25 02:15:19 superthecus kernel: ata5.00: failed to IDENTIFY (I/O 
+error, err_mask=0x4)
+Jun 25 02:15:19 superthecus kernel: ata5.00: revalidation failed (errno=-5)
+Jun 25 02:15:19 superthecus kernel: ata5.00: disabled
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 10000a0b 0
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 10000a0c 0
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 10000a0d 0
+Jun 25 02:15:23 superthecus tgtd: abort_task_set(938) found 0 0
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 44 e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 6d e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 4f e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 10000060 e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 10000050 e
+Jun 25 02:15:23 superthecus tgtd: abort_cmd(914) found 1000007c e
+Jun 25 02:15:24 superthecus kernel: ata5: port is slow to respond, 
+please be patient (Status 0x80)
+Jun 25 02:15:30 superthecus kernel: ata5: prereset failed (errno=-16)
+Jun 25 02:15:30 superthecus kernel: ata5: reset failed, giving up
+Jun 25 02:15:30 superthecus kernel: ata5: EH complete
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929791
+Jun 25 02:15:30 superthecus kernel: raid5: Disk failure on sdf1, 
+disabling device. Operation continuing on 4 devices
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929535
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928991
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928831
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928615
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928383
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547925847
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547925784 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928967
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547928904 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547928912 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929415
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547929352 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929431
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547929368 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547929376 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547930303
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930240 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930248 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930256 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930264 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930272 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930280 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930288 on sdf1).
+Jun 25 02:15:30 superthecus kernel: raid5:md0: read error not 
+correctable (sector 547930296 on sdf1).
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 500831807
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 540211391
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928767
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929159
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus syslogd: /dev/ttyS0: Resource temporarily 
+unavailable
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929407
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929423
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929447
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547929799
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928607
+Jun 25 02:15:30 superthecus kernel: sd 5:0:0:0: [sdf] Result: 
+hostbyte=0x04 driverbyte=0x00
+Jun 25 02:15:30 superthecus kernel: end_request: I/O error, dev sdf, 
+sector 547928255
+Jun 25 02:15:30 superthecus kernel: RAID5 conf printout:
+Jun 25 02:15:30 superthecus kernel:  --- rd:5 wd:4
+Jun 25 02:15:30 superthecus kernel:  disk 0, o:1, dev:sdb1
+Jun 25 02:15:30 superthecus kernel:  disk 1, o:1, dev:sdc1
+Jun 25 02:15:30 superthecus kernel:  disk 2, o:1, dev:sdd1
+Jun 25 02:15:30 superthecus kernel:  disk 3, o:1, dev:sde1
+Jun 25 02:15:30 superthecus kernel:  disk 4, o:0, dev:sdf1
+Jun 25 02:15:30 superthecus kernel: RAID5 conf printout:
+Jun 25 02:15:30 superthecus kernel:  --- rd:5 wd:4
+Jun 25 02:15:30 superthecus kernel:  disk 0, o:1, dev:sdb1
+Jun 25 02:15:30 superthecus kernel:  disk 1, o:1, dev:sdc1
+Jun 25 02:15:30 superthecus kernel:  disk 2, o:1, dev:sdd1
+Jun 25 02:15:30 superthecus kernel:  disk 3, o:1, dev:sde1
+Jun 25 02:15:30 superthecus mdadm: Fail event detected on md device 
+/dev/md0, component device /dev/sdf1
+Jun 25 02:15:30 superthecus kernel: tgtd[1454]: segfault at 21c ip 
+0804ed4e sp 77e1fa10 error 4 in tgtd[8048000+1e000]
+
+
+
+-- 
+Tomasz Chmielewski
+<A HREF="http://wpkg.org">http://wpkg.org</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001725.html">[PATCH 2/2] when we start up fcoe on an interface, check that
+</A></li>
+	<LI>Next message: <A HREF="001703.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1702">[ date ]</a>
+              <a href="thread.html#1702">[ thread ]</a>
+              <a href="subject.html#1702">[ subject ]</a>
+              <a href="author.html#1702">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

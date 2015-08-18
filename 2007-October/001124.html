@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 2/2] plug valloc leaks
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20plug%20valloc%20leaks&In-Reply-To=%3C72018d8916d8da8cf3eb71e957458f1a99f4e7e6.1193511441.git.pw%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001123.html">
+   <LINK REL="Next"  HREF="001126.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 2/2] plug valloc leaks</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%202/2%5D%20plug%20valloc%20leaks&In-Reply-To=%3C72018d8916d8da8cf3eb71e957458f1a99f4e7e6.1193511441.git.pw%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH 2/2] plug valloc leaks">pw at osc.edu
+       </A><BR>
+    <I>Sat Oct 27 20:34:53 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001123.html">[Stgt-devel] [PATCH 1/2] ibmvio unreachable code
+</A></li>
+        <LI>Next message: <A HREF="001126.html">[Stgt-devel] [PATCH 2/2] plug valloc leaks
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1124">[ date ]</a>
+              <a href="thread.html#1124">[ thread ]</a>
+              <a href="subject.html#1124">[ subject ]</a>
+              <a href="author.html#1124">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>A few inquiry and related handlers do not release their valloc-ed pages
+in error paths.  Fix these.
+
+ibmvio inquiry:  only alloc when needed for __ibmvio_inquiry, not for
+spc_inquiry.
+
+smc read element status:  inspect reserved byte first, free for
+unknown element type.
+
+spc inquiry:  free in error path.
+
+spc mode sense:  free in sense for a few failure cases.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/ibmvio/ibmvio.c |   10 +++++-----
+ usr/smc.c           |    7 ++++---
+ usr/spc.c           |    8 ++++++--
+ 3 files changed, 15 insertions(+), 10 deletions(-)
+
+diff --git a/usr/ibmvio/ibmvio.c b/usr/ibmvio/ibmvio.c
+index 5836498..0e6b256 100644
+--- a/usr/ibmvio/ibmvio.c
++++ b/usr/ibmvio/ibmvio.c
+@@ -146,6 +146,11 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	if (((scb[1] &amp; 0x3) == 0x3) || (!(scb[1] &amp; 0x3) &amp;&amp; scb[2]))
+ 		goto sense;
+ 
++	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
++
++	if (scb[1] &amp; 0x3)
++		return spc_inquiry(host_no, cmd);
++
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		key = HARDWARE_ERROR;
+@@ -154,11 +159,6 @@ static int ibmvio_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	}
+ 	memset(data, 0, pagesize);
+ 
+-	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
+-
+-	if (scb[1] &amp; 0x3)
+-		return spc_inquiry(host_no, cmd);
+-
+ 	cmd-&gt;len = __ibmvio_inquiry(host_no, cmd, data);
+ 	cmd-&gt;len = min_t(int, cmd-&gt;len, scb[4]);
+ 	cmd-&gt;uaddr = (unsigned long) data;
+diff --git a/usr/smc.c b/usr/smc.c
+index df38b25..9d55992 100644
+--- a/usr/smc.c
++++ b/usr/smc.c
+@@ -273,6 +273,9 @@ static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+ 		goto sense;
+ 	}
+ 
++	if (scb[11])	/* Reserved byte */
++		goto sense;
++
+ 	data = valloc(pagesize);
+ 	if (!data) {
+ 		dprintf(&quot;valloc(%lu) failed\n&quot;, pagesize);
+@@ -282,9 +285,6 @@ static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+ 	}
+ 	memset(data, 0, pagesize);
+ 
+-	if (scb[11])	/* Reserved byte */
+-		goto sense;
+-
+ 	switch(element_type) {
+ 	case ELEMENT_ANY:
+ 		/* Return element in type order */
+@@ -333,6 +333,7 @@ static int smc_read_element_status(int host_no, struct scsi_cmd *cmd)
+ 						  dvcid, voltag);
+ 		break;
+ 	default:
++		free(data);
+ 		goto sense;
+ 		break;
+ 	}
+diff --git a/usr/spc.c b/usr/spc.c
+index 45a0430..3e1f65e 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -234,8 +234,10 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 		}
+ 	}
+ 
+-	if (ret != SAM_STAT_GOOD)
++	if (ret != SAM_STAT_GOOD) {
++		free(data);
+ 		goto sense;
++	}
+ 
+ 	cmd-&gt;len = min_t(int, len, scb[4]);
+ 	cmd-&gt;uaddr = (unsigned long) data;
+@@ -373,7 +375,7 @@ static int build_mode_page(uint8_t *data, struct mode_pg *pg)
+ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int len = 0;
+-	uint8_t *data, *scb, mode6, dbd, pcode, subpcode;
++	uint8_t *data = NULL, *scb, mode6, dbd, pcode, subpcode;
+ 	uint16_t alloc_len;
+ 	unsigned char key = ILLEGAL_REQUEST;
+ 	uint16_t asc = ASC_INVALID_FIELD_IN_CDB;
+@@ -441,6 +443,8 @@ int spc_mode_sense(int host_no, struct scsi_cmd *cmd)
+ 	return SAM_STAT_GOOD;
+ 
+ sense:
++	if (data)
++		free(data);
+ 	cmd-&gt;len = 0;
+ 	sense_data_build(cmd, key, asc);
+ 	return SAM_STAT_CHECK_CONDITION;
+-- 
+1.5.3.4
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001123.html">[Stgt-devel] [PATCH 1/2] ibmvio unreachable code
+</A></li>
+	<LI>Next message: <A HREF="001126.html">[Stgt-devel] [PATCH 2/2] plug valloc leaks
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1124">[ date ]</a>
+              <a href="thread.html#1124">[ thread ]</a>
+              <a href="subject.html#1124">[ subject ]</a>
+              <a href="author.html#1124">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

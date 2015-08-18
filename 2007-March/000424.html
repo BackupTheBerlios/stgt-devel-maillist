@@ -1,0 +1,508 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] osd sense fixup
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20osd%20sense%20fixup&In-Reply-To=%3C20070305203659.GC17606%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000423.html">
+   <LINK REL="Next"  HREF="000425.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] osd sense fixup</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20osd%20sense%20fixup&In-Reply-To=%3C20070305203659.GC17606%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] osd sense fixup">pw at osc.edu
+       </A><BR>
+    <I>Mon Mar  5 21:36:59 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000423.html">[Stgt-devel] [PATCH] pass scb length
+</A></li>
+        <LI>Next message: <A HREF="000425.html">[Stgt-devel] [PATCH] parse iscsi AHS header for extended CDB
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#424">[ date ]</a>
+              <a href="thread.html#424">[ thread ]</a>
+              <a href="subject.html#424">[ subject ]</a>
+              <a href="author.html#424">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>OSD must use descriptor format sense data.  Support request sense and
+report luns.  Add support for a couple more inquiry page codes.  Remove
+list of actions; submit can deal with it.  They are obsolete anyway.
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+ usr/osd.c |  289 +++++++++++++++++++++++++++++++++++++++----------------------
+ usr/osd.h |   33 -------
+ 2 files changed, 186 insertions(+), 136 deletions(-)
+ delete mode 100644 usr/osd.h
+
+diff --git a/usr/osd.c b/usr/osd.c
+index 4cdfa1a..1d65e42 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -1,7 +1,7 @@
+ /*
+  * SCSI object storage device command processing
+  *
+- * Copyright (C) 2006 Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
++ * Copyright (C) 2006-2007 Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+  *
+  * Copyright (C) 2007 FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tomof at acm.org</A>&gt;
+  * Copyright (C) 2007 Mike Christie &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt;
+@@ -13,6 +13,7 @@
+ #include &lt;stdio.h&gt;
+ #include &lt;stdlib.h&gt;
+ #include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
+ 
+ #include &quot;list.h&quot;
+ #include &quot;util.h&quot;
+@@ -21,19 +22,36 @@
+ #include &quot;driver.h&quot;
+ #include &quot;scsi.h&quot;
+ #include &quot;spc.h&quot;
+-#include &quot;osd.h&quot;
+ 
+ #define PRODUCT_ID	&quot;OSD&quot;
+ #define PRODUCT_REV	&quot;0&quot;
+ 
++/*
++ * Build a descriptor format sense header.  OSDs must return this,
++ * not fixed format.
++ */
++static void sense_descriptor_build(struct scsi_cmd *cmd, uint8_t key,
++				   uint8_t asc, uint8_t ascq)
++{
++	cmd-&gt;sense_buffer[0] = 0x72;  /* current, not deferred */
++	cmd-&gt;sense_buffer[1] = key;
++	cmd-&gt;sense_buffer[2] = asc;
++	cmd-&gt;sense_buffer[3] = ascq;
++	cmd-&gt;sense_len = 8;
++}
++
+ static int osd_inquiry(int host_no, struct scsi_cmd *cmd)
+ {
+ 	uint8_t *data, *scb = cmd-&gt;scb;
+-	int len, ret = SAM_STAT_CHECK_CONDITION;
+-	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
++	int evpd = scb[1] &amp; 1;
++	uint8_t page_code = scb[2];
++	uint16_t alloc_len = (scb[3] &lt;&lt; 8) | scb[4];
++	int len;
++	/* illegal field in CDB */
++	unsigned char key = ILLEGAL_REQUEST, asc = 0x24;
+ 
+ 	/* EVPD means need a page code */
+-	if ((scb[1] &amp; 0x3) == 0 &amp;&amp; scb[2] != 0)
++	if ((scb[1] &amp; 0x3) == 0 &amp;&amp; page_code != 0)
+ 		goto sense;
+ 
+ 	data = valloc(pagesize);
+@@ -44,13 +62,17 @@ static int osd_inquiry(int host_no, struct scsi_cmd *cmd)
+ 	}
+ 	memset(data, 0, pagesize);
+ 
+-	dprintf(&quot;%x %x\n&quot;, scb[1], scb[2]);
++	dprintf(&quot;%x %x\n&quot;, scb[1], page_code);
+ 
+ 	data[0] = TYPE_OSD;
+ 	if (!cmd-&gt;dev)
+ 		data[0] = TYPE_NO_LUN;
+ 
+-	if ((scb[1] &amp; 0x1) == 0) {
++	if (evpd == 0) {
++		if (alloc_len &lt; 5)
++			goto sense;
++		if (page_code != 0)
++			goto sense;
+ 		data[2] = 5;  /* modern version */
+ 		data[3] = 0x02;  /* modern response format */
+ 		data[7] = 0x02;  /* support command queueing */
+@@ -72,47 +94,56 @@ static int osd_inquiry(int host_no, struct scsi_cmd *cmd)
+ 			len = 64;
+ 		}
+ 		data[4] = len - 5;  /* additional length */
+-		ret = SAM_STAT_GOOD;
+ 	} else {
++		if (alloc_len &lt; 4)
++			goto sense;
+ 		if (!cmd-&gt;dev)
+ 			goto sense;
+-
+-		data[1] = scb[2];
+-		if (scb[2] == 0x0) {
++		data[1] = page_code;
++		if (page_code == 0x0) {
+ 			/* supported VPD pages */
+ 			data[3] = 3;
+ 			data[4] = 0x0;
+ 			data[5] = 0x80;
+ 			data[6] = 0x83;
+ 			len = 7;
+-			ret = SAM_STAT_GOOD;
+-		} else if (scb[2] == 0x80) {
+-			/* unit serial number &quot;    &quot; */
+-			data[3] = 4;
+-			memset(data + 4, 0x20, 4);
+-			len = 8;
+-			ret = SAM_STAT_GOOD;
+-		} else if (scb[2] == 0x83) {
++		} else if (page_code == 0x80) {
++			/* unit serial number */
++			char hostname[256];
++			gethostname(hostname, sizeof(hostname));
++			data[3] = strlen(hostname);
++			memcpy(data + 4, hostname, strlen(hostname)+1);
++			len = 4 + data[3];
++		} else if (page_code == 0x83) {
+ 			/* device identification */
+ 			data[3] = SCSI_ID_LEN + 4;
+ 			data[4] = 0x1;
+ 			data[5] = 0x1;
+ 			data[7] = SCSI_ID_LEN;
+ 			if (cmd-&gt;dev)
+-				memcpy(data + 8, cmd-&gt;dev-&gt;scsi_id, SCSI_ID_LEN);
++				memcpy(data + 8, cmd-&gt;dev-&gt;scsi_id,
++				       SCSI_ID_LEN);
+ 			len = SCSI_ID_LEN + 8;
+-			ret = SAM_STAT_GOOD;
++		} else if (page_code == 0xb0) {
++			/* osd information */
++			data[3] = 10-4; /* addl length */
++			data[4+3] = 2;
++			data[4+4] = 0;  /* nosec */
++			data[4+5] = 0;
++			len = 10;
++		} else if (page_code == 0xb1) {
++			data[3] = 20-4;  /* addl length */
++			memset(&amp;data[4], 0xaa, 16);  /* random secy token */
++			len = 20;
+ 		}
+ 	}
+ 
+-	if (ret != SAM_STAT_GOOD)
+-		goto sense;
+-
+-	cmd-&gt;len = min_t(int, len, scb[4]);
+-
++	cmd-&gt;uaddr = (uintptr_t) data;
++	cmd-&gt;len = min_t(int, len, alloc_len);
+ 	return SAM_STAT_GOOD;
++
+ sense:
+-	sense_data_build(cmd, key, asc, 0);
++	sense_descriptor_build(cmd, key, asc, 0);
+ 	cmd-&gt;len = 0;
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+@@ -120,7 +151,6 @@ sense:
+ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+ {
+ 	int ret = SAM_STAT_GOOD;
+-	uint16_t action;
+ 	unsigned char key = ILLEGAL_REQUEST, asc = 0x25;
+ 	unsigned long uaddr;
+ 	bkio_submit_t *submit = cmd-&gt;c_target-&gt;bdt-&gt;bd_cmd_submit;
+@@ -132,98 +162,151 @@ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+ 		goto sense;
+ 	}
+ 
+-	action = (cmd-&gt;scb[8] &lt;&lt; 8) | cmd-&gt;scb[9];
+-
+-	switch (action) {
+-	case OSD_APPEND:
+-	case OSD_CREATE:
+-	case OSD_CREATE_AND_WRITE:
+-	case OSD_CREATE_COLLECTION:
+-	case OSD_CREATE_PARTITION:
+-	case OSD_FLUSH:
+-	case OSD_FLUSH_COLLECTION:
+-	case OSD_FLUSH_OSD:
+-	case OSD_FLUSH_PARTITION:
+-	case OSD_FORMAT_OSD:
+-	case OSD_GET_ATTRIBUTES:
+-	case OSD_GET_MEMBER_ATTRIBUTES:
+-	case OSD_LIST:
+-	case OSD_LIST_COLLECTION:
+-	case OSD_PERFORM_SCSI_COMMAND:
+-	case OSD_PERFORM_TASK_MGMT_FUNC:
+-	case OSD_QUERY:
+-	case OSD_READ:
+-	case OSD_REMOVE:
+-	case OSD_REMOVE_COLLECTION:
+-	case OSD_REMOVE_MEMBER_OBJECTS:
+-	case OSD_REMOVE_PARTITION:
+-	case OSD_SET_ATTRIBUTES:
+-	case OSD_SET_KEY:
+-	case OSD_SET_MASTER_KEY:
+-	case OSD_SET_MEMBER_ATTRIBUTES:
+-	case OSD_WRITE:
+-		ret = submit(cmd-&gt;dev, cmd-&gt;scb, cmd-&gt;rw, cmd-&gt;len, &amp;uaddr,
+-			     cmd-&gt;offset, &amp;cmd-&gt;async, (void *)cmd);
+-		if (ret)
+-			goto sense;
+-		break;
+-	default:
+-		eprintf(&quot;unknown service action 0x%04x\n&quot;, action);
++	ret = submit(cmd-&gt;dev, cmd-&gt;scb, cmd-&gt;rw, cmd-&gt;len, &amp;uaddr,
++		     cmd-&gt;offset, &amp;cmd-&gt;async, (void *)cmd);
++	if (ret)
+ 		goto sense;
+-	}
+ 
+ 	return SAM_STAT_GOOD;
+ sense:
+-	sense_data_build(cmd, key, asc, 0);
++	sense_descriptor_build(cmd, key, asc, 0);
++	cmd-&gt;len = 0;
++	return SAM_STAT_CHECK_CONDITION;
++}
++
++/*
++ * Return descriptor format, with asc/ascq 0x2400 &quot;Illegal field in CDB&quot;.
++ */
++static int osd_illegal_op(int host_no, struct scsi_cmd *cmd)
++{
+ 	cmd-&gt;len = 0;
++	sense_descriptor_build(cmd, ILLEGAL_REQUEST, 0x24, 0);
+ 	return SAM_STAT_CHECK_CONDITION;
+ }
+ 
++/*
++ * Many commands are duplicate from SPC because we must return different
++ * sense format.
++ */
++static int osd_test_unit(int host_no, struct scsi_cmd *cmd)
++{
++	int ret;
++
++	if (!cmd-&gt;dev)
++		ret = osd_illegal_op(host_no, cmd);
++	else
++		ret = spc_test_unit(host_no, cmd);
++	return ret;
++}
++
++
++static int osd_request_sense(int host_no, struct scsi_cmd *cmd)
++{
++	cmd-&gt;len = 0;
++	sense_descriptor_build(cmd, NO_SENSE, 0, 0);
++	return SAM_STAT_GOOD;
++}
++
++static int osd_report_luns(int host_no, struct scsi_cmd *cmd)
++{
++	int ret;
++
++	ret = spc_report_luns(host_no, cmd);
++	if (ret == SAM_STAT_CHECK_CONDITION) {
++		/*
++		 * Ick.  Translate descriptor format.
++		 */
++		uint8_t key = cmd-&gt;sense_buffer[2];
++		uint8_t asc = cmd-&gt;sense_buffer[12];
++		uint8_t ascq = cmd-&gt;sense_buffer[13];
++		sense_descriptor_build(cmd, key, asc, ascq);
++	}
++	return ret;
++}
++
+ struct device_type_template osd_template = {
+ 	.name	= &quot;osd&quot;,
+ 	.ops	= {
+-		[0x00 ... 0x0f] = {spc_illegal_op},
++		/* 0x00 */
++		{osd_test_unit,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_request_sense,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
+ 
+ 		/* 0x10 */
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
+ 		{osd_inquiry,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-
+-		[0x20 ... 0x6f] = {spc_illegal_op},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++
++		[0x20 ... 0x6f] = {osd_illegal_op},
+ 
+ 		/* 0x70 */
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
+-		{spc_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
+ 		{osd_varlen_cdb,},
+ 
+-		[0x80 ... 0xff] = {spc_illegal_op},
++		[0x80 ... 0x9f] = {osd_illegal_op},
++
++		/* 0xA0 */
++		{osd_report_luns,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++		{osd_illegal_op,},
++
++		[0xb0 ... 0xff] = {osd_illegal_op},
+ 	}
+ };
+diff --git a/usr/osd.h b/usr/osd.h
+deleted file mode 100644
+index fe9f43c..0000000
+--- a/usr/osd.h
++++ /dev/null
+@@ -1,33 +0,0 @@
+-#ifndef __OSD_H
+-#define __OSD_H
+-
+-/* varlen cdb service actions for OSD-2 (before SNIA changes 17 jan 07) */
+-#define OSD_APPEND			0x8807
+-#define OSD_CREATE			0x8802
+-#define OSD_CREATE_AND_WRITE		0x8812
+-#define OSD_CREATE_COLLECTION		0x8815
+-#define OSD_CREATE_PARTITION		0x880b
+-#define OSD_FLUSH			0x8808
+-#define OSD_FLUSH_COLLECTION		0x881a
+-#define OSD_FLUSH_OSD			0x881c
+-#define OSD_FLUSH_PARTITION		0x881b
+-#define OSD_FORMAT_OSD			0x8801
+-#define OSD_GET_ATTRIBUTES		0x880e
+-#define OSD_GET_MEMBER_ATTRIBUTES	0x8822
+-#define OSD_LIST			0x8803
+-#define OSD_LIST_COLLECTION		0x8817
+-#define OSD_PERFORM_SCSI_COMMAND	0x8f7e
+-#define OSD_PERFORM_TASK_MGMT_FUNC	0x8f7f
+-#define OSD_QUERY			0x8820
+-#define OSD_READ			0x8805
+-#define OSD_REMOVE			0x880a
+-#define OSD_REMOVE_COLLECTION		0x8816
+-#define OSD_REMOVE_MEMBER_OBJECTS	0x8821
+-#define OSD_REMOVE_PARTITION		0x880c
+-#define OSD_SET_ATTRIBUTES		0x880f
+-#define OSD_SET_KEY			0x8818
+-#define OSD_SET_MASTER_KEY		0x8819
+-#define OSD_SET_MEMBER_ATTRIBUTES	0x8823
+-#define OSD_WRITE			0x8806
+-
+-#endif
+-- 
+1.5.0.2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000423.html">[Stgt-devel] [PATCH] pass scb length
+</A></li>
+	<LI>Next message: <A HREF="000425.html">[Stgt-devel] [PATCH] parse iscsi AHS header for extended CDB
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#424">[ date ]</a>
+              <a href="thread.html#424">[ thread ]</a>
+              <a href="subject.html#424">[ subject ]</a>
+              <a href="author.html#424">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

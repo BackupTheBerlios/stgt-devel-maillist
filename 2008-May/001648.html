@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Next tgt release?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Next%20tgt%20release%3F&In-Reply-To=%3C20080520170116E.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001640.html">
+   <LINK REL="Next"  HREF="001643.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Next tgt release?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Next%20tgt%20release%3F&In-Reply-To=%3C20080520170116E.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Next tgt release?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue May 20 10:01:16 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001640.html">[Stgt-devel] Next tgt release?
+</A></li>
+        <LI>Next message: <A HREF="001643.html">[Stgt-devel] Stability problem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1648">[ date ]</a>
+              <a href="thread.html#1648">[ thread ]</a>
+              <a href="subject.html#1648">[ subject ]</a>
+              <a href="author.html#1648">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 14 May 2008 14:52:31 +0200
+Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+
+&gt;<i> FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt; On Mon, 28 Apr 2008 23:08:58 +0200
+</I>&gt;<i> &gt; Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt;&gt; FUJITA Tomonori schrieb:
+</I>&gt;<i> &gt;&gt;&gt; On Mon, 28 Apr 2008 21:52:36 +0300
+</I>&gt;<i> &gt;&gt;&gt; &quot;Erez Zilber&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt; wrote:
+</I>&gt;<i> &gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; Is there a plan for the next release of tgt? I'm asking because we would
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; like to include it (as an RPM) in the next release of OFED (InfiniBand
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt;&gt; stack) which will be released around Sep. 08.
+</I>&gt;<i> &gt;&gt;&gt;&gt;&gt; Are you talking about snapshots like tgt-20071227?
+</I>&gt;<i> &gt;&gt;&gt;&gt; Yes. Is this only a random snapshot or is it a more stable version of tgt?
+</I>&gt;<i> &gt;&gt;&gt; They are random snapshots.
+</I>&gt;<i> &gt;&gt; Any plans to make at least a semi-stable release?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; A random snapshot should be a semi-stable release at least.
+</I>&gt;<i> 
+</I>&gt;<i> Most people will likely trust a snapshot like tgt-20071227 than a daily git.
+</I>&gt;<i> 
+</I>&gt;<i> And tgt-20071227 lacks some features present in the latest release, i.e. this 
+</I>&gt;<i> won't work:
+</I>&gt;<i> 
+</I>&gt;<i> # tgtadm --op update --mode target --tid=47 -n state -v offline
+</I>&gt;<i> # tgtadm --op update --mode target --tid=47 -n state -v ready
+</I>&gt;<i> tgtadm: invalid request
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Of course, if you don't care about users, let them wonder if anything they pull 
+</I>&gt;<i> from git will work or not... :|
+</I>
+I think that normal users just use a version shipped with a
+distribution. Distribution people choose the best version.
+
+If you use a snapshot, you are more than a normal user.
+
+Anyway, I've uploaded a new snapshot:
+
+<A HREF="http://stgt.berlios.de/releases/tgt-20080520.tar.bz2">http://stgt.berlios.de/releases/tgt-20080520.tar.bz2</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001640.html">[Stgt-devel] Next tgt release?
+</A></li>
+	<LI>Next message: <A HREF="001643.html">[Stgt-devel] Stability problem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1648">[ date ]</a>
+              <a href="thread.html#1648">[ thread ]</a>
+              <a href="subject.html#1648">[ subject ]</a>
+              <a href="author.html#1648">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [PATCH] Add ability to dynamically set SCSI Inquiry params
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20ability%20to%20dynamically%20set%20SCSI%20Inquiry%20params&In-Reply-To=%3Cmailman.8.1331738471.12506.stgt-devel%40lists.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000735.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[PATCH] Add ability to dynamically set SCSI Inquiry params</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BPATCH%5D%20Add%20ability%20to%20dynamically%20set%20SCSI%20Inquiry%20params&In-Reply-To=%3Cmailman.8.1331738471.12506.stgt-devel%40lists.berlios.de%3E"
+       TITLE="[PATCH] Add ability to dynamically set SCSI Inquiry params">markh794 at gmail.com
+       </A><BR>
+    <I>Thu May 31 22:07:33 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000735.html">[PATCH] Add new module entry points for configuration
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#737">[ date ]</a>
+              <a href="thread.html#737">[ thread ]</a>
+              <a href="subject.html#737">[ subject ]</a>
+              <a href="author.html#737">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Added support to configure:
+  Vendor Identification
+  Product Identification
+  Product Revision
+  Format of returned 'sense data'
+  Define if the lu is capable of supporting removable media
+  Define/set if the lu is online / offline.
+  Params are passed using the 'tgtadm' utility:
+
+  VendorIdent=&quot;string&quot;
+  ProductIdent=&quot;string&quot;
+  ProductRev=&quot;string&quot;
+  Removable=&lt;0|1&gt; - 0 == non-removable, 1 == removable media
+  SenseFormat=&lt;0|1&gt; - 0 == Clasic sense format, 1 == New sense format
+  Online=&lt;0|1&gt; - 0 == Unit offline, 1 == Unit Online
+
+e.g.
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+        --params VendorIdent=QUANTUM,ProductIdent=HD100,ProductRev=0010
+tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun $LUN \
+        --params Removable=1,SenseFormat=1,Online=1
+
+Example script (scripts/tgt-core-test) to set up HDD &amp; CD device.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+
+diff --git a/scripts/tgt-core-test b/scripts/tgt-core-test
+new file mode 100755
+index 0000000..37a007c
+--- /dev/null
++++ b/scripts/tgt-core-test
+@@ -0,0 +1,74 @@
++#!/bin/bash
++
++P=`ps -ef|grep -v grep|grep tgtd|wc -l`
++if [ &quot;X&quot;$P == &quot;X0&quot; ]; then
++       tgtd -d 1
++fi
++
++if [ ! -d /d/01 ]; then
++       mkdir -p /d/01
++fi
++
++if [ ! -f /d/01/hd_block ]; then
++       dd if=/dev/zero of=/d/01/hd_block bs=1M count=8
++fi
++if [ ! -f /d/01/cd_block0 ]; then
++       dd if=/dev/zero of=/d/01/cd_block0 bs=1M count=8
++fi
++if [ ! -f /d/01/cd_block1 ]; then
++       dd if=/dev/zero of=/d/01/cd_block1 bs=1M count=8
++fi
++if [ ! -f /d/01/cd_block2 ]; then
++       dd if=/dev/zero of=/d/01/cd_block2 bs=1M count=8
++fi
++
++set -x
++
++sleep 1
++
++###################################################################################
++# Set up SBC HDD device
++###################################################################################
++TID=1
++
++tgtadm --lld iscsi --mode target --op new --tid $TID \
++               -T iqn.2007-03:marks-vtl_sbc:`hostname` --target-type disk
++
++sleep 1
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 0 -b
+/d/01/hd_block
++
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0
+--params scsi_sn=FRED00,scsi_id=Fred
++
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
++       --params
+VendorIdent=QUANTUM,ProductIdent=HD100,ProductRev=0010,Removable=1,SenseFormat=1
++
++
++tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
++
++
++###################################################################################
++# Set up MMC CD/DVD device
++###################################################################################
++TID=2
++
++tgtadm --lld iscsi --mode target --op new --tid $TID \
++               -T iqn.2007-03:marks-vtl_mmc:`hostname` --target-type cd
++
++sleep 1
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 0 -b
+/d/01/cd_block0
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 0 \
++       --params
+VendorIdent=VirtualCD,ProductIdent=CD101,ProductRev=0010,scsi_sn=XYZZY10,Removable=1
++
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 1 -b
+/d/01/cd_block1
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 1 \
++       --params
+VendorIdent=VirtualCD,ProductIdent=CD101,ProductRev=0010,scsi_sn=XYZZY11,Removable=1
++
++tgtadm --lld iscsi --mode logicalunit --op new --tid $TID --lun 2 -b
+/d/01/cd_block2
++tgtadm --lld iscsi --mode logicalunit --op update --tid $TID --lun 2 \
++       --params
+VendorIdent=VirtualCD,ProductIdent=CD101,ProductRev=0010,scsi_sn=XYZZY12,Removable=1
++
++tgtadm --lld iscsi --mode target --op bind --tid $TID -I ALL
++
++tgtadm --lld iscsi --mode target --op show
++
++
+diff --git a/usr/spc.c b/usr/spc.c
+index e9a74d9..d864443 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -283,18 +283,29 @@ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+ }
+
+ enum {
+-       Opt_scsiid, Opt_scsisn, Opt_err,
++       Opt_scsiid, Opt_scsisn,
++       Opt_VendorIdent, Opt_ProductIdent,
++       Opt_ProductRev, Opt_SenseFormat,
++       Opt_Removable, Opt_Online,
++       Opt_err,
+ };
+
+ static match_table_t tokens = {
+        {Opt_scsiid, &quot;scsi_id=%s&quot;},
+        {Opt_scsisn, &quot;scsi_sn=%s&quot;},
++       {Opt_VendorIdent, &quot;VendorIdent=%s&quot;},
++       {Opt_ProductIdent, &quot;ProductIdent=%s&quot;},
++       {Opt_ProductRev, &quot;ProductRev=%s&quot;},
++       {Opt_SenseFormat, &quot;SenseFormat=%s&quot;},
++       {Opt_Removable, &quot;Removable=%s&quot;},
++       {Opt_Online, &quot;Online=%s&quot;},
+        {Opt_err, NULL},
+ };
+
+ int spc_lu_config(struct scsi_lu *lu, char * params) {
+        int err = 0;
+        char *p;
++       char buf[20];
+
+        if (!strncmp(&quot;targetOps&quot;, params, 9))
+                params = params + 10;
+@@ -315,6 +326,30 @@ int spc_lu_config(struct scsi_lu *lu, char * params) {
+                        match_strncpy(lu-&gt;attributes-&gt;scsi_sn, &amp;args[0],
+                                      sizeof(lu-&gt;attributes-&gt;scsi_sn) - 1);
+                        break;
++               case Opt_VendorIdent:
++                       match_strncpy(lu-&gt;attributes-&gt;VendorIdent, &amp;args[0],
++                                       sizeof(lu-&gt;attributes-&gt;VendorIdent));
++                       break;
++               case Opt_ProductIdent:
++                       match_strncpy(lu-&gt;attributes-&gt;ProductIdent, &amp;args[0],
++                                       sizeof(lu-&gt;attributes-&gt;ProductIdent));
++                       break;
++               case Opt_ProductRev:
++                       match_strncpy(lu-&gt;attributes-&gt;ProductRev, &amp;args[0],
++                                       sizeof(lu-&gt;attributes-&gt;ProductRev));
++                       break;
++               case Opt_SenseFormat:
++                       match_strncpy(buf, &amp;args[0],  sizeof(buf));
++                       lu-&gt;attributes-&gt;sense_format = atoi(buf);
++                       break;
++               case Opt_Removable:
++                       match_strncpy(buf, &amp;args[0],  sizeof(buf));
++                       lu-&gt;attributes-&gt;isRemovable = atoi(buf);
++                       break;
++               case Opt_Online:
++                       match_strncpy(buf, &amp;args[0],  sizeof(buf));
++                       lu-&gt;attributes-&gt;onLine = atoi(buf);
++                       break;
+                default:
+                        err = TGTADM_INVALID_REQUEST;
+                }
+-- 
+1.5.1.3
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000735.html">[PATCH] Add new module entry points for configuration
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#737">[ date ]</a>
+              <a href="thread.html#737">[ thread ]</a>
+              <a href="subject.html#737">[ subject ]</a>
+              <a href="author.html#737">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

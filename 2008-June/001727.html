@@ -1,0 +1,253 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3Cc9a3e4540806291656t490dec6eia01246fd8cdd5e8c%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001712.html">
+   <LINK REL="Next"  HREF="001730.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault</H1>
+    <B>ronnie sahlberg</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20disk%20kicked%20out%20of%20RAID%20-%3E%20tgtd%20segmentation%20fault&In-Reply-To=%3Cc9a3e4540806291656t490dec6eia01246fd8cdd5e8c%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault">ronniesahlberg at gmail.com
+       </A><BR>
+    <I>Mon Jun 30 01:56:48 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001712.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+        <LI>Next message: <A HREF="001730.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1727">[ date ]</a>
+              <a href="thread.html#1727">[ thread ]</a>
+              <a href="subject.html#1727">[ subject ]</a>
+              <a href="author.html#1727">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Tomasz,
+
+I could not get that configuration to work.
+
+Can you please provide more detailed instructions exactly how to set
+up hosts A B and C
+so I can try to reproduce it.
+
+Please provide the exact commandline for each and every command I need
+to run on the three hosts and Ill try to
+reproduce it under gdb.
+
+
+On Fri, Jun 27, 2008 at 1:51 AM, Tomasz Chmielewski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mangoo at wpkg.org</A>&gt; wrote:
+&gt;<i> Tomasz Chmielewski schrieb:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> ronnie sahlberg schrieb:
+</I>&gt;&gt;&gt;<i>
+</I>&gt;&gt;&gt;<i> Since it is reproducible,  can you run it under gdb and get a backtrace?
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Unfortunately not.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> The disk is now totally failed - some fifteen minutes ago I was still able
+</I>&gt;&gt;<i> to read from it for a couple of minutes after plugging it in.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> Now I can't read from it any more after plugging it in, so I can't add it
+</I>&gt;&gt;<i> to RAID.
+</I>&gt;<i>
+</I>&gt;<i> OK, I found a way to reproduce it without using any broken disks.
+</I>&gt;<i>
+</I>&gt;<i> You will need these to build a RAID-1 device:
+</I>&gt;<i> - losetup or a separate partition/disk
+</I>&gt;<i> - 3 machines (1 target, 1 target+initiator, 1 initiator)
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> If something was not clear enough, please just ask.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 1. Create a ~100 MB empty file (or bigger, if you want):
+</I>&gt;<i>
+</I>&gt;<i> dd if=/dev/zero of=raid-a bs=1k count=104857
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 2. Make a block device out of it:
+</I>&gt;<i>
+</I>&gt;<i> losetup /dev/loop0 raid-a
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 3. Log in to another target - lets say the drive will be called /dev/sdh
+</I>&gt;<i> (substitute the target address etc.):
+</I>&gt;<i>
+</I>&gt;<i> iscsiadm -m node -T iqn......test -p 10.1.1.1 -l
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 4. Build RAID-1 (above target is now /dev/sdz):
+</I>&gt;<i>
+</I>&gt;<i> mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/loop0 /dev/sdh
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 5. Wait a bit until it's synced (see /proc/mdstat), and make this target
+</I>&gt;<i> available to initiators (substitute the values to match your own):
+</I>&gt;<i>
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode target --tid 3 -T
+</I>&gt;<i> iqn.2008-06.net.syneticon:superthecus.test
+</I>&gt;<i> tgtadm --lld iscsi --op new --mode logicalunit --tid 3 --lun 1 -b /dev/md1
+</I>&gt;<i> tgtadm --lld iscsi --op bind --mode target --tid 3 -I ALL
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 6. Start watching the syslog (on the machine where tgtd will crash):
+</I>&gt;<i>
+</I>&gt;<i> tail -f /var/log/syslog
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 7. From yet another machine (initiator), log in to that target, and read
+</I>&gt;<i> data from it (let's say the target is now /dev/sdb):
+</I>&gt;<i>
+</I>&gt;<i> iscsiadm -m node -T iqn.2008-06.net.syneticon:superthecus.test -p 10.1.1.2
+</I>&gt;<i> -l
+</I>&gt;<i>
+</I>&gt;<i> while true; do dd if=/dev/sdb of=/dev/null bs=1k; done
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> 8. And immediately block the traffic between this machine (where we will
+</I>&gt;<i> make tgtd fail after a drive failed in RAID) and the other target
+</I>&gt;<i> (immediately, because if you have lots of RAM and the whole device is
+</I>&gt;<i> cached, it won't be kicked out of RAID very fast):
+</I>&gt;<i>
+</I>&gt;<i> iptables -A INPUT -s 10.1.1.1 -p tcp --sport 3260 -j DROP
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> The connection will fail after 120 seconds with standard open-iscsi
+</I>&gt;<i> settings.
+</I>&gt;<i>
+</I>&gt;<i> After blocking the traffic, the syslog says (with my comments):
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> This is where we can't communicate with the other target (which is a part of
+</I>&gt;<i> RAID):
+</I>&gt;<i>
+</I>&gt;<i> Jun 26 17:39:43 superthecus iscsid: Nop-out timedout after 15 seconds on
+</I>&gt;<i> connection 6:0 state (3). Dropping session.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> When a disk in RAID-1 is failing, there is no IO to the whole array for
+</I>&gt;<i> ~minute - tgtd notices it[1]:
+</I>&gt;<i>
+</I>&gt;<i> Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found a04 0
+</I>&gt;<i> Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found a05 0
+</I>&gt;<i> Jun 26 17:39:50 superthecus tgtd: abort_task_set(938) found 0 0
+</I>&gt;<i> Jun 26 17:39:50 superthecus tgtd: abort_cmd(914) found 1c e
+</I>&gt;<i> Jun 26 17:39:50 superthecus tgtd: abort_cmd(914) found 1e e
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> The disk is finally failed:
+</I>&gt;<i>
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel:  session6: session recovery timed out
+</I>&gt;<i> after 120 secs
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+</I>&gt;<i> driverbyte=0x00
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+</I>&gt;<i> 44256
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: printk: 46 messages suppressed.
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44256
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44264
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44272
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44280
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44288
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44296
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44304
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44312
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44320
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: sdh: rescheduling sector 44328
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+</I>&gt;<i> driverbyte=0x00
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+</I>&gt;<i> 44000
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+</I>&gt;<i> driverbyte=0x00
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+</I>&gt;<i> 44256
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: sd 14:0:0:1: [sdh] Result: hostbyte=0x01
+</I>&gt;<i> driverbyte=0x00
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: end_request: I/O error, dev sdh, sector
+</I>&gt;<i> 44256
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: raid1: Disk failure on sdh, disabling
+</I>&gt;<i> device.
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: ^IOperation continuing on 1 devices
+</I>&gt;<i> Jun 26 17:41:43 superthecus mdadm: Fail event detected on md device
+</I>&gt;<i> /dev/md1, component device /dev/.static/dev/.static/dev/sdh
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: RAID1 conf printout:
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel:  --- wd:1 rd:2
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel:  disk 0, wo:0, o:1, dev:loop0
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel:  disk 1, wo:1, o:0, dev:sdh
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel: RAID1 conf printout:
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel:  --- wd:1 rd:2
+</I>&gt;<i> Jun 26 17:41:43 superthecus kernel:  disk 0, wo:0, o:1, dev:loop0
+</I>&gt;<i> Jun 26 17:42:43 superthecus mdadm: SpareActive event detected on md device
+</I>&gt;<i> /dev/md1, component device /dev/.static/dev/.static/dev/sdh
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> We have only one tgtd instance:
+</I>&gt;<i>
+</I>&gt;<i> # ps -C tgtd
+</I>&gt;<i>  PID TTY          TIME CMD
+</I>&gt;<i>  6496 ?        00:00:00 tgtd
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> With the above method, &quot;segfault&quot; is not logged in the syslog.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Note that simply failing a disk in RAID (-f option to mdadm) doesn't make
+</I>&gt;<i> tgtd crash. You may need to reproduce the above scenario 1-2 times to
+</I>&gt;<i> actually see the issue (for 4 tries, tgtd failed 3 times for me).
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> [1] While testing it, tgtd crashed on the other target machine (with no
+</I>&gt;<i> issues in RAID); on the same machine to which I was blocking traffic with
+</I>&gt;<i> iptables:
+</I>&gt;<i>
+</I>&gt;<i> tgtd[2125]: segfault at 8 rip 40e72d rsp 7fff511287d0 error 6
+</I>&gt;<i>
+</I>&gt;<i> Definitely, it's not very healthy :(
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> --
+</I>&gt;<i> Tomasz Chmielewski
+</I>&gt;<i> <A HREF="http://wpkg.org">http://wpkg.org</A>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001712.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+	<LI>Next message: <A HREF="001730.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1727">[ date ]</a>
+              <a href="thread.html#1727">[ thread ]</a>
+              <a href="subject.html#1727">[ subject ]</a>
+              <a href="author.html#1727">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] iSER tgtd performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20tgtd%20performance&In-Reply-To=%3Cdf5c931c0710100135l76d7b3bbrd79d3bbb4fcd69e1%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001067.html">
+   <LINK REL="Next"  HREF="001074.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] iSER tgtd performance</H1>
+    <B>Jernej Porenta</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20iSER%20tgtd%20performance&In-Reply-To=%3Cdf5c931c0710100135l76d7b3bbrd79d3bbb4fcd69e1%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] iSER tgtd performance">nejc.porenta at gmail.com
+       </A><BR>
+    <I>Wed Oct 10 10:35:20 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001067.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+        <LI>Next message: <A HREF="001074.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1068">[ date ]</a>
+              <a href="thread.html#1068">[ thread ]</a>
+              <a href="subject.html#1068">[ subject ]</a>
+              <a href="author.html#1068">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 10/10/07, Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> Apparently you have DDR IB cards.  1030 MB/s is quite amazing.
+</I>&gt;<i> We've only seen 920-ish for reads with SDR, 850-ish for writes.
+</I>&gt;<i>
+</I>&gt;<i> The tests you are running.  Disktest does big linear reads/writes to
+</I>&gt;<i> its iscsi block device?  If you stay within the first 1GB for both
+</I>&gt;<i> test setups you describe, I would expect the same performance.  But
+</I>&gt;<i> if you wander up closer to the 3.5 GB area for the larger ram disk,
+</I>&gt;<i> the Linux VM will probably start pushing some of the older pages out
+</I>&gt;<i> to swap.  It likes to keep some amount of memory free.
+</I>&gt;<i>
+</I>
+Yes I have DDR IB cards (and I figured out that that might be the issue).
+
+I made some additional tests with disktest
+(<A HREF="http://www.open-iscsi.org/bits/disktest.tar.gz">http://www.open-iscsi.org/bits/disktest.tar.gz</A>). I have added 4GB RAM
+to target machine so now it has 8GB and created several ramdisks and
+testing bandwidth throughput with several clients on same client
+machine. Here are the results:
+- 2GB target: 2 clients - each 280MB/s, 3 clients - each 215MB/s
+- 1GB target: 1 client - 900MB/s, 2 clients - each 350MB/s, 3 clients 238MB/s
+
+each client had different LUN target.
+
+I have also made some tests with target size 512MB but the results
+were beyond 2.5GB/s so I believe that there must be something wrong
+with disktest or Linux buffers screw up the test.
+
+I am planning to do some testing with IOzone or bonnie++, so results
+might follow...
+
+I use disktest like that:
+./disktest -PT -T120 -pr -h1 -K1 -B256K -IB /dev/sdb
+
+I also tried testing target from 2 different machines:
+- 3GB target: 1 client - 440MB/s, 2 clients - each 420MB/s
+- 2GB target: 1 client - 470MB/s, 2 clients - each 470MB/s
+- 1GB target 1 client - 900MB/s, 2 clients - each 850MB/s
+
+I assume that there might be some IO buffers somewhere, so I assume
+that normal speed would be around 450MB/s. Same results Robin got:
+<A HREF="https://lists.berlios.de/pipermail/stgt-devel/2007-October/001063.html">https://lists.berlios.de/pipermail/stgt-devel/2007-October/001063.html</A>
+
+&gt;<i>
+</I>&gt;<i> &gt; My init scripts on target and client are available here:
+</I>&gt;<i> &gt; <A HREF="http://www.nejc.net/diploma/tgtd/">http://www.nejc.net/diploma/tgtd/</A>
+</I>&gt;<i>
+</I>&gt;<i> Scripts look fine.  Is it necessary to turn off HeaderDigest on the
+</I>&gt;<i> initiator side?  I had hoped that iscsiadm would realize it was
+</I>&gt;<i> asked to use iser and turn off HeaderDigest and DataDigest on its
+</I>&gt;<i> own, but never got around to testing that.
+</I>
+I had some troubles with HeaderDigest at the beginning so I turned it
+to none and it stayed in my scripts. I tried it now and it is not
+working without it
+
+I have also tried tgtd with iSER with TCP connection over IPoIB but
+disktest reported read errors. From the begining everything went just
+fine, but afterwards the read requests started to fail and the
+performance dropped significantly, so I tried iSCSI enterprise target
+software for TCP and it worked well, so I believe that there might be
+a bug in tgtd software but I am unable to reproduce it, because if I
+turn on the debug option, the performance drops because of 100% CPU
+usage on the target. And believe it or not, everything works if CPU
+usage on target is 100%, so there are some issues with highspeed tgtd
+IPoIB target :)
+
+Again thanks for your help...
+
+cheers from Slovenia, Jernej
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001067.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+	<LI>Next message: <A HREF="001074.html">[Stgt-devel] iSER tgtd performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1068">[ date ]</a>
+              <a href="thread.html#1068">[ thread ]</a>
+              <a href="subject.html#1068">[ subject ]</a>
+              <a href="author.html#1068">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

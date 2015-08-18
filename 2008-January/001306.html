@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Performance of SCST versus STGT
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C20080122122657R.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001303.html">
+   <LINK REL="Next"  HREF="001308.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Performance of SCST versus STGT</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Performance%20of%20SCST%20versus%20STGT&In-Reply-To=%3C20080122122657R.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] Performance of SCST versus STGT">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Tue Jan 22 04:26:57 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001303.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+        <LI>Next message: <A HREF="001308.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1306">[ date ]</a>
+              <a href="thread.html#1306">[ thread ]</a>
+              <a href="subject.html#1306">[ subject ]</a>
+              <a href="author.html#1306">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Sun, 20 Jan 2008 10:36:18 +0100
+&quot;Bart Van Assche&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">bart.vanassche at gmail.com</A>&gt; wrote:
+
+&gt;<i> On Jan 18, 2008 1:08 PM, Vladislav Bolkhovitin &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">vst at vlnb.net</A>&gt; wrote:
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; [ ... ]
+</I>&gt;<i> &gt; So, seems I understood your slides correctly: the more valuable data for
+</I>&gt;<i> &gt; our SCST SRP vs STGT iSER comparison should be on page 26 for 1 command
+</I>&gt;<i> &gt; read (~480MB/s, i.e. ~60% from Bart's result on the equivalent hardware).
+</I>&gt;<i> 
+</I>&gt;<i> At least in my tests SCST performed significantly better than STGT.
+</I>&gt;<i> These tests were performed with the currently available
+</I>&gt;<i> implementations of SCST and STGT. Which performance improvements are
+</I>
+First, I recommend you to examine iSER stuff more since it has some
+parameters unlike SRP, which effects the performance, IIRC. At least,
+you could get the iSER performances similar to Pete's.
+
+
+&gt;<i> possible for these projects (e.g. zero-copying), and by how much is it
+</I>&gt;<i> expected that these performance improvements will increase throughput
+</I>&gt;<i> and will decrease latency ?
+</I>
+The major bottleneck about RDMA transfer is registering the buffer
+before transfer. stgt's iSER driver has pre-registered buffers and
+move data between page cache and thsse buffers, and then does RDMA
+transfer.
+
+The big problem of stgt iSER is disk I/Os (move data between disk and
+page cache). We need a proper asynchronous I/O mechanism, however,
+Linux doesn't provide such and we use a workaround, which incurs large
+latency. I guess, we cannot solve this until syslets is merged into
+mainline.
+
+The above approach still needs one memory copy (between the
+pre-registered buffers and page cahce). If we need more performance,
+we have to implement a new caching mechanism using the pre-registered
+buffers instead of just using page cache. AIO with O_DIRECT enables us
+to implement such caching mechanism (we can use eventfd so we don't
+need something like syslets, that is, we can implement such now).
+
+I'm not sure someone will implement such RDMA caching mechanism for
+stgt. Pete and his colleagues implemented stgt iSER driver (thanks!)
+but they are not interested in block I/Os (they are OSD people).
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001303.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+	<LI>Next message: <A HREF="001308.html">[Stgt-devel] Performance of SCST versus STGT
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1306">[ date ]</a>
+              <a href="thread.html#1306">[ thread ]</a>
+              <a href="subject.html#1306">[ subject ]</a>
+              <a href="author.html#1306">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

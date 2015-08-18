@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20A%20curious%20observation%20with%20iSCSI%20and%20SCSI%20tgt%20...&In-Reply-To=%3C46b8a8850807021401k538b6198jab2f7b5577a584f0%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001755.html">
+   <LINK REL="Next"  HREF="001884.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...</H1>
+    <B>Richard Sharpe</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20A%20curious%20observation%20with%20iSCSI%20and%20SCSI%20tgt%20...&In-Reply-To=%3C46b8a8850807021401k538b6198jab2f7b5577a584f0%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...">realrichardsharpe at gmail.com
+       </A><BR>
+    <I>Wed Jul  2 23:01:02 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001755.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+        <LI>Next message: <A HREF="001884.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1736">[ date ]</a>
+              <a href="thread.html#1736">[ thread ]</a>
+              <a href="subject.html#1736">[ subject ]</a>
+              <a href="author.html#1736">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+
+I am testing some configurations I have laying around here at work while
+waiting for our new hardware to arrive.
+
+I set up one system, a 1U with 2GB of memory and a Xeon (speed not really
+relevant to this) and GigE as a target and set up a virtual disk via iSCSI.
+
+Then on another system, an old DELL, I set up the initiator, and ran:
+
+   dd if=/dev/zero of=/dev/sda1 bs=1024 count=1000000
+
+and I got a throughput of 10.5-10.8MB/a while consuming around 10-12% of the
+CPU on the target (shown via top).
+
+That number looked suspiciously like 100BaseT numbers to me, and lspci told
+me it was.
+
+So, I shifted to another system with GigE and did the same tests. This time
+around, tgtd on the target machine was getting 25-30% with spikes up to 99%
+but the throughput stayed around 10.2MB/s.
+
+I am going to pull down the kernel profiling tool to see what is going on,
+but I wonder if anyone else knows off the top of their heads?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080702/462b0ec0/attachment.html">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080702/462b0ec0/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001755.html">[Stgt-devel] disk kicked out of RAID -&gt; tgtd segmentation fault
+</A></li>
+	<LI>Next message: <A HREF="001884.html">[Stgt-devel] A curious observation with iSCSI and SCSI tgt ...
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1736">[ date ]</a>
+              <a href="thread.html#1736">[ thread ]</a>
+              <a href="subject.html#1736">[ subject ]</a>
+              <a href="author.html#1736">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

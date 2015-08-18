@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] one more iscsi ahs bug fix
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20one%20more%20iscsi%20ahs%20bug%20fix&In-Reply-To=%3C20070316201345.GA2940%40osc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000436.html">
+   <LINK REL="Next"  HREF="000441.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] one more iscsi ahs bug fix</H1>
+    <B>Pete Wyckoff</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20one%20more%20iscsi%20ahs%20bug%20fix&In-Reply-To=%3C20070316201345.GA2940%40osc.edu%3E"
+       TITLE="[Stgt-devel] [PATCH] one more iscsi ahs bug fix">pw at osc.edu
+       </A><BR>
+    <I>Fri Mar 16 21:13:45 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000436.html">[Stgt-devel] target parser problems with SAS
+</A></li>
+        <LI>Next message: <A HREF="000441.html">[Stgt-devel] [PATCH] one more iscsi ahs bug fix
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#440">[ date ]</a>
+              <a href="thread.html#440">[ thread ]</a>
+              <a href="subject.html#440">[ subject ]</a>
+              <a href="author.html#440">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Try to fix the precedence bug again.  Binary + really does happen
+before ternary ? : .
+
+Signed-off-by: Pete Wyckoff &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">pw at osc.edu</A>&gt;
+---
+
+ usr/iscsi/iscsid.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index 6fd469d..131c838 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1241,7 +1241,7 @@ static int iscsi_scsi_cmd_rx_start(struct iscsi_connection *conn)
+ 		req-&gt;flags &amp; ISCSI_FLAG_CMD_ATTR_MASK, req-&gt;itt);
+ 
+ 	task_len = max(imm_len, data_len) +
+-		ahs_len ? sizeof(req-&gt;cdb) + ahs_len : 0;
++		(ahs_len ? sizeof(req-&gt;cdb) + ahs_len : 0);
+ 
+ 	task = iscsi_alloc_task(conn, task_len);
+ 	if (task)
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000436.html">[Stgt-devel] target parser problems with SAS
+</A></li>
+	<LI>Next message: <A HREF="000441.html">[Stgt-devel] [PATCH] one more iscsi ahs bug fix
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#440">[ date ]</a>
+              <a href="thread.html#440">[ thread ]</a>
+              <a href="subject.html#440">[ subject ]</a>
+              <a href="author.html#440">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

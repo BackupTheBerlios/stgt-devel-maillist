@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH 4/4] OSD command parser
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C1169569456.2803.64.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000395.html">
+   <LINK REL="Next"  HREF="000397.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH 4/4] OSD command parser</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%204/4%5D%20OSD%20command%20parser&In-Reply-To=%3C1169569456.2803.64.camel%40localhost.localdomain%3E"
+       TITLE="[Stgt-devel] [PATCH 4/4] OSD command parser">blackmagic02881 at gmail.com
+       </A><BR>
+    <I>Tue Jan 23 17:24:16 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000395.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+        <LI>Next message: <A HREF="000397.html">[Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#396">[ date ]</a>
+              <a href="thread.html#396">[ thread ]</a>
+              <a href="subject.html#396">[ subject ]</a>
+              <a href="author.html#396">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Tue, 2007-01-23 at 11:19 -0500, Pete Wyckoff wrote:
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">blackmagic02881 at gmail.com</A> wrote on Mon, 22 Jan 2007 14:35 -0500:
+</I>&gt;<i> &gt; not a good idea. suggest to keep in a way like IET code, for each target
+</I>&gt;<i> &gt; type, call its foo_cmd_perform(), and make some common spc function as
+</I>&gt;<i> &gt; helper functions.
+</I>&gt;<i> 
+</I>&gt;<i> I think you're saying that I should duplicate the switch() logic for
+</I>&gt;<i> the SPC commands in all the (osd|sbc|mmc|...)_cmd_perfom()
+</I>&gt;<i> type-specific functions.  This would reduce scsi_cmd_perform() into
+</I>&gt;<i> just a check on the target type, with no handling of SPC commands,
+</I>&gt;<i> e.g. INQUIRY.
+</I>
+exactly. because even it is a SPC command, it is handled differently
+from type to type.
+
+&gt;<i> 
+</I>&gt;<i> I'm not opposed to doing that, just don't have a good reason to do
+</I>&gt;<i> so.  As the OSD work progresses this may become clear to me (PERFORM
+</I>&gt;<i> SCSI COMMAND and PERFORM TASK MANAGEMENT FUNCTION).
+</I>
+good reason is simpler interface, each particular target type only
+fulfill a few interface in order to accomplish the work. and less extern
+functions define in .h.
+
+&gt;<i> 
+</I>&gt;<i> 		-- Pete
+</I>-- 
+<A HREF="http://blackmagic02881.wordpress.com/">http://blackmagic02881.wordpress.com/</A>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000395.html">[Stgt-devel] [PATCH 4/4] OSD command parser
+</A></li>
+	<LI>Next message: <A HREF="000397.html">[Stgt-devel] ibmvstgt/aio broken with 2.6.20-rc6 powerpc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#396">[ date ]</a>
+              <a href="thread.html#396">[ thread ]</a>
+              <a href="subject.html#396">[ subject ]</a>
+              <a href="author.html#396">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

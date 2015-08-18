@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/2] Add dynamic lu configuration.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%20Add%20dynamic%20lu%20configuration.&In-Reply-To=%3Cf29db9a80706141655v219ad89cn54e6861363f75e69%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000780.html">
+   <LINK REL="Next"  HREF="000771.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/2] Add dynamic lu configuration.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%20Add%20dynamic%20lu%20configuration.&In-Reply-To=%3Cf29db9a80706141655v219ad89cn54e6861363f75e69%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/2] Add dynamic lu configuration.">markh794 at gmail.com
+       </A><BR>
+    <I>Fri Jun 15 01:55:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000780.html">[Stgt-devel] [Patch 1/2] Add dynamic lu configuration.
+</A></li>
+        <LI>Next message: <A HREF="000771.html">[Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into scsi_lu	struct.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#781">[ date ]</a>
+              <a href="thread.html#781">[ thread ]</a>
+              <a href="subject.html#781">[ subject ]</a>
+              <a href="author.html#781">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 6/15/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> From: &quot;Mark Harvey&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] [Patch 1/2] Add dynamic lu configuration.
+</I>&gt;<i> Date: Fri, 15 Jun 2007 08:32:00 +1000
+</I>&gt;<i>
+</I>&gt;<i> &gt; On 6/15/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; @@ -286,18 +286,29 @@ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt; &gt; &gt;  }
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt;  enum {
+</I>&gt;<i> &gt; &gt; &gt; -     Opt_scsiid, Opt_scsisn, Opt_err,
+</I>&gt;<i> &gt; &gt; &gt; +     Opt_scsiid, Opt_scsisn,
+</I>&gt;<i> &gt; &gt; &gt; +     Opt_vendorid, Opt_productid,
+</I>&gt;<i> &gt; &gt; &gt; +     Opt_productrev, Opt_sense_format,
+</I>&gt;<i> &gt; &gt; &gt; +     Opt_removable, Opt_online,
+</I>&gt;<i> &gt; &gt; &gt; +     Opt_err,
+</I>&gt;<i> &gt; &gt; &gt;  };
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt;  static match_table_t tokens = {
+</I>&gt;<i> &gt; &gt; &gt;       {Opt_scsiid, &quot;scsi_id=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt;       {Opt_scsisn, &quot;scsi_sn=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_vendorid, &quot;vendor_id=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_productid, &quot;product_id=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_productrev, &quot;product_rev=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_sense_format, &quot;sense_format=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_removable, &quot;removable=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_online, &quot;online=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt;       {Opt_err, NULL},
+</I>&gt;<i> &gt; &gt; &gt;  };
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; I want name consistency here though I'm not arguing that Opt_scsiid
+</I>&gt;<i> &gt; &gt; and scsi_id / Opt_scsisn and scsi_sn naming is the best choice.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; Previously, you used:
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_VendorIdent, &quot;VendorIdent=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_ProductIdent, &quot;ProductIdent=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_ProductRev, &quot;ProductRev=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_SenseFormat, &quot;SenseFormat=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_Removable, &quot;Removable=%s&quot;},
+</I>&gt;<i> &gt; &gt; &gt; +     {Opt_Online, &quot;Online=%s&quot;},
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; I'm ok with changing Opt_scsiid and scsi_id / Opt_scsisn and scsi_sn
+</I>&gt;<i> &gt; &gt; naming.
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; Suggestions?
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Sorry, I took the 'consistency' to reflect the Upper/Lower-case. I
+</I>&gt;<i> &gt; missed the scsisn/scsi_sn all together.
+</I>&gt;<i>
+</I>&gt;<i> I meant to it and Upper/Lower-case.
+</I>&gt;<i>
+</I>&gt;<i> You prefer Upper/Lower-case? I meant you want something like SCSI_ID=%s?
+</I>
+I have no preference either way.
+
+The stgt device configuration is something I would expect will be set
+up in a script and not changed very often.
+
+If you have a preference, I'll go with that. Otherwise lets got with
+the scsi_id format.
+i.e. word_seperated_with_underscores.
+
+&gt;<i>
+</I>&gt;<i> This is visible to users, we shouldn't change this often.
+</I>&gt;<i>
+</I>
+I agree 100%
+
+And of course, it should also be consistent across all tgtadm switch options.
+
+Cheers
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000780.html">[Stgt-devel] [Patch 1/2] Add dynamic lu configuration.
+</A></li>
+	<LI>Next message: <A HREF="000771.html">[Stgt-devel] [Patch 2/2] Move lu_phy_attr struct into scsi_lu	struct.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#781">[ date ]</a>
+              <a href="thread.html#781">[ thread ]</a>
+              <a href="subject.html#781">[ subject ]</a>
+              <a href="author.html#781">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

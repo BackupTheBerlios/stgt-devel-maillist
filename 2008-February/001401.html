@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] fix userspace compilation errors with Fedora 9
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20fix%20userspace%20compilation%20errors%20with%20Fedora%209&In-Reply-To=%3C47B48857.4010603%40cs.wisc.edu%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001417.html">
+   <LINK REL="Next"  HREF="001402.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] fix userspace compilation errors with Fedora 9</H1>
+    <B>Mike Christie</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20fix%20userspace%20compilation%20errors%20with%20Fedora%209&In-Reply-To=%3C47B48857.4010603%40cs.wisc.edu%3E"
+       TITLE="[Stgt-devel] fix userspace compilation errors with Fedora 9">michaelc at cs.wisc.edu
+       </A><BR>
+    <I>Thu Feb 14 19:28:39 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001417.html">[Stgt-devel] Different throughput numbers on SLES 10 and	RHEL	5.1
+</A></li>
+        <LI>Next message: <A HREF="001402.html">[Stgt-devel] fix userspace compilation errors with Fedora 9
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1401">[ date ]</a>
+              <a href="thread.html#1401">[ thread ]</a>
+              <a href="subject.html#1401">[ subject ]</a>
+              <a href="author.html#1401">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hey,
+
+Here is a patch from the Fedora tgt maintainer that is in the fedora 
+tree. It fixes the compilation error:
+
+
+iscsi/iscsid.c: In function 'text_scan_text':
+iscsi/iscsid.c:680: error: 'NI_MAXHOST' undeclared (first use in this 
+function)
+iscsi/iscsid.c:680: error: (Each undeclared identifier is reported only once
+iscsi/iscsid.c:680: error: for each function it appears in.)
+iscsi/iscsid.c:680: warning: unused variable 'buf'
+make: *** [iscsi/iscsid.o] Error 1
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: fix-fc-compile-errors.patch
+Type: text/x-patch
+Size: 997 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/stgt-devel/attachments/20080214/b5a92da8/attachment.bin">https://lists.berlios.de/pipermail/stgt-devel/attachments/20080214/b5a92da8/attachment.bin</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001417.html">[Stgt-devel] Different throughput numbers on SLES 10 and	RHEL	5.1
+</A></li>
+	<LI>Next message: <A HREF="001402.html">[Stgt-devel] fix userspace compilation errors with Fedora 9
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1401">[ date ]</a>
+              <a href="thread.html#1401">[ thread ]</a>
+              <a href="subject.html#1401">[ subject ]</a>
+              <a href="author.html#1401">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

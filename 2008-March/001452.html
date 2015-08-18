@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47D68381.4070503%40Voltaire.COM%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001451.html">
+   <LINK REL="Next"  HREF="001433.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Erez Zilber</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3C47D68381.4070503%40Voltaire.COM%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">erezz at Voltaire.COM
+       </A><BR>
+    <I>Tue Mar 11 14:05:05 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001451.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001433.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1452">[ date ]</a>
+              <a href="thread.html#1452">[ thread ]</a>
+              <a href="subject.html#1452">[ subject ]</a>
+              <a href="author.html#1452">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Pete Wyckoff wrote:
+&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at Voltaire.COM</A> wrote on Mon, 10 Mar 2008 15:20 +0200:
+</I>&gt;<i>   
+</I>&gt;&gt;<i> Pete Wyckoff wrote:
+</I>&gt;&gt;<i>     
+</I>&gt;&gt;&gt;<i> Agreed, that's rather slow, 480 MB/s.  Something else is going on.
+</I>&gt;&gt;&gt;<i> Closest number I can lay my hands on says 350 kB was 94 us in the
+</I>&gt;&gt;&gt;<i> pread, 3800 MB/s.
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;<i> What's your setup? I'm using a RAM disk that I found here:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> <A HREF="http://marc.info/?l=linux-scsi&amp;m=120331663227540&amp;w=2">http://marc.info/?l=linux-scsi&amp;m=120331663227540&amp;w=2</A>
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> Well that would be rather unusual.
+</I>&gt;<i>
+</I>&gt;<i> Most of the world just does:
+</I>&gt;<i>
+</I>&gt;<i>     mkdir /tmp/ramdisk
+</I>&gt;<i>     mount -t tmpfs none /tmp/ramdisk
+</I>&gt;<i>     dd if=/dev/zero bs=1M count=1024 of=/tmp/ramdisk/lun1
+</I>&gt;<i>     tgtadm ... --backing-store /tmp/ramdisk/lun1
+</I>&gt;<i>
+</I>&gt;<i> or similar.
+</I>&gt;<i>   
+</I>
+You always learn something new :-) . We didn't use RAM disks until now.
+
+&gt;<i>   
+</I>&gt;&gt;&gt;<i>   You should be measuring memory copy speed here.
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;<i> Do you mean that memory copy is 480 MB/sec? That's slow.
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i>     
+</I>&gt;&gt;&gt;<i>   
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;&gt;&gt;<i> Another question is - how does pread64 access the SCSI device? I
+</I>&gt;&gt;&gt;&gt;<i> understand that it reads from /dev/sdX. Does it call sd? How? Is there
+</I>&gt;&gt;&gt;&gt;<i> any memory copy involved? I'm asking that because I'm used to kernel
+</I>&gt;&gt;&gt;&gt;<i> space where we just call scsi_do_req.
+</I>&gt;&gt;&gt;&gt;<i>     
+</I>&gt;&gt;&gt;&gt;<i>         
+</I>&gt;&gt;&gt;<i> It reads from wherever it put your device with ./tgtadm ...
+</I>&gt;&gt;&gt;<i> --backing-store ... .  Presumably a file on the file system, or a
+</I>&gt;&gt;&gt;<i> raw block device like /dev/sdb.
+</I>&gt;&gt;&gt;<i>       
+</I>&gt;&gt;<i> Of course. The question is - what is the interface between pread and
+</I>&gt;&gt;<i> scsi-ml? That's what I still don't understand.
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> You can start with the system call and follow it down: sys_pread64,
+</I>&gt;<i> vfs_read, ..., ext3_readpage, ..., submit_bio, ... .  But I'm
+</I>&gt;<i> talking tmpfs, which is slightly different.  And your experimental
+</I>&gt;<i> scsi ram driver would export a block device but still goes
+</I>&gt;<i> similarly through blkdev_readpage, submit_bh and on down.
+</I>&gt;<i>
+</I>&gt;<i> You shouldn't really have to care.  This is internal plumbing that
+</I>&gt;<i> better work.
+</I>&gt;<i>
+</I>&gt;<i>   
+</I>
+OK. So, eventually (with a real storage) this will go down to the sd
+driver and to scsi_mod. Is there any copy_from_user on the way or any
+data copy?
+
+&gt;&gt;<i> strace looks like that:
+</I>&gt;&gt;<i>
+</I>&gt;&gt;<i> epoll_wait(3, {}, 1024, 2000) = 0 &lt;2.000066&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {}, 1024, 2000) = 0 &lt;2.000068&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {}, 1024, 2000) = 0 &lt;2.000065&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {}, 1024, 2000) = 0 &lt;2.000065&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {{EPOLLIN, {u32=5394880, u64=5394880}}}, 1024, 2000) = 1
+</I>&gt;&gt;<i> &lt;1.184798&gt;
+</I>&gt;&gt;<i> read(10, &quot;\320\235R\0\0\0\0\0&quot;, 8) = 8 &lt;0.000009&gt;
+</I>&gt;&gt;<i> pread(11, &quot;\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0&quot;...,
+</I>&gt;&gt;<i> 131072, 0) = 131072 &lt;0.000336&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {{EPOLLIN, {u32=5394880, u64=5394880}}}, 1024, 2000) = 1
+</I>&gt;&gt;<i> &lt;0.000088&gt;
+</I>&gt;&gt;<i> read(10, &quot;\320\235R\0\0\0\0\0&quot;, 8) = 8 &lt;0.000024&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {{EPOLLIN, {u32=5394880, u64=5394880}}}, 1024, 2000) = 1
+</I>&gt;&gt;<i> &lt;0.000023&gt;
+</I>&gt;&gt;<i> read(10, &quot;\320\235R\0\0\0\0\0&quot;, 8) = 8 &lt;0.000024&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {}, 1024, 2000) = 0 &lt;1.998508&gt;
+</I>&gt;&gt;<i> epoll_wait(3, {}, 1024, 2000) = 0 &lt;1.999959&gt;
+</I>&gt;&gt;<i>     
+</I>&gt;<i>
+</I>&gt;<i> All the time is in pread.  If a normal tmpfs fixes things, file a
+</I>&gt;<i> bug report if you care about this scsi ram driver.  Probably better
+</I>&gt;<i> if you test it without iscsi and iser to see if it is just
+</I>&gt;<i> inherently slow.
+</I>&gt;<i>   
+</I>
+Looks better now (with the RAM disk that you use):
+
+epoll_wait(3, {{EPOLLIN, {u32=5394880, u64=5394880}}}, 1024, 2000) = 1
+&lt;0.000100&gt;
+read(10, &quot;\320\235R\0\0\0\0\0&quot;, 8)      = 8 &lt;0.000005&gt;
+
+Now, I also get nicer numbers with sgp_dd (bs=512, bpt=1024, thr=8,
+time=1, count=102400000, dio=1):
+
+READ - 1380 MB/sec
+WRITE - 1420 MB/sec
+
+with small IOs (1k):
+
+READ - 40K
+WRITE - 20K
+
+I will try to put my hands on real fast storage and retest it.
+
+Erez
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001451.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001433.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1452">[ date ]</a>
+              <a href="thread.html#1452">[ thread ]</a>
+              <a href="subject.html#1452">[ subject ]</a>
+              <a href="author.html#1452">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

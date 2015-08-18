@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> Ang: Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new version of iscsi target?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2005-December/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%0A%09new%20version%20of%20iscsi%20target%3F&In-Reply-To=%3C1133983863.31445.156.camel%40localhost.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000131.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>Ang: Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new version of iscsi target?</H1>
+    <B>Ming Zhang</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20Ang%3A%20Re%3A%20Ang%3A%20Re%3A%20%5BStgt-devel%5D%20Re%3A%20%5BIscsitarget-devel%5D%20stgt%20a%0A%09new%20version%20of%20iscsi%20target%3F&In-Reply-To=%3C1133983863.31445.156.camel%40localhost.localdomain%3E"
+       TITLE="Ang: Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a	new version of iscsi target?">mingz at ele.uri.edu
+       </A><BR>
+    <I>Wed Dec  7 20:31:03 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000131.html">Ang: Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 2005-12-07 at 20:07 +0100, <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">johan at capvert.se</A> wrote:
+&gt;<i> 
+</I>&gt;<i>                                                Hi!
+</I>&gt;<i>                          
+</I>&gt;<i> 
+</I>&gt;<i> Our opinion of the LSI MPT target driver is that it is not good
+</I>&gt;<i> enough. Maybe to use as a base for further developement. We had a guy
+</I>&gt;<i> here that spended a lot of time with it, without any success. Maybe
+</I>&gt;<i> somebody else could do a better job, but &quot;warning&quot;. 
+</I>&gt;<i> I had some QLA iScsi HBA&#194;&#180;s since they released them, and I tried to
+</I>&gt;<i> get the target F/W from Qlogic, but they refused. I will try again,
+</I>&gt;<i> since I also want the Fc target F/W. 
+</I>
+no idea about iscsi one, but for fc stuff u can get it after signing
+nda. that is how i got all fc spec. but also because this nda, i can not
+do it for stgt. :P
+
+so only way is to do it base on scst code, Mike is doing this right now.
+Hope he does not have NDA limitation. :P
+
+&gt;<i>  We are now running a project to use EVMS volumes for target
+</I>&gt;<i> exportation, currently with scst, but hopefully soon with stgt. We
+</I>&gt;<i> want to put access control in EVMS.
+</I>
+i guess stgt will support lun masking like stuff easily since report_lun
+is handled  in user space right?
+
+
+ming
+
+&gt;<i>               Best regards from/Med v&#195;&#164;nliga h&#195;&#164;lsningar fr&#195;&#165;n
+</I>&gt;<i> 
+</I>&gt;<i>                                 Johan Kragsterman
+</I>&gt;<i> 
+</I>&gt;<i>                               <A HREF="http://www.capvert.se">http://www.capvert.se</A> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Mike Christie
+</I>&gt;<i> &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">michaelc at cs.wisc.edu</A>&gt; 
+</I>&gt;<i> 
+</I>&gt;<i> 2005-12-07 19:38 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i>          
+</I>&gt;<i>         Till:
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">johan at capvert.se</A> 
+</I>&gt;<i>         Kopia:
+</I>&gt;<i>  <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">iscsitarget-devel at lists.sourceforge.net</A>, <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">mingz at ele.uri.edu</A>, stgt &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">stgt-devel at lists.berlios.de</A>&gt;, Robert Whitehead &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">WRWHITEHEAD at novell.com</A>&gt; 
+</I>&gt;<i>         &#195;&#132;rende:
+</I>&gt;<i>  Re: Ang: Re:
+</I>&gt;<i> [Stgt-devel] Re:
+</I>&gt;<i> [Iscsitarget-devel]
+</I>&gt;<i> stgt a new version of
+</I>&gt;<i> iscsi target?
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">johan at capvert.se</A> wrote:
+</I>&gt;<i> &gt;                                         Hi, Mike!
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I, and I suppose a lot of other people, would like know how you look
+</I>&gt;<i> at the
+</I>&gt;<i> &gt; HW support on the Fc side? I don&#194;&#180;t know what you mean now, when you
+</I>&gt;<i> talk
+</I>&gt;<i> &gt; about HW target support, 
+</I>&gt;<i> 
+</I>&gt;<i> For qlogic FC, it is the same as scst at this point, except we are
+</I>&gt;<i> based 
+</I>&gt;<i> off the mainline qla2xxx driver. At this point I am in the middle of 
+</I>&gt;<i> taking a lot of the scst qla code but redone for coding style and our 
+</I>&gt;<i> framework and the mainlin qlogic driver.
+</I>&gt;<i> 
+</I>&gt;<i> For qlogic iSCSI, I think Tomo is going to buy a card and with
+</I>&gt;<i> qlogic's 
+</I>&gt;<i> help we are goin gto try and add support. For all qlogic sutff we do
+</I>&gt;<i> not 
+</I>&gt;<i> have the docs so we are just looking at source in the web and asking
+</I>&gt;<i> the 
+</I>&gt;<i> qlogic guys.
+</I>&gt;<i> 
+</I>&gt;<i> Christoph also posted a link to the MPT fusion target support and
+</I>&gt;<i> Eric 
+</I>&gt;<i> at LSI has been nice enough to let me bug him about that driver so we 
+</I>&gt;<i> hope to get support for the LSI MPT fusion cards.
+</I>&gt;<i> 
+</I>&gt;<i> And maybe one day we can support Emulex. James Smart has been really 
+</I>&gt;<i> nice in answering my questions, but I am not sure I want to bother
+</I>&gt;<i> him 
+</I>&gt;<i> eveyrday since I know he is busy woth his day job so maybe I will
+</I>&gt;<i> have 
+</I>&gt;<i> to go through my work.
+</I>&gt;<i> 
+</I>&gt;<i> if you talk iScsi HBA, TOE HBA, NIC, or Fc HBA, or
+</I>&gt;<i> &gt; all of them. Since I&#194;&#180;m very much on the Fc side, I&#194;&#180;m especially
+</I>&gt;<i> interested
+</I>&gt;<i> &gt; in your developement strategy for Fc. How is your priority list look
+</I>&gt;<i> like?
+</I>&gt;<i> &gt; 
+</I>&gt;<i> 
+</I>&gt;<i> Right now I am just trying to get what was in scst into tgt. So this 
+</I>&gt;<i> means qlogic 2xxxx card support first, then mpt, then I will bug
+</I>&gt;<i> qlogic 
+</I>&gt;<i> about their HW iscsi card and bug my boss to bug emulex. Tomo might
+</I>&gt;<i> be 
+</I>&gt;<i> working the HW qlogic iscsi card or mpt right now though too. Maybe 
+</I>&gt;<i> after we have at least qlogic we can try to stablize things (like
+</I>&gt;<i> finish 
+</I>&gt;<i> adding refcounting, do the eh stuff, redo the MSG_*, fix bugs, etc)
+</I>&gt;<i> and 
+</I>&gt;<i> then roll a release.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: Splunk Inc. Do you grep through log files
+for problems?  Stop!  Download the new AJAX search engine that makes
+searching your log files as easy as surfing the  web.  DOWNLOAD SPLUNK!
+<A HREF="http://ads.osdn.com/?ad_idv37&amp;alloc_id865&amp;op&#204;k">http://ads.osdn.com/?ad_idv37&amp;alloc_id865&amp;op&#204;k</A>
+_______________________________________________
+Iscsitarget-devel mailing list
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Iscsitarget-devel at lists.sourceforge.net</A>
+<A HREF="https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel">https://lists.sourceforge.net/lists/listinfo/iscsitarget-devel</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000131.html">Ang: Re: Ang: Re: [Stgt-devel] Re: [Iscsitarget-devel] stgt a new version of iscsi target?
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

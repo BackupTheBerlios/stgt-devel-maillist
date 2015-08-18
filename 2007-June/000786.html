@@ -1,0 +1,326 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%20Merge%20lu_phy_attr%20struct%20into%20scsi_lu&In-Reply-To=%3C467245DF.9020605%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000785.html">
+   <LINK REL="Next"  HREF="000789.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/2%5D%20Merge%20lu_phy_attr%20struct%20into%20scsi_lu&In-Reply-To=%3C467245DF.9020605%40gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu">markh794 at gmail.com
+       </A><BR>
+    <I>Fri Jun 15 09:55:11 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000785.html">[PATCH] add scc device type support
+</A></li>
+        <LI>Next message: <A HREF="000789.html">[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#786">[ date ]</a>
+              <a href="thread.html#786">[ thread ]</a>
+              <a href="subject.html#786">[ subject ]</a>
+              <a href="author.html#786">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&gt;<i>From de670fc4dc5d67584b7a84841df6a01443f23e48 Mon Sep 17 00:00:00 2001
+</I>From: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+Date: Fri, 15 Jun 2007 17:20:34 +1000
+Subject: Merge lu_phy_attr struct into scsi_lu struct
+
+Included lu_phy_attr struct 'in line' with scsi_lu structure.
+ - It is a static structure and works just as well inside
+   the scsi_lu struct.
+
+Signed-off-by: Mark Harvey &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">markh794 at gmail.com</A>&gt;
+---
+ usr/mmc.c    |   10 +++++-----
+ usr/osd.c    |   10 +++++-----
+ usr/sbc.c    |    8 ++++----
+ usr/scsi.c   |    2 +-
+ usr/spc.c    |   52 ++++++++++++++++++++++++----------------------------
+ usr/target.c |    8 ++++----
+ usr/tgtd.h   |    6 +++---
+ 7 files changed, 46 insertions(+), 50 deletions(-)
+
+diff --git a/usr/mmc.c b/usr/mmc.c
+index a8aced5..0ac5f72 100644
+--- a/usr/mmc.c
++++ b/usr/mmc.c
+@@ -126,11 +126,11 @@ static int mmc_lu_init(struct scsi_lu *lu)
+ 	if (spc_lu_init(lu))
+ 		return -ENOMEM;
+ 
+-	memcpy(lu-&gt;attrs-&gt;product_id, &quot;VIRTUAL-CDROM&quot;, 16);
+-	lu-&gt;attrs-&gt;sense_format = 0;
+-	lu-&gt;attrs-&gt;version_desc[0] = 0x02A0; /* MMC3, no version claimed */
+-	lu-&gt;attrs-&gt;version_desc[1] = 0x0960; /* iSCSI */
+-	lu-&gt;attrs-&gt;version_desc[2] = 0x0300; /* SPC-3 */
++	memcpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-CDROM&quot;, 16);
++	lu-&gt;attrs.sense_format = 0;
++	lu-&gt;attrs.version_desc[0] = 0x02A0; /* MMC3, no version claimed */
++	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
++	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+ 
+ 	return 0;
+ }
+diff --git a/usr/osd.c b/usr/osd.c
+index ac33168..33d6455 100644
+--- a/usr/osd.c
++++ b/usr/osd.c
+@@ -56,11 +56,11 @@ static int osd_lu_init(struct scsi_lu *lu)
+ 	if (spc_lu_init(lu))
+ 		return -ENOMEM;
+ 
+-	memcpy(lu-&gt;attrs-&gt;product_id, &quot;OSD&quot;, 16);
+-	lu-&gt;attrs-&gt;sense_format = 1;
+-	lu-&gt;attrs-&gt;version_desc[0] = 0x0340; /* OSD */
+-	lu-&gt;attrs-&gt;version_desc[1] = 0x0960; /* iSCSI */
+-	lu-&gt;attrs-&gt;version_desc[2] = 0x0300; /* SPC-3 */
++	memcpy(lu-&gt;attrs.product_id, &quot;OSD&quot;, 16);
++	lu-&gt;attrs.sense_format = 1;
++	lu-&gt;attrs.version_desc[0] = 0x0340; /* OSD */
++	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
++	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+ 
+ 	return 0;
+ }
+diff --git a/usr/sbc.c b/usr/sbc.c
+index 2924cc6..8fe39e7 100644
+--- a/usr/sbc.c
++++ b/usr/sbc.c
+@@ -342,10 +342,10 @@ static int sbc_lu_init(struct scsi_lu *lu)
+ 	if (spc_lu_init(lu))
+ 		return -ENOMEM;
+ 
+-	memcpy(lu-&gt;attrs-&gt;product_id, &quot;VIRTUAL-DISK&quot;, 16);
+-	lu-&gt;attrs-&gt;version_desc[0] = 0x04C0; /* SBC-3 no version claimed */
+-	lu-&gt;attrs-&gt;version_desc[1] = 0x0960; /* iSCSI */
+-	lu-&gt;attrs-&gt;version_desc[2] = 0x0300; /* SPC-3 */
++	memcpy(lu-&gt;attrs.product_id, &quot;VIRTUAL-DISK&quot;, 16);
++	lu-&gt;attrs.version_desc[0] = 0x04C0; /* SBC-3 no version claimed */
++	lu-&gt;attrs.version_desc[1] = 0x0960; /* iSCSI */
++	lu-&gt;attrs.version_desc[2] = 0x0300; /* SPC-3 */
+ 
+ 	return 0;
+ }
+diff --git a/usr/scsi.c b/usr/scsi.c
+index 50e2080..c9fb7b6 100644
+--- a/usr/scsi.c
++++ b/usr/scsi.c
+@@ -40,7 +40,7 @@
+ 
+ void sense_data_build(struct scsi_cmd *cmd, uint8_t key, uint8_t asc, uint8_t asq)
+ {
+-	if (cmd-&gt;dev &amp;&amp; cmd-&gt;dev-&gt;attrs-&gt;sense_format) {
++	if (cmd-&gt;dev &amp;&amp; cmd-&gt;dev-&gt;attrs.sense_format) {
+ 		/* descriptor format */
+ 
+ 		cmd-&gt;sense_buffer[0] = 0x72;  /* current, not deferred */
+diff --git a/usr/spc.c b/usr/spc.c
+index 99a7df3..602af5d 100644
+--- a/usr/spc.c
++++ b/usr/spc.c
+@@ -64,19 +64,19 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 		uint16_t *desc;
+ 
+ 		data[0] = device_type;
+-		data[1] = (cmd-&gt;dev-&gt;attrs-&gt;is_removable) ? 0x80 : 0;
++		data[1] = (cmd-&gt;dev-&gt;attrs.removable) ? 0x80 : 0;
+ 		data[2] = 5;	/* SPC-3 */
+ 		data[3] = 0x42;
+ 		data[7] = 0x02;
+ 
+ 		memset(data + 8, 0x20, 28);
+-		strncpy((char *)data + 8, cmd-&gt;dev-&gt;attrs-&gt;vendor_id, 8);
+-		strncpy((char *)data + 16, cmd-&gt;dev-&gt;attrs-&gt;product_id, 16);
+-		strncpy((char *)data + 32, cmd-&gt;dev-&gt;attrs-&gt;product_rev, 4);
++		strncpy((char *)data + 8, cmd-&gt;dev-&gt;attrs.vendor_id, 8);
++		strncpy((char *)data + 16, cmd-&gt;dev-&gt;attrs.product_id, 16);
++		strncpy((char *)data + 32, cmd-&gt;dev-&gt;attrs.product_rev, 4);
+ 
+ 		desc = (uint16_t *)(data + 58);
+-		for (i = 0; i &lt; ARRAY_SIZE(cmd-&gt;dev-&gt;attrs-&gt;version_desc); i++)
+-			*desc++ = __cpu_to_be16(cmd-&gt;dev-&gt;attrs-&gt;version_desc[i]);
++		for (i = 0; i &lt; ARRAY_SIZE(cmd-&gt;dev-&gt;attrs.version_desc); i++)
++			*desc++ = __cpu_to_be16(cmd-&gt;dev-&gt;attrs.version_desc[i]);
+ 
+ 		len = 66;
+ 		data[4] = len - 5;	/* Additional Length */
+@@ -108,12 +108,12 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 			len = 4 + SCSI_SN_LEN;
+ 			ret = SAM_STAT_GOOD;
+ 
+-			if (cmd-&gt;dev &amp;&amp; strlen(cmd-&gt;dev-&gt;attrs-&gt;scsi_sn)) {
++			if (cmd-&gt;dev &amp;&amp; strlen(cmd-&gt;dev-&gt;attrs.scsi_sn)) {
+ 				uint8_t *p;
+ 				char *q;
+ 
+ 				p = data + 4 + tmp - 1;
+-				q = cmd-&gt;dev-&gt;attrs-&gt;scsi_sn + SCSI_SN_LEN - 1;
++				q = cmd-&gt;dev-&gt;attrs.scsi_sn + SCSI_SN_LEN - 1;
+ 				for (; tmp &gt; 0; tmp--, q)
+ 					*(p--) = *(q--);
+ 			}
+@@ -127,7 +127,7 @@ int spc_inquiry(int host_no, struct scsi_cmd *cmd)
+ 			data[7] = tmp;
+ 			if (cmd-&gt;dev)
+ 				strncpy((char *) data + 8,
+-					cmd-&gt;dev-&gt;attrs-&gt;scsi_id, SCSI_ID_LEN);
++					cmd-&gt;dev-&gt;attrs.scsi_id, SCSI_ID_LEN);
+ 
+ 			len = tmp + 8;
+ 			ret = SAM_STAT_GOOD;
+@@ -286,12 +286,12 @@ int spc_illegal_op(int host_no, struct scsi_cmd *cmd)
+ }
+ 
+ enum {
+-	Opt_scsiid, Opt_scsisn, Opt_err,
++	Opt_scsi_id, Opt_scsi_sn, Opt_err,
+ };
+ 
+ static match_table_t tokens = {
+-	{Opt_scsiid, &quot;scsi_id=%s&quot;},
+-	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
++	{Opt_scsi_id, &quot;scsi_id=%s&quot;},
++	{Opt_scsi_sn, &quot;scsi_sn=%s&quot;},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -310,13 +310,13 @@ int spc_lu_config(struct scsi_lu *lu, char *params) {
+ 		dprintf(&quot;*p : %s\n&quot;, p);
+ 		token = match_token(p, tokens, args);
+ 		switch (token) {
+-		case Opt_scsiid:
+-			match_strncpy(lu-&gt;attrs-&gt;scsi_id, &amp;args[0],
+-				      sizeof(lu-&gt;attrs-&gt;scsi_id) - 1);
++		case Opt_scsi_id:
++			match_strncpy(lu-&gt;attrs.scsi_id, &amp;args[0],
++				      sizeof(lu-&gt;attrs.scsi_id) - 1);
+ 			break;
+-		case Opt_scsisn:
+-			match_strncpy(lu-&gt;attrs-&gt;scsi_sn, &amp;args[0],
+-				      sizeof(lu-&gt;attrs-&gt;scsi_sn) - 1);
++		case Opt_scsi_sn:
++			match_strncpy(lu-&gt;attrs.scsi_sn, &amp;args[0],
++				      sizeof(lu-&gt;attrs.scsi_sn) - 1);
+ 			break;
+ 		default:
+ 			err = TGTADM_INVALID_REQUEST;
+@@ -327,16 +327,12 @@ int spc_lu_config(struct scsi_lu *lu, char *params) {
+ 
+ int spc_lu_init(struct scsi_lu *lu)
+ {
+-	lu-&gt;attrs = zalloc(sizeof(struct lu_phy_attr));
+-	if (!lu-&gt;attrs)
+-		return -ENOMEM;
+-
+-	memcpy(lu-&gt;attrs-&gt;vendor_id, VENDOR_ID, 8);
+-	memcpy(lu-&gt;attrs-&gt;product_rev, &quot;0001&quot;, 4);
+-	lu-&gt;attrs-&gt;is_removable = 0;
+-	lu-&gt;attrs-&gt;sense_format = 0;
+-	lu-&gt;attrs-&gt;online = 0;
+-	lu-&gt;attrs-&gt;reset = 1;
++	strncpy(lu-&gt;attrs.vendor_id, VENDOR_ID, strlen(VENDOR_ID));
++	memcpy(lu-&gt;attrs.product_rev, &quot;0001&quot;, 4);
++	lu-&gt;attrs.removable = 0;
++	lu-&gt;attrs.sense_format = 0;
++	lu-&gt;attrs.online = 0;
++	lu-&gt;attrs.reset = 1;
+ 
+ 	return 0;
+ }
+diff --git a/usr/target.c b/usr/target.c
+index 5b74be1..9170310 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -252,9 +252,9 @@ int tgt_device_create(int tid, uint64_t lun, char *args)
+ 		err = target-&gt;dev_type_template.lu_init(lu);
+ 
+ 	if (!err) {
+-		snprintf(lu-&gt;attrs-&gt;scsi_id, sizeof(lu-&gt;attrs-&gt;scsi_id),
++		snprintf(lu-&gt;attrs.scsi_id, sizeof(lu-&gt;attrs.scsi_id),
+ 			 &quot;deadbeaf%d:%&quot; PRIu64, tid, lun);
+-		snprintf(lu-&gt;attrs-&gt;scsi_sn, sizeof(lu-&gt;attrs-&gt;scsi_sn),
++		snprintf(lu-&gt;attrs.scsi_sn, sizeof(lu-&gt;attrs.scsi_sn),
+ 			 &quot;beaf%d%&quot; PRIu64, tid, lun);
+ 	}
+ 
+@@ -1126,8 +1126,8 @@ int tgt_target_show_all(char *buf, int rest)
+ 				 _TAB3 &quot;Size: %s\n&quot;
+ 				 _TAB3 &quot;Backing store: %s\n&quot;,
+ 				 lu-&gt;lun,
+-				 lu-&gt;attrs-&gt;scsi_id,
+-				 lu-&gt;attrs-&gt;scsi_sn,
++				 lu-&gt;attrs.scsi_id,
++				 lu-&gt;attrs.scsi_sn,
+ 				 print_disksize(lu-&gt;size),
+ 				 lu-&gt;path);
+ 
+diff --git a/usr/tgtd.h b/usr/tgtd.h
+index 7b64655..e214fbb 100644
+--- a/usr/tgtd.h
++++ b/usr/tgtd.h
+@@ -40,8 +40,8 @@ struct lu_phy_attr {
+ 	char product_rev[5];
+ 	uint16_t version_desc[VERSION_DESCRIPTOR_LEN];
+ 
+-	char is_removable;	/* Removable media */
+-	char online;		/* Logical Unit online ? */
++	char removable;		/* Removable media */
++	char online;		/* Logical Unit online */
+ 	char reset;		/* Power-on or reset has occured */
+ 	char sense_format;	/* Descrptor format sense data supported */
+ };
+@@ -63,7 +63,7 @@ struct scsi_lu {
+ 	uint64_t reserve_id;
+ 
+ 	/* TODO: needs a structure for lots of device parameters */
+-	struct lu_phy_attr *attrs;
++	struct lu_phy_attr attrs;
+ };
+ 
+ struct scsi_cmd {
+-- 
+1.5.2.1
+
+
+
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000785.html">[PATCH] add scc device type support
+</A></li>
+	<LI>Next message: <A HREF="000789.html">[Stgt-devel] [Patch 1/2] Merge lu_phy_attr struct into scsi_lu
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#786">[ date ]</a>
+              <a href="thread.html#786">[ thread ]</a>
+              <a href="subject.html#786">[ subject ]</a>
+              <a href="author.html#786">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Open connections
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C57482.190.10.50.223.1205623520.squirrel%40webmail.decarpentier.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001468.html">
+   <LINK REL="Next"  HREF="001472.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Open connections</H1>
+    <B>Niels de Carpentier</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Open%20connections&In-Reply-To=%3C57482.190.10.50.223.1205623520.squirrel%40webmail.decarpentier.com%3E"
+       TITLE="[Stgt-devel] Open connections">stgt at decarpentier.com
+       </A><BR>
+    <I>Sun Mar 16 00:25:20 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001468.html">[Stgt-devel] Open connections
+</A></li>
+        <LI>Next message: <A HREF="001472.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1469">[ date ]</a>
+              <a href="thread.html#1469">[ thread ]</a>
+              <a href="subject.html#1469">[ subject ]</a>
+              <a href="author.html#1469">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I did some more checking of the connection issue, and the problem is that
+the return code of it_destroy_nexus is not checked. In this case it will
+return EBUSY, and the connection is never actually removed.
+
+Niels
+
+&gt;<i> I'm having an issue where old connections keep being listed in tgt, while
+</I>&gt;<i> they are not in use anymore.
+</I>&gt;<i>
+</I>&gt;<i> I'm running a diskless system with an iscsi root, which uses open-iscsi as
+</I>&gt;<i> the initiator. The initrd mount does the initial mounting, and on the
+</I>&gt;<i> final image iscsid is started, which does a reconnect.
+</I>&gt;<i>
+</I>&gt;<i> After the system has booted, the follow status is available on the target:
+</I>&gt;<i>
+</I>&gt;<i> Target 1: iqn.2008-04.com.test:storage.front001
+</I>&gt;<i>     System information:
+</I>&gt;<i>         Driver: iscsi
+</I>&gt;<i>         Status: running
+</I>&gt;<i>     I_T nexus information:
+</I>&gt;<i>         I_T nexus: 1
+</I>&gt;<i>             Initiator: front_dom0
+</I>&gt;<i>             Connection: 0
+</I>&gt;<i>                 IP Address: 10.0.0.84
+</I>&gt;<i>         I_T nexus: 2
+</I>&gt;<i>             Initiator: front_dom0
+</I>&gt;<i>             Connection: 0
+</I>&gt;<i>                 IP Address: 10.0.0.84
+</I>&gt;<i>     LUN information:
+</I>&gt;<i>         LUN: 0
+</I>&gt;<i>             Type: controller
+</I>&gt;<i>             SCSI ID: deadbeaf1:0
+</I>&gt;<i>             SCSI SN: beaf10
+</I>&gt;<i>             Size: 0 MB
+</I>&gt;<i>             Online: Yes
+</I>&gt;<i>             Poweron/Reset: Yes
+</I>&gt;<i>             Removable media: No
+</I>&gt;<i>             Backing store: No backing store
+</I>&gt;<i>         LUN: 1
+</I>&gt;<i>             Type: disk
+</I>&gt;<i>             SCSI ID: deadbeaf1:1
+</I>&gt;<i>             SCSI SN: beaf11
+</I>&gt;<i>             Size: 2147 MB
+</I>&gt;<i>             Online: Yes
+</I>&gt;<i>             Poweron/Reset: No
+</I>&gt;<i>             Removable media: No
+</I>&gt;<i>             Backing store: /dev/vg_images/frontend001
+</I>&gt;<i>         LUN: 2
+</I>&gt;<i>             Type: disk
+</I>&gt;<i>             SCSI ID: deadbeaf1:2
+</I>&gt;<i>             SCSI SN: beaf12
+</I>&gt;<i>             Size: 1074 MB
+</I>&gt;<i>             Online: Yes
+</I>&gt;<i>             Poweron/Reset: No
+</I>&gt;<i>             Removable media: No
+</I>&gt;<i>             Backing store: /dev/vg_images/frontend001_swap
+</I>&gt;<i>     Account information:
+</I>&gt;<i>         frontend
+</I>&gt;<i>     ACL information:
+</I>&gt;<i>         10.0.0.0/24
+</I>&gt;<i>
+</I>&gt;<i> However, netstat shows only a single connection active:
+</I>&gt;<i>
+</I>&gt;<i> netstat -an | grep 3260
+</I>&gt;<i>
+</I>&gt;<i> tcp        0      0 0.0.0.0:3260                0.0.0.0:*
+</I>&gt;<i>  LISTEN
+</I>&gt;<i> tcp        0      0 10.0.0.17:3260              10.0.0.84:53025
+</I>&gt;<i>  ESTABLISHED
+</I>&gt;<i> tcp        0      0 :::3260                     :::*
+</I>&gt;<i>  LISTEN
+</I>&gt;<i>
+</I>&gt;<i> If I reboot the iscsi root system without restarting tgtd, the initial
+</I>&gt;<i> connect will fail. A logout and a new login is necessary to get a working
+</I>&gt;<i> connection in this case.
+</I>&gt;<i>
+</I>&gt;<i> The following is logged by tgtd during this time:
+</I>&gt;<i>
+</I>&gt;<i> Mar 15 12:54:58 rbk tgtd: iscsi_task_queue(1437) unexpected cmd_sn
+</I>&gt;<i> (0,7551)
+</I>&gt;<i> Mar 15 12:55:17 rbk tgtd: iscsi_task_queue(1437) unexpected cmd_sn
+</I>&gt;<i> (1,7551)
+</I>&gt;<i> Mar 15 12:55:23 rbk tgtd: iscsi_task_queue(1437) unexpected cmd_sn
+</I>&gt;<i> (2,7551)
+</I>&gt;<i> Mar 15 12:55:42 rbk tgtd: iscsi_task_queue(1437) unexpected cmd_sn
+</I>&gt;<i> (3,7551)
+</I>&gt;<i>
+</I>&gt;<i> I can provide more information on request.
+</I>&gt;<i>
+</I>&gt;<i> Niels de Carpentier
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i>
+</I>
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001468.html">[Stgt-devel] Open connections
+</A></li>
+	<LI>Next message: <A HREF="001472.html">[Stgt-devel] Open connections
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1469">[ date ]</a>
+              <a href="thread.html#1469">[ thread ]</a>
+              <a href="subject.html#1469">[ subject ]</a>
+              <a href="author.html#1469">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

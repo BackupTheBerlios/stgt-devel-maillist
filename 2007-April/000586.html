@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] scsi_id and scsi_sn not able to set
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20scsi_id%20and%20scsi_sn%20not%20able%20to%20set&In-Reply-To=%3C20070421214447A.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000585.html">
+   <LINK REL="Next"  HREF="000589.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] scsi_id and scsi_sn not able to set</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20scsi_id%20and%20scsi_sn%20not%20able%20to%20set&In-Reply-To=%3C20070421214447A.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] scsi_id and scsi_sn not able to set">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Sat Apr 21 14:44:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000585.html">[Stgt-devel] scsi_id and scsi_sn not able to set
+</A></li>
+        <LI>Next message: <A HREF="000589.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#586">[ date ]</a>
+              <a href="thread.html#586">[ thread ]</a>
+              <a href="subject.html#586">[ subject ]</a>
+              <a href="author.html#586">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+Subject: [Stgt-devel] scsi_id and scsi_sn not able to set
+Date: Sat, 21 Apr 2007 13:55:34 +0200
+
+&gt;<i> Up until the last patches the following worked fine:
+</I>&gt;<i> 
+</I>&gt;<i> tgtadm -L iscsi -m logicalunit -o update -t 2 -l 1 -n scsi_id -v &quot;CDROM ISO&quot;
+</I>&gt;<i> tgtadm -L iscsi -m logicalunit -o update -t 2 -l 1 -n scsi_sn -v &quot;001&quot;
+</I>&gt;<i> 
+</I>&gt;<i> But that doesn't seem to work anymore. Now I get 'invalid request'.
+</I>&gt;<i> How can I set these parameters?
+</I>
+Oops, here's a fix.
+
+BTW, please use a plain-text mail.
+
+diff --git a/usr/target.c b/usr/target.c
+index 156b8e6..118e7ad 100644
+--- a/usr/target.c
++++ b/usr/target.c
+@@ -344,8 +344,8 @@ enum {
+ };
+ 
+ static match_table_t tokens = {
+-	{Opt_scsiid, &quot;Scsi_id=%s&quot;},
+-	{Opt_scsisn, &quot;Scsi_sn=%s&quot;},
++	{Opt_scsiid, &quot;scsi_id=%s&quot;},
++	{Opt_scsisn, &quot;scsi_sn=%s&quot;},
+ 	{Opt_err, NULL},
+ };
+ 
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000585.html">[Stgt-devel] scsi_id and scsi_sn not able to set
+</A></li>
+	<LI>Next message: <A HREF="000589.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#586">[ date ]</a>
+              <a href="thread.html#586">[ thread ]</a>
+              <a href="subject.html#586">[ subject ]</a>
+              <a href="author.html#586">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

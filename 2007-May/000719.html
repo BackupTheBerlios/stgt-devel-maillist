@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/8%20%5D%20Setup%20.device_init%2C%0A%09device_shutdown%20%26%20device_config%20to%20the%20device%20template.&In-Reply-To=%3Cf29db9a80705292007q668d539dw61c08957fa0a7d00%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000718.html">
+   <LINK REL="Next"  HREF="000720.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.</H1>
+    <B>Mark Harvey</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPatch%201/8%20%5D%20Setup%20.device_init%2C%0A%09device_shutdown%20%26%20device_config%20to%20the%20device%20template.&In-Reply-To=%3Cf29db9a80705292007q668d539dw61c08957fa0a7d00%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] [Patch 1/8 ] Setup .device_init,	device_shutdown &amp; device_config to the device template.">markh794 at gmail.com
+       </A><BR>
+    <I>Wed May 30 05:07:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000718.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+        <LI>Next message: <A HREF="000720.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#719">[ date ]</a>
+              <a href="thread.html#719">[ thread ]</a>
+              <a href="subject.html#719">[ subject ]</a>
+              <a href="author.html#719">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Thanks for the feedback.
+
+My aim is to produce code of sufficient quality to be integrated with
+this project.
+
+This is my first attempt at submitting code to any project, so I
+appreciate your feedback &amp; patience.
+
+On 5/30/07, FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+&gt;<i> Thanks for the patches. Sorry for the delay.
+</I>&gt;<i>
+</I>&gt;<i> &gt; diff --git a/usr/mmc.c b/usr/mmc.c
+</I>&gt;<i> &gt; index e9cc479..d53d0f3 100644
+</I>&gt;<i> &gt; --- a/usr/mmc.c
+</I>&gt;<i> &gt; +++ b/usr/mmc.c
+</I>&gt;<i> &gt; @@ -121,10 +121,24 @@ static int mmc_read_capacity(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt;       return SAM_STAT_GOOD;
+</I>&gt;<i> &gt;  }
+</I>&gt;<i> &gt;
+</I>&gt;<i>
+</I>&gt;<i> trailing spaces
+</I>
+OK - &quot;trailing spaces&quot; is a subject I'm unsure about.
+
+Looking at the code, a 'cat -E mmc.c' shows no trailing spaces...
+
+The &quot;trailing spaces&quot; appears in various mailing lists many times (not
+just this one), so any tips, references to this subject is most
+welcome.
+  ============================
+[snip]
+        size = cmd-&gt;dev-&gt;size &gt;&gt; MMC_BLK_SHIFT;$
+$
+        data[0] = (size &gt;&gt; 32) ?$
+                __cpu_to_be32(0xffffffff) : __cpu_to_be32(size - 1);$
+        data[1] = __cpu_to_be32(1U &lt;&lt; MMC_BLK_SHIFT);$
+        cmd-&gt;len = 8;$
+$
+        return SAM_STAT_GOOD;$
+}$
+$
+  ============================
+&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt; +static int device_mmc_init(struct scsi_lu *lu)
+</I>&gt;<i> &gt; +{
+</I>&gt;<i> &gt; +     lu-&gt;d_sense = 1;
+</I>&gt;<i> &gt; +     return 0;
+</I>&gt;<i> &gt; +}
+</I>&gt;<i> &gt; +
+</I>&gt;<i> &gt; +static int device_mmc_shutdown(struct scsi_lu *lu)
+</I>&gt;<i> &gt; +{
+</I>&gt;<i> &gt; +     return 0;
+</I>&gt;<i> &gt; +}
+</I>&gt;<i>
+</I>&gt;<i> In general, the kernel uses init/exit pair, I guess. So I prefer it.
+</I>
+Easily changed..
+
+&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt;  struct device_type_template mmc_template = {
+</I>&gt;<i> &gt;       .type   = TYPE_ROM,
+</I>&gt;<i> &gt;       .name   = &quot;cdrom/dvd&quot;,
+</I>&gt;<i> &gt;       .pid    = &quot;VIRTUAL-CDROM&quot;,
+</I>&gt;<i> &gt; +     .device_init = device_mmc_init,
+</I>&gt;<i> &gt; +     .device_shutdown = device_mmc_shutdown,
+</I>&gt;<i> &gt; +     .device_config = spc_device_config,
+</I>&gt;<i>
+</I>&gt;<i> lu_init/lu_exit/lu_config looks better?
+</I>
+OK.
+
+&gt;<i>
+</I>&gt;<i> Yeah, it would be better to rename device_* functions too. I take care
+</I>&gt;<i> about that.
+</I>
+Yeah, I saw this and I have made it consistent
+
+
+&gt;<i>
+</I>&gt;<i> &gt;       .ops    = {
+</I>&gt;<i> &gt;               {spc_test_unit,},
+</I>&gt;<i> &gt;               {spc_illegal_op,},
+</I>&gt;<i> &gt; diff --git a/usr/osd.c b/usr/osd.c
+</I>&gt;<i> &gt; index 46bf0a0..64e7b2a 100644
+</I>&gt;<i> &gt; --- a/usr/osd.c
+</I>&gt;<i> &gt; +++ b/usr/osd.c
+</I>&gt;<i> &gt; @@ -145,15 +145,22 @@ static int osd_varlen_cdb(int host_no, struct scsi_cmd *cmd)
+</I>&gt;<i> &gt;       return cmd-&gt;c_target-&gt;bst-&gt;bs_cmd_submit(cmd);
+</I>&gt;<i> &gt;  }
+</I>&gt;<i> &gt;
+</I>&gt;<i>
+</I>&gt;<i> trailing spaces
+</I>&gt;<i>
+</I>&gt;<i> All the patches seem to have tons of trailing spaces.
+</I>
+Request for assistance in identifying why these are occurring in a
+previous comment..
+
+&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt; +int spc_mode_sense(int host_no, struct scsi_cmd *cmd, struct list_head * mode_head)
+</I>&gt;<i> &gt; +{
+</I>&gt;<i> &gt; +     int             ret = SAM_STAT_GOOD, len;
+</I>&gt;<i>
+</I>&gt;<i> Should be:
+</I>&gt;<i>
+</I>&gt;<i> int ret = SAM_STAT_GOOD, len;
+</I>
+OK, I've a habit of inserting a '&lt;tab&gt;' char here. I'll correct my ways. :)
+
+&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> &gt; +     uint8_t         pcode = cmd-&gt;scb[2] &amp; 0x3f;
+</I>&gt;<i> &gt; +     uint64_t        size;
+</I>&gt;<i> &gt; +     uint8_t         *data = NULL;
+</I>&gt;<i> &gt; +     unsigned char   key = ILLEGAL_REQUEST;
+</I>&gt;<i> &gt; +     uint16_t        asc_ascq = E_INVALID_FIELD_IN_CDB;
+</I>&gt;<i> &gt; +     struct  mode    * m;
+</I>&gt;<i>
+</I>&gt;<i> Can you read the Linux coding style document, fix and resubmit the
+</I>&gt;<i> patches? If this is the last patchset that you send (hopefully not),
+</I>&gt;<i> I'll fix them this time.
+</I>
+Hopefully it is just the beginning.
+
+My aim is for complete SMC / SSC / SPC + other SCSI-3 support.
+
+&gt;<i>
+</I>&gt;<i> Please try `git-apply --whitespace=error` before submitting a patch to
+</I>&gt;<i> avoid trailing spaces.
+</I>&gt;<i>
+</I>
+Cheers
+Mark
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000718.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+	<LI>Next message: <A HREF="000720.html">[Stgt-devel] [Patch 1/8 ] Setup .device_init, device_shutdown &amp; device_config to the device template.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#719">[ date ]</a>
+              <a href="thread.html#719">[ thread ]</a>
+              <a href="subject.html#719">[ subject ]</a>
+              <a href="author.html#719">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

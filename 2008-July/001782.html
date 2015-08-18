@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] tape drive not supported yet?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tape%20drive%20not%20supported%20yet%3F&In-Reply-To=%3C20080717135753N.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001780.html">
+   <LINK REL="Next"  HREF="001783.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] tape drive not supported yet?</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20tape%20drive%20not%20supported%20yet%3F&In-Reply-To=%3C20080717135753N.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] tape drive not supported yet?">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Thu Jul 17 06:57:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001780.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+        <LI>Next message: <A HREF="001783.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1782">[ date ]</a>
+              <a href="thread.html#1782">[ thread ]</a>
+              <a href="subject.html#1782">[ subject ]</a>
+              <a href="author.html#1782">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, 16 Jul 2008 16:51:38 +0900
+FUJITA Tomonori &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">fujita.tomonori at lab.ntt.co.jp</A>&gt; wrote:
+
+&gt;<i> On Sat, 12 Jul 2008 19:40:21 +0200
+</I>&gt;<i> Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt; wrote:
+</I>&gt;<i> 
+</I>&gt;<i> &gt; Tried to set up a tape drive target:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; LUN=$(($LUN+1))
+</I>&gt;<i> &gt; ID=Tape
+</I>&gt;<i> &gt; SN=54321
+</I>&gt;<i> &gt; tgtadm --lld iscsi --op new --mode logicalunit --tid $TID --lun $LUN \
+</I>&gt;<i> &gt; --device-type tape
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Unfortunately, tgtadm tells me:
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; tgtadm: type emulation isn't supported yet
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Is this correct?
+</I>&gt;<i> 
+</I>&gt;<i> You are talking about vtl, right?
+</I>&gt;<i> 
+</I>&gt;<i> Here's aftab azmi's vtl patch:
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="https://lists.berlios.de/pipermail/stgt-devel/2008-May/001610.html">https://lists.berlios.de/pipermail/stgt-devel/2008-May/001610.html</A>
+</I>&gt;<i> 
+</I>&gt;<i> I've cleaned up it and my initiator can find a tape drive with this
+</I>&gt;<i> pathc. However, seems that this patch has several issues to solve.
+</I>&gt;<i> 
+</I>&gt;<i> Mark's comments are:
+</I>&gt;<i> 
+</I>&gt;<i> <A HREF="https://lists.berlios.de/pipermail/stgt-devel/2008-May/001622.html">https://lists.berlios.de/pipermail/stgt-devel/2008-May/001622.html</A>
+</I>&gt;<i> 
+</I>&gt;<i> I need vtl to just work on the tape initiator driver. I'll try to
+</I>&gt;<i> improve the vtl support but probabaly I don't have time to make the
+</I>&gt;<i> vtl support good enough for real usage.
+</I>
+BTW, I'll merge this patch unless someone is against it.
+
+As discussed, it's not finished at all, but it's easier to work with
+the in-tree code rather than out-of-tree code.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001780.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+	<LI>Next message: <A HREF="001783.html">[Stgt-devel] tape drive not supported yet?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1782">[ date ]</a>
+              <a href="thread.html#1782">[ thread ]</a>
+              <a href="subject.html#1782">[ subject ]</a>
+              <a href="author.html#1782">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

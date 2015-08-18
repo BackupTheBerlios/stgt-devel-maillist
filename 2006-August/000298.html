@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] User-mode iSER
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154576798.17864.2.camel%40bigtime.es335.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000295.html">
+   <LINK REL="Next"  HREF="000273.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] User-mode iSER</H1>
+    <B>Tom Tucker</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20User-mode%20iSER&In-Reply-To=%3C1154576798.17864.2.camel%40bigtime.es335.com%3E"
+       TITLE="[Stgt-devel] User-mode iSER">tom at opengridcomputing.com
+       </A><BR>
+    <I>Thu Aug  3 05:46:38 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000295.html">[Stgt-devel] User-mode iSER
+</A></li>
+        <LI>Next message: <A HREF="000273.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#298">[ date ]</a>
+              <a href="thread.html#298">[ thread ]</a>
+              <a href="subject.html#298">[ subject ]</a>
+              <a href="author.html#298">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Thu, 2006-08-03 at 07:33 +0900, FUJITA Tomonori wrote:
+&gt;<i> From: Tom Tucker &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">tom at opengridcomputing.com</A>&gt;
+</I>&gt;<i> Subject: Re: [Stgt-devel] User-mode iSER
+</I>&gt;<i> Date: Wed, 02 Aug 2006 10:58:40 -0500
+</I>&gt;<i> 
+</I>&gt;<i> &gt; On Wed, 2006-08-02 at 07:21 +0900, FUJITA Tomonori wrote:
+</I>&gt;<i> &gt; [...snip...]
+</I>&gt;<i> &gt; &gt; &gt; 
+</I>&gt;<i> &gt; &gt; &gt; Also, won't a user-mode approach support virtual target devices more
+</I>&gt;<i> &gt; &gt; &gt; easily? 
+</I>&gt;<i> &gt; &gt; 
+</I>&gt;<i> &gt; &gt; There's no difference. Note that we try to push a small portion of the
+</I>&gt;<i> &gt; &gt; iSCSI tcp driver into kernel (iSCSI protocol processing). Both
+</I>&gt;<i> &gt; &gt; approaches perform SCSI protocol processing, I/O in user space.
+</I>&gt;<i> &gt; &gt; I think that you can easily implement any kind of vitalization, device
+</I>&gt;<i> &gt; &gt; vitalization (like virtual tape library) and backing vitalization
+</I>&gt;<i> &gt; &gt; (snapshot, encryption, compression, etc) in user space with both
+</I>&gt;<i> &gt; &gt; approaches.
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; Yes, I think this is true, in the current design, the target device I/O
+</I>&gt;<i> &gt; is done in user space, so adding a new device type to trunk/usr is just
+</I>&gt;<i> &gt; as easy. The event that initiates this I/O though comes from the kernel
+</I>&gt;<i> &gt; over a netlink socket.
+</I>&gt;<i> 
+</I>&gt;<i> We don't use netlink because it turned out that we cannot pass
+</I>&gt;<i> user-space pointers via netlik due to its philosophy.
+</I>&gt;<i> 
+</I>&gt;<i> The pathch to replace netlink is at:
+</I>&gt;<i> <A HREF="http://marc.theaimsgroup.com/?l=linux-scsi&amp;m=115413498823780&amp;w=2">http://marc.theaimsgroup.com/?l=linux-scsi&amp;m=115413498823780&amp;w=2</A>
+</I>&gt;<i> 
+</I>&gt;<i> The reason why we cannot netlink is at:
+</I>&gt;<i> <A HREF="http://lkml.org/lkml/2006/4/19/165">http://lkml.org/lkml/2006/4/19/165</A>
+</I>&gt;<i> 
+</I>Ah...my bad. I just updated and see that many things have changed. It's
+looking good...
+
+&gt;<i> 
+</I>&gt;<i> &gt; Moving this all to user-space &quot;might&quot; make this perform better and
+</I>&gt;<i> &gt; simplify the architecture.
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; Do you think this is true or does it create as many problems as it
+</I>&gt;<i> &gt; solves?
+</I>&gt;<i> 
+</I>&gt;<i> I'm not sure. That might be true if we think about only target drivers
+</I>&gt;<i> that can be implemented in user-space (iSCSI tcp for generic NICs,
+</I>&gt;<i> iSER), but we also need to support target drivers that needs in-kernel
+</I>&gt;<i> support.
+</I>&gt;<i> 
+</I>&gt;<i> Anyway, as I said in the first mail, we don't know where iSCSI tcp for
+</I>&gt;<i> generic NICs and iSER drivers live. So just wait for few days.
+</I>
+Sure. Thanks for the update.
+
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000295.html">[Stgt-devel] User-mode iSER
+</A></li>
+	<LI>Next message: <A HREF="000273.html">[Stgt-devel] User-mode iSER
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#298">[ date ]</a>
+              <a href="thread.html#298">[ thread ]</a>
+              <a href="subject.html#298">[ subject ]</a>
+              <a href="author.html#298">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

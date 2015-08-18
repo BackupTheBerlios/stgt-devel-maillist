@@ -1,0 +1,720 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] head and data digest
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20head%20and%20data%20digest&In-Reply-To=%3C462B81AE.7040003%40gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000589.html">
+   <LINK REL="Next"  HREF="000591.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] head and data digest</H1>
+    <B>Albert Pauw</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20head%20and%20data%20digest&In-Reply-To=%3C462B81AE.7040003%40gmail.com%3E"
+       TITLE="[Stgt-devel] [PATCH] head and data digest">albert.pauw at gmail.com
+       </A><BR>
+    <I>Sun Apr 22 17:39:26 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000589.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+        <LI>Next message: <A HREF="000591.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#590">[ date ]</a>
+              <a href="thread.html#590">[ thread ]</a>
+              <a href="subject.html#590">[ subject ]</a>
+              <a href="author.html#590">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>I set HeaderDigest to CRC32C on the disk target:
+[<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at orange</A> sbin]# iscsiadm -m node -T iqn.2007-03.com.example:stgt.disk
+node.name = iqn.2007-03.com.example:stgt.disk
+node.transport_name = tcp
+node.tpgt = 1
+node.startup = manual
+iface.name = default
+node.discovery_address = &lt;empty&gt;
+node.discovery_port = 0
+node.discovery_type = static
+node.session.initial_cmdsn = 0
+node.session.cmds_max = 128
+node.session.queue_depth = 32
+node.session.auth.authmethod = None
+node.session.auth.username = &lt;empty&gt;
+node.session.auth.password = &lt;empty&gt;
+node.session.auth.username_in = &lt;empty&gt;
+node.session.auth.password_in = &lt;empty&gt;
+node.session.timeo.replacement_timeout = 120
+node.session.err_timeo.abort_timeout = 10
+node.session.err_timeo.reset_timeout = 30
+node.session.iscsi.InitialR2T = No
+node.session.iscsi.ImmediateData = Yes
+node.session.iscsi.FirstBurstLength = 262144
+node.session.iscsi.MaxBurstLength = 16776192
+node.session.iscsi.DefaultTime2Retain = 0
+node.session.iscsi.DefaultTime2Wait = 0
+node.session.iscsi.MaxConnections = 1
+node.session.iscsi.MaxOutstandingR2T = 1
+node.session.iscsi.ERL = 0
+node.conn[0].address = 127.0.0.1
+node.conn[0].port = 3260
+node.conn[0].startup = manual
+node.conn[0].tcp.window_size = 524288
+node.conn[0].tcp.type_of_service = 0
+node.conn[0].timeo.logout_timeout = 15
+node.conn[0].timeo.login_timeout = 15
+node.conn[0].timeo.auth_timeout = 45
+node.conn[0].timeo.active_timeout = 5
+node.conn[0].timeo.idle_timeout = 60
+node.conn[0].timeo.ping_timeout = 5
+node.conn[0].timeo.noop_out_interval = 10
+node.conn[0].timeo.noop_out_timeout = 15
+node.conn[0].iscsi.MaxRecvDataSegmentLength = 131072
+node.conn[0].iscsi.HeaderDigest = CRC32C
+node.conn[0].iscsi.DataDigest = None,CRC32C
+node.conn[0].iscsi.IFMarker = No
+node.conn[0].iscsi.OFMarker = No
+
+I only get:
+
+iscsiadm: Could not login session (err 5).
+iscsiadm: initiator reported error (5 - encountered iSCSI login failure)
+
+
+FUJITA Tomonori wrote:
+&gt;<i> This patch adds head and data digest features (not heavily
+</I>&gt;<i> tested). It's against the latest git tree.
+</I>&gt;<i> 
+</I>&gt;<i> Please test this and let me know the results.
+</I>&gt;<i> 
+</I>&gt;<i> Do we provide all features of iscsitarget?
+</I>&gt;<i> 
+</I>&gt;<i> diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+</I>&gt;<i> index e4e36aa..fcd2385 100644
+</I>&gt;<i> --- a/usr/iscsi/conn.c
+</I>&gt;<i> +++ b/usr/iscsi/conn.c
+</I>&gt;<i> @@ -176,18 +176,3 @@ int conn_take_fd(struct iscsi_connection
+</I>&gt;<i>  
+</I>&gt;<i>  	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i> -
+</I>&gt;<i> -void conn_read_pdu(struct iscsi_connection *conn)
+</I>&gt;<i> -{
+</I>&gt;<i> -	conn-&gt;rx_iostate = IOSTATE_READ_BHS;
+</I>&gt;<i> -	conn-&gt;rx_buffer = (void *)&amp;conn-&gt;req.bhs;
+</I>&gt;<i> -	conn-&gt;rx_size = BHS_SIZE;
+</I>&gt;<i> -}
+</I>&gt;<i> -
+</I>&gt;<i> -void conn_write_pdu(struct iscsi_connection *conn)
+</I>&gt;<i> -{
+</I>&gt;<i> -	conn-&gt;tx_iostate = IOSTATE_WRITE_BHS;
+</I>&gt;<i> -	memset(&amp;conn-&gt;rsp, 0, sizeof(conn-&gt;rsp));
+</I>&gt;<i> -	conn-&gt;tx_buffer = (void *)&amp;conn-&gt;rsp.bhs;
+</I>&gt;<i> -	conn-&gt;tx_size = BHS_SIZE;
+</I>&gt;<i> -}
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+</I>&gt;<i> index 2377952..fbde08c 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.c
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.c
+</I>&gt;<i> @@ -38,9 +38,53 @@ #include &quot;iscsid.h&quot;
+</I>&gt;<i>  #include &quot;tgtd.h&quot;
+</I>&gt;<i>  #include &quot;util.h&quot;
+</I>&gt;<i>  #include &quot;driver.h&quot;
+</I>&gt;<i> +#include &quot;crc32c.h&quot;
+</I>&gt;<i>  
+</I>&gt;<i>  #define MAX_QUEUE_CMD	32
+</I>&gt;<i>  
+</I>&gt;<i> +enum {
+</I>&gt;<i> +	IOSTATE_FREE,
+</I>&gt;<i> +
+</I>&gt;<i> +	IOSTATE_RX_BHS,
+</I>&gt;<i> +	IOSTATE_RX_INIT_AHS,
+</I>&gt;<i> +	IOSTATE_RX_AHS,
+</I>&gt;<i> +	IOSTATE_RX_INIT_HDIGEST,
+</I>&gt;<i> +	IOSTATE_RX_HDIGEST,
+</I>&gt;<i> +	IOSTATE_RX_CHECK_HDIGEST,
+</I>&gt;<i> +	IOSTATE_RX_INIT_DATA,
+</I>&gt;<i> +	IOSTATE_RX_DATA,
+</I>&gt;<i> +	IOSTATE_RX_INIT_DDIGEST,
+</I>&gt;<i> +	IOSTATE_RX_DDIGEST,
+</I>&gt;<i> +	IOSTATE_RX_CHECK_DDIGEST,
+</I>&gt;<i> +	IOSTATE_RX_END,
+</I>&gt;<i> +
+</I>&gt;<i> +	IOSTATE_TX_BHS,
+</I>&gt;<i> +	IOSTATE_TX_INIT_AHS,
+</I>&gt;<i> +	IOSTATE_TX_AHS,
+</I>&gt;<i> +	IOSTATE_TX_INIT_HDIGEST,
+</I>&gt;<i> +	IOSTATE_TX_HDIGEST,
+</I>&gt;<i> +	IOSTATE_TX_INIT_DATA,
+</I>&gt;<i> +	IOSTATE_TX_DATA,
+</I>&gt;<i> +	IOSTATE_TX_INIT_DDIGEST,
+</I>&gt;<i> +	IOSTATE_TX_DDIGEST,
+</I>&gt;<i> +	IOSTATE_TX_END,
+</I>&gt;<i> +};
+</I>&gt;<i> +
+</I>&gt;<i> +void conn_read_pdu(struct iscsi_connection *conn)
+</I>&gt;<i> +{
+</I>&gt;<i> +	conn-&gt;rx_iostate = IOSTATE_RX_BHS;
+</I>&gt;<i> +	conn-&gt;rx_buffer = (void *)&amp;conn-&gt;req.bhs;
+</I>&gt;<i> +	conn-&gt;rx_size = BHS_SIZE;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i> +static void conn_write_pdu(struct iscsi_connection *conn)
+</I>&gt;<i> +{
+</I>&gt;<i> +	conn-&gt;tx_iostate = IOSTATE_TX_BHS;
+</I>&gt;<i> +	memset(&amp;conn-&gt;rsp, 0, sizeof(conn-&gt;rsp));
+</I>&gt;<i> +	conn-&gt;tx_buffer = (void *)&amp;conn-&gt;rsp.bhs;
+</I>&gt;<i> +	conn-&gt;tx_size = BHS_SIZE;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  static struct iscsi_key login_keys[] = {
+</I>&gt;<i>  	{&quot;InitiatorName&quot;,},
+</I>&gt;<i>  	{&quot;InitiatorAlias&quot;,},
+</I>&gt;<i> @@ -1492,6 +1536,11 @@ static int iscsi_task_rx_start(struct is
+</I>&gt;<i>  		break;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	if (conn-&gt;rx_task) {
+</I>&gt;<i> +		conn-&gt;req.ahs = conn-&gt;rx_task-&gt;ahs;
+</I>&gt;<i> +		conn-&gt;req.data = conn-&gt;rx_task-&gt;data;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i>  	return err;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> @@ -1662,167 +1711,314 @@ nodata:
+</I>&gt;<i>  	return -EAGAIN;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i> +static int do_recv(int fd, struct iscsi_connection *conn, int next_state)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int ret;
+</I>&gt;<i> +
+</I>&gt;<i> +	ret = conn-&gt;tp-&gt;ep_read(fd, conn-&gt;rx_buffer, conn-&gt;rx_size);
+</I>&gt;<i> +	if (!ret) {
+</I>&gt;<i> +		conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +		return 0;
+</I>&gt;<i> +	} else if (ret &lt; 0) {
+</I>&gt;<i> +		if (errno == EINTR || errno == EAGAIN)
+</I>&gt;<i> +			return 0;
+</I>&gt;<i> +		else
+</I>&gt;<i> +			return -EIO;
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	conn-&gt;rx_size -= ret;
+</I>&gt;<i> +	conn-&gt;rx_buffer += ret;
+</I>&gt;<i> +	if (!conn-&gt;rx_size)
+</I>&gt;<i> +		conn-&gt;rx_iostate = next_state;
+</I>&gt;<i> +
+</I>&gt;<i> +	return ret;
+</I>&gt;<i> +}
+</I>&gt;<i> +
+</I>&gt;<i>  static void iscsi_rx_handler(int fd, struct iscsi_connection *conn)
+</I>&gt;<i>  {
+</I>&gt;<i> -	int res;
+</I>&gt;<i> +	int ret = 0, hdigest, ddigest;
+</I>&gt;<i> +	uint32_t crc;
+</I>&gt;<i>  
+</I>&gt;<i> +	if (conn-&gt;state == STATE_SCSI) {
+</I>&gt;<i> +		struct param *p = conn-&gt;session_param;
+</I>&gt;<i> +		hdigest = p[ISCSI_PARAM_HDRDGST_EN].val &amp; DIGEST_CRC32C;
+</I>&gt;<i> +		ddigest = p[ISCSI_PARAM_DATADGST_EN].val &amp; DIGEST_CRC32C;
+</I>&gt;<i> +	} else
+</I>&gt;<i> +		hdigest = ddigest = 0;
+</I>&gt;<i> +again:
+</I>&gt;<i>  	switch (conn-&gt;rx_iostate) {
+</I>&gt;<i> -	case IOSTATE_READ_BHS:
+</I>&gt;<i> -	case IOSTATE_READ_AHS_DATA:
+</I>&gt;<i> -	read_again:
+</I>&gt;<i> -		res = conn-&gt;tp-&gt;ep_read(fd, conn-&gt;rx_buffer, conn-&gt;rx_size);
+</I>&gt;<i> -		if (!res) {
+</I>&gt;<i> -			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +	case IOSTATE_RX_BHS:
+</I>&gt;<i> +		ret = do_recv(fd, conn, IOSTATE_RX_INIT_AHS);
+</I>&gt;<i> +		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_INIT_AHS)
+</I>&gt;<i>  			break;
+</I>&gt;<i> -		} else if (res &lt; 0) {
+</I>&gt;<i> -			if (errno == EINTR)
+</I>&gt;<i> -				goto read_again;
+</I>&gt;<i> -			else if (errno == EAGAIN)
+</I>&gt;<i> -				break;
+</I>&gt;<i> -			else {
+</I>&gt;<i> +	case IOSTATE_RX_INIT_AHS:
+</I>&gt;<i> +		if (conn-&gt;state == STATE_SCSI) {
+</I>&gt;<i> +			ret = iscsi_task_rx_start(conn);
+</I>&gt;<i> +			if (ret) {
+</I>&gt;<i>  				conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> -				dprintf(&quot;%d %d, %m\n&quot;, res, errno);
+</I>&gt;<i> +				break;
+</I>&gt;<i>  			}
+</I>&gt;<i> +		} else {
+</I>&gt;<i> +			conn-&gt;rx_buffer = conn-&gt;req_buffer;
+</I>&gt;<i> +			conn-&gt;req.ahs = conn-&gt;rx_buffer;
+</I>&gt;<i> +			conn-&gt;req.data = conn-&gt;rx_buffer + conn-&gt;rx_size;
+</I>&gt;<i> +		}
+</I>&gt;<i> +		conn-&gt;req.ahssize = conn-&gt;req.bhs.hlength * 4;
+</I>&gt;<i> +		conn-&gt;req.datasize = ntoh24(conn-&gt;req.bhs.dlength);
+</I>&gt;<i> +		conn-&gt;rx_size = roundup(conn-&gt;req.ahssize, 4);
+</I>&gt;<i> +		if (conn-&gt;rx_size) {
+</I>&gt;<i> +			ret = do_recv(fd, conn, IOSTATE_RX_AHS);
+</I>&gt;<i> +			if (ret &lt;= 0)
+</I>&gt;<i> +				break;
+</I>&gt;<i> +		} else
+</I>&gt;<i> +			conn-&gt;rx_iostate = hdigest ?
+</I>&gt;<i> +				IOSTATE_RX_INIT_HDIGEST : IOSTATE_RX_INIT_DATA;
+</I>&gt;<i> +
+</I>&gt;<i> +		if (conn-&gt;rx_iostate == IOSTATE_RX_INIT_DATA)
+</I>&gt;<i> +			goto again;
+</I>&gt;<i> +		else if (conn-&gt;rx_iostate != IOSTATE_RX_AHS)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_RX_AHS:
+</I>&gt;<i> +		ret = do_recv(fd, conn, hdigest ?
+</I>&gt;<i> +			      IOSTATE_RX_INIT_HDIGEST : IOSTATE_RX_INIT_DATA);
+</I>&gt;<i> +		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_INIT_HDIGEST)
+</I>&gt;<i>  			break;
+</I>&gt;<i> +	case IOSTATE_RX_INIT_HDIGEST:
+</I>&gt;<i> +		conn-&gt;rx_buffer = conn-&gt;rx_digest;
+</I>&gt;<i> +		conn-&gt;rx_size = sizeof(conn-&gt;rx_digest);
+</I>&gt;<i> +		conn-&gt;rx_iostate = IOSTATE_RX_HDIGEST;
+</I>&gt;<i> +	case IOSTATE_RX_HDIGEST:
+</I>&gt;<i> +		ret = do_recv(fd, conn, IOSTATE_RX_CHECK_HDIGEST);
+</I>&gt;<i> +		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_CHECK_HDIGEST)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_RX_CHECK_HDIGEST:
+</I>&gt;<i> +		crc = ~0;
+</I>&gt;<i> +		crc = crc32c(crc, &amp;conn-&gt;req.bhs, BHS_SIZE);
+</I>&gt;<i> +		if (conn-&gt;req.ahssize)
+</I>&gt;<i> +			crc = crc32c(crc, conn-&gt;req.ahs,
+</I>&gt;<i> +				     roundup(conn-&gt;req.ahssize, 4));
+</I>&gt;<i> +		crc = ~__cpu_to_le32(crc);
+</I>&gt;<i> +		if (*((uint32_t *)conn-&gt;rx_digest) != crc) {
+</I>&gt;<i> +			eprintf(&quot;rx hdr digest error 0x%x calc 0x%x\n&quot;,
+</I>&gt;<i> +				*((uint32_t *)conn-&gt;rx_digest), crc);
+</I>&gt;<i> +			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i>  		}
+</I>&gt;<i> -		conn-&gt;rx_size -= res;
+</I>&gt;<i> -		conn-&gt;rx_buffer += res;
+</I>&gt;<i> -		if (conn-&gt;rx_size)
+</I>&gt;<i> +		conn-&gt;rx_iostate = IOSTATE_RX_INIT_DATA;
+</I>&gt;<i> +	case IOSTATE_RX_INIT_DATA:
+</I>&gt;<i> +		conn-&gt;rx_size = roundup(conn-&gt;req.datasize, 4);
+</I>&gt;<i> +		if (conn-&gt;rx_size) {
+</I>&gt;<i> +			conn-&gt;rx_iostate = IOSTATE_RX_DATA;
+</I>&gt;<i> +			conn-&gt;rx_buffer = conn-&gt;req.data;
+</I>&gt;<i> +		} else {
+</I>&gt;<i> +			conn-&gt;rx_iostate = IOSTATE_RX_END;
+</I>&gt;<i>  			break;
+</I>&gt;<i> +		}
+</I>&gt;<i> +	case IOSTATE_RX_DATA:
+</I>&gt;<i> +		ret = do_recv(fd, conn, ddigest ?
+</I>&gt;<i> +			      IOSTATE_RX_INIT_DDIGEST : IOSTATE_RX_END);
+</I>&gt;<i> +		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_INIT_DDIGEST)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_RX_INIT_DDIGEST:
+</I>&gt;<i> +		conn-&gt;rx_buffer = conn-&gt;rx_digest;
+</I>&gt;<i> +		conn-&gt;rx_size = sizeof(conn-&gt;rx_digest);
+</I>&gt;<i> +		conn-&gt;rx_iostate = IOSTATE_RX_DDIGEST;
+</I>&gt;<i> +	case IOSTATE_RX_DDIGEST:
+</I>&gt;<i> +		ret = do_recv(fd, conn, IOSTATE_RX_CHECK_DDIGEST);
+</I>&gt;<i> +		if (ret &lt;= 0 || conn-&gt;rx_iostate != IOSTATE_RX_CHECK_DDIGEST)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_RX_CHECK_DDIGEST:
+</I>&gt;<i> +		crc = ~0;
+</I>&gt;<i> +		crc = crc32c(crc, conn-&gt;req.data, roundup(conn-&gt;req.datasize, 4));
+</I>&gt;<i> +		crc = ~__cpu_to_le32(crc);
+</I>&gt;<i> +		conn-&gt;rx_iostate = IOSTATE_RX_END;
+</I>&gt;<i> +		if (*((uint32_t *)conn-&gt;rx_digest) != crc) {
+</I>&gt;<i> +			eprintf(&quot;rx hdr digest error 0x%x calc 0x%x\n&quot;,
+</I>&gt;<i> +				*((uint32_t *)conn-&gt;rx_digest), crc);
+</I>&gt;<i> +			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +		}
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	default:
+</I>&gt;<i> +		eprintf(&quot;error %d %d\n&quot;, conn-&gt;state, conn-&gt;rx_iostate);
+</I>&gt;<i> +		exit(1);
+</I>&gt;<i> +	}
+</I>&gt;<i>  
+</I>&gt;<i> -		switch (conn-&gt;rx_iostate) {
+</I>&gt;<i> -		case IOSTATE_READ_BHS:
+</I>&gt;<i> -			conn-&gt;req.ahssize = conn-&gt;req.bhs.hlength * 4;
+</I>&gt;<i> -			conn-&gt;req.datasize = ntoh24(conn-&gt;req.bhs.dlength);
+</I>&gt;<i> +	if (ret &lt; 0 ||
+</I>&gt;<i> +	    conn-&gt;rx_iostate != IOSTATE_RX_END ||
+</I>&gt;<i> +	    conn-&gt;state == STATE_CLOSE)
+</I>&gt;<i> +		return;
+</I>&gt;<i>  
+</I>&gt;<i> -			if (conn-&gt;state == STATE_SCSI) {
+</I>&gt;<i> -				res = iscsi_task_rx_start(conn);
+</I>&gt;<i> -				if (res) {
+</I>&gt;<i> -					conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> -					break;
+</I>&gt;<i> -				}
+</I>&gt;<i> -			} else {
+</I>&gt;<i> -				conn-&gt;rx_buffer = conn-&gt;req_buffer;
+</I>&gt;<i> -				conn-&gt;req.ahs = conn-&gt;rx_buffer;
+</I>&gt;<i> -				conn-&gt;rx_size = roundup(conn-&gt;req.ahssize, 4);
+</I>&gt;<i> -				conn-&gt;req.data = conn-&gt;rx_buffer + conn-&gt;rx_size;
+</I>&gt;<i> -				conn-&gt;rx_size += roundup(conn-&gt;req.datasize, 4);
+</I>&gt;<i> -			}
+</I>&gt;<i> +	if (conn-&gt;rx_size) {
+</I>&gt;<i> +		eprintf(&quot;error %d %d %d\n&quot;, conn-&gt;state, conn-&gt;rx_iostate,
+</I>&gt;<i> +			conn-&gt;rx_size);
+</I>&gt;<i> +		exit(1);
+</I>&gt;<i> +	}
+</I>&gt;<i>  
+</I>&gt;<i> -			if (conn-&gt;rx_size) {
+</I>&gt;<i> -				conn-&gt;rx_iostate = IOSTATE_READ_AHS_DATA;
+</I>&gt;<i> -				goto read_again;
+</I>&gt;<i> -			}
+</I>&gt;<i> +	if (conn-&gt;state == STATE_SCSI) {
+</I>&gt;<i> +		ret = iscsi_task_rx_done(conn);
+</I>&gt;<i> +		if (ret)
+</I>&gt;<i> +			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +		else
+</I>&gt;<i> +			conn_read_pdu(conn);
+</I>&gt;<i> +	} else {
+</I>&gt;<i> +		conn_write_pdu(conn);
+</I>&gt;<i> +		tgt_event_modify(fd, EPOLLOUT);
+</I>&gt;<i> +		ret = cmnd_execute(conn);
+</I>&gt;<i> +		if (ret)
+</I>&gt;<i> +			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +	}
+</I>&gt;<i> +}
+</I>&gt;<i>  
+</I>&gt;<i> -		case IOSTATE_READ_AHS_DATA:
+</I>&gt;<i> -			if (conn-&gt;state == STATE_SCSI) {
+</I>&gt;<i> -				res = iscsi_task_rx_done(conn);
+</I>&gt;<i> -				if (!res)
+</I>&gt;<i> -					conn_read_pdu(conn);
+</I>&gt;<i> -			} else {
+</I>&gt;<i> -				conn_write_pdu(conn);
+</I>&gt;<i> -				tgt_event_modify(fd, EPOLLOUT);
+</I>&gt;<i> -				res = cmnd_execute(conn);
+</I>&gt;<i> -			}
+</I>&gt;<i> +static int do_send(int fd, struct iscsi_connection *conn, int next_state)
+</I>&gt;<i> +{
+</I>&gt;<i> +	int ret;
+</I>&gt;<i> +again:
+</I>&gt;<i> +	ret = conn-&gt;tp-&gt;ep_write_begin(fd, conn-&gt;tx_buffer, conn-&gt;tx_size);
+</I>&gt;<i> +	if (ret &lt; 0) {
+</I>&gt;<i> +		if (errno != EINTR &amp;&amp; errno != EAGAIN)
+</I>&gt;<i> +			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +		else if (errno == EINTR || errno == EAGAIN)
+</I>&gt;<i> +			goto again;
+</I>&gt;<i>  
+</I>&gt;<i> -			if (res)
+</I>&gt;<i> -				conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> -			break;
+</I>&gt;<i> -		}
+</I>&gt;<i> -		break;
+</I>&gt;<i> +		return -EIO;
+</I>&gt;<i>  	}
+</I>&gt;<i> +
+</I>&gt;<i> +	conn-&gt;tx_size -= ret;
+</I>&gt;<i> +	conn-&gt;tx_buffer += ret;
+</I>&gt;<i> +	if (conn-&gt;tx_size)
+</I>&gt;<i> +		goto again;
+</I>&gt;<i> +	conn-&gt;tx_iostate = next_state;
+</I>&gt;<i> +
+</I>&gt;<i> +	return 0;
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  static void iscsi_tx_handler(int fd, struct iscsi_connection *conn)
+</I>&gt;<i>  {
+</I>&gt;<i> -	int res;
+</I>&gt;<i> +	int ret = 0, hdigest, ddigest;
+</I>&gt;<i> +	uint32_t crc;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (conn-&gt;state == STATE_SCSI) {
+</I>&gt;<i> +		struct param *p = conn-&gt;session_param;
+</I>&gt;<i> +		hdigest = p[ISCSI_PARAM_HDRDGST_EN].val &amp; DIGEST_CRC32C;
+</I>&gt;<i> +		ddigest = p[ISCSI_PARAM_DATADGST_EN].val &amp; DIGEST_CRC32C;
+</I>&gt;<i> +	} else
+</I>&gt;<i> +		hdigest = ddigest = 0;
+</I>&gt;<i>  
+</I>&gt;<i>  	if (conn-&gt;state == STATE_SCSI &amp;&amp; !conn-&gt;tx_task) {
+</I>&gt;<i> -		res = iscsi_task_tx_start(conn);
+</I>&gt;<i> -		if (res)
+</I>&gt;<i> +		ret = iscsi_task_tx_start(conn);
+</I>&gt;<i> +		if (ret)
+</I>&gt;<i>  			return;
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i>  	switch (conn-&gt;tx_iostate) {
+</I>&gt;<i> -	case IOSTATE_WRITE_BHS:
+</I>&gt;<i> -	case IOSTATE_WRITE_AHS:
+</I>&gt;<i> -	case IOSTATE_WRITE_DATA:
+</I>&gt;<i> -	write_again:
+</I>&gt;<i> -		res = conn-&gt;tp-&gt;ep_write_begin(fd, conn-&gt;tx_buffer,
+</I>&gt;<i> -					       conn-&gt;tx_size);
+</I>&gt;<i> -		if (res &lt; 0) {
+</I>&gt;<i> -			if (errno != EINTR &amp;&amp; errno != EAGAIN)
+</I>&gt;<i> -				conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> -			else if (errno == EINTR)
+</I>&gt;<i> -				goto write_again;
+</I>&gt;<i> +	case IOSTATE_TX_BHS:
+</I>&gt;<i> +		ret = do_send(fd, conn, IOSTATE_TX_INIT_AHS);
+</I>&gt;<i> +		if (ret &lt; 0)
+</I>&gt;<i>  			break;
+</I>&gt;<i> -		}
+</I>&gt;<i> +	case IOSTATE_TX_INIT_AHS:
+</I>&gt;<i> +		if (conn-&gt;rsp.ahssize) {
+</I>&gt;<i> +			conn-&gt;tx_iostate = IOSTATE_TX_AHS;
+</I>&gt;<i> +			conn-&gt;tx_buffer = conn-&gt;rsp.ahs;
+</I>&gt;<i> +			conn-&gt;tx_size = conn-&gt;rsp.ahssize;
+</I>&gt;<i>  
+</I>&gt;<i> -		conn-&gt;tx_size -= res;
+</I>&gt;<i> -		conn-&gt;tx_buffer += res;
+</I>&gt;<i> -		if (conn-&gt;tx_size)
+</I>&gt;<i> -			goto write_again;
+</I>&gt;<i> -
+</I>&gt;<i> -		switch (conn-&gt;tx_iostate) {
+</I>&gt;<i> -		case IOSTATE_WRITE_BHS:
+</I>&gt;<i> -			if (conn-&gt;rsp.ahssize) {
+</I>&gt;<i> -				conn-&gt;tx_iostate = IOSTATE_WRITE_AHS;
+</I>&gt;<i> -				conn-&gt;tx_buffer = conn-&gt;rsp.ahs;
+</I>&gt;<i> -				conn-&gt;tx_size = conn-&gt;rsp.ahssize;
+</I>&gt;<i> -				goto write_again;
+</I>&gt;<i> -			}
+</I>&gt;<i> -		case IOSTATE_WRITE_AHS:
+</I>&gt;<i> -			if (conn-&gt;rsp.datasize) {
+</I>&gt;<i> -				int pad;
+</I>&gt;<i> -
+</I>&gt;<i> -				conn-&gt;tx_iostate = IOSTATE_WRITE_DATA;
+</I>&gt;<i> -				conn-&gt;tx_buffer = conn-&gt;rsp.data;
+</I>&gt;<i> -				conn-&gt;tx_size = conn-&gt;rsp.datasize;
+</I>&gt;<i> -				pad = conn-&gt;tx_size &amp; (PAD_WORD_LEN - 1);
+</I>&gt;<i> -				if (pad) {
+</I>&gt;<i> -					pad = PAD_WORD_LEN - pad;
+</I>&gt;<i> -					memset(conn-&gt;tx_buffer + conn-&gt;tx_size,
+</I>&gt;<i> -					       0, pad);
+</I>&gt;<i> -					conn-&gt;tx_size += pad;
+</I>&gt;<i> -				}
+</I>&gt;<i> -				goto write_again;
+</I>&gt;<i> -			}
+</I>&gt;<i> -		case IOSTATE_WRITE_DATA:
+</I>&gt;<i> -			conn-&gt;tp-&gt;ep_write_end(fd);
+</I>&gt;<i> -			cmnd_finish(conn);
+</I>&gt;<i> +			conn-&gt;tx_iostate = IOSTATE_TX_AHS;
+</I>&gt;<i> +		} else
+</I>&gt;<i> +			conn-&gt;tx_iostate = hdigest ?
+</I>&gt;<i> +				IOSTATE_TX_INIT_HDIGEST : IOSTATE_TX_INIT_DATA;
+</I>&gt;<i>  
+</I>&gt;<i> -			switch (conn-&gt;state) {
+</I>&gt;<i> -			case STATE_KERNEL:
+</I>&gt;<i> -				res = conn_take_fd(conn, fd);
+</I>&gt;<i> -				if (res)
+</I>&gt;<i> -					conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> -				else {
+</I>&gt;<i> -					conn-&gt;state = STATE_SCSI;
+</I>&gt;<i> -					conn_read_pdu(conn);
+</I>&gt;<i> -					tgt_event_modify(fd, EPOLLIN);
+</I>&gt;<i> -				}
+</I>&gt;<i> -				break;
+</I>&gt;<i> -			case STATE_EXIT:
+</I>&gt;<i> -			case STATE_CLOSE:
+</I>&gt;<i> -				break;
+</I>&gt;<i> -			case STATE_SCSI:
+</I>&gt;<i> -				iscsi_task_tx_done(conn);
+</I>&gt;<i> -				break;
+</I>&gt;<i> -			default:
+</I>&gt;<i> -				conn_read_pdu(conn);
+</I>&gt;<i> -				tgt_event_modify(fd, EPOLLIN);
+</I>&gt;<i> -				break;
+</I>&gt;<i> +		if (conn-&gt;tx_iostate != IOSTATE_TX_AHS)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_TX_AHS:
+</I>&gt;<i> +		conn-&gt;tx_iostate = hdigest ?
+</I>&gt;<i> +			IOSTATE_TX_INIT_HDIGEST : IOSTATE_TX_INIT_DATA;
+</I>&gt;<i> +		if (conn-&gt;tx_iostate != IOSTATE_TX_INIT_HDIGEST)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_TX_INIT_HDIGEST:
+</I>&gt;<i> +		crc = ~0;
+</I>&gt;<i> +		crc = crc32c(crc, &amp;conn-&gt;rsp.bhs, BHS_SIZE);
+</I>&gt;<i> +		*(uint32_t *)conn-&gt;tx_digest = ~__cpu_to_le32(crc);
+</I>&gt;<i> +		conn-&gt;tx_iostate = IOSTATE_TX_HDIGEST;
+</I>&gt;<i> +		conn-&gt;tx_buffer = conn-&gt;tx_digest;
+</I>&gt;<i> +		conn-&gt;tx_size = sizeof(conn-&gt;tx_digest);
+</I>&gt;<i> +	case IOSTATE_TX_HDIGEST:
+</I>&gt;<i> +		ret = do_send(fd, conn, IOSTATE_TX_INIT_DATA);
+</I>&gt;<i> +		if (ret &lt; 0)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_TX_INIT_DATA:
+</I>&gt;<i> +		if (conn-&gt;rsp.datasize) {
+</I>&gt;<i> +			int pad;
+</I>&gt;<i> +
+</I>&gt;<i> +			conn-&gt;tx_iostate = IOSTATE_TX_DATA;
+</I>&gt;<i> +			conn-&gt;tx_buffer = conn-&gt;rsp.data;
+</I>&gt;<i> +			conn-&gt;tx_size = conn-&gt;rsp.datasize;
+</I>&gt;<i> +			pad = conn-&gt;tx_size &amp; (PAD_WORD_LEN - 1);
+</I>&gt;<i> +			if (pad) {
+</I>&gt;<i> +				pad = PAD_WORD_LEN - pad;
+</I>&gt;<i> +				memset(conn-&gt;tx_buffer + conn-&gt;tx_size, 0, pad);
+</I>&gt;<i> +				conn-&gt;tx_size += pad;
+</I>&gt;<i>  			}
+</I>&gt;<i> +		} else
+</I>&gt;<i> +			conn-&gt;tx_iostate = IOSTATE_TX_END;
+</I>&gt;<i> +		if (conn-&gt;tx_iostate != IOSTATE_TX_DATA)
+</I>&gt;<i>  			break;
+</I>&gt;<i> -		}
+</I>&gt;<i> -
+</I>&gt;<i> +	case IOSTATE_TX_DATA:
+</I>&gt;<i> +		ret = do_send(fd, conn, ddigest ?
+</I>&gt;<i> +			      IOSTATE_TX_INIT_DDIGEST : IOSTATE_TX_END);
+</I>&gt;<i> +		if (ret &lt; 0)
+</I>&gt;<i> +			return;
+</I>&gt;<i> +		if (conn-&gt;tx_iostate != IOSTATE_TX_INIT_DDIGEST)
+</I>&gt;<i> +			break;
+</I>&gt;<i> +	case IOSTATE_TX_INIT_DDIGEST:
+</I>&gt;<i> +		crc = ~0;
+</I>&gt;<i> +		crc = crc32c(crc, conn-&gt;rsp.data,
+</I>&gt;<i> +			     roundup(conn-&gt;rsp.datasize, 4));
+</I>&gt;<i> +		*(uint32_t *)conn-&gt;tx_digest = ~__cpu_to_le32(crc);
+</I>&gt;<i> +		conn-&gt;tx_iostate = IOSTATE_TX_DDIGEST;
+</I>&gt;<i> +		conn-&gt;tx_buffer = conn-&gt;tx_digest;
+</I>&gt;<i> +		conn-&gt;tx_size = sizeof(conn-&gt;tx_digest);
+</I>&gt;<i> +	case IOSTATE_TX_DDIGEST:
+</I>&gt;<i> +		ret = do_send(fd, conn, IOSTATE_TX_END);
+</I>&gt;<i>  		break;
+</I>&gt;<i>  	default:
+</I>&gt;<i> -		eprintf(&quot;illegal iostate %d %d\n&quot;, conn-&gt;tx_iostate,
+</I>&gt;<i> -			conn-&gt;tx_iostate);
+</I>&gt;<i> -		conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +		eprintf(&quot;error %d %d\n&quot;, conn-&gt;state, conn-&gt;tx_iostate);
+</I>&gt;<i> +		exit(1);
+</I>&gt;<i> +	}
+</I>&gt;<i> +
+</I>&gt;<i> +	if (ret &lt; 0 ||
+</I>&gt;<i> +	    conn-&gt;tx_iostate != IOSTATE_TX_END ||
+</I>&gt;<i> +	    conn-&gt;state == STATE_CLOSE)
+</I>&gt;<i> +		return;
+</I>&gt;<i> +
+</I>&gt;<i> +	if (conn-&gt;tx_size) {
+</I>&gt;<i> +		eprintf(&quot;error %d %d %d\n&quot;, conn-&gt;state, conn-&gt;tx_iostate,
+</I>&gt;<i> +			conn-&gt;tx_size);
+</I>&gt;<i> +		exit(1);
+</I>&gt;<i>  	}
+</I>&gt;<i>  
+</I>&gt;<i> +	conn-&gt;tp-&gt;ep_write_end(fd);
+</I>&gt;<i> +	cmnd_finish(conn);
+</I>&gt;<i> +
+</I>&gt;<i> +	switch (conn-&gt;state) {
+</I>&gt;<i> +	case STATE_KERNEL:
+</I>&gt;<i> +		ret = conn_take_fd(conn, fd);
+</I>&gt;<i> +		if (ret)
+</I>&gt;<i> +			conn-&gt;state = STATE_CLOSE;
+</I>&gt;<i> +		else {
+</I>&gt;<i> +			conn-&gt;state = STATE_SCSI;
+</I>&gt;<i> +			conn_read_pdu(conn);
+</I>&gt;<i> +			tgt_event_modify(fd, EPOLLIN);
+</I>&gt;<i> +		}
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case STATE_EXIT:
+</I>&gt;<i> +	case STATE_CLOSE:
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	case STATE_SCSI:
+</I>&gt;<i> +		iscsi_task_tx_done(conn);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	default:
+</I>&gt;<i> +		conn_read_pdu(conn);
+</I>&gt;<i> +		tgt_event_modify(fd, EPOLLIN);
+</I>&gt;<i> +		break;
+</I>&gt;<i> +	}
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  void iscsi_event_handler(int fd, int events, void *data)
+</I>&gt;<i> @@ -1838,8 +2034,10 @@ void iscsi_event_handler(int fd, int eve
+</I>&gt;<i>  	if (conn-&gt;state != STATE_CLOSE &amp;&amp; events &amp; EPOLLOUT)
+</I>&gt;<i>  		iscsi_tx_handler(fd, conn);
+</I>&gt;<i>  
+</I>&gt;<i> -	if (conn-&gt;state == STATE_CLOSE)
+</I>&gt;<i> +	if (conn-&gt;state == STATE_CLOSE) {
+</I>&gt;<i>  		conn_close(conn, fd);
+</I>&gt;<i> +		dprintf(&quot;connection closed\n&quot;);
+</I>&gt;<i> +	}
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  struct tgt_driver iscsi = {
+</I>&gt;<i> diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+</I>&gt;<i> index 84d74f3..29abc5d 100644
+</I>&gt;<i> --- a/usr/iscsi/iscsid.h
+</I>&gt;<i> +++ b/usr/iscsi/iscsid.h
+</I>&gt;<i> @@ -174,6 +174,9 @@ struct iscsi_connection {
+</I>&gt;<i>  
+</I>&gt;<i>  	struct list_head tx_clist;
+</I>&gt;<i>  
+</I>&gt;<i> +	unsigned char rx_digest[4];
+</I>&gt;<i> +	unsigned char tx_digest[4];
+</I>&gt;<i> +
+</I>&gt;<i>  	int auth_state;
+</I>&gt;<i>  	union {
+</I>&gt;<i>  		struct {
+</I>&gt;<i> @@ -187,13 +190,6 @@ struct iscsi_connection {
+</I>&gt;<i>  	struct iscsi_transport *tp;
+</I>&gt;<i>  };
+</I>&gt;<i>  
+</I>&gt;<i> -#define IOSTATE_FREE		0
+</I>&gt;<i> -#define IOSTATE_READ_BHS	1
+</I>&gt;<i> -#define IOSTATE_READ_AHS_DATA	2
+</I>&gt;<i> -#define IOSTATE_WRITE_BHS	3
+</I>&gt;<i> -#define IOSTATE_WRITE_AHS	4
+</I>&gt;<i> -#define IOSTATE_WRITE_DATA	5
+</I>&gt;<i> -
+</I>&gt;<i>  #define STATE_FREE		0
+</I>&gt;<i>  #define STATE_SECURITY		1
+</I>&gt;<i>  #define STATE_SECURITY_AUTH	2
+</I>&gt;<i> @@ -263,14 +259,13 @@ extern void conn_put(struct iscsi_connec
+</I>&gt;<i>  extern int conn_get(struct iscsi_connection *conn);
+</I>&gt;<i>  extern struct iscsi_connection * conn_find(struct iscsi_session *session, uint32_t cid);
+</I>&gt;<i>  extern int conn_take_fd(struct iscsi_connection *conn, int fd);
+</I>&gt;<i> -extern void conn_read_pdu(struct iscsi_connection *conn);
+</I>&gt;<i> -extern void conn_write_pdu(struct iscsi_connection *conn);
+</I>&gt;<i>  extern void conn_add_to_session(struct iscsi_connection *conn, struct iscsi_session *session);
+</I>&gt;<i>  
+</I>&gt;<i>  /* iscsid.c */
+</I>&gt;<i>  extern void iscsi_event_handler(int fd, int events, void *data);
+</I>&gt;<i>  extern char *text_key_find(struct iscsi_connection *conn, char *searchKey);
+</I>&gt;<i>  extern void text_key_add(struct iscsi_connection *conn, char *key, char *value);
+</I>&gt;<i> +extern void conn_read_pdu(struct iscsi_connection *conn);
+</I>&gt;<i>  
+</I>&gt;<i>  /* iscsid.c iscsi_task */
+</I>&gt;<i>  extern void iscsi_free_task(struct iscsi_task *task);
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Stgt-devel mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">Stgt-devel at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">https://lists.berlios.de/mailman/listinfo/stgt-devel</A>
+</I>&gt;<i> 
+</I>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000589.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+	<LI>Next message: <A HREF="000591.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#590">[ date ]</a>
+              <a href="thread.html#590">[ thread ]</a>
+              <a href="subject.html#590">[ subject ]</a>
+              <a href="author.html#590">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

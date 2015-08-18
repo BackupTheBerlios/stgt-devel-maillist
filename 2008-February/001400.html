@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] Tuning iSER for performance
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3Ce2e108260802140837k37f430b8lde6ab699e3419f4d%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001399.html">
+   <LINK REL="Next"  HREF="001386.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] Tuning iSER for performance</H1>
+    <B>Bart Van Assche</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20Tuning%20iSER%20for%20performance&In-Reply-To=%3Ce2e108260802140837k37f430b8lde6ab699e3419f4d%40mail.gmail.com%3E"
+       TITLE="[Stgt-devel] Tuning iSER for performance">bart.vanassche at gmail.com
+       </A><BR>
+    <I>Thu Feb 14 17:37:05 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001399.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+        <LI>Next message: <A HREF="001386.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1400">[ date ]</a>
+              <a href="thread.html#1400">[ thread ]</a>
+              <a href="subject.html#1400">[ subject ]</a>
+              <a href="author.html#1400">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Wed, Feb 13, 2008 at 4:07 PM, Erez Zilber &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">erezz at voltaire.com</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i>  I'm not familiar enough with xdd, so I don't know how to tune it. Can
+</I>&gt;<i>  you try the following commands (assuming that /dev/sg4 is your sg device)?
+</I>&gt;<i>
+</I>&gt;<i>  READ: sgp_dd if=/dev/sg4 of=/dev/null bs=512 bpt=1024 count=20480000
+</I>&gt;<i>  thr=8 time=1
+</I>&gt;<i>  WRITE: sgp_dd of=/dev/sg4 if=/dev/zero bs=512 bpt=1024 count=20480000
+</I>&gt;<i>  thr=8 time=1
+</I>
+You have been running tests with indirect (=buffered) I/O, so your
+tests say more about how well Linux can buffer data than about iSER
+and STGT. I have ran the following tests (target: 2 GB RAM disk, SDR
+4x network, iSER, ib_write_bw: 933 MB/s):
+
+$ sgp_dd dio=1 if=/dev/sde of=/dev/null bs=512 bpt=1024 count=4194304
+thr=8 time=1
+time to transfer data was 3.896344 secs, 551.15 MB/sec
+4194304+0 records in
+4194304+0 records out
+$ sgp_dd dio=1 of=/dev/sde if=/dev/zero bs=512 bpt=1024 count=4194304
+thr=8 time=1
+time to transfer data was 2.858662 secs, 751.22 MB/sec
+4194304+0 records in
+4194304+0 records out
+
+Note: my opinion is that the parameters passed in the above tests are
+highly unrealistic with regard to predicting filesystem performance.
+The parameters passed to sgp_dd specify that all data is passed in
+units of 512 KB and with eight threads at a time. A typical filesystem
+communicates data over iSCSI in blocks of 4 KB to 32 KB.
+
+Bart Van Assche.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001399.html">[Stgt-devel] Tuning iSER for performance
+</A></li>
+	<LI>Next message: <A HREF="001386.html">[Stgt-devel] [Scst-devel] Integration of SCST in the mainstream	Linux kernel
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1400">[ date ]</a>
+              <a href="thread.html#1400">[ thread ]</a>
+              <a href="subject.html#1400">[ subject ]</a>
+              <a href="author.html#1400">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

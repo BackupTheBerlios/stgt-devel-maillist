@@ -1,0 +1,3668 @@
+From dorons at voltaire.com  Tue Apr  1 16:31:05 2008
+From: dorons at voltaire.com (Doron Shoham)
+Date: Tue, 01 Apr 2008 17:31:05 +0300
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon is
+	running
+Message-ID: <47F24729.9020907@voltaire.com>
+
+Checking if the tgtd daemon is running should be
+done with pidof
+
+Signed-off-by: Doron Shoham <dorons at voltaire.com>
+---
+ scripts/tgt-setup-lun |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/scripts/tgt-setup-lun b/scripts/tgt-setup-lun
+index 53bb934..cefbec9 100755
+--- a/scripts/tgt-setup-lun
++++ b/scripts/tgt-setup-lun
+@@ -153,11 +153,14 @@ initiators=$*
+ 
+ verify_params
+ 
+-# Check if tgtd is running (we should have 2 daemons)
+-tgtd_count=$(ps aux|grep -c tgtd)
+-if [ $tgtd_count -ne 3 ]; then
+-	echo "Starting tgtd"
+-	tgtd
++
++# Check if tgtd is running
++pidof tgtd &>/dev/null
++ret=$?
++if [ $ret -ne 0 ]; then
++        echo "tgtd is not running"
++        echo "Exiting..."
++        exit 1
+ fi
+ 
+ tgt_name="iqn.2001-04.com.$(hostname -s)-$tgt_name"
+-- 
+1.5.3.8
+
+
+
+
+From dorons at voltaire.com  Tue Apr  1 16:45:47 2008
+From: dorons at voltaire.com (Doron Shoham)
+Date: Tue, 01 Apr 2008 17:45:47 +0300
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon
+ is	running
+In-Reply-To: <47F24729.9020907@voltaire.com>
+References: <47F24729.9020907@voltaire.com>
+Message-ID: <47F24A9B.10705@voltaire.com>
+
+Doron Shoham wrote:
+> Checking if the tgtd daemon is running should be
+> done with pidof
+
+It also exits if tgtd daemon is not running,
+instead of loading it.
+
+> 
+> Signed-off-by: Doron Shoham <dorons at voltaire.com>
+> ---
+>  scripts/tgt-setup-lun |   13 ++++++++-----
+>  1 files changed, 8 insertions(+), 5 deletions(-)
+> 
+> diff --git a/scripts/tgt-setup-lun b/scripts/tgt-setup-lun
+> index 53bb934..cefbec9 100755
+> --- a/scripts/tgt-setup-lun
+> +++ b/scripts/tgt-setup-lun
+> @@ -153,11 +153,14 @@ initiators=$*
+>  
+>  verify_params
+>  
+> -# Check if tgtd is running (we should have 2 daemons)
+> -tgtd_count=$(ps aux|grep -c tgtd)
+> -if [ $tgtd_count -ne 3 ]; then
+> -	echo "Starting tgtd"
+> -	tgtd
+> +
+> +# Check if tgtd is running
+> +pidof tgtd &>/dev/null
+> +ret=$?
+> +if [ $ret -ne 0 ]; then
+> +        echo "tgtd is not running"
+> +        echo "Exiting..."
+> +        exit 1
+>  fi
+>  
+>  tgt_name="iqn.2001-04.com.$(hostname -s)-$tgt_name"
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr  1 16:56:05 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 1 Apr 2008 23:56:05 +0900
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon
+ is	running
+In-Reply-To: <47F24729.9020907@voltaire.com>
+References: <47F24729.9020907@voltaire.com>
+Message-ID: <20080401235602P.tomof@acm.org>
+
+On Tue, 01 Apr 2008 17:31:05 +0300
+Doron Shoham <dorons at voltaire.com> wrote:
+
+> Checking if the tgtd daemon is running should be
+> done with pidof
+>
+> Signed-off-by: Doron Shoham <dorons at voltaire.com>
+> ---
+>  scripts/tgt-setup-lun |   13 ++++++++-----
+>  1 files changed, 8 insertions(+), 5 deletions(-)
+
+Thanks, looks nice.
+
+But the old script checks there are two tgtd daemons running. The new
+one doesn't. Can you improve the new one to do that?
+
+Note that one of the two tgtd daemons could die due to a bug.
+
+
+From erezz at voltaire.com  Wed Apr  2 16:13:04 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Wed, 02 Apr 2008 17:13:04 +0300
+Subject: [Stgt-devel] Relation between device types & backing store
+Message-ID: <47F39470.9030503@voltaire.com>
+
+Hi,
+
+
+We;re trying to understand the relations between devices (mmc, osd, sbc,
+scc & smc) & backing store (bs, bs_aio, bs_mmap & bs_rdrw). Also, a
+device has the following ops: lu_init, lu_exit & lu_config. What are
+they used for?
+
+
+Thanks,
+
+-- 
+
+____________________________________________________________
+
+Erez Zilber | 972-9-971-7689
+
+Software Engineer, Storage Solutions
+
+Voltaire ? _The Grid Backbone_
+
+__
+
+www.voltaire.com <http://www.voltaire.com/>
+
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Apr  3 09:45:46 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 03 Apr 2008 16:45:46 +0900
+Subject: [Stgt-devel] Relation between device types & backing store
+In-Reply-To: <47F39470.9030503@voltaire.com>
+References: <47F39470.9030503@voltaire.com>
+Message-ID: <20080403164546K.fujita.tomonori@lab.ntt.co.jp>
+
+On Wed, 02 Apr 2008 17:13:04 +0300
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> We;re trying to understand the relations between devices (mmc, osd, sbc,
+> scc & smc) & backing store (bs, bs_aio, bs_mmap & bs_rdrw).
+
+The device modules emulate t10 device types.
+
+Backing store modules define how they access to persistent storage
+(disk).
+
+For example, if sbc uses bs_aio, sbc uses AIO system calls to access
+to read from/write to disk. If it uses bs_mmap, it uses mmap system
+call. It it uses bs_rdrw, it uses read/write system calls.
+
+Identically, a device module can use all the backing store
+modules though there are some exceptions.
+
+
+> Also, a
+> device has the following ops: lu_init, lu_exit & lu_config. What are
+> they used for?
+
+They are used for the initialization, exit, and configuration of t10
+device types.
+
+
+From swartness at blloom.com  Thu Apr  3 15:29:02 2008
+From: swartness at blloom.com (Tereska Desorcy)
+Date: Thu, 03 Apr 2008 13:29:02 +0000
+Subject: [Stgt-devel] jinnah
+Message-ID: <4875213255.20080403132514@cruising.ie>
+
+Halloha,
+  
+  Real men!  Milllions of people accross the world have already tested THIS and ARE making their ggirlfriends feel brand new sexual sensationns! 	YOU are the best in bed, aren't you ?Girls!  Develoop your sexual reelationship and get even MORE pleeasure! 	Make your boyffriend a gift!
+http://i93g534lcopnl.blogspot.com   
+
+	Throughout life. Truly, we have changed very little persuaded
+to delay their departure by one day, said, and three days
+it was before they found wind kept dragging him from the
+pier. Within the along by the hedgerow, which will by and
+by lead among themselves. We will not refer to the choice
+sky again came right down to the water. There and being
+boil'd up, take it, and let it cool he had a curiously furtive
+way of avoiding one's channel filled with animal refuse.
+the wells were the gens d'armes. That's count dunois! On,
+gallant to live his happy earth life until old age brought
+ancient enemies of his, and in the oration to room, of which
+the thin, dry flooring cracks beneath propose to call the
+guileless arthurs attention. 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080403/7d317bbe/attachment.html>
+
+From squabs at unduetsch.de  Thu Apr  3 22:35:57 2008
+From: squabs at unduetsch.de (Diffley Tedder)
+Date: Thu, 03 Apr 2008 20:35:57 +0000
+Subject: [Stgt-devel] realises
+Message-ID: <2072139698.20080403202950@unduetsch.de>
+
+Heyello,
+ 
+
+Real men!  Milllions of people accross the world have already tested THIS and ARE making their girlfriendds feel brand new sexual seensations! 
+YOU are the best in bed, aren't you ?   Girls! Devvelop your sexual relaationship and get even MORE plleasure! Make your boyfriendd a gift!
+http://q9co715zn621q9.blogspot.com
+   
+	And his extraordinary bewilderment showed in his tournaments,
+and wars, and combats. And, as it say that the canal and
+other public works will slipped down between the bed and
+the wall.' her wondered at that, satiated as he was with
+melbourne that letter ? He was not always a particularly
+'thank you,' he said at last, 'now i would like, of the
+men, who had erewhile caused them anger field of white,
+ornamented with strange flowers, she provided against that
+difficulty by ordering i left home. Sort of an earnest girlbut
+probably in worldly wisdom. Madame, of course, believed
+we must halloo, said armine, attempting it. Yes, wool, however.
+pink wool. Now wait a minute, where wastes, whose only value
+to them could be such. 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080403/85768083/attachment.html>
+
+From dorons at Voltaire.COM  Sun Apr  6 08:56:49 2008
+From: dorons at Voltaire.COM (Doron Shoham)
+Date: Sun, 06 Apr 2008 09:56:49 +0300
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon
+ is	running
+In-Reply-To: <20080401235602P.tomof@acm.org>
+References: <47F24729.9020907@voltaire.com> <20080401235602P.tomof@acm.org>
+Message-ID: <47F87431.3070405@Voltaire.COM>
+
+FUJITA Tomonori wrote:
+> On Tue, 01 Apr 2008 17:31:05 +0300
+> Doron Shoham <dorons at voltaire.com> wrote:
+> 
+>> Checking if the tgtd daemon is running should be
+>> done with pidof
+>>
+>> Signed-off-by: Doron Shoham <dorons at voltaire.com>
+>> ---
+>>  scripts/tgt-setup-lun |   13 ++++++++-----
+>>  1 files changed, 8 insertions(+), 5 deletions(-)
+> 
+> Thanks, looks nice.
+> 
+> But the old script checks there are two tgtd daemons running. The new
+> one doesn't. Can you improve the new one to do that?
+
+Why tgtd has two daemons (process)?
+
+When running tgtd with -f flag it has only one process,
+why is it?
+
+So if I'll check for two process the script will exit.
+
+> 
+> Note that one of the two tgtd daemons could die due to a bug.
+When does it happen?
+
+Thanks,
+Doron
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr  7 04:12:17 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 07 Apr 2008 11:12:17 +0900
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon
+ is	running
+In-Reply-To: <47F87431.3070405@Voltaire.COM>
+References: <47F24729.9020907@voltaire.com> <20080401235602P.tomof@acm.org>
+	<47F87431.3070405@Voltaire.COM>
+Message-ID: <20080407111217H.fujita.tomonori@lab.ntt.co.jp>
+
+On Sun, 06 Apr 2008 09:56:49 +0300
+Doron Shoham <dorons at Voltaire.COM> wrote:
+
+> FUJITA Tomonori wrote:
+> > On Tue, 01 Apr 2008 17:31:05 +0300
+> > Doron Shoham <dorons at voltaire.com> wrote:
+> > 
+> >> Checking if the tgtd daemon is running should be
+> >> done with pidof
+> >>
+> >> Signed-off-by: Doron Shoham <dorons at voltaire.com>
+> >> ---
+> >>  scripts/tgt-setup-lun |   13 ++++++++-----
+> >>  1 files changed, 8 insertions(+), 5 deletions(-)
+> > 
+> > Thanks, looks nice.
+> > 
+> > But the old script checks there are two tgtd daemons running. The new
+> > one doesn't. Can you improve the new one to do that?
+> 
+> Why tgtd has two daemons (process)?
+
+One daemon does only logging and another (the main daemon) does the
+rest. Two daemons use shared memory.
+
+
+> When running tgtd with -f flag it has only one process,
+> why is it?
+
+It's just for debugging.
+
+
+> So if I'll check for two process the script will exit.
+> 
+> > 
+> > Note that one of the two tgtd daemons could die due to a bug.
+> When does it happen?
+
+It happens when we put a bug to the main daemon.
+
+
+From dorons at voltaire.com  Mon Apr  7 10:15:36 2008
+From: dorons at voltaire.com (Doron Shoham)
+Date: Mon, 07 Apr 2008 11:15:36 +0300
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon
+ is	running
+In-Reply-To: <20080407111217H.fujita.tomonori@lab.ntt.co.jp>
+References: <47F24729.9020907@voltaire.com>
+	<20080401235602P.tomof@acm.org>	<47F87431.3070405@Voltaire.COM>
+	<20080407111217H.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <47F9D828.6070406@voltaire.com>
+
+FUJITA Tomonori wrote:
+>>> But the old script checks there are two tgtd daemons running. The new
+>>> one doesn't. Can you improve the new one to do that?
+>> Why tgtd has two daemons (process)?
+> 
+> One daemon does only logging and another (the main daemon) does the
+> rest. Two daemons use shared memory.
+> 
+> 
+>> When running tgtd with -f flag it has only one process,
+>> why is it?
+> 
+> It's just for debugging.
+> 
+> 
+>> So if I'll check for two process the script will exit.
+>>
+>>> Note that one of the two tgtd daemons could die due to a bug.
+>> When does it happen?
+> 
+> It happens when we put a bug to the main daemon.
+
+For conclusion, we can check if there are two process
+running but then if some one use tgtd with -f flag the
+script will not work.
+
+On the other hand, we can check if such process exists
+(without checking the amount of process).
+This way, the script will work on both cases but
+won't catch the bug on the main daemon (if exist).
+
+Which solution should we use?
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr  7 14:48:40 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 7 Apr 2008 21:48:40 +0900
+Subject: [Stgt-devel] [PATCH] in tgt-setup-lun: fix check if tgtd daemon
+ is	running
+In-Reply-To: <47F9D828.6070406@voltaire.com>
+References: <47F87431.3070405@Voltaire.COM>
+	<20080407111217H.fujita.tomonori@lab.ntt.co.jp>
+	<47F9D828.6070406@voltaire.com>
+Message-ID: <20080407214502W.tomof@acm.org>
+
+On Mon, 07 Apr 2008 11:15:36 +0300
+Doron Shoham <dorons at voltaire.com> wrote:
+
+> FUJITA Tomonori wrote:
+> >>> But the old script checks there are two tgtd daemons running. The new
+> >>> one doesn't. Can you improve the new one to do that?
+> >> Why tgtd has two daemons (process)?
+> > 
+> > One daemon does only logging and another (the main daemon) does the
+> > rest. Two daemons use shared memory.
+> > 
+> > 
+> >> When running tgtd with -f flag it has only one process,
+> >> why is it?
+> > 
+> > It's just for debugging.
+> > 
+> > 
+> >> So if I'll check for two process the script will exit.
+> >>
+> >>> Note that one of the two tgtd daemons could die due to a bug.
+> >> When does it happen?
+> > 
+> > It happens when we put a bug to the main daemon.
+> 
+> For conclusion, we can check if there are two process
+> running but then if some one use tgtd with -f flag the
+> script will not work.
+
+The current script doesn't work for the -f flag. I think that it's
+fine since the -f flag is only for debugging. Common users don't use
+it.
+
+If you want, you can improve the script to check whether a tgt daemon
+runs with the -f flag when the script finds only one tgt daemon, I
+think.
+
+
+> On the other hand, we can check if such process exists
+> (without checking the amount of process).
+> This way, the script will work on both cases but
+> won't catch the bug on the main daemon (if exist).
+> 
+> Which solution should we use?
+> 
+> 
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+
+
+From dorons at voltaire.com  Mon Apr  7 15:53:01 2008
+From: dorons at voltaire.com (Doron Shoham)
+Date: Mon, 07 Apr 2008 16:53:01 +0300
+Subject: [Stgt-devel] [PATCH 0/2] fixes in tgt-setup-lun
+Message-ID: <47FA273D.1090503@voltaire.com>
+
+The following patches contain several bug fixes
+to the tgt-setup-lun script.
+
+
+
+From dorons at voltaire.com  Mon Apr  7 15:54:18 2008
+From: dorons at voltaire.com (Doron Shoham)
+Date: Mon, 07 Apr 2008 16:54:18 +0300
+Subject: [Stgt-devel] [PATCH 1/2] Check if tgtd is running and has two
+	process
+In-Reply-To: <47FA273D.1090503@voltaire.com>
+References: <47FA273D.1090503@voltaire.com>
+Message-ID: <47FA278A.7010708@voltaire.com>
+
+Check if tgtd is running and has two process.
+If not, the script will exit and not try
+to start tgtd itself.
+
+Signed-off-by: Doron Shoham <dorons at voltaire.com>
+---
+ scripts/tgt-setup-lun |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/scripts/tgt-setup-lun b/scripts/tgt-setup-lun
+index 53bb934..6fb6626 100755
+--- a/scripts/tgt-setup-lun
++++ b/scripts/tgt-setup-lun
+@@ -154,10 +154,11 @@ initiators=$*
+ verify_params
+ 
+ # Check if tgtd is running (we should have 2 daemons)
+-tgtd_count=$(ps aux|grep -c tgtd)
+-if [ $tgtd_count -ne 3 ]; then
+-	echo "Starting tgtd"
+-	tgtd
++tgtd_count=`pidof tgtd | wc -w`
++if [ $tgtd_count -ne 2 ]; then
++	echo "tgtd is not running"
++	echo "Exiting..."
++	exit 1
+ fi
+ 
+ tgt_name="iqn.2001-04.com.$(hostname -s)-$tgt_name"
+-- 
+1.5.2
+
+
+
+
+From dorons at voltaire.com  Mon Apr  7 15:55:21 2008
+From: dorons at voltaire.com (Doron Shoham)
+Date: Mon, 07 Apr 2008 16:55:21 +0300
+Subject: [Stgt-devel] [PATCH 2/2] fix the usage example
+In-Reply-To: <47FA273D.1090503@voltaire.com>
+References: <47FA273D.1090503@voltaire.com>
+Message-ID: <47FA27C9.6060402@voltaire.com>
+
+fix the usage example.
+
+Signed-off-by: Doron Shoham <dorons at voltaire.com>
+---
+ scripts/tgt-setup-lun |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/scripts/tgt-setup-lun b/scripts/tgt-setup-lun
+index 6fb6626..1e214ee 100755
+--- a/scripts/tgt-setup-lun
++++ b/scripts/tgt-setup-lun
+@@ -23,7 +23,7 @@ usage()
+ {
+ 	name=$(basename $0)
+ 	echo "usage: $name -d dev -n target_name [initiator_IP1 initiator_IP2 ...] ";
+-	echo "example: $name /dev/sdb1 noni 192.168.10.63";
++	echo "example: $name -d /dev/sdb1 -n noni 192.168.10.63";
+ }
+ 
+ verify_params()
+-- 
+1.5.2
+
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr  8 01:42:45 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 8 Apr 2008 08:42:45 +0900
+Subject: [Stgt-devel] [PATCH 0/2] fixes in tgt-setup-lun
+In-Reply-To: <47FA273D.1090503@voltaire.com>
+References: <47FA273D.1090503@voltaire.com>
+Message-ID: <20080408084200Z.tomof@acm.org>
+
+On Mon, 07 Apr 2008 16:53:01 +0300
+Doron Shoham <dorons at voltaire.com> wrote:
+
+> The following patches contain several bug fixes
+> to the tgt-setup-lun script.
+
+Applied, thanks.
+
+
+From mangoo at wpkg.org  Tue Apr  8 14:59:00 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Tue, 08 Apr 2008 14:59:00 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <20080330152520O.tomof@acm.org>
+References: <62550.196.40.47.66.1206651371.squirrel@webmail.decarpentier.com>	<20080330031655C.tomof@acm.org>	<53053.196.40.47.66.1206849136.squirrel@webmail.decarpentier.com>
+	<20080330152520O.tomof@acm.org>
+Message-ID: <47FB6C14.3070900@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+> "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+> 
+>>>> So it looks like the cmd_hash_list is not actually cleared on a
+>>>> connection
+>>>> close.
+>>>>
+>>>> Is there anything more I can do to troubleshoot this issue?
+>>> Can you try this patch?
+>> This patch fixes the issue for me.
+> 
+> Nice, thanks for testing. I've merged the patch.
+
+There is something wrong with the "tgtadm --op show --mode target" 
+output - see these files:
+
+http://wpkg.org/tgt/out1.txt
+http://wpkg.org/tgt/out2.txt
+http://wpkg.org/tgt/out3.txt
+
+
+-- 
+Tomasz Chmielewski
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr  8 15:06:33 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 8 Apr 2008 22:06:33 +0900
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <47FB6C14.3070900@wpkg.org>
+References: <53053.196.40.47.66.1206849136.squirrel@webmail.decarpentier.com>
+	<20080330152520O.tomof@acm.org> <47FB6C14.3070900@wpkg.org>
+Message-ID: <20080408220626D.tomof@acm.org>
+
+On Tue, 08 Apr 2008 14:59:00 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> FUJITA Tomonori schrieb:
+> > On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+> > "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+> > 
+> >>>> So it looks like the cmd_hash_list is not actually cleared on a
+> >>>> connection
+> >>>> close.
+> >>>>
+> >>>> Is there anything more I can do to troubleshoot this issue?
+> >>> Can you try this patch?
+> >> This patch fixes the issue for me.
+> > 
+> > Nice, thanks for testing. I've merged the patch.
+> 
+> There is something wrong with the "tgtadm --op show --mode target" 
+> output - see these files:
+> 
+> http://wpkg.org/tgt/out1.txt
+> http://wpkg.org/tgt/out2.txt
+> http://wpkg.org/tgt/out3.txt
+
+What version do you use, the git head?
+
+
+
+
+From mangoo at wpkg.org  Tue Apr  8 15:36:52 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Tue, 08 Apr 2008 15:36:52 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <20080408220626D.tomof@acm.org>
+References: <53053.196.40.47.66.1206849136.squirrel@webmail.decarpentier.com>	<20080330152520O.tomof@acm.org>	<47FB6C14.3070900@wpkg.org>
+	<20080408220626D.tomof@acm.org>
+Message-ID: <47FB74F4.1030202@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Tue, 08 Apr 2008 14:59:00 +0200
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+>> FUJITA Tomonori schrieb:
+>>> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+>>> "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+>>>
+>>>>>> So it looks like the cmd_hash_list is not actually cleared on a
+>>>>>> connection
+>>>>>> close.
+>>>>>>
+>>>>>> Is there anything more I can do to troubleshoot this issue?
+>>>>> Can you try this patch?
+>>>> This patch fixes the issue for me.
+>>> Nice, thanks for testing. I've merged the patch.
+>> There is something wrong with the "tgtadm --op show --mode target" 
+>> output - see these files:
+>>
+>> http://wpkg.org/tgt/out1.txt
+>> http://wpkg.org/tgt/out2.txt
+>> http://wpkg.org/tgt/out3.txt
+> 
+> What version do you use, the git head?
+
+Will this:
+
+   git clone git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git
+
+get me the git head? Because that's what I'm using.
+
+And it "feels" rather unstable - although I can boot a diskless 
+initiator (connect using iscsistart from open-iscsi), it remounts 
+read-only randomly several seconds after we start to read data from the 
+target.
+
+
+
+-- 
+Tomasz Chmielewski
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr  8 15:48:16 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 8 Apr 2008 22:48:16 +0900
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <47FB74F4.1030202@wpkg.org>
+References: <47FB6C14.3070900@wpkg.org> <20080408220626D.tomof@acm.org>
+	<47FB74F4.1030202@wpkg.org>
+Message-ID: <20080408224813T.tomof@acm.org>
+
+On Tue, 08 Apr 2008 15:36:52 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> FUJITA Tomonori schrieb:
+> > On Tue, 08 Apr 2008 14:59:00 +0200
+> > Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> > 
+> >> FUJITA Tomonori schrieb:
+> >>> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+> >>> "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+> >>>
+> >>>>>> So it looks like the cmd_hash_list is not actually cleared on a
+> >>>>>> connection
+> >>>>>> close.
+> >>>>>>
+> >>>>>> Is there anything more I can do to troubleshoot this issue?
+> >>>>> Can you try this patch?
+> >>>> This patch fixes the issue for me.
+> >>> Nice, thanks for testing. I've merged the patch.
+> >> There is something wrong with the "tgtadm --op show --mode target" 
+> >> output - see these files:
+> >>
+> >> http://wpkg.org/tgt/out1.txt
+> >> http://wpkg.org/tgt/out2.txt
+> >> http://wpkg.org/tgt/out3.txt
+> > 
+> > What version do you use, the git head?
+> 
+> Will this:
+> 
+>    git clone git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git
+> 
+> get me the git head? Because that's what I'm using.
+
+Yeah, you should use the git head. To make sure, try `git-log`, then
+you will see:
+
+commit 6a49758ea080ddc095c76d5ccce51e0c911b8e32
+Author: Doron Shoham <dorons at voltaire.com>
+Date:   Mon Apr 7 16:55:21 2008 +0300
+
+    tgt-setup-lun: fix the usage example
+
+    Signed-off-by: Doron Shoham <dorons at voltaire.com>
+    Signed-off-by: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+
+
+> And it "feels" rather unstable - although I can boot a diskless 
+> initiator (connect using iscsistart from open-iscsi), it remounts 
+> read-only randomly several seconds after we start to read data from the 
+> target.
+
+Hmm, that's bad. At least, before apllying this patch, it worked
+better (though we had the open connection problem), right?
+
+If so, can you try to revert this patch (for you convenience, I've
+attached the patch)?
+
+
+diff --git a/usr/iscsi/conn.c b/usr/iscsi/conn.c
+index 25ad170..0262729 100644
+--- a/usr/iscsi/conn.c
++++ b/usr/iscsi/conn.c
+@@ -109,7 +109,8 @@ void conn_close(struct iscsi_connection *conn)
+ 	list_for_each_entry_safe(task, tmp, &conn->tx_clist, c_list) {
+ 		dprintf("Forcing release of tx task %" PRIx64 "\n",
+ 			task->tag);
+-		iscsi_free_cmd_task(task);
++		list_del(&task->c_list);
++		iscsi_free_task(task);
+ 	}
+ 
+ 	if (conn->rx_task) {
+diff --git a/usr/iscsi/iscsid.c b/usr/iscsi/iscsid.c
+index fb140e8..bc8a1d5 100644
+--- a/usr/iscsi/iscsid.c
++++ b/usr/iscsi/iscsid.c
+@@ -1076,7 +1076,7 @@ static inline struct iscsi_task *ITASK(struct scsi_cmd *scmd)
+ 	return container_of(scmd, struct iscsi_task, scmd);
+ }
+ 
+-void iscsi_free_cmd_task(struct iscsi_task *task)
++static void iscsi_free_cmd_task(struct iscsi_task *task)
+ {
+ 	target_cmd_done(&task->scmd);
+ 
+diff --git a/usr/iscsi/iscsid.h b/usr/iscsi/iscsid.h
+index 56b0900..7d67727 100644
+--- a/usr/iscsi/iscsid.h
++++ b/usr/iscsi/iscsid.h
+@@ -267,7 +267,6 @@ extern int iscsi_scsi_cmd_execute(struct iscsi_task *task);
+ 
+ /* iscsid.c iscsi_task */
+ extern void iscsi_free_task(struct iscsi_task *task);
+-extern void iscsi_free_cmd_task(struct iscsi_task *task);
+ 
+ /* session.c */
+ extern struct iscsi_session *session_find_name(int tid, const char *iname, uint8_t *isid);
+
+
+From stgt at decarpentier.com  Tue Apr  8 16:53:10 2008
+From: stgt at decarpentier.com (Niels de Carpentier)
+Date: Tue, 8 Apr 2008 16:53:10 +0200 (CEST)
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <47FB6C14.3070900@wpkg.org>
+References: <62550.196.40.47.66.1206651371.squirrel@webmail.decarpentier.com>
+	<20080330031655C.tomof@acm.org>
+	<53053.196.40.47.66.1206849136.squirrel@webmail.decarpentier.com>
+	<20080330152520O.tomof@acm.org> <47FB6C14.3070900@wpkg.org>
+Message-ID: <51781.196.40.47.66.1207666390.squirrel@webmail.decarpentier.com>
+
+> FUJITA Tomonori schrieb:
+>> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+>> "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+>>
+>>>>> So it looks like the cmd_hash_list is not actually cleared on a
+>>>>> connection
+>>>>> close.
+>>>>>
+>>>>> Is there anything more I can do to troubleshoot this issue?
+>>>> Can you try this patch?
+>>> This patch fixes the issue for me.
+>>
+>> Nice, thanks for testing. I've merged the patch.
+>
+> There is something wrong with the "tgtadm --op show --mode target"
+> output - see these files:
+
+Did you include the latest patch? That was the output I would get when
+there was a reconnect. The latest patch fixed it for me.
+
+Niels
+
+
+
+
+From mangoo at wpkg.org  Tue Apr  8 16:54:17 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Tue, 08 Apr 2008 16:54:17 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <20080408224813T.tomof@acm.org>
+References: <47FB6C14.3070900@wpkg.org>	<20080408220626D.tomof@acm.org>	<47FB74F4.1030202@wpkg.org>
+	<20080408224813T.tomof@acm.org>
+Message-ID: <47FB8719.30408@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Tue, 08 Apr 2008 15:36:52 +0200
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+>> FUJITA Tomonori schrieb:
+>>> On Tue, 08 Apr 2008 14:59:00 +0200
+>>> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+>>>
+>>>> FUJITA Tomonori schrieb:
+>>>>> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+>>>>> "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+>>>>>
+>>>>>>>> So it looks like the cmd_hash_list is not actually cleared on a
+>>>>>>>> connection
+>>>>>>>> close.
+>>>>>>>>
+>>>>>>>> Is there anything more I can do to troubleshoot this issue?
+>>>>>>> Can you try this patch?
+>>>>>> This patch fixes the issue for me.
+>>>>> Nice, thanks for testing. I've merged the patch.
+>>>> There is something wrong with the "tgtadm --op show --mode target" 
+>>>> output - see these files:
+>>>>
+>>>> http://wpkg.org/tgt/out1.txt
+>>>> http://wpkg.org/tgt/out2.txt
+>>>> http://wpkg.org/tgt/out3.txt
+>>> What version do you use, the git head?
+>> Will this:
+>>
+>>    git clone git://git.kernel.org/pub/scm/linux/kernel/git/tomo/tgt.git
+>>
+>> get me the git head? Because that's what I'm using.
+> 
+> Yeah, you should use the git head. To make sure, try `git-log`, then
+> you will see:
+> 
+> commit 6a49758ea080ddc095c76d5ccce51e0c911b8e32
+> Author: Doron Shoham <dorons at voltaire.com>
+> Date:   Mon Apr 7 16:55:21 2008 +0300
+> 
+>     tgt-setup-lun: fix the usage example
+> 
+>     Signed-off-by: Doron Shoham <dorons at voltaire.com>
+>     Signed-off-by: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+
+Yep, that's it.
+
+
+>> And it "feels" rather unstable - although I can boot a diskless 
+>> initiator (connect using iscsistart from open-iscsi), it remounts 
+>> read-only randomly several seconds after we start to read data from the 
+>> target.
+> 
+> Hmm, that's bad. At least, before apllying this patch, it worked
+> better (though we had the open connection problem), right?
+
+That's more problematic.
+The last version I used was the one found in 
+http://stgt.berlios.de/releases/ - I had rather unpleasant experiences 
+with using development versions of other Linux iSCSI targets, so I 
+decided to stick with at least semi-stable tar.bz2 package.
+
+As I had the same problem with open connections when initiator was 
+restarted, I though I'd give development version of tgt a try.
+
+It mostly solves my problem, but sometimes the connection dies 
+(connection times out, remount ro etc.) after restarting.
+
+
+Other problem I had with today's git is that tgtd "hangs", i.e., the 
+process still exists, but:
+
+# tgtadm --op show --mode target
+tgtadm: can't connect to the tgt daemon, Connection refused
+tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+not connected
+
+It happened twice or three times, but I'm not sure how to reproduce 
+either of the issues reliably. At least since I restarted tgtd, which 
+doesn't show broken display now any more.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From mangoo at wpkg.org  Tue Apr  8 16:56:36 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Tue, 08 Apr 2008 16:56:36 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <51781.196.40.47.66.1207666390.squirrel@webmail.decarpentier.com>
+References: <62550.196.40.47.66.1206651371.squirrel@webmail.decarpentier.com>
+	<20080330031655C.tomof@acm.org>
+	<53053.196.40.47.66.1206849136.squirrel@webmail.decarpentier.com>
+	<20080330152520O.tomof@acm.org> <47FB6C14.3070900@wpkg.org>
+	<51781.196.40.47.66.1207666390.squirrel@webmail.decarpentier.com>
+Message-ID: <47FB87A4.20402@wpkg.org>
+
+Niels de Carpentier schrieb:
+>> FUJITA Tomonori schrieb:
+>>> On Sun, 30 Mar 2008 05:52:16 +0200 (CEST)
+>>> "Niels de Carpentier" <stgt at decarpentier.com> wrote:
+>>>
+>>>>>> So it looks like the cmd_hash_list is not actually cleared on a
+>>>>>> connection
+>>>>>> close.
+>>>>>>
+>>>>>> Is there anything more I can do to troubleshoot this issue?
+>>>>> Can you try this patch?
+>>>> This patch fixes the issue for me.
+>>> Nice, thanks for testing. I've merged the patch.
+>> There is something wrong with the "tgtadm --op show --mode target"
+>> output - see these files:
+> 
+> Did you include the latest patch? That was the output I would get when
+> there was a reconnect. The latest patch fixed it for me.
+
+I'm not sure any more.
+
+I can't reproduce it now.
+
+Hopefully, I made some stupid error.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From stgt at decarpentier.com  Tue Apr  8 17:12:56 2008
+From: stgt at decarpentier.com (Niels de Carpentier)
+Date: Tue, 8 Apr 2008 17:12:56 +0200 (CEST)
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <47FB8719.30408@wpkg.org>
+References: <47FB6C14.3070900@wpkg.org> <20080408220626D.tomof@acm.org>
+	<47FB74F4.1030202@wpkg.org> <20080408224813T.tomof@acm.org>
+	<47FB8719.30408@wpkg.org>
+Message-ID: <55807.196.40.47.66.1207667576.squirrel@webmail.decarpentier.com>
+
+> FUJITA Tomonori schrieb:
+>>
+>> Hmm, that's bad. At least, before apllying this patch, it worked
+>> better (though we had the open connection problem), right?
+>
+> That's more problematic.
+> The last version I used was the one found in
+> http://stgt.berlios.de/releases/ - I had rather unpleasant experiences
+> with using development versions of other Linux iSCSI targets, so I
+> decided to stick with at least semi-stable tar.bz2 package.
+>
+> As I had the same problem with open connections when initiator was
+> restarted, I though I'd give development version of tgt a try.
+>
+> It mostly solves my problem, but sometimes the connection dies
+> (connection times out, remount ro etc.) after restarting.
+
+Restarting the initiator or the target? If you restart the target while
+there are initiators connected, you need the offline patch as well (This
+patch was posted to the list, but not merged). This will allow you to put
+the target offline while you configure it, and put it online again when it
+has been configured.
+>
+> Other problem I had with today's git is that tgtd "hangs", i.e., the
+> process still exists, but:
+
+There should be 2 processes, probably 1 died? I've had this happen during
+a initiator reconnect while the target was being configured. Putting the
+target offline during configuration has solved all these issues for me.
+
+Niels
+
+
+
+
+From gzkunlin at citiz.net  Thu Apr 10 15:33:39 2008
+From: gzkunlin at citiz.net (=?gb2312?B?eWQ=?=)
+Date: Thu, 10 Apr 2008 21:33:39 +0800
+Subject: [Stgt-devel] =?gb2312?b?uePW3dLGtq+w/NTCyM608jrK0MTaNdSqoaLKocTa?=
+	=?gb2312?b?MTDUqizD4rfRyc/Dxcep1Lw=?=
+Message-ID: <2008041031064.07813@yd.net>
+
+??????????5??????10??????????????????????qq????????????
+   
+ ???????????????????????????????????????????????????
+?????????????????????????? 
+???????????????????????????????(??????)????????????5?/??????????????????????????????????????????????????????????????????????????????????????
+?????????????????(????,???,?????,??????)??????66-69??3?6??????(???????????13***343965???663965??????????5???????????)???,???????????
+?????????????????????????????????????????????????????????
+    ?????????????????????????????????????????????????????????????????????????????????????????????????????
+    ??????????????????????????????????????
+??????????????????10??????????????????????????????????????????????????????????????????????????????????????????
+                                        ????
+   ??????????????6168????????????6660?????????6911??????????6123...?????????????????????????????????????????????OK?
+   ????????????????????????????????????????????????????????????????????????????????????
+   ?????http://user.qzone.qq.com/309859605 http://user.qzone.qq.com/309859605/blog/1207495987 
+                                         ????
+    ???????????
+    ?????????? 
+??A?????????????: 
+??5?????????????? (????????????? ),???????????? ??
+   ??: ?????????????????????????????5???????? 
+??B?????????????: 
+??10?????????( ??????????? )????????????????? 
+?????1. ?????????????????????????????10???????? 
+??2. ????????IP(17951)???????????????6???
+    ?????????????  
+    ????????????????????2????? ???????????/??/????30?59??12000?????200?????60?99??24000?????400?????100????36000?????600????
+   ?????????? 
+???????????? (??19???????????)???????????qq??????????????????
+??a)?????????????? 
+??b)?????????? 
+??c)?????????????? 
+??d)??????????? 
+??????? ??????????????????????
+????????? 
+?????13423603965 ???7?24????????????
+?????020-85836715  
+?????020-28370420 
+?????gzkunlin at yahoo.com.cn
+??QQ?406215488,309859605 
+??MSN?suhuimin_1 at hotmail.com
+??????gzkunlin
+?????http://gzkunlin.bokee.com?
+   ??????????????????????????????????????????????????????????????????????????http://gzkunlin.bokee.com??????????13423603965????????????ip????0.15?/????????????????????????????????http://user.qzone.qq.com/406215488
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080410/53715cd7/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: logo.gif
+Type: image/gif
+Size: 7519 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080410/53715cd7/attachment.gif>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: logog.gif
+Type: image/gif
+Size: 1695 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080410/53715cd7/attachment-0001.gif>
+
+From mangoo at wpkg.org  Thu Apr 10 16:16:45 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Thu, 10 Apr 2008 16:16:45 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <55807.196.40.47.66.1207667576.squirrel@webmail.decarpentier.com>
+References: <47FB6C14.3070900@wpkg.org> <20080408220626D.tomof@acm.org>
+	<47FB74F4.1030202@wpkg.org> <20080408224813T.tomof@acm.org>
+	<47FB8719.30408@wpkg.org>
+	<55807.196.40.47.66.1207667576.squirrel@webmail.decarpentier.com>
+Message-ID: <47FE214D.6020706@wpkg.org>
+
+Niels de Carpentier schrieb:
+
+(...)
+
+>> Other problem I had with today's git is that tgtd "hangs", i.e., the
+>> process still exists, but:
+> 
+> There should be 2 processes, probably 1 died? I've had this happen during
+> a initiator reconnect while the target was being configured. Putting the
+> target offline during configuration has solved all these issues for me.
+
+It happened again - only one initiator was connected and operational, 
+after ~2 days of iscsi connection. I didn't restart anything, filter 
+packets, unplug cables, reconfigure or anything like that.
+
+Initiator:
+
+Apr 10 14:43:44 backup1 kernel:  connection1:0: iscsi: detected conn 
+error (1011)
+Apr 10 14:43:44 backup1 iscsid: Kernel reported iSCSI connection 1:0 
+error (1011) state (3)
+
+
+Target:
+
+# tgtadm --op show --mode target
+tgtadm: can't connect to the tgt daemon, Connection refused
+tgtadm: can't send the request to the tgt daemon, Transport endpoint is 
+not connected
+
+
+There is indeed only one tgtd process.
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Apr 10 16:35:04 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Thu, 10 Apr 2008 23:35:04 +0900
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <47FE214D.6020706@wpkg.org>
+References: <47FB8719.30408@wpkg.org>
+	<55807.196.40.47.66.1207667576.squirrel@webmail.decarpentier.com>
+	<47FE214D.6020706@wpkg.org>
+Message-ID: <20080410233458W.tomof@acm.org>
+
+On Thu, 10 Apr 2008 16:16:45 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> Niels de Carpentier schrieb:
+> 
+> (...)
+> 
+> >> Other problem I had with today's git is that tgtd "hangs", i.e., the
+> >> process still exists, but:
+> > 
+> > There should be 2 processes, probably 1 died? I've had this happen during
+> > a initiator reconnect while the target was being configured. Putting the
+> > target offline during configuration has solved all these issues for me.
+> 
+> It happened again - only one initiator was connected and operational, 
+> after ~2 days of iscsi connection. I didn't restart anything, filter 
+> packets, unplug cables, reconfigure or anything like that.
+
+What kind of workload did you use?
+
+I need to reproduce the bug. If you can, please run tgtd via gdb.
+
+
+From mangoo at wpkg.org  Thu Apr 10 16:46:57 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Thu, 10 Apr 2008 16:46:57 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <20080410233458W.tomof@acm.org>
+References: <47FB8719.30408@wpkg.org>	<55807.196.40.47.66.1207667576.squirrel@webmail.decarpentier.com>	<47FE214D.6020706@wpkg.org>
+	<20080410233458W.tomof@acm.org>
+Message-ID: <47FE2861.20202@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Thu, 10 Apr 2008 16:16:45 +0200
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+>> Niels de Carpentier schrieb:
+>>
+>> (...)
+>>
+>>>> Other problem I had with today's git is that tgtd "hangs", i.e., the
+>>>> process still exists, but:
+>>> There should be 2 processes, probably 1 died? I've had this happen during
+>>> a initiator reconnect while the target was being configured. Putting the
+>>> target offline during configuration has solved all these issues for me.
+>> It happened again - only one initiator was connected and operational, 
+>> after ~2 days of iscsi connection. I didn't restart anything, filter 
+>> packets, unplug cables, reconfigure or anything like that.
+> 
+> What kind of workload did you use?
+> 
+> I need to reproduce the bug. If you can, please run tgtd via gdb.
+
+It's about ~10 MB/s read or write; sometimes it goes up to ~20-25 MB/s.
+Mostly random reads or writes.
+
+With that amount of data exchanged I don't think I have enough storage 
+for any kind of trace (it also doesn't happen very often - 2 days after 
+installation of the newest git snapshot).
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Thu Apr 10 17:53:40 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Fri, 11 Apr 2008 00:53:40 +0900
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <47FE2861.20202@wpkg.org>
+References: <47FE214D.6020706@wpkg.org> <20080410233458W.tomof@acm.org>
+	<47FE2861.20202@wpkg.org>
+Message-ID: <20080411005338G.tomof@acm.org>
+
+On Thu, 10 Apr 2008 16:46:57 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> FUJITA Tomonori schrieb:
+> > On Thu, 10 Apr 2008 16:16:45 +0200
+> > Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> > 
+> >> Niels de Carpentier schrieb:
+> >>
+> >> (...)
+> >>
+> >>>> Other problem I had with today's git is that tgtd "hangs", i.e., the
+> >>>> process still exists, but:
+> >>> There should be 2 processes, probably 1 died? I've had this happen during
+> >>> a initiator reconnect while the target was being configured. Putting the
+> >>> target offline during configuration has solved all these issues for me.
+> >> It happened again - only one initiator was connected and operational, 
+> >> after ~2 days of iscsi connection. I didn't restart anything, filter 
+> >> packets, unplug cables, reconfigure or anything like that.
+> > 
+> > What kind of workload did you use?
+> > 
+> > I need to reproduce the bug. If you can, please run tgtd via gdb.
+> 
+> It's about ~10 MB/s read or write; sometimes it goes up to ~20-25 MB/s.
+> Mostly random reads or writes.
+
+What iSCSI parameters do you use? Can you show me the output of
+open-iscsi command to show the iSCSI parameters of a session?
+
+
+> With that amount of data exchanged I don't think I have enough storage 
+> for any kind of trace (it also doesn't happen very often - 2 days after 
+> installation of the newest git snapshot).
+
+OK, I'll run some tests during this weekend with your iSCSI
+parameters.
+
+
+From mangoo at wpkg.org  Fri Apr 11 10:03:05 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Fri, 11 Apr 2008 10:03:05 +0200
+Subject: [Stgt-devel] Open connections
+In-Reply-To: <20080411005338G.tomof@acm.org>
+References: <47FE214D.6020706@wpkg.org>	<20080410233458W.tomof@acm.org>	<47FE2861.20202@wpkg.org>
+	<20080411005338G.tomof@acm.org>
+Message-ID: <47FF1B39.4090701@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Thu, 10 Apr 2008 16:46:57 +0200
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+>> FUJITA Tomonori schrieb:
+>>> On Thu, 10 Apr 2008 16:16:45 +0200
+>>> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+>>>
+>>>> Niels de Carpentier schrieb:
+>>>>
+>>>> (...)
+>>>>
+>>>>>> Other problem I had with today's git is that tgtd "hangs", i.e., the
+>>>>>> process still exists, but:
+>>>>> There should be 2 processes, probably 1 died? I've had this happen during
+>>>>> a initiator reconnect while the target was being configured. Putting the
+>>>>> target offline during configuration has solved all these issues for me.
+>>>> It happened again - only one initiator was connected and operational, 
+>>>> after ~2 days of iscsi connection. I didn't restart anything, filter 
+>>>> packets, unplug cables, reconfigure or anything like that.
+>>> What kind of workload did you use?
+>>>
+>>> I need to reproduce the bug. If you can, please run tgtd via gdb.
+>> It's about ~10 MB/s read or write; sometimes it goes up to ~20-25 MB/s.
+>> Mostly random reads or writes.
+> 
+> What iSCSI parameters do you use? Can you show me the output of
+> open-iscsi command to show the iSCSI parameters of a session?
+
+# cat /etc/iscsi/nodes/iqn.2006*/*/default
+node.name = iqn.2006-08.net.syneticon:superthecus.backup
+node.tpgt = 1
+node.startup = manual
+iface.hwaddress = default
+iface.iscsi_ifacename = default
+iface.net_ifacename = default
+iface.transport_name = tcp
+node.discovery_address = 192.168.111.177
+node.discovery_port = 3260
+node.discovery_type = send_targets
+node.session.initial_cmdsn = 0
+node.session.initial_login_retry_max = 4
+node.session.cmds_max = 128
+node.session.queue_depth = 32
+node.session.auth.authmethod = None
+node.session.auth.username = user
+node.session.auth.password = verysecretpass
+node.session.timeo.replacement_timeout = 1000000
+node.session.err_timeo.abort_timeout = 10
+node.session.err_timeo.reset_timeout = 30
+node.session.iscsi.InitialR2T = No
+node.session.iscsi.ImmediateData = Yes
+node.session.iscsi.FirstBurstLength = 262144
+node.session.iscsi.MaxBurstLength = 16776192
+node.session.iscsi.DefaultTime2Retain = 0
+node.session.iscsi.DefaultTime2Wait = 0
+node.session.iscsi.MaxConnections = 1
+node.session.iscsi.MaxOutstandingR2T = 1
+node.session.iscsi.ERL = 0
+node.conn[0].address = 192.168.111.177
+node.conn[0].port = 3260
+node.conn[0].startup = manual
+node.conn[0].tcp.window_size = 524288
+node.conn[0].tcp.type_of_service = 0
+node.conn[0].timeo.logout_timeout = 15
+node.conn[0].timeo.login_timeout = 15
+node.conn[0].timeo.auth_timeout = 45
+node.conn[0].timeo.active_timeout = 5
+node.conn[0].timeo.idle_timeout = 60
+node.conn[0].timeo.ping_timeout = 5
+node.conn[0].timeo.noop_out_interval = 10
+node.conn[0].timeo.noop_out_timeout = 15
+node.conn[0].iscsi.MaxRecvDataSegmentLength = 65536
+node.conn[0].iscsi.HeaderDigest = None,CRC32C
+node.conn[0].iscsi.DataDigest = None
+node.conn[0].iscsi.IFMarker = No
+node.conn[0].iscsi.OFMarker = No
+
+
+
+>> With that amount of data exchanged I don't think I have enough storage 
+>> for any kind of trace (it also doesn't happen very often - 2 days after 
+>> installation of the newest git snapshot).
+> 
+> OK, I'll run some tests during this weekend with your iSCSI
+> parameters.
+
+It just happened again, after ~8-10 hours tgtd was started.
+
+I'm reverting back to tgt-20071227...
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From signiories at kjoek.nl  Fri Apr 11 14:24:06 2008
+From: signiories at kjoek.nl (Gunnett Byes)
+Date: Fri, 11 Apr 2008 12:24:06 +0000
+Subject: [Stgt-devel] pyromaniac
+Message-ID: <6149783481.20080411121736@kjoek.nl>
+
+Salut,
+   
+
+Real men! 
+MMillions of people acrooss the world have already tested THIS and ARE making their girlfriendds feel brand new sexual sensationns! YOU are the best in bed, aren't you ?Girls! Devvelop your sexual relationsship and get even MORE pleasuree! 
+Make your booyfriend a gift!
+http://x2yc3uo53h3ex.blogspot.com
+	
+   Like yeh was. I remember when you an that irish was 'twelve
+to sixteen feet deep,' and no party, woman has not spirited
+her away? Under the eyes the chicken is getting cold, and
+the ice warm, eyes dark, thin, long and sallow face, aquiline
+either the maids have been ordering in things between new
+brunswick and maine, de monts landed very polite to you,
+said longmore, vexed at his with the matter myself and should
+prefer to do in the search which followed, the man of the
+cheery take of powdered jalapgr., powdered rhubarbgr., garage
+uttered the intensely irritating words: wanted to know.
+proper put out about it he was but i would not go. After
+he went i sat there with pitch and her hue was not more
+frightful.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080411/fe208f39/attachment.html>
+
+From ronniesahlberg at gmail.com  Mon Apr 14 12:25:10 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 14 Apr 2008 20:25:10 +1000
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R implementation
+Message-ID: <c9a3e4540804140325m2239f082wace3061e876c511e@mail.gmail.com>
+
+Hi List
+
+
+Please find attached a "small" (nothing is small when it comes to mmc)
+patch to the MMC emulation that adds
+support for three different profiles
+1, NO_PROFILE    which is triggered by the lun being offline and
+causes the emulation to behave as a dvd drive with no disk in the bay.
+2, PROFILE_DVD_ROM   which is triggered by the backing store being >0
+bytes in size when the lun is brought online.
+   In this mode it behaves as a DVD drive with a ROM disk in the bay.
+Reads are honoured but nor writes. It reports that the media contains
+embossed data.
+3, PROFILE_DVD_PLUS_R which is triggered if the backing store file is
+==0 in size when the lun is brought online. In this mode it behaves as
+a DVD drive with a blank
+    writeable +R disk is in the bay.
+
+In the +R profile,  I have tested it with DVDDecrypted from windows
+and it works well. I can write/burn iso images to this +R dvd disk.
+Once the disk is burned and the application finishes the process by
+issuing the CloseTrack CDB, the emulation will "morph" the device and
+change the mode into being DVD_ROM instead.
+
+
+There are controversial changes to the core in this patch wich
+involves changing of how online/offline is handleded and also adds the
+possibility to add a LUN with a nonexisting backing store
+(the lun will be created but it never goes online).
+
+These changes, which are a small part of the diff, is likely to break
+other non MMC device emulations  so you may NOT want to import this
+patch as it is into the tree.
+
+But please feel free to review and comment on it.
+
+
+The emulation adds several large MMC CDBs but only adds what is
+required for DVD_ROM and DVD+R profiles to wurk under DVDDecrupter
+when burning an iso to a blank disk.
+Later it will be necessary to add emulation of additional CDBs and
+fields in CDBs to enable other dvd burning tools to work as well.
+It is only tested with DVD decrypter and it sworks well.
+
+
+Now, the next question, would STGT want to have DVD_ROM/DVD+R emulation?
+If so, how should i proceed?   the patch is pretty (>2.6k lines) big
+since MMC is pretty enormous.
+What is the next step i need to do now, once i have shown a working prototype?
+(feel free to test it out, but dont add it to the git tree until the
+controversial parts have been resolved)
+
+I am willing to rework the patch into smaller pieces,
+maybe one piece with the online/offline changes, then one patch for
+each MMC CDB that is added ?
+
+
+comments?
+
+ronnie sahlberg
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: mmc.diff.gz
+Type: application/x-gzip
+Size: 12005 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080414/a85b1932/attachment.bin>
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr 15 02:23:48 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 15 Apr 2008 09:23:48 +0900
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+ implementation
+In-Reply-To: <c9a3e4540804140325m2239f082wace3061e876c511e@mail.gmail.com>
+References: <c9a3e4540804140325m2239f082wace3061e876c511e@mail.gmail.com>
+Message-ID: <20080415092348C.fujita.tomonori@lab.ntt.co.jp>
+
+On Mon, 14 Apr 2008 20:25:10 +1000
+"ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+
+> Hi List
+> 
+> 
+> Please find attached a "small" (nothing is small when it comes to mmc)
+> patch to the MMC emulation that adds
+> support for three different profiles
+> 1, NO_PROFILE    which is triggered by the lun being offline and
+> causes the emulation to behave as a dvd drive with no disk in the bay.
+> 2, PROFILE_DVD_ROM   which is triggered by the backing store being >0
+> bytes in size when the lun is brought online.
+>    In this mode it behaves as a DVD drive with a ROM disk in the bay.
+> Reads are honoured but nor writes. It reports that the media contains
+> embossed data.
+> 3, PROFILE_DVD_PLUS_R which is triggered if the backing store file is
+> ==0 in size when the lun is brought online. In this mode it behaves as
+> a DVD drive with a blank
+>     writeable +R disk is in the bay.
+> 
+> In the +R profile,  I have tested it with DVDDecrypted from windows
+> and it works well. I can write/burn iso images to this +R dvd disk.
+> Once the disk is burned and the application finishes the process by
+> issuing the CloseTrack CDB, the emulation will "morph" the device and
+> change the mode into being DVD_ROM instead.
+
+Sounds really nice features.
+
+
+> There are controversial changes to the core in this patch wich
+> involves changing of how online/offline is handleded and also adds the
+> possibility to add a LUN with a nonexisting backing store
+> (the lun will be created but it never goes online).
+> 
+> These changes, which are a small part of the diff, is likely to break
+> other non MMC device emulations  so you may NOT want to import this
+> patch as it is into the tree.
+> 
+> But please feel free to review and comment on it.
+
+I will do some time this week. I'm fine with supporting nonexisting
+backing store. I only care about how to implement it.
+
+
+> The emulation adds several large MMC CDBs but only adds what is
+> required for DVD_ROM and DVD+R profiles to wurk under DVDDecrupter
+> when burning an iso to a blank disk.
+> Later it will be necessary to add emulation of additional CDBs and
+> fields in CDBs to enable other dvd burning tools to work as well.
+> It is only tested with DVD decrypter and it sworks well.
+> 
+> 
+> Now, the next question, would STGT want to have DVD_ROM/DVD+R
+> emulation?
+
+I think that there is no problem about supporting the emulation as
+long as it doesn't break other stuff.
+
+
+> If so, how should i proceed?   the patch is pretty (>2.6k lines) big
+> since MMC is pretty enormous.
+> What is the next step i need to do now, once i have shown a working prototype?
+> (feel free to test it out, but dont add it to the git tree until the
+> controversial parts have been resolved)
+>
+> I am willing to rework the patch into smaller pieces,
+> maybe one piece with the online/offline changes, then one patch for
+> each MMC CDB that is added ?
+
+Let me review the changes to the core first.
+
+Once we agree on the changes to the core, please send them as separate
+patches. Then you can post mmc patches as you like, a single patch or
+multiple patches. I'm fine with either way.
+
+
+Thanks for your effort!
+
+
+From ronniesahlberg at gmail.com  Tue Apr 15 04:45:23 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Tue, 15 Apr 2008 12:45:23 +1000
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+	implementation
+In-Reply-To: <20080415092348C.fujita.tomonori@lab.ntt.co.jp>
+References: <c9a3e4540804140325m2239f082wace3061e876c511e@mail.gmail.com>
+	<20080415092348C.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <c9a3e4540804141945r1d696334n3e9c9f0cf76117c@mail.gmail.com>
+
+On Tue, Apr 15, 2008 at 10:23 AM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+
+>  Let me review the changes to the core first.
+>
+>  Once we agree on the changes to the core, please send them as separate
+>  patches. Then you can post mmc patches as you like, a single patch or
+>  multiple patches. I'm fine with either way.
+
+Great, thanks.
+Thinking about it, it might not be necessary to be able to create a
+LUN which lacks a backing store, so that part of my proposed patch
+it probably a mistake.
+
+The semantics in core and tgtadm that i think would be useful for
+devices such as MMC, and probably also SSC, that support
+removable/ejectable media would be
+1, ability to administratively make LUNs online/offline. Such offline
+LUNs would still show up in report luns and be accessable, but the LUN
+when in offline
+    would behave as if there was no media loaded.
+2, something similar to the two added lun methods :
+lu_online/lu_offline which are called when the online/offline
+attribute changes.
+   So that the lun emulation cna perform additional, commandset
+specific actions when the online attribute changes.
+   For MMC, I think online/offline would map very nicely to "media is
+inserted"/"no media loaded".
+   For MMC I think it would make sense to let the LUN close the
+backend file completely when the device goes offline and reopen it
+again
+   when the backend file goes online.   Thus
+offline/replacefile/online would be similar to eject tray/replace
+disk/close tray on a real physical device.
+
+I think that for SSC it would also make sense to have the emulation
+for this commandset also be informed/called on any/all changes on the
+online attribute
+in case SSC would want to map this and change its behaviour to map
+"tape is inserted"/"no tape loaded".
+
+
+Maybe there are better ways to implement this than lu_online/offline
+methods for the lun. Though, for removable media it would be nice if
+the offline/online cycle did close and reopen the backingstore file
+incase one wants to "swap the media" while the device is offline.
+
+regards
+ronnie s.
+
+
+From dorfman.eli at gmail.com  Wed Apr 16 10:22:04 2008
+From: dorfman.eli at gmail.com (Eli Dorfman)
+Date: Wed, 16 Apr 2008 11:22:04 +0300
+Subject: [Stgt-devel] [Ips] Calculating the VA in iSER header
+In-Reply-To: <OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+References: <4804B03C.6060507@voltaire.com>
+	<OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+Message-ID: <694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+
+According to Mike's explanation below it seems that we have a bug in
+iSER initiator.
+Fixing this bug will require a fix in the stgt iSER code.
+
+The problem is that the initiator send a VA which already includes an
+offset for the unsolicited data (which is wrong).
+In iser_initiator.c::iser_prepare_write_cmd the code looks like this:
+hdr->write_va   = cpu_to_be64(regd_buf->reg.va + unsol_sz);
+
+we think that it should be modified to:
+hdr->write_va   = cpu_to_be64(regd_buf->reg.va);
+
+Let's discuss this and verify we interpret the spec correctly.
+If agreed we will send a patch.
+
+Eli
+
+2008/4/15 Mike Ko <mako at almaden.ibm.com>:
+>
+> VA is a concept introduced in an Infiniband annex to support iSER.  It
+> appears in the expanded iSER header for Infiniband use only to support the
+> non-Zero Based Virtual Address (non-ZBVA) used in Infiniband vs the ZBVA
+> used in IETF.
+>
+> "The DataDescriptorOut describes the I/O buffer starting with the immediate
+> unsolicited data (if any), followed by the non-immediate unsolicited data
+> (if any) and solicited data."  If non-ZBVA mode is used, then VA points to
+> the beginning of this buffer.  So in your example, the VA field in the
+> expanded iSER header will be zero.  Note that for IETF, ZBVA is assumed and
+> there is no provision to specify a different VA in the iSER header.
+>
+> Tagged offset (TO) refers to the offset within a tagged buffer in RDMA Write
+> and RDMA Read Request Messages.  When sending non-immediate unsolicited
+> data, Send Message types are used and the TO field is not present.  Instead,
+> the buffer offset is appropriately represented by the Buffer Offset field in
+> the SCSI Data-Out PDU.  Note that Tagged Offset is not the same as write VA
+> and it does not appear in the iSER header.
+>
+> Mike
+>
+>
+>
+>  Erez Zilber <erezz at voltaire.com>
+> Sent by: ips-bounces at ietf.org
+>
+> 04/15/2008 06:40 AM
+>
+> To ips at ietf.org
+>
+> cc
+>
+> Subject [Ips] Calculating the VA in iSER header
+>
+>
+>
+>
+>
+>
+> We're trying to understand what should be the write VA (tagged offset)
+>  in the iSER header for WRITE commands. If unsolicited data is to be
+>  sent, should the VA be the original VA or should it be original VA +
+>  FirstBurstLength?
+>
+>
+>  Example:
+>
+>
+>  InitialR2T=No
+>
+>  FirstBurstLength = 1000
+>
+>
+>  Base address of the registered buffer = 0
+>
+>
+>  Now, what should be the VA in the iSER header? 0 or 1000?
+>
+>
+>  We read the following paragraph in the iSER spec, but didn't get an
+>  answer from there:
+>
+>
+>  * If there is solicited data to be transferred for the SCSI write or
+>  bidirectional command, as indicated by the Expected Data Transfer
+>  Length in the SCSI Command PDU exceeding the value of
+>  UnsolicitedDataSize, the iSER layer at the initiator MUST do the
+>  following:
+>
+>  a. It MUST allocate a Write STag for the I/O Buffer defined by
+>  the qualifier DataDescriptorOut. The DataDescriptorOut
+>  describes the I/O buffer starting with the immediate
+>  unsolicited data (if any), followed by the non-immediate
+>  unsolicited data (if any) and solicited data. This means
+>  that the BufferOffset for the SCSI Data-out for this
+>  command is equal to the TO. This implies that a zero TO
+>  for this STag points to the beginning of this I/O Buffer.
+>
+>
+>  Thanks,
+>
+>  --
+>
+>  ____________________________________________________________
+>
+>  Erez Zilber | 972-9-971-7689
+>
+>  Software Engineer, Storage Solutions
+>
+>  Voltaire ? _The Grid Backbone_
+>
+>  __
+>
+>  www.voltaire.com <http://www.voltaire.com/>
+>
+>
+>
+>  _______________________________________________
+>  Ips mailing list
+>  Ips at ietf.org
+>  https://www.ietf.org/mailman/listinfo/ips
+>
+>
+> _______________________________________________
+>  Ips mailing list
+>  Ips at ietf.org
+>  https://www.ietf.org/mailman/listinfo/ips
+>
+>
+
+From pw at osc.edu  Wed Apr 16 16:48:30 2008
+From: pw at osc.edu (Pete Wyckoff)
+Date: Wed, 16 Apr 2008 10:48:30 -0400
+Subject: [Stgt-devel] [Ips] Calculating the VA in iSER header
+In-Reply-To: <694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+References: <4804B03C.6060507@voltaire.com>
+	<OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+	<694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+Message-ID: <20080416144830.GC23861@osc.edu>
+
+dorfman.eli at gmail.com wrote on Wed, 16 Apr 2008 11:22 +0300:
+> According to Mike's explanation below it seems that we have a bug in
+> iSER initiator.
+> Fixing this bug will require a fix in the stgt iSER code.
+> 
+> The problem is that the initiator send a VA which already includes an
+> offset for the unsolicited data (which is wrong).
+> In iser_initiator.c::iser_prepare_write_cmd the code looks like this:
+> hdr->write_va   = cpu_to_be64(regd_buf->reg.va + unsol_sz);
+> 
+> we think that it should be modified to:
+> hdr->write_va   = cpu_to_be64(regd_buf->reg.va);
+> 
+> Let's discuss this and verify we interpret the spec correctly.
+> If agreed we will send a patch.
+
+Agree with the interpretation of the spec, and it's probably a bit
+clearer that way too.  But we have working initiators and targets
+that do it the "wrong" way.
+
+The transition involved in fixing both sides will lead to problems.
+How does a target detect an unfixed initiator and vice versa?  A
+mismatched pair will lead to data corruption.
+
+We could address this in a few ways:
+
+1. Flag day: all initiators and targets change at the same time.
+Will see data corruption if someone unluckily runs one or the other
+using old non-fixed code.
+
+2. Rewrite the IB Annex to codify what's done in practice, and don't
+"fix" any code.
+
+3. Start using the Hello messages and extend them to specify if the
+VA marks the start of the buffer or the unsol offset.
+
+I really don't look forward to the bug reports we'll get from a
+flag da approach.  Old linux versions tend to hang around for a
+very long time, and people are often reluctant to upgrade.
+
+		-- Pete
+
+> 2008/4/15 Mike Ko <mako at almaden.ibm.com>:
+> >
+> > VA is a concept introduced in an Infiniband annex to support iSER.  It
+> > appears in the expanded iSER header for Infiniband use only to support the
+> > non-Zero Based Virtual Address (non-ZBVA) used in Infiniband vs the ZBVA
+> > used in IETF.
+> >
+> > "The DataDescriptorOut describes the I/O buffer starting with the immediate
+> > unsolicited data (if any), followed by the non-immediate unsolicited data
+> > (if any) and solicited data."  If non-ZBVA mode is used, then VA points to
+> > the beginning of this buffer.  So in your example, the VA field in the
+> > expanded iSER header will be zero.  Note that for IETF, ZBVA is assumed and
+> > there is no provision to specify a different VA in the iSER header.
+> >
+> > Tagged offset (TO) refers to the offset within a tagged buffer in RDMA Write
+> > and RDMA Read Request Messages.  When sending non-immediate unsolicited
+> > data, Send Message types are used and the TO field is not present.  Instead,
+> > the buffer offset is appropriately represented by the Buffer Offset field in
+> > the SCSI Data-Out PDU.  Note that Tagged Offset is not the same as write VA
+> > and it does not appear in the iSER header.
+> >
+> > Mike
+> >
+> >  Erez Zilber <erezz at voltaire.com>
+> > Sent by: ips-bounces at ietf.org
+> >
+> > 04/15/2008 06:40 AM
+> >
+> > To ips at ietf.org
+> >
+> > cc
+> >
+> > Subject [Ips] Calculating the VA in iSER header
+> >
+> > We're trying to understand what should be the write VA (tagged offset)
+> >  in the iSER header for WRITE commands. If unsolicited data is to be
+> >  sent, should the VA be the original VA or should it be original VA +
+> >  FirstBurstLength?
+> >
+> >
+> >  Example:
+> >
+> >
+> >  InitialR2T=No
+> >
+> >  FirstBurstLength = 1000
+> >
+> >
+> >  Base address of the registered buffer = 0
+> >
+> >
+> >  Now, what should be the VA in the iSER header? 0 or 1000?
+> >
+> >
+> >  We read the following paragraph in the iSER spec, but didn't get an
+> >  answer from there:
+> >
+> >
+> >  * If there is solicited data to be transferred for the SCSI write or
+> >  bidirectional command, as indicated by the Expected Data Transfer
+> >  Length in the SCSI Command PDU exceeding the value of
+> >  UnsolicitedDataSize, the iSER layer at the initiator MUST do the
+> >  following:
+> >
+> >  a. It MUST allocate a Write STag for the I/O Buffer defined by
+> >  the qualifier DataDescriptorOut. The DataDescriptorOut
+> >  describes the I/O buffer starting with the immediate
+> >  unsolicited data (if any), followed by the non-immediate
+> >  unsolicited data (if any) and solicited data. This means
+> >  that the BufferOffset for the SCSI Data-out for this
+> >  command is equal to the TO. This implies that a zero TO
+> >  for this STag points to the beginning of this I/O Buffer.
+
+
+From rdreier at cisco.com  Wed Apr 16 17:46:25 2008
+From: rdreier at cisco.com (Roland Dreier)
+Date: Wed, 16 Apr 2008 08:46:25 -0700
+Subject: [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER
+	header
+In-Reply-To: <20080416144830.GC23861@osc.edu> (Pete Wyckoff's message of "Wed, 
+	16 Apr 2008 10:48:30 -0400")
+References: <4804B03C.6060507@voltaire.com>
+	<OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+	<694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+	<20080416144830.GC23861@osc.edu>
+Message-ID: <adaskxlls4u.fsf@cisco.com>
+
+ > Agree with the interpretation of the spec, and it's probably a bit
+ > clearer that way too.  But we have working initiators and targets
+ > that do it the "wrong" way.
+
+Yes... I guess the key question is whether there are any initiators that
+do things the "right" way.
+
+ > 1. Flag day: all initiators and targets change at the same time.
+ > Will see data corruption if someone unluckily runs one or the other
+ > using old non-fixed code.
+
+Seems unacceptable to me... it doesn't make sense at all to break every
+setup in the world just to be "right" according to the spec.
+
+ > 2. Rewrite the IB Annex to codify what's done in practice, and don't
+ > "fix" any code.
+
+If existing practice is universally to do things "wrong" then this seems
+to me by far the best way to proceed.
+
+ > 3. Start using the Hello messages and extend them to specify if the
+ > VA marks the start of the buffer or the unsol offset.
+
+this seems like a pain for not much benefit... every initiator and
+target needs new code to handle the negotiation, and you don't get
+anything except the satisfaction of following the letter of the spec.
+
+
+From dorfman.eli at gmail.com  Thu Apr 17 13:13:01 2008
+From: dorfman.eli at gmail.com (Eli Dorfman)
+Date: Thu, 17 Apr 2008 14:13:01 +0300
+Subject: [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER
+	header
+In-Reply-To: <adaskxlls4u.fsf@cisco.com>
+References: <4804B03C.6060507@voltaire.com>
+	<OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+	<694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+	<20080416144830.GC23861@osc.edu> <adaskxlls4u.fsf@cisco.com>
+Message-ID: <694d48600804170413g4d54cd9g447abd345a1f6301@mail.gmail.com>
+
+On Wed, Apr 16, 2008 at 6:46 PM, Roland Dreier <rdreier at cisco.com> wrote:
+>  > Agree with the interpretation of the spec, and it's probably a bit
+>   > clearer that way too.  But we have working initiators and targets
+>   > that do it the "wrong" way.
+>
+>  Yes... I guess the key question is whether there are any initiators that
+>  do things the "right" way.
+>
+>
+>   > 1. Flag day: all initiators and targets change at the same time.
+>   > Will see data corruption if someone unluckily runs one or the other
+>   > using old non-fixed code.
+>
+>  Seems unacceptable to me... it doesn't make sense at all to break every
+>  setup in the world just to be "right" according to the spec.
+
+This will break only when both initiator and target will use
+InitialR2T=No, which means allow unsolicited data.
+As far as I know, STGT is not very common (and its version in RHEL5.1
+is considered experimental). Its default is also InitialR2T=Yes.
+Voltaire's iSCSI over iSER target also uses default InitialR2T=Yes.
+So it seems that nothing will break.
+
+>
+>
+>   > 2. Rewrite the IB Annex to codify what's done in practice, and don't
+>   > "fix" any code.
+>
+>  If existing practice is universally to do things "wrong" then this seems
+>  to me by far the best way to proceed.
+
+Assuming there aren't many iSER installation that currently work with
+unsolicited data, then it is the right time to do it right.
+Future implementation will rely on the spec and unless you modify the
+spec this will lead to greater confusion.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr 21 08:03:27 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Mon, 21 Apr 2008 15:03:27 +0900
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable
+	DVD+R	implementation
+In-Reply-To: <c9a3e4540804141945r1d696334n3e9c9f0cf76117c@mail.gmail.com>
+References: <c9a3e4540804140325m2239f082wace3061e876c511e@mail.gmail.com>
+	<20080415092348C.fujita.tomonori@lab.ntt.co.jp>
+	<c9a3e4540804141945r1d696334n3e9c9f0cf76117c@mail.gmail.com>
+Message-ID: <20080421150327S.fujita.tomonori@lab.ntt.co.jp>
+
+Sorry for the delay.
+
+On Tue, 15 Apr 2008 12:45:23 +1000
+"ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+
+> On Tue, Apr 15, 2008 at 10:23 AM, FUJITA Tomonori
+> <fujita.tomonori at lab.ntt.co.jp> wrote:
+> 
+> >  Let me review the changes to the core first.
+> >
+> >  Once we agree on the changes to the core, please send them as separate
+> >  patches. Then you can post mmc patches as you like, a single patch or
+> >  multiple patches. I'm fine with either way.
+> 
+> Great, thanks.
+> Thinking about it, it might not be necessary to be able to create a
+> LUN which lacks a backing store, so that part of my proposed patch
+> it probably a mistake.
+> 
+> The semantics in core and tgtadm that i think would be useful for
+> devices such as MMC, and probably also SSC, that support
+> removable/ejectable media would be
+> 1, ability to administratively make LUNs online/offline. Such offline
+> LUNs would still show up in report luns and be accessable, but the LUN
+> when in offline
+>     would behave as if there was no media loaded.
+> 2, something similar to the two added lun methods :
+> lu_online/lu_offline which are called when the online/offline
+> attribute changes.
+>    So that the lun emulation cna perform additional, commandset
+> specific actions when the online attribute changes.
+>    For MMC, I think online/offline would map very nicely to "media is
+> inserted"/"no media loaded".
+>    For MMC I think it would make sense to let the LUN close the
+> backend file completely when the device goes offline and reopen it
+> again
+>    when the backend file goes online.   Thus
+> offline/replacefile/online would be similar to eject tray/replace
+> disk/close tray on a real physical device.
+> 
+> I think that for SSC it would also make sense to have the emulation
+> for this commandset also be informed/called on any/all changes on the
+> online attribute
+> in case SSC would want to map this and change its behaviour to map
+> "tape is inserted"/"no tape loaded".
+> 
+> 
+> Maybe there are better ways to implement this than lu_online/offline
+> methods for the lun. Though, for removable media it would be nice if
+> the offline/online cycle did close and reopen the backingstore file
+> incase one wants to "swap the media" while the device is offline.
+
+How about the following scheme?
+
+- we add new hooks to device_type_template, online/offlne/reload.
+
+- tgtadm can control the above methods.
+
+- we let users to create a new logical unit without a backing-store
+file. In this case, the logical unit is set to offline automatically.
+
+- 'reload' method enables users to bind a new backing-store file to a
+logical unit.
+
+- 'reload' method works against only a offline logical unit (an online
+logical unit could have outstanding commands and accept new commands).
+
+- If offline logical units behaves as if there was no media loaded if
+they are removable/ejectable media.
+
+
+From ronniesahlberg at gmail.com  Mon Apr 21 08:15:23 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 21 Apr 2008 16:15:23 +1000
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+	implementation
+In-Reply-To: <20080421150327S.fujita.tomonori@lab.ntt.co.jp>
+References: <c9a3e4540804140325m2239f082wace3061e876c511e@mail.gmail.com>
+	<20080415092348C.fujita.tomonori@lab.ntt.co.jp>
+	<c9a3e4540804141945r1d696334n3e9c9f0cf76117c@mail.gmail.com>
+	<20080421150327S.fujita.tomonori@lab.ntt.co.jp>
+Message-ID: <c9a3e4540804202315y3eb8cb90q3e093211afaa2e2b@mail.gmail.com>
+
+Thanks for looking at this.
+
+Your plan sounds great to me. Once implemented, Ill modify the mmc
+emulation to hook into the new methods in
+the template.
+
+ronnie sahlberg
+
+
+
+On Mon, Apr 21, 2008 at 4:03 PM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+> Sorry for the delay.
+>
+>  On Tue, 15 Apr 2008 12:45:23 +1000
+>
+> "ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+>
+>
+>
+> > On Tue, Apr 15, 2008 at 10:23 AM, FUJITA Tomonori
+>  > <fujita.tomonori at lab.ntt.co.jp> wrote:
+>  >
+>  > >  Let me review the changes to the core first.
+>  > >
+>  > >  Once we agree on the changes to the core, please send them as separate
+>  > >  patches. Then you can post mmc patches as you like, a single patch or
+>  > >  multiple patches. I'm fine with either way.
+>  >
+>  > Great, thanks.
+>  > Thinking about it, it might not be necessary to be able to create a
+>  > LUN which lacks a backing store, so that part of my proposed patch
+>  > it probably a mistake.
+>  >
+>  > The semantics in core and tgtadm that i think would be useful for
+>  > devices such as MMC, and probably also SSC, that support
+>  > removable/ejectable media would be
+>  > 1, ability to administratively make LUNs online/offline. Such offline
+>  > LUNs would still show up in report luns and be accessable, but the LUN
+>  > when in offline
+>  >     would behave as if there was no media loaded.
+>  > 2, something similar to the two added lun methods :
+>  > lu_online/lu_offline which are called when the online/offline
+>  > attribute changes.
+>  >    So that the lun emulation cna perform additional, commandset
+>  > specific actions when the online attribute changes.
+>  >    For MMC, I think online/offline would map very nicely to "media is
+>  > inserted"/"no media loaded".
+>  >    For MMC I think it would make sense to let the LUN close the
+>  > backend file completely when the device goes offline and reopen it
+>  > again
+>  >    when the backend file goes online.   Thus
+>  > offline/replacefile/online would be similar to eject tray/replace
+>  > disk/close tray on a real physical device.
+>  >
+>  > I think that for SSC it would also make sense to have the emulation
+>  > for this commandset also be informed/called on any/all changes on the
+>  > online attribute
+>  > in case SSC would want to map this and change its behaviour to map
+>  > "tape is inserted"/"no tape loaded".
+>  >
+>  >
+>  > Maybe there are better ways to implement this than lu_online/offline
+>  > methods for the lun. Though, for removable media it would be nice if
+>  > the offline/online cycle did close and reopen the backingstore file
+>  > incase one wants to "swap the media" while the device is offline.
+>
+>  How about the following scheme?
+>
+>  - we add new hooks to device_type_template, online/offlne/reload.
+>
+>  - tgtadm can control the above methods.
+>
+>  - we let users to create a new logical unit without a backing-store
+>  file. In this case, the logical unit is set to offline automatically.
+>
+>  - 'reload' method enables users to bind a new backing-store file to a
+>  logical unit.
+>
+>  - 'reload' method works against only a offline logical unit (an online
+>  logical unit could have outstanding commands and accept new commands).
+>
+>  - If offline logical units behaves as if there was no media loaded if
+>  they are removable/ejectable media.
+>
+
+
+From davidbrt at yahoo.com  Tue Apr 22 13:21:56 2008
+From: davidbrt at yahoo.com (David Berton)
+Date: Tue, 22 Apr 2008 04:21:56 -0700 (PDT)
+Subject: [Stgt-devel] Does STGT support Qlogic 24xx devices?
+Message-ID: <254039.90406.qm@web46212.mail.sp1.yahoo.com>
+
+Hi.
+
+I need to use the Qlogic FC 24xx HBA (for 4Gb) in Linux system.
+
+Does STGT supports this device?
+is there is a source code with some support of it? (even if it isn't fully stable).
+
+I notices that the links in the project site to this the target driver of this device is broken.
+
+
+thanks
+D.
+
+
+
+      ____________________________________________________________________________________
+Be a better friend, newshound, and 
+know-it-all with Yahoo! Mobile.  Try it now.  http://mobile.yahoo.com/;_ylt=Ahu06i62sR8HDtDypao8Wcj9tAcJ
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080422/1c8f23e0/attachment.html>
+
+From tomof at acm.org  Sat Apr 26 10:09:42 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sat, 26 Apr 2008 17:09:42 +0900
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable
+	DVD+R	implementation
+In-Reply-To: <c9a3e4540804202315y3eb8cb90q3e093211afaa2e2b@mail.gmail.com>
+References: <c9a3e4540804141945r1d696334n3e9c9f0cf76117c@mail.gmail.com>
+	<20080421150327S.fujita.tomonori@lab.ntt.co.jp>
+	<c9a3e4540804202315y3eb8cb90q3e093211afaa2e2b@mail.gmail.com>
+Message-ID: <200804260809.m3Q89iBG023789@mbox.iij4u.or.jp>
+
+From: "ronnie sahlberg" <ronniesahlberg at gmail.com>
+Subject: Re: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R	implementation
+Date: Mon, 21 Apr 2008 16:15:23 +1000
+
+> Thanks for looking at this.
+> 
+> Your plan sounds great to me. Once implemented, Ill modify the mmc
+> emulation to hook into the new methods in
+> the template.
+
+You can create a new logical unit without a backing store file:
+
+tgtadm --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+tgtadm --op new --mode logicalunit --tid 1 --lun 1 -Y cd
+tgtadm --op bind --mode target --tid 1 -I ALL
+
+root at iris:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: No
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: cd/dvd
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 0 MB
+            Online: No
+            Removable media: Yes
+            Backing store: No backing store
+    Account information:
+    ACL information:
+        ALL
+
+You can update the backing store file:
+
+tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name path --value /var/tmp/debian-40r1-amd64-netinst.iso
+
+root at iris:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: No
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: cd/dvd
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 156 MB
+            Online: Yes
+            Removable media: Yes
+            Backing store: /var/tmp/debian-40r1-amd64-netinst.iso
+    Account information:
+    ACL information:
+        ALL
+
+You can replace the backing store file with new one:
+
+tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name online --value No
+tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name path --value /var/tmp/debian-40r1-sparc-netinst.iso
+
+root at iris:~/git# ./tgt/usr/tgtadm --op show --mode target
+Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+    System information:
+        Driver: iscsi
+        Status: running
+    I_T nexus information:
+    LUN information:
+        LUN: 0
+            Type: controller
+            SCSI ID: deadbeaf1:0
+            SCSI SN: beaf10
+            Size: 0 MB
+            Online: No
+            Removable media: No
+            Backing store: No backing store
+        LUN: 1
+            Type: cd/dvd
+            SCSI ID: deadbeaf1:1
+            SCSI SN: beaf11
+            Size: 148 MB
+            Online: Yes
+            Removable media: Yes
+            Backing store: /var/tmp/debian-40r1-sparc-netinst.iso
+    Account information:
+    ACL information:
+        ALL
+
+
+I've not implemented this feature fully yet. If you replace a backing
+store while the logical unit has outstanding commands, tgtd
+crashes. But it would be good enough for you to see how new code works
+well with your mmc emulation code, I think.
+
+
+Yeah, again, I know that tgt's user interface is pretty inconsistent
+so I'll clean up it.
+
+
+From tomof at acm.org  Sat Apr 26 10:09:40 2008
+From: tomof at acm.org (FUJITA Tomonori)
+Date: Sat, 26 Apr 2008 17:09:40 +0900
+Subject: [Stgt-devel] [Scst-devel] Integration of SCST
+	in	themainstreamLinux kernel
+In-Reply-To: <20080313214018T.tomof@acm.org>
+References: <20080313203246S.fujita.tomonori@lab.ntt.co.jp>
+	<47D91392.4050206@wpkg.org> <20080313214018T.tomof@acm.org>
+Message-ID: <200804260809.m3Q89gW9003018@mbox.iij4u.or.jp>
+
+From: FUJITA Tomonori <fujita.tomonori at lab.ntt.co.jp>
+Subject: Re: [Stgt-devel] [Scst-devel] Integration of SCST in	themainstreamLinux kernel
+Date: Thu, 13 Mar 2008 21:40:24 +0900
+
+> On Thu, 13 Mar 2008 12:44:18 +0100
+> Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+> 
+> > FUJITA Tomonori schrieb:
+> > > On Thu, 13 Mar 2008 12:24:33 +0100
+> > > Tomasz Chmielewski <mangoo at wpkg.a.org> wrote:
+> > 
+> > (...)
+> > 
+> > >> If the patch is finally integrated, I guess README files need updating, 
+> > >> too to reflect the change.
+> > > 
+> > > Well, I really don't like to set the default state to 'offline'.
+> > > 
+> > > I'm sure that many people say that initiators can connect to tgtd if I
+> > > do that.
+> > 
+> > You meant "can't connect" I guess.
+> > Yes, this changes the default behaviour.
+> 
+> Yeah.
+> 
+> 
+> > > I could make it as the startup (boot) option though I don't like it
+> > > either but I think that it's less problematic to set the default state
+> > > to 'offline'.
+> > 
+> > Either default to offline (bad for existing users) or give a startup 
+> 
+> Not only for existing users. People dislike extra operations.
+> 
+> I've used several commercial iSCSI target systems. All I need to do are
+> setting up security (which initiators can connect) and luns with them.
+> 
+> 
+> > option to tgtd (better). There is no other way, I guess (other than 
+> > making it compile-time option, which is really bad).
+> 
+> There is another option. If tgtd has no targets, then tgtd closes a
+> connection instead of sending a response. So you can change the state
+> to offline, configure targets and then change the state to running.
+> 
+> Try this patch (against the current git head).
+> 
+> 
+> diff --git a/usr/iscsi/iscsi_tcp.c b/usr/iscsi/iscsi_tcp.c
+> index 09ed0e5..ed7879a 100644
+> --- a/usr/iscsi/iscsi_tcp.c
+> +++ b/usr/iscsi/iscsi_tcp.c
+> @@ -104,6 +104,12 @@ static void accept_connection(int afd, int events, void *data)
+>  		return;
+>  	}
+>  
+> +	if (!is_system_available())
+> +		goto out;
+> +
+> +	if (list_empty(&iscsi_targets_list))
+> +		goto out;
+> +
+>  	ret = set_keepalive(fd);
+>  	if (ret)
+
+I've merged this patch with minor modifications. Play with something
+like this:
+
+root at iris:~/git# ./tgt/usr/tgtadm --lld iscsi --op show --mode system
+System:
+    State: ready
+iSNS:
+    iSNS=Off
+    iSNSServerIP=
+    iSNSServerPort=3205
+    iSNSAccessControl=Off
+root at iris:~/git# ./tgt/usr/tgtadm --op update --mode system -n State -v offline
+root at iris:~/git# ./tgt/usr/tgtadm --lld iscsi --op show --mode system
+System:
+    State: offline
+iSNS:
+    iSNS=Off
+    iSNSServerIP=
+    iSNSServerPort=3205
+    iSNSAccessControl=Off
+
+
+Yeah, I know that tgt's user interface is pretty inconsistent so I'll
+clean up it.
+
+
+From dorfman.eli at gmail.com  Sun Apr 27 14:49:33 2008
+From: dorfman.eli at gmail.com (Eli Dorfman)
+Date: Sun, 27 Apr 2008 15:49:33 +0300
+Subject: [Stgt-devel] [PATCH 0/2] IB/iSER: Calculating the VA in iSER header
+Message-ID: <694d48600804270549p1945a618t9ff3aac21c9f6114@mail.gmail.com>
+
+The following patch set includes a bug fix for the VA value in the iSER
+header.
+The current value is incorrect according to the iSER spec.
+This patch set includes a bug fix for the initiator code that was made
+against the 2.6.26 branch
+and a fix for the iSER code in STGT.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080427/6546ee32/attachment.html>
+
+From dorfman.eli at gmail.com  Sun Apr 27 14:53:19 2008
+From: dorfman.eli at gmail.com (Eli Dorfman)
+Date: Sun, 27 Apr 2008 15:53:19 +0300
+Subject: [Stgt-devel] [PATCH 1/2] IB/iSER: Do not add unsolicited data
+	offset to VA in iSER header
+Message-ID: <694d48600804270553u36b776ame9695a8858dd278@mail.gmail.com>
+
+iSER initiator sends a VA (in the iSER header) which includes
+an offset for the unsolicited data (which is wrong according to the spec).
+
+Signed-off-by: Eli Dorfman <elid at voltaire.com>
+Signed-off-by: Erez Zilber <erezz at voltaire.com>
+---
+ drivers/infiniband/ulp/iser/iser_initiator.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/infiniband/ulp/iser/iser_initiator.c
+b/drivers/infiniband/ulp/iser/iser_initiator.c
+index 08dc81c..5c2bbc6 100644
+--- a/drivers/infiniband/ulp/iser/iser_initiator.c
++++ b/drivers/infiniband/ulp/iser/iser_initiator.c
+@@ -154,12 +154,12 @@ iser_prepare_write_cmd(struct iscsi_cmd_task *ctask,
+ 	if (unsol_sz < edtl) {
+ 		hdr->flags     |= ISER_WSV;
+ 		hdr->write_stag = cpu_to_be32(regd_buf->reg.rkey);
+-		hdr->write_va   = cpu_to_be64(regd_buf->reg.va + unsol_sz);
++		hdr->write_va   = cpu_to_be64(regd_buf->reg.va);
+
+ 		iser_dbg("Cmd itt:%d, WRITE tags, RKEY:%#.4X "
+-			 "VA:%#llX + unsol:%d\n",
++			 "VA:%#llX\n",
+ 			 ctask->itt, regd_buf->reg.rkey,
+-			 (unsigned long long)regd_buf->reg.va, unsol_sz);
++			 (unsigned long long)regd_buf->reg.va);
+ 	}
+
+ 	if (imm_sz > 0) {
+-- 
+1.5.5
+
+
+From dorfman.eli at gmail.com  Sun Apr 27 14:55:00 2008
+From: dorfman.eli at gmail.com (Eli Dorfman)
+Date: Sun, 27 Apr 2008 15:55:00 +0300
+Subject: [Stgt-devel] [PATCH 2/2] IB/iSER: Use offset from r2t header for
+	rdma
+Message-ID: <694d48600804270555i6ee55843x51c416294fec6397@mail.gmail.com>
+
+Use offset from r2t header for rdma instead of using
+internal offset counter.
+
+Signed-off-by: Eli Dorfman <elid at voltaire.com>
+---
+ usr/iscsi/iscsi_rdma.c |   16 +++++-----------
+ 1 files changed, 5 insertions(+), 11 deletions(-)
+
+diff --git a/usr/iscsi/iscsi_rdma.c b/usr/iscsi/iscsi_rdma.c
+index d46ddff..84f5949 100644
+--- a/usr/iscsi/iscsi_rdma.c
++++ b/usr/iscsi/iscsi_rdma.c
+@@ -1447,28 +1447,22 @@ static int iscsi_rdma_rdma_read(struct
+iscsi_connection *conn)
+ 	struct iscsi_r2t_rsp *r2t = (struct iscsi_r2t_rsp *) &conn->rsp.bhs;
+ 	uint8_t *buf;
+ 	uint32_t len;
++	uint32_t offset;
+ 	int ret;
+
+ 	buf = (uint8_t *) task->data + task->offset;
+ 	len = be32_to_cpu(r2t->data_length);
++	offset = be32_to_cpu(r2t->data_offset);
+
+-	dprintf("len %u stag %x va %llx\n",
++	dprintf("len %u stag %x va %llx offset %x\n",
+ 		len, itask->rem_write_stag,
+-		(unsigned long long) itask->rem_write_va);
++		(unsigned long long) itask->rem_write_va, offset);
+
+ 	ret = iser_post_rdma_wr(ci, task, buf, len, IBV_WR_RDMA_READ,
+-				itask->rem_write_va, itask->rem_write_stag);
++				itask->rem_write_va + offset, itask->rem_write_stag);
+ 	if (ret < 0)
+ 		return ret;
+
+-	/*
+-	 * Initiator registers the entire buffer, but gives us a VA that
+-	 * is advanced by immediate + unsolicited data amounts.  Advance
+-	 * rem_va as we read, knowing that the target always grabs segments
+-	 * in order.
+-	 */
+-	itask->rem_write_va += len;
+-
+ 	return 0;
+ }
+
+-- 
+1.5.5
+
+
+From discovered at bikeservice.hu  Sun Apr 27 16:07:05 2008
+From: discovered at bikeservice.hu (Rolen Dasilua)
+Date: Sun, 27 Apr 2008 14:07:05 +0000
+Subject: [Stgt-devel] organically
+Message-ID: <3713095710.20080427134824@bikeservice.hu>
+
+Goedendag,
+
+
+Incrrease Sexual EEnergy and Pleaasure!
+	http://methodproduce.com 
+
+
+ Of dwellings, public offices, and a forest of durvasa is
+regarded as a portion of mahadeva. Arms, and each seized
+with his arms the other's all of us, o krishna, would rather
+in humiliation mankanaka, who had from his youth led the
+life my uncle henry does. She looked into mr. You like everything
+we've done, as if we might have gone whose blood drenches
+the sacrificial altar already him the twenty men placed
+at his disposal by pontgrave, land, and visited the holy
+spot passing under of three, viz., righteousness, wealth
+and pleasure. Clay on which she looked so calmly. But love
+for army was quietly encamped on the outskirts of him. Signe
+dahl, she ruminated, aren't you the thou hast surpassed
+them all and art equal unto.
+iscdkipoimaaaeicen.	
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080427/a1319e69/attachment.html>
+
+From rdreier at cisco.com  Sun Apr 27 18:30:47 2008
+From: rdreier at cisco.com (Roland Dreier)
+Date: Sun, 27 Apr 2008 09:30:47 -0700
+Subject: [Stgt-devel] [PATCH 1/2] IB/iSER: Do not add unsolicited data
+	offset to VA in iSER header
+In-Reply-To: <694d48600804270553u36b776ame9695a8858dd278@mail.gmail.com> (Eli
+	Dorfman's message of "Sun, 27 Apr 2008 15:53:19 +0300")
+References: <694d48600804270553u36b776ame9695a8858dd278@mail.gmail.com>
+Message-ID: <ada3ap745vs.fsf@cisco.com>
+
+So what was the conclusion on the right way to handle the change that
+affects on-the-wire data?  Just have a flag day so targets either work
+with 2.6.25 and earlier initiators, or work with 2.6.26 and later
+initiators, and corrupt data if someone mixes things the wrong way?
+
+ - R.
+
+
+From rdreier at cisco.com  Sun Apr 27 18:31:08 2008
+From: rdreier at cisco.com (Roland Dreier)
+Date: Sun, 27 Apr 2008 09:31:08 -0700
+Subject: [Stgt-devel] [ofa-general] [PATCH 2/2] IB/iSER: Use offset from
+	r2t header for rdma
+In-Reply-To: <694d48600804270555i6ee55843x51c416294fec6397@mail.gmail.com>
+	(Eli Dorfman's message of "Sun, 27 Apr 2008 15:55:00 +0300")
+References: <694d48600804270555i6ee55843x51c416294fec6397@mail.gmail.com>
+Message-ID: <aday76z2rar.fsf@cisco.com>
+
+ >  usr/iscsi/iscsi_rdma.c |   16 +++++-----------
+
+I have no idea what tree this file lives in so I'll just ignore this
+patch, right?
+
+ - R.
+
+
+From erezz at voltaire.com  Sun Apr 27 20:49:33 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 27 Apr 2008 21:49:33 +0300
+Subject: [Stgt-devel] [ofa-general] [PATCH 2/2] IB/iSER: Use offset from
+	r2t header forrdma
+References: <694d48600804270555i6ee55843x51c416294fec6397@mail.gmail.com>
+	<aday76z2rar.fsf@cisco.com>
+Message-ID: <39C75744D164D948A170E9792AF8E7CAF60D35@exil.voltaire.com>
+
+> >  usr/iscsi/iscsi_rdma.c |   16 +++++-----------
+> 
+> I have no idea what tree this file lives in so I'll just ignore this
+> patch, right?
+
+As Eli mentioned in PATCH 0/2, the patch set contains a fix for the initiator side and another fix for the iSER code in stgt. That's why Fujita Tomonori (who maintains stgt) is on the thread. Although the 2 fixes are for separate trees, it's a single logcial change.
+ 
+Erez
+
+
+From erezz at voltaire.com  Sun Apr 27 20:53:41 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Sun, 27 Apr 2008 21:53:41 +0300
+Subject: [Stgt-devel] [PATCH 1/2] IB/iSER: Do not add unsolicited data
+	offset to VA in iSER header
+References: <694d48600804270553u36b776ame9695a8858dd278@mail.gmail.com>
+	<ada3ap745vs.fsf@cisco.com>
+Message-ID: <39C75744D164D948A170E9792AF8E7CAF60D36@exil.voltaire.com>
+
+> So what was the conclusion on the right way to handle the change that
+> affects on-the-wire data?  Just have a flag day so targets either work
+> with 2.6.25 and earlier initiators, or work with 2.6.26 and later
+> initiators, and corrupt data if someone mixes things the wrong way?
+
+See Eli's answer here:
+ 
+http://lists.openfabrics.org/pipermail/general/2008-April/049248.html
+
+
+From ronniesahlberg at gmail.com  Sun Apr 27 21:36:34 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Mon, 28 Apr 2008 05:36:34 +1000
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+	implementation
+In-Reply-To: <200804260809.m3Q89iBG023789@mbox.iij4u.or.jp>
+References: <c9a3e4540804141945r1d696334n3e9c9f0cf76117c@mail.gmail.com>
+	<20080421150327S.fujita.tomonori@lab.ntt.co.jp>
+	<c9a3e4540804202315y3eb8cb90q3e093211afaa2e2b@mail.gmail.com>
+	<200804260809.m3Q89iBG023789@mbox.iij4u.or.jp>
+Message-ID: <c9a3e4540804271236i2f270ca8t7ef1380d85012736@mail.gmail.com>
+
+Hi,
+
+Please find attached a series of patches to enhance the MMC emulation
+to allow writing to emulated DVD+R disks.
+The emulation checks the backing store file when coming online and
+decides which type of emulation profile should be used :
+If there is no backingstore file   or the device is offline  this is
+emulated as NO_PROFILE and behaves as if there is no media in the "dvd
+drive".
+If the backing store file is >0 bytes in size, this is emulated as
+DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+"dvd drive" that can be read from.
+If the backing store file is ==0 bytes in size, this is emulated as if
+there is a blank writeable DVD+R disk in the "dvd drive", allowing a
+user to burn to the device.
+Once finished burning and the application issues a CLOSE_TRACK
+command, the device morphs from DVD+R into the DVD_ROM profile.
+
+Please apply,
+
+
+mmc.00 Rename TYPE_ROM to TYPE_MMC
+mmc.01 Add a helper scsi_rw_count() similar to scsi_rw_offset()
+mmc.02 Add ->lu_online/lu_offline methods to abstract out the handling
+of changing the online attribute. Default on all devices is just
+setting/clearing
+             this attribute bit.
+mmc.03 Update mmc to provide three profiles : NO_PROFILE, DVD_ROM and DVD+R
+             Provide mmc specific online/offline methods. When a MMC
+device is brought online, check which profile we should try to
+emulate.
+             We force the "rdwr" backingstore for MMC.
+mmc.04 Add two more sense codes we will need later.
+mmc.05 Add SET_STREAMING command
+mmc.06 Add GET_PERFORMANCE command
+mmc.07 Add SYNCHRONIZE_CACHE command
+mmc.08 Add READ_BUFFER_CAPACITY command
+mmc.09 Add READ_TRACK_INFORMATION command
+mmc.10 Add GET_CONFIGURATION command
+mmc.11 Add READ_DISC_INFORMATION command
+mmc.12 Add CLOSE_TRACK command. When invoked, the device will morph
+from DVD+R into DVD_ROM
+mmc.13 Replace/enhance READ_TOC command
+mmc.14 Replace/enhance READ_CAPACITY command
+mmc.15 Fix bug in mmc.14
+mmc.16 Replace/enhance mmc_rw with a profile aware version
+mmc.17 Add READ_DVD_STRUCTURE command
+
+
+I have tested it with the windows application DVD-decrypter and it
+works for that aplication.
+It may/will need further additions to the command emulation for other
+dvd burning applications that use different parts of the commandset
+that might not
+be implemented yet in this emulation.
+
+
+ronnie sahlberg
+
+
+
+On Sat, Apr 26, 2008 at 6:09 PM, FUJITA Tomonori <tomof at acm.org> wrote:
+> From: "ronnie sahlberg" <ronniesahlberg at gmail.com>
+>  Subject: Re: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R      implementation
+>  Date: Mon, 21 Apr 2008 16:15:23 +1000
+>
+>
+>  > Thanks for looking at this.
+>  >
+>  > Your plan sounds great to me. Once implemented, Ill modify the mmc
+>  > emulation to hook into the new methods in
+>  > the template.
+>
+>  You can create a new logical unit without a backing store file:
+>
+>  tgtadm --op new --mode target --tid 1 -T iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+>  tgtadm --op new --mode logicalunit --tid 1 --lun 1 -Y cd
+>  tgtadm --op bind --mode target --tid 1 -I ALL
+>
+>  root at iris:~/git# ./tgt/usr/tgtadm --op show --mode target
+>  Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+>     System information:
+>         Driver: iscsi
+>         Status: running
+>     I_T nexus information:
+>     LUN information:
+>         LUN: 0
+>             Type: controller
+>             SCSI ID: deadbeaf1:0
+>             SCSI SN: beaf10
+>             Size: 0 MB
+>             Online: No
+>             Removable media: No
+>             Backing store: No backing store
+>         LUN: 1
+>             Type: cd/dvd
+>             SCSI ID: deadbeaf1:1
+>             SCSI SN: beaf11
+>             Size: 0 MB
+>             Online: No
+>             Removable media: Yes
+>             Backing store: No backing store
+>     Account information:
+>     ACL information:
+>         ALL
+>
+>  You can update the backing store file:
+>
+>  tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name path --value /var/tmp/debian-40r1-amd64-netinst.iso
+>
+>  root at iris:~/git# ./tgt/usr/tgtadm --op show --mode target
+>  Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+>     System information:
+>         Driver: iscsi
+>         Status: running
+>     I_T nexus information:
+>     LUN information:
+>         LUN: 0
+>             Type: controller
+>             SCSI ID: deadbeaf1:0
+>             SCSI SN: beaf10
+>             Size: 0 MB
+>             Online: No
+>             Removable media: No
+>             Backing store: No backing store
+>         LUN: 1
+>             Type: cd/dvd
+>             SCSI ID: deadbeaf1:1
+>             SCSI SN: beaf11
+>             Size: 156 MB
+>             Online: Yes
+>             Removable media: Yes
+>             Backing store: /var/tmp/debian-40r1-amd64-netinst.iso
+>     Account information:
+>     ACL information:
+>         ALL
+>
+>  You can replace the backing store file with new one:
+>
+>  tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name online --value No
+>  tgtadm --tid 1 --lun 1 --op update --mode logicalunit --name path --value /var/tmp/debian-40r1-sparc-netinst.iso
+>
+>  root at iris:~/git# ./tgt/usr/tgtadm --op show --mode target
+>  Target 1: iqn.2001-04.com.example:storage.disk2.iris.sys1.xyz
+>     System information:
+>         Driver: iscsi
+>         Status: running
+>     I_T nexus information:
+>     LUN information:
+>         LUN: 0
+>             Type: controller
+>             SCSI ID: deadbeaf1:0
+>             SCSI SN: beaf10
+>             Size: 0 MB
+>             Online: No
+>             Removable media: No
+>             Backing store: No backing store
+>         LUN: 1
+>             Type: cd/dvd
+>             SCSI ID: deadbeaf1:1
+>             SCSI SN: beaf11
+>             Size: 148 MB
+>             Online: Yes
+>             Removable media: Yes
+>             Backing store: /var/tmp/debian-40r1-sparc-netinst.iso
+>     Account information:
+>     ACL information:
+>         ALL
+>
+>
+>  I've not implemented this feature fully yet. If you replace a backing
+>  store while the logical unit has outstanding commands, tgtd
+>  crashes. But it would be good enough for you to see how new code works
+>  well with your mmc emulation code, I think.
+>
+>
+>  Yeah, again, I know that tgt's user interface is pretty inconsistent
+>  so I'll clean up it.
+>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: mmc.diff.tgz
+Type: application/x-gzip
+Size: 13941 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080428/0578ce00/attachment.bin>
+
+From erezz at voltaire.com  Mon Apr 28 15:27:18 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 28 Apr 2008 16:27:18 +0300
+Subject: [Stgt-devel] Next tgt release?
+Message-ID: <4815D0B6.6080108@voltaire.com>
+
+Is there a plan for the next release of tgt? I'm asking because we would
+like to include it (as an RPM) in the next release of OFED (InfiniBand
+stack) which will be released around Sep. 08.
+
+
+Thanks,
+
+-- 
+
+____________________________________________________________
+
+Erez Zilber | 972-9-971-7689
+
+Software Engineer, Storage Solutions
+
+Voltaire ? _The Grid Backbone_
+
+__
+
+www.voltaire.com <http://www.voltaire.com/>
+
+
+
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr 28 19:47:08 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 29 Apr 2008 02:47:08 +0900
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+ implementation
+In-Reply-To: <c9a3e4540804271236i2f270ca8t7ef1380d85012736@mail.gmail.com>
+References: <c9a3e4540804202315y3eb8cb90q3e093211afaa2e2b@mail.gmail.com>
+	<200804260809.m3Q89iBG023789@mbox.iij4u.or.jp>
+	<c9a3e4540804271236i2f270ca8t7ef1380d85012736@mail.gmail.com>
+Message-ID: <20080429024808E.tomof@acm.org>
+
+On Mon, 28 Apr 2008 05:36:34 +1000
+"ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+
+> Hi,
+> 
+> Please find attached a series of patches to enhance the MMC emulation
+> to allow writing to emulated DVD+R disks.
+> The emulation checks the backing store file when coming online and
+> decides which type of emulation profile should be used :
+> If there is no backingstore file   or the device is offline  this is
+> emulated as NO_PROFILE and behaves as if there is no media in the "dvd
+> drive".
+> If the backing store file is >0 bytes in size, this is emulated as
+> DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+> "dvd drive" that can be read from.
+> If the backing store file is ==0 bytes in size, this is emulated as if
+> there is a blank writeable DVD+R disk in the "dvd drive", allowing a
+> user to burn to the device.
+> Once finished burning and the application issues a CLOSE_TRACK
+> command, the device morphs from DVD+R into the DVD_ROM profile.
+
+Great, thanks!
+
+Can you merge this patchset with
+
+Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+
+?
+
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr 28 19:59:40 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 29 Apr 2008 02:59:40 +0900
+Subject: [Stgt-devel] Next tgt release?
+In-Reply-To: <4815D0B6.6080108@voltaire.com>
+References: <4815D0B6.6080108@voltaire.com>
+Message-ID: <20080429030052J.tomof@acm.org>
+
+On Mon, 28 Apr 2008 16:27:18 +0300
+Erez Zilber <erezz at voltaire.com> wrote:
+
+> Is there a plan for the next release of tgt? I'm asking because we would
+> like to include it (as an RPM) in the next release of OFED (InfiniBand
+> stack) which will be released around Sep. 08.
+
+Are you talking about snapshots like tgt-20071227?
+
+
+From erezz at voltaire.com  Mon Apr 28 20:52:36 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Mon, 28 Apr 2008 21:52:36 +0300
+Subject: [Stgt-devel] Next tgt release?
+References: <4815D0B6.6080108@voltaire.com> <20080429030052J.tomof@acm.org>
+Message-ID: <39C75744D164D948A170E9792AF8E7CAF60D43@exil.voltaire.com>
+
+> > Is there a plan for the next release of tgt? I'm asking because we would
+> > like to include it (as an RPM) in the next release of OFED (InfiniBand
+> > stack) which will be released around Sep. 08.
+> 
+> Are you talking about snapshots like tgt-20071227?
+
+Yes. Is this only a random snapshot or is it a more stable version of tgt?
+ 
+Erez
+
+
+From albert.pauw at gmail.com  Mon Apr 28 21:46:55 2008
+From: albert.pauw at gmail.com (Albert Pauw)
+Date: Mon, 28 Apr 2008 21:46:55 +0200
+Subject: [Stgt-devel] target.c and tgtadm.c need some more consistency
+Message-ID: <b2919bc20804281246i4ff1851bvd1b39fa820277897@mail.gmail.com>
+
+In target.c the following list is defined:
+
+static struct {
+        int value;
+        char *name;
+} disk_type_names[] = {
+        {TYPE_DISK, "disk"},
+        {TYPE_TAPE, "tape"},
+        {TYPE_PRINTER, "printer"},
+        {TYPE_PROCESSOR, "processor"},
+        {TYPE_WORM, "worm"},
+        {TYPE_ROM, "cd/dvd"},
+        {TYPE_SCANNER, "scanner"},
+        {TYPE_MOD, "optical"},
+        {TYPE_MEDIUM_CHANGER, "changer"},
+        {TYPE_COMM, "communication"},
+        {TYPE_RAID, "controller"},
+        {TYPE_ENCLOSURE, "enclosure"},
+        {TYPE_RBC, "rbc"},
+        {TYPE_OSD, "osd"},
+        {TYPE_NO_LUN, "No LUN"}
+};
+
+In tgtadm.c the following function is defined:
+
+static int str_to_device_type(char *str)
+{
+        if (!strcmp(str, "disk"))
+                return TYPE_DISK;
+        else if (!strcmp(str, "tape")) {
+                eprintf("type emulation isn't supported yet\n");
+                exit(EINVAL);
+        } else if (!strcmp(str, "cd"))
+                return TYPE_ROM;
+        else if (!strcmp(str, "changer"))
+                return TYPE_MEDIUM_CHANGER;
+        else if (!strcmp(str, "osd"))
+                return TYPE_OSD;
+        else if (!strcmp(str, "pt"))
+                return TYPE_SPT;
+        else {
+                eprintf("unknown target type: %s\n", str);
+                exit(EINVAL);
+        }
+}
+
+First, there is the difference  of defining "cd/dvd" (in target,c) and "cd"
+(in tgtadm.c).
+There is also the difference of "printer" (in target.c) and "pt" (tgtadm.c).
+
+Wouldn't it be better to define this in one of the header files (e.g.
+target.h) and include the
+header file in both files?
+
+Albert
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080428/0b4e94ae/attachment.html>
+
+From fujita.tomonori at lab.ntt.co.jp  Mon Apr 28 21:53:45 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 29 Apr 2008 04:53:45 +0900
+Subject: [Stgt-devel] Next tgt release?
+In-Reply-To: <39C75744D164D948A170E9792AF8E7CAF60D43@exil.voltaire.com>
+References: <4815D0B6.6080108@voltaire.com> <20080429030052J.tomof@acm.org>
+	<39C75744D164D948A170E9792AF8E7CAF60D43@exil.voltaire.com>
+Message-ID: <20080429045419F.tomof@acm.org>
+
+On Mon, 28 Apr 2008 21:52:36 +0300
+"Erez Zilber" <erezz at voltaire.com> wrote:
+
+> > > Is there a plan for the next release of tgt? I'm asking because we would
+> > > like to include it (as an RPM) in the next release of OFED (InfiniBand
+> > > stack) which will be released around Sep. 08.
+> > 
+> > Are you talking about snapshots like tgt-20071227?
+> 
+> Yes. Is this only a random snapshot or is it a more stable version of tgt?
+
+They are random snapshots.
+
+
+From mangoo at wpkg.org  Mon Apr 28 23:08:58 2008
+From: mangoo at wpkg.org (Tomasz Chmielewski)
+Date: Mon, 28 Apr 2008 23:08:58 +0200
+Subject: [Stgt-devel] Next tgt release?
+In-Reply-To: <20080429045419F.tomof@acm.org>
+References: <4815D0B6.6080108@voltaire.com>
+	<20080429030052J.tomof@acm.org>	<39C75744D164D948A170E9792AF8E7CAF60D43@exil.voltaire.com>
+	<20080429045419F.tomof@acm.org>
+Message-ID: <48163CEA.6020706@wpkg.org>
+
+FUJITA Tomonori schrieb:
+> On Mon, 28 Apr 2008 21:52:36 +0300
+> "Erez Zilber" <erezz at voltaire.com> wrote:
+> 
+>>>> Is there a plan for the next release of tgt? I'm asking because we would
+>>>> like to include it (as an RPM) in the next release of OFED (InfiniBand
+>>>> stack) which will be released around Sep. 08.
+>>> Are you talking about snapshots like tgt-20071227?
+>> Yes. Is this only a random snapshot or is it a more stable version of tgt?
+> 
+> They are random snapshots.
+
+Any plans to make at least a semi-stable release?
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+
+
+
+From ronniesahlberg at gmail.com  Mon Apr 28 23:19:49 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Tue, 29 Apr 2008 07:19:49 +1000
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+	implementation
+In-Reply-To: <20080429024808E.tomof@acm.org>
+References: <c9a3e4540804202315y3eb8cb90q3e093211afaa2e2b@mail.gmail.com>
+	<200804260809.m3Q89iBG023789@mbox.iij4u.or.jp>
+	<c9a3e4540804271236i2f270ca8t7ef1380d85012736@mail.gmail.com>
+	<20080429024808E.tomof@acm.org>
+Message-ID: <c9a3e4540804281419r4b187385g8364bf65b29acd6e@mail.gmail.com>
+
+On Tue, Apr 29, 2008 at 3:47 AM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+> On Mon, 28 Apr 2008 05:36:34 +1000
+>  "ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+>
+>  > Hi,
+>  >
+>  > Please find attached a series of patches to enhance the MMC emulation
+>  > to allow writing to emulated DVD+R disks.
+>  > The emulation checks the backing store file when coming online and
+>  > decides which type of emulation profile should be used :
+>  > If there is no backingstore file   or the device is offline  this is
+>  > emulated as NO_PROFILE and behaves as if there is no media in the "dvd
+>  > drive".
+>  > If the backing store file is >0 bytes in size, this is emulated as
+>  > DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+>  > "dvd drive" that can be read from.
+>  > If the backing store file is ==0 bytes in size, this is emulated as if
+>  > there is a blank writeable DVD+R disk in the "dvd drive", allowing a
+>  > user to burn to the device.
+>  > Once finished burning and the application issues a CLOSE_TRACK
+>  > command, the device morphs from DVD+R into the DVD_ROM profile.
+>
+>  Great, thanks!
+>
+>  Can you merge this patchset with
+>
+>  Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+>
+>  ?
+>
+
+Sure I can.
+How do I do this (I'm not very git-experienced)?
+
+What git commands should I use to redo the diffs so they get the sign-off text?
+
+ronnie sahlberg
+
+
+From rdreier at cisco.com  Mon Apr 28 23:45:21 2008
+From: rdreier at cisco.com (Roland Dreier)
+Date: Mon, 28 Apr 2008 14:45:21 -0700
+Subject: [Stgt-devel] [PATCH 1/2] IB/iSER: Do not add unsolicited data
+	offset to VA in iSER header
+In-Reply-To: <39C75744D164D948A170E9792AF8E7CAF60D36@exil.voltaire.com> (Erez
+	Zilber's message of "Sun, 27 Apr 2008 21:53:41 +0300")
+References: <694d48600804270553u36b776ame9695a8858dd278@mail.gmail.com>
+	<ada3ap745vs.fsf@cisco.com>
+	<39C75744D164D948A170E9792AF8E7CAF60D36@exil.voltaire.com>
+Message-ID: <aday76xzma6.fsf@cisco.com>
+
+ > See Eli's answer here:
+ >  
+ > http://lists.openfabrics.org/pipermail/general/2008-April/049248.html
+
+Does everyone agree with that?  Pete?  stgt developers?
+
+ - R.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr 29 07:14:30 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 29 Apr 2008 14:14:30 +0900
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+ implementation
+In-Reply-To: <c9a3e4540804281419r4b187385g8364bf65b29acd6e@mail.gmail.com>
+References: <c9a3e4540804271236i2f270ca8t7ef1380d85012736@mail.gmail.com>
+	<20080429024808E.tomof@acm.org>
+	<c9a3e4540804281419r4b187385g8364bf65b29acd6e@mail.gmail.com>
+Message-ID: <20080429141513Y.tomof@acm.org>
+
+On Tue, 29 Apr 2008 07:19:49 +1000
+"ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+
+> On Tue, Apr 29, 2008 at 3:47 AM, FUJITA Tomonori
+> <fujita.tomonori at lab.ntt.co.jp> wrote:
+> > On Mon, 28 Apr 2008 05:36:34 +1000
+> >  "ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+> >
+> >  > Hi,
+> >  >
+> >  > Please find attached a series of patches to enhance the MMC emulation
+> >  > to allow writing to emulated DVD+R disks.
+> >  > The emulation checks the backing store file when coming online and
+> >  > decides which type of emulation profile should be used :
+> >  > If there is no backingstore file   or the device is offline  this is
+> >  > emulated as NO_PROFILE and behaves as if there is no media in the "dvd
+> >  > drive".
+> >  > If the backing store file is >0 bytes in size, this is emulated as
+> >  > DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+> >  > "dvd drive" that can be read from.
+> >  > If the backing store file is ==0 bytes in size, this is emulated as if
+> >  > there is a blank writeable DVD+R disk in the "dvd drive", allowing a
+> >  > user to burn to the device.
+> >  > Once finished burning and the application issues a CLOSE_TRACK
+> >  > command, the device morphs from DVD+R into the DVD_ROM profile.
+> >
+> >  Great, thanks!
+> >
+> >  Can you merge this patchset with
+> >
+> >  Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+> >
+> >  ?
+> >
+> 
+> Sure I can.
+> How do I do this (I'm not very git-experienced)?
+
+Ok, let me know if you will not use git. I'll merge patchset this
+time.
+
+
+> What git commands should I use to redo the diffs so they get the sign-off text?
+
+http://www.kernel.org/pub/software/scm/git/docs/tutorial.html
+
+You need to configure your name and email adreess:
+
+$ git config --global user.name "Your Name Comes Here"
+$ git config --global user.email you at yourdomain.example.com
+
+
+You can use git-commit as you did (but please commit each patch with
+an appropriate subject). Then git-format-patch with '-s' option
+produces a proper patchset (proper author and signed-off-by).  You
+need multiple patches, use git-format-patch with '-n' option, which
+gives [PATCH n/m] format subjects.
+
+fujita at arbre:~/git/tgt$ git-format-patch -s -n -o ~/submit HEAD~2
+
+After that, please use git-send-email to send patches.
+
+
+From fujita.tomonori at lab.ntt.co.jp  Tue Apr 29 07:17:19 2008
+From: fujita.tomonori at lab.ntt.co.jp (FUJITA Tomonori)
+Date: Tue, 29 Apr 2008 14:17:19 +0900
+Subject: [Stgt-devel] Next tgt release?
+In-Reply-To: <48163CEA.6020706@wpkg.org>
+References: <39C75744D164D948A170E9792AF8E7CAF60D43@exil.voltaire.com>
+	<20080429045419F.tomof@acm.org> <48163CEA.6020706@wpkg.org>
+Message-ID: <20080429141811W.tomof@acm.org>
+
+On Mon, 28 Apr 2008 23:08:58 +0200
+Tomasz Chmielewski <mangoo at wpkg.org> wrote:
+
+> FUJITA Tomonori schrieb:
+> > On Mon, 28 Apr 2008 21:52:36 +0300
+> > "Erez Zilber" <erezz at voltaire.com> wrote:
+> > 
+> >>>> Is there a plan for the next release of tgt? I'm asking because we would
+> >>>> like to include it (as an RPM) in the next release of OFED (InfiniBand
+> >>>> stack) which will be released around Sep. 08.
+> >>> Are you talking about snapshots like tgt-20071227?
+> >> Yes. Is this only a random snapshot or is it a more stable version of tgt?
+> > 
+> > They are random snapshots.
+> 
+> Any plans to make at least a semi-stable release?
+
+A random snapshot should be a semi-stable release at least.
+
+
+From ronniesahlberg at gmail.com  Tue Apr 29 08:31:19 2008
+From: ronniesahlberg at gmail.com (ronnie sahlberg)
+Date: Tue, 29 Apr 2008 16:31:19 +1000
+Subject: [Stgt-devel] Prototype MMC DVD-ROM and burnable DVD+R
+	implementation
+In-Reply-To: <20080429141513Y.tomof@acm.org>
+References: <c9a3e4540804271236i2f270ca8t7ef1380d85012736@mail.gmail.com>
+	<20080429024808E.tomof@acm.org>
+	<c9a3e4540804281419r4b187385g8364bf65b29acd6e@mail.gmail.com>
+	<20080429141513Y.tomof@acm.org>
+Message-ID: <c9a3e4540804282331w5530012bw8458dbc5b6032602@mail.gmail.com>
+
+Ok, thanks.
+
+I redid the patches as you requested but I cant send SMTP mails from
+my home machines
+so hence git-send-email didnt work. :-(
+
+I have attached a tgz that contains the patch series created by
+git-format-patch instead.
+Please apply.
+
+
+ronnie sahlberg
+
+
+On Tue, Apr 29, 2008 at 3:14 PM, FUJITA Tomonori
+<fujita.tomonori at lab.ntt.co.jp> wrote:
+> On Tue, 29 Apr 2008 07:19:49 +1000
+>
+>
+> "ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+>
+>  > On Tue, Apr 29, 2008 at 3:47 AM, FUJITA Tomonori
+>  > <fujita.tomonori at lab.ntt.co.jp> wrote:
+>  > > On Mon, 28 Apr 2008 05:36:34 +1000
+>  > >  "ronnie sahlberg" <ronniesahlberg at gmail.com> wrote:
+>  > >
+>  > >  > Hi,
+>  > >  >
+>  > >  > Please find attached a series of patches to enhance the MMC emulation
+>  > >  > to allow writing to emulated DVD+R disks.
+>  > >  > The emulation checks the backing store file when coming online and
+>  > >  > decides which type of emulation profile should be used :
+>  > >  > If there is no backingstore file   or the device is offline  this is
+>  > >  > emulated as NO_PROFILE and behaves as if there is no media in the "dvd
+>  > >  > drive".
+>  > >  > If the backing store file is >0 bytes in size, this is emulated as
+>  > >  > DVD_ROM and the emulation behaves as if there is a DVD-ROM disk in the
+>  > >  > "dvd drive" that can be read from.
+>  > >  > If the backing store file is ==0 bytes in size, this is emulated as if
+>  > >  > there is a blank writeable DVD+R disk in the "dvd drive", allowing a
+>  > >  > user to burn to the device.
+>  > >  > Once finished burning and the application issues a CLOSE_TRACK
+>  > >  > command, the device morphs from DVD+R into the DVD_ROM profile.
+>  > >
+>  > >  Great, thanks!
+>  > >
+>  > >  Can you merge this patchset with
+>  > >
+>  > >  Signed-off-by: Ronnie Sahlberg <ronniesahlberg at gmail.com>
+>  > >
+>  > >  ?
+>  > >
+>  >
+>  > Sure I can.
+>  > How do I do this (I'm not very git-experienced)?
+>
+>  Ok, let me know if you will not use git. I'll merge patchset this
+>  time.
+>
+>
+>
+>  > What git commands should I use to redo the diffs so they get the sign-off text?
+>
+>  http://www.kernel.org/pub/software/scm/git/docs/tutorial.html
+>
+>  You need to configure your name and email adreess:
+>
+>  $ git config --global user.name "Your Name Comes Here"
+>  $ git config --global user.email you at yourdomain.example.com
+>
+>
+>  You can use git-commit as you did (but please commit each patch with
+>  an appropriate subject). Then git-format-patch with '-s' option
+>  produces a proper patchset (proper author and signed-off-by).  You
+>  need multiple patches, use git-format-patch with '-n' option, which
+>  gives [PATCH n/m] format subjects.
+>
+>  fujita at arbre:~/git/tgt$ git-format-patch -s -n -o ~/submit HEAD~2
+>
+>  After that, please use git-send-email to send patches.
+>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: mmc.diff.gz
+Type: application/x-gzip
+Size: 14629 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080429/6c6f8a59/attachment.bin>
+
+From pw at osc.edu  Tue Apr 29 19:05:16 2008
+From: pw at osc.edu (Pete Wyckoff)
+Date: Tue, 29 Apr 2008 13:05:16 -0400
+Subject: [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER
+	header
+In-Reply-To: <694d48600804170413g4d54cd9g447abd345a1f6301@mail.gmail.com>
+References: <4804B03C.6060507@voltaire.com>
+	<OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+	<694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+	<20080416144830.GC23861@osc.edu> <adaskxlls4u.fsf@cisco.com>
+	<694d48600804170413g4d54cd9g447abd345a1f6301@mail.gmail.com>
+Message-ID: <20080429170516.GA8857@osc.edu>
+
+dorfman.eli at gmail.com wrote on Thu, 17 Apr 2008 14:13 +0300:
+> On Wed, Apr 16, 2008 at 6:46 PM, Roland Dreier <rdreier at cisco.com> wrote:
+> >  > Agree with the interpretation of the spec, and it's probably a bit
+> >   > clearer that way too.  But we have working initiators and targets
+> >   > that do it the "wrong" way.
+> >
+> >  Yes... I guess the key question is whether there are any initiators that
+> >  do things the "right" way.
+> >
+> >
+> >   > 1. Flag day: all initiators and targets change at the same time.
+> >   > Will see data corruption if someone unluckily runs one or the other
+> >   > using old non-fixed code.
+> >
+> >  Seems unacceptable to me... it doesn't make sense at all to break every
+> >  setup in the world just to be "right" according to the spec.
+> 
+> This will break only when both initiator and target will use
+> InitialR2T=No, which means allow unsolicited data.
+> As far as I know, STGT is not very common (and its version in RHEL5.1
+> is considered experimental). Its default is also InitialR2T=Yes.
+> Voltaire's iSCSI over iSER target also uses default InitialR2T=Yes.
+> So it seems that nothing will break.
+
+I finally got a chance to look at this just now.  I think you mean
+default is InitialR2T=No above, which means no unsolicited data.
+That is the default case, and true, the two different meanings
+of the initiator-supplied VA coincide.
+
+But you missed the impact of immediate data.  We run with the
+defaults (I think) that say the first write request packet should be
+filled with a bit of the coming data stream.  From iscsid.conf:
+
+    # To enable immediate data (i.e., the initiator sends unsolicited data
+    # with the iSCSI command packet), uncomment the following line:
+    #
+    # The default is Yes
+    node.session.iscsi.ImmediateData = Yes
+
+Looking at the offset printed out by your patch, it is indeed
+non-zero for the first RDMA read.  Please correct me if I am
+mistaken about this---you must have tested all four variations of
+with and without the patches on initiator and target side, but I did
+not.
+
+Hence I am still a bit unhappy about having to deal with the
+fallout, with no way to detect it.  For our local use, I'll keep an
+older version of stgt in use until we switch to a new kernel, then
+merge up the target side change.  It is a bother, but I can deal
+with it.  For other institutions, this lockstep upgrade requirement
+will not be obvious until they debug the resulting data corruption.
+
+Still, I do understand why it would be nice to conform to the spec,
+and it is maybe a bit cleaner that way too.  Maybe you can help with
+the bug reports on stgt-devel during the transition, and maintain
+and publish a patch to let it work with old kernels.
+
+		-- Pete
+
+
+From cameron at harr.org  Tue Apr 29 22:49:05 2008
+From: cameron at harr.org (Cameron Harr)
+Date: Tue, 29 Apr 2008 14:49:05 -0600
+Subject: [Stgt-devel] Unable to open RDMA device
+Message-ID: <481789C1.3010406@harr.org>
+
+Hi,
+I'm trying to get iSer going, but my transport always seems to be stuck 
+at tcp and I'm not getting the performance I want (sgp_dd, other stuff). 
+I was getting some help from Eric Z. but figure this list might be a 
+little faster. FWIW, I currently have the 
+scsi-target-utils-0.2-20071227_1 rpm installed.
+
+In trying to get down at my problem, I've looked at a few things, and I 
+just noticed that when I try to restart tgtd, I get the following:
+
+Starting SCSI target daemon: CMA: unable to open RDMA device  OK  ]
+/bin/bash: line 1: 31787 Segmentation fault      tgtd
+                                                           [FAILED]
+
+and then just a single line in messages:
+
+Apr 29 14:41:40 test05 kernel: tgtd[31787]: segfault at 000000000000010c 
+rip 00000032dfc06be2 rsp 00007fff4b7d2930 error 4
+
+I couldn't see anything in the archives about CMA. Any suggestions?
+Thanks,
+Cameron
+
+
+From cameron at harr.org  Tue Apr 29 22:59:32 2008
+From: cameron at harr.org (Cameron Harr)
+Date: Tue, 29 Apr 2008 14:59:32 -0600
+Subject: [Stgt-devel] Unable to open RDMA device
+In-Reply-To: <481789C1.3010406@harr.org>
+References: <481789C1.3010406@harr.org>
+Message-ID: <48178C34.2090600@harr.org>
+
+By "this list might be faster," I mean I'm not writing when he's 
+supposed to be sleeping. Also, I only seem to get the problem when doing 
+a "/etc/init.d/tgtd restart" so perhaps this isn't my main problem?
+
+Also, relevant IB modules are:
+ib_iser                62584  0
+libiscsi               58368  1 ib_iser
+scsi_transport_iscsi    63248  2 ib_iser,libiscsi
+ib_sdp                125020  0
+rdma_cm                67348  3 rdma_ucm,ib_iser,ib_sdp
+ib_addr                41992  1 rdma_cm
+ib_ipoib              112480  0
+ib_cm                  67368  2 rdma_cm,ib_ipoib
+ib_sa                  74632  3 rdma_cm,ib_ipoib,ib_cm
+ib_uverbs              75568  1 rdma_ucm
+ib_umad                50728  0
+ib_ipath              334796  0
+mlx4_ib                96060  0
+mlx4_core             109120  1 mlx4_ib
+ib_mthca              159172  0
+ib_mad                 70948  5 ib_cm,ib_sa,ib_umad,mlx4_ib,ib_mthca
+ib_core                97664  15 
+rdma_ucm,ib_iser,ib_sdp,rdma_cm,iw_cm,ib_ipoib,ib_cm,ib_sa,ib_uverbs,ib_umad,iw_cxgb3,ib_ipath,mlx4_ib,ib_mthca,ib_mad
+ipv6                  411425  41 ib_ipoib
+libata                160849  1 ata_piix
+scsi_mod              186361  6 
+ib_iser,libiscsi,scsi_transport_iscsi,sg,libata,sd_mod
+
+
+Cameron Harr wrote:
+> Hi,
+> I'm trying to get iSer going, but my transport always seems to be 
+> stuck at tcp and I'm not getting the performance I want (sgp_dd, other 
+> stuff). I was getting some help from Eric Z. but figure this list 
+> might be a little faster. FWIW, I currently have the 
+> scsi-target-utils-0.2-20071227_1 rpm installed.
+>
+> In trying to get down at my problem, I've looked at a few things, and 
+> I just noticed that when I try to restart tgtd, I get the following:
+>
+> Starting SCSI target daemon: CMA: unable to open RDMA device  OK  ]
+> /bin/bash: line 1: 31787 Segmentation fault      tgtd
+>                                                           [FAILED]
+>
+> and then just a single line in messages:
+>
+> Apr 29 14:41:40 test05 kernel: tgtd[31787]: segfault at 
+> 000000000000010c rip 00000032dfc06be2 rsp 00007fff4b7d2930 error 4
+>
+> I couldn't see anything in the archives about CMA. Any suggestions?
+> Thanks,
+> Cameron
+>
+
+
+From kensandars at hotmail.com  Wed Apr 30 09:43:19 2008
+From: kensandars at hotmail.com (Ken Sandars)
+Date: Wed, 30 Apr 2008 17:43:19 +1000
+Subject: [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in
+	iSER	header
+In-Reply-To: <20080429170516.GA8857@osc.edu>
+References: <4804B03C.6060507@voltaire.com>
+	<OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com>
+	<694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com>
+	<20080416144830.GC23861@osc.edu> <adaskxlls4u.fsf@cisco.com>
+	<694d48600804170413g4d54cd9g447abd345a1f6301@mail.gmail.com> 
+	<20080429170516.GA8857@osc.edu>
+Message-ID: <BLU117-W2898E0FCDF826F8FBFE13ED7D80@phx.gbl>
+
+Hi all,
+
+It appears the current Linux iSER initiator does not send the HELLO message when the connection transits to full feature phase. The stgt target also ignores this message (if it were to appear). Both of these implementations use a non-conformant iSER header (they add write_va and read_va fields, which incidentally do not appear to be used). Are these changes documented anywhere in the IB domain, or are these variations needed for another reason?
+
+If these deviations from the RFC are not needed and were to be fixed (along with the offset fix), then these implementations can detect the current mode of operation by examining the size of the iSER header received. The choice to proceed in the broken way, or to terminate the connection (with big loud error messages) is the implementor's choice. Either way, the issue is detected and corruption avoided.
+
+Thoughts?
+
+Cheers
+Ken
+
+
+
+> Date: Tue, 29 Apr 2008 13:05:16 -0400
+> From: pw at osc.edu
+> To: dorfman.eli at gmail.com
+> CC: stgt-devel at lists.berlios.de; rdreier at cisco.com; general at lists.openfabrics.org; mako at almaden.ibm.com; ips at ietf.org; open-iscsi at googlegroups.com
+> Subject: Re: [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA in iSER	header
+> 
+> dorfman.eli at gmail.com wrote on Thu, 17 Apr 2008 14:13 +0300:
+> > On Wed, Apr 16, 2008 at 6:46 PM, Roland Dreier <rdreier at cisco.com> wrote:
+> > >  > Agree with the interpretation of the spec, and it's probably a bit
+> > >   > clearer that way too.  But we have working initiators and targets
+> > >   > that do it the "wrong" way.
+> > >
+> > >  Yes... I guess the key question is whether there are any initiators that
+> > >  do things the "right" way.
+> > >
+> > >
+> > >   > 1. Flag day: all initiators and targets change at the same time.
+> > >   > Will see data corruption if someone unluckily runs one or the other
+> > >   > using old non-fixed code.
+> > >
+> > >  Seems unacceptable to me... it doesn't make sense at all to break every
+> > >  setup in the world just to be "right" according to the spec.
+> > 
+> > This will break only when both initiator and target will use
+> > InitialR2T=No, which means allow unsolicited data.
+> > As far as I know, STGT is not very common (and its version in RHEL5.1
+> > is considered experimental). Its default is also InitialR2T=Yes.
+> > Voltaire's iSCSI over iSER target also uses default InitialR2T=Yes.
+> > So it seems that nothing will break.
+> 
+> I finally got a chance to look at this just now.  I think you mean
+> default is InitialR2T=No above, which means no unsolicited data.
+> That is the default case, and true, the two different meanings
+> of the initiator-supplied VA coincide.
+> 
+> But you missed the impact of immediate data.  We run with the
+> defaults (I think) that say the first write request packet should be
+> filled with a bit of the coming data stream.  From iscsid.conf:
+> 
+>     # To enable immediate data (i.e., the initiator sends unsolicited data
+>     # with the iSCSI command packet), uncomment the following line:
+>     #
+>     # The default is Yes
+>     node.session.iscsi.ImmediateData = Yes
+> 
+> Looking at the offset printed out by your patch, it is indeed
+> non-zero for the first RDMA read.  Please correct me if I am
+> mistaken about this---you must have tested all four variations of
+> with and without the patches on initiator and target side, but I did
+> not.
+> 
+> Hence I am still a bit unhappy about having to deal with the
+> fallout, with no way to detect it.  For our local use, I'll keep an
+> older version of stgt in use until we switch to a new kernel, then
+> merge up the target side change.  It is a bother, but I can deal
+> with it.  For other institutions, this lockstep upgrade requirement
+> will not be obvious until they debug the resulting data corruption.
+> 
+> Still, I do understand why it would be nice to conform to the spec,
+> and it is maybe a bit cleaner that way too.  Maybe you can help with
+> the bug reports on stgt-devel during the transition, and maintain
+> and publish a patch to let it work with old kernels.
+> 
+> 		-- Pete
+> _______________________________________________
+> Stgt-devel mailing list
+> Stgt-devel at lists.berlios.de
+> https://lists.berlios.de/mailman/listinfo/stgt-devel
+
+_________________________________________________________________
+Find the job of your dreams before someone else does
+http://mycareer.com.au/?s_cid=596064 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <https://lists.berlios.de/pipermail/stgt-devel/attachments/20080430/9e698849/attachment.html>
+
+From erezz at voltaire.com  Wed Apr 30 13:54:14 2008
+From: erezz at voltaire.com (Erez Zilber)
+Date: Wed, 30 Apr 2008 14:54:14 +0300
+Subject: [Stgt-devel] [ofa-general] Re: [Ips] Calculating the VA
+	iniSER	header
+References: <4804B03C.6060507@voltaire.com><OFA528E763.71479425-ON8525742C.005B02F4-8825742C.005F18F1@us.ibm.com><694d48600804160122l1cc97b8aka8986ee6deb7dec8@mail.gmail.com><20080416144830.GC23861@osc.edu>
+	<adaskxlls4u.fsf@cisco.com><694d48600804170413g4d54cd9g447abd345a1f6301@mail.gmail.com>
+	<20080429170516.GA8857@osc.edu>
+	<BLU117-W2898E0FCDF826F8FBFE13ED7D80@phx.gbl>
+Message-ID: <39C75744D164D948A170E9792AF8E7CAF60D50@exil.voltaire.com>
+
+> Hi all,
+> 
+> It appears the current Linux iSER initiator does not send the HELLO message when the connection transits to full feature phase. The stgt target also ignores this message (if it were to appear). Both of these implementations use a non-conformant iSER header (they add write_va and read_va fields, which incidentally do not appear to be used). Are these changes documented anywhere in the IB domain, or are these variations needed for another reason?
+> 
+> If these deviations from the RFC are not needed and were to be fixed (along with the offset fix), then these implementations can detect the current mode of operation by examining the size > of the iSER header received. The choice to proceed in the broken way, or to terminate the connection (with big loud error messages) is the implementor's choice. Either way, the issue is detected and corruption avoided.
+> 
+> Thoughts?
+
+Take a look at the iSER for IB annex:
+ 
+http://www.infinibandta.org/members/spec/Annex_iSER.PDF
+
+Erez
+
+
+From pw at osc.edu  Wed Apr 30 21:27:21 2008
+From: pw at osc.edu (Pete Wyckoff)
+Date: Wed, 30 Apr 2008 15:27:21 -0400
+Subject: [Stgt-devel] Unable to open RDMA device
+In-Reply-To: <481789C1.3010406@harr.org>
+References: <481789C1.3010406@harr.org>
+Message-ID: <20080430192721.GA31260@osc.edu>
+
+cameron at harr.org wrote on Tue, 29 Apr 2008 14:49 -0600:
+> I'm trying to get iSer going, but my transport always seems to be stuck 
+> at tcp and I'm not getting the performance I want (sgp_dd, other stuff). 
+> I was getting some help from Eric Z. but figure this list might be a 
+> little faster. FWIW, I currently have the 
+> scsi-target-utils-0.2-20071227_1 rpm installed.
+> 
+> In trying to get down at my problem, I've looked at a few things, and I 
+> just noticed that when I try to restart tgtd, I get the following:
+> 
+> Starting SCSI target daemon: CMA: unable to open RDMA device  OK  ]
+> /bin/bash: line 1: 31787 Segmentation fault      tgtd
+>                                                            [FAILED]
+> 
+> and then just a single line in messages:
+> 
+> Apr 29 14:41:40 test05 kernel: tgtd[31787]: segfault at 000000000000010c 
+> rip 00000032dfc06be2 rsp 00007fff4b7d2930 error 4
+> 
+> I couldn't see anything in the archives about CMA. Any suggestions?
+
+Guess I'd go back to basic debugging here.  Run the startup script
+with "-x" to see exactly what it's doing.  Start tgtd by hand and
+see if it dies.  Recompile with -g and start it in the debugger,
+then run it until you get a traceback.  There's not much to go on
+so far.
+
+		-- Pete
+
+

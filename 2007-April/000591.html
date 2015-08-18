@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] head and data digest
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20head%20and%20data%20digest&In-Reply-To=%3C20070423072127S.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000590.html">
+   <LINK REL="Next"  HREF="000592.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] head and data digest</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20head%20and%20data%20digest&In-Reply-To=%3C20070423072127S.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] head and data digest">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Apr 23 00:21:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000590.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+        <LI>Next message: <A HREF="000592.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#591">[ date ]</a>
+              <a href="thread.html#591">[ thread ]</a>
+              <a href="subject.html#591">[ subject ]</a>
+              <a href="author.html#591">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>From: Albert Pauw &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">albert.pauw at gmail.com</A>&gt;
+Subject: Re: [Stgt-devel] [PATCH] head and data digest
+Date: Sun, 22 Apr 2007 17:39:26 +0200
+
+&gt;<i> I set HeaderDigest to CRC32C on the disk target:
+</I>
+Do you enable the features? Here's an example:
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op show --mode target --tid 1
+MaxRecvDataSegmentLength=8192
+MaxXmitDataSegmentLength=8192
+HeaderDigest=None
+DataDigest=None
+InitialR2T=Yes
+MaxOutstandingR2T=1
+ImmediateData=Yes
+FirstBurstLength=65536
+MaxBurstLength=262144
+DataPDUInOrder=Yes
+DataSequenceInOrder=Yes
+ErrorRecoveryLevel=0
+IFMarker=No
+OFMarker=No
+DefaultTime2Wait=2
+DefaultTime2Retain=20
+OFMarkInt=Reject
+IFMarkInt=Reject
+MaxConnections=1
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op update --mode target --tid 1 -n HeaderDigest -v CRC32C
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op update --mode target --tid 1 -n DataDigest -v CRC32C
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">root at ac</A>:~/git# ./tgt/usr/tgtadm --op show --mode target --tid 1
+MaxRecvDataSegmentLength=8192
+MaxXmitDataSegmentLength=8192
+HeaderDigest=CRC32C
+DataDigest=CRC32C
+InitialR2T=Yes
+MaxOutstandingR2T=1
+ImmediateData=Yes
+FirstBurstLength=65536
+MaxBurstLength=262144
+DataPDUInOrder=Yes
+DataSequenceInOrder=Yes
+ErrorRecoveryLevel=0
+IFMarker=No
+OFMarker=No
+DefaultTime2Wait=2
+DefaultTime2Retain=20
+OFMarkInt=Reject
+IFMarkInt=Reject
+MaxConnections=1
+
+With this configuration, the target accepts CRC32C and
+None. Currently, there is no way to configure a target to accept only
+CRC32C.
+
+If it still doesn't work for you, please send the tcpdump log during a
+login process.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000590.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+	<LI>Next message: <A HREF="000592.html">[Stgt-devel] [PATCH] head and data digest
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#591">[ date ]</a>
+              <a href="thread.html#591">[ thread ]</a>
+              <a href="subject.html#591">[ subject ]</a>
+              <a href="author.html#591">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>

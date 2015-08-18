@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/stgt-devel/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%20persistent%0A%09device%09binding&In-Reply-To=%3C20080728205053B.fujita.tomonori%40lab.ntt.co.jp%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001921.html">
+   <LINK REL="Next"  HREF="001925.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding</H1>
+    <B>FUJITA Tomonori</B> 
+    <A HREF="mailto:stgt-devel%40lists.berlios.de?Subject=Re%3A%20%5BStgt-devel%5D%20%5BPATCH%5D%20tgt-admin%3A%20support%20persistent%0A%09device%09binding&In-Reply-To=%3C20080728205053B.fujita.tomonori%40lab.ntt.co.jp%3E"
+       TITLE="[Stgt-devel] [PATCH] tgt-admin: support persistent	device	binding">fujita.tomonori at lab.ntt.co.jp
+       </A><BR>
+    <I>Mon Jul 28 13:50:00 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001921.html">[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+</A></li>
+        <LI>Next message: <A HREF="001925.html">[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1922">[ date ]</a>
+              <a href="thread.html#1922">[ thread ]</a>
+              <a href="subject.html#1922">[ subject ]</a>
+              <a href="author.html#1922">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On Mon, 28 Jul 2008 14:37:52 +0300
+&quot;Eli Dorfman&quot; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorfman.eli at gmail.com</A>&gt; wrote:
+
+&gt;<i> &gt;&gt; Signed-off-by: Doron Shoham &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/stgt-devel">dorons at voltaire.com</A>&gt;
+</I>&gt;<i> &gt;&gt; ---
+</I>&gt;<i> &gt;&gt;  doc/manpages/tgt-admin.8 |    3 ++
+</I>&gt;<i> &gt;&gt;  scripts/tgt-admin        |   64 ++++++++++++++++++++++++++++++++++-----------
+</I>&gt;<i> &gt;&gt;  2 files changed, 51 insertions(+), 16 deletions(-)
+</I>&gt;<i> &gt;&gt;
+</I>&gt;<i> &gt;&gt; diff --git a/doc/manpages/tgt-admin.8 b/doc/manpages/tgt-admin.8
+</I>&gt;<i> &gt;&gt; index 97d6484..5598932 100644
+</I>&gt;<i> &gt;&gt; --- a/doc/manpages/tgt-admin.8
+</I>&gt;<i> &gt;&gt; +++ b/doc/manpages/tgt-admin.8
+</I>&gt;<i> &gt;&gt; @@ -85,6 +85,9 @@ example for a configuration file:
+</I>&gt;<i> &gt;&gt;  &lt;target iqn.2007-02.com.example:san.xen1&gt;
+</I>&gt;<i> &gt;&gt;     backing-store /dev/san/xen1-disk1 # LUN1
+</I>&gt;<i> &gt;&gt;     direct-store /dev/san/xen1-disk2 # LUN2
+</I>&gt;<i> &gt;&gt; +   # for persistent binding use scsi serial number
+</I>&gt;<i> &gt;&gt; +   backing-store 00c0ffd508d70048ed1dbc4704000000 #LUN3
+</I>&gt;<i> &gt;&gt; +   direct-store 00c0ffd508d70048ed1dbc4704000001 # LUN4
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; I'm not sure about direct-store thing at all. They are
+</I>&gt;<i> &gt; confusing. direct-store is backing-store.
+</I>&gt;<i> 
+</I>&gt;<i> basically you are right, but we need a way to export real physical
+</I>&gt;<i> serial number to the initiator so that we can use multipath.
+</I>&gt;<i> The direct-store attribute is used to allow exporting real physical
+</I>&gt;<i> device with its properties like: serial number, vendor, etc
+</I>&gt;<i> 
+</I>&gt;<i> we also need away to export a virtual device with explicit device
+</I>&gt;<i> properties (serial number, vendor, etc) and not use the auto generated
+</I>&gt;<i> deadbeaf ids.
+</I>
+I know that.
+
+
+&gt;<i> maybe use the following format :
+</I>&gt;<i> &lt;target xyz&gt;
+</I>&gt;<i>     &lt;backing-store /dev/sdb&gt;
+</I>&gt;<i>           properties  custom # use properties specified below or
+</I>&gt;<i> default (generate the deadbeaf id) or direct (get real serial number)
+</I>&gt;<i>           serial-number 12345678
+</I>&gt;<i>           vendor myvendor
+</I>&gt;<i>     &lt;/backing-store&gt;
+</I>&gt;<i> &lt;/target&gt;
+</I>&gt;<i> 
+</I>&gt;<i> what do you think?
+</I>
+Hmm, 'properties custom' looks unnecessary for me. If a device file of
+a disk drive is used as backing-store and none of the properties are
+specified, we can use the physical properties.
+
+And if an administrator wants to use a disk drive as backing-store, he
+should use /dev/disk/by-id/* files instead of changeable /dev/sd* files.
+
+Except for those, it looks sane for me.
+
+Well, I don't like a XML format but I can live with it if people are
+happy about that.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001921.html">[Stgt-devel] [PATCH] tgt-admin: support persistent device	binding
+</A></li>
+	<LI>Next message: <A HREF="001925.html">[Stgt-devel] [PATCH] tgt-admin: support	persistent	device	binding
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1922">[ date ]</a>
+              <a href="thread.html#1922">[ thread ]</a>
+              <a href="subject.html#1922">[ subject ]</a>
+              <a href="author.html#1922">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/stgt-devel">More information about the Stgt-devel
+mailing list</a><br>
+</body></html>
